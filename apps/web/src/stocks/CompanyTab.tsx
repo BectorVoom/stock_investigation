@@ -1,4 +1,5 @@
 import type {
+	CompanyOverviewView,
 	CompanySummaryView,
 	EquityBusinessParagraph,
 	EquityBusinessSource,
@@ -25,6 +26,7 @@ import { ErrorNotice, HEADING, Loading } from "../components/ui.tsx";
 import { formatPeriodEnd } from "../equities/financialFormat.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
+import { CompanyOverview } from "./CompanyOverview.tsx";
 import { rereadWhileAwaiting, stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import type { StockTabProps } from "./stockTabs.ts";
@@ -78,7 +80,7 @@ export function CompanyTab(props: StockTabProps): JSX.Element {
 		<div class="space-y-4" data-field="stock-company-tab">
 			{/* While loading or failed the summary shows nothing: the listing says it. */}
 			<Show when={profile.value()}>
-				{(current) => <SummaryGroup summary={current().summary} />}
+				{(current) => <SummaryGroup summary={current().summary} overview={current().overview} />}
 			</Show>
 			<ListingGroup {...props} profile={profile.value()} failed={profile.failure() !== null} />
 			{/* While loading or failed the Business group shows nothing: the listing says it. */}
@@ -178,62 +180,77 @@ function ListingGroup(
 }
 
 /**
- * The AI-written summary (ADR-0060): the description and the investment
- * themes in the UI language, then who wrote it and when — always marked as
- * written by AI — or a line saying none is written yet.
+ * 事業概要 (Business overview): the company overview with evidence and
+ * references (ADR-0064) when one is stored; else the AI-written summary
+ * (ADR-0060) — the description and the investment themes in the UI
+ * language, then who wrote it and when, always marked as written by AI —
+ * or a line saying none is written yet.
  */
-function SummaryGroup(props: { readonly summary: CompanySummaryView | null }): JSX.Element {
+function SummaryGroup(props: {
+	readonly summary: CompanySummaryView | null;
+	readonly overview: CompanyOverviewView | null;
+}): JSX.Element {
+	const s = useMessages(stocksMessages);
+	return (
+		<section aria-label={s().summaryHeading} data-field="company-summary">
+			<h4 class={HEADING}>{s().summaryHeading}</h4>
+			<Show when={props.overview} fallback={<SummaryOrNone summary={props.summary} />}>
+				{(overview) => <CompanyOverview overview={overview()} />}
+			</Show>
+		</section>
+	);
+}
+
+/** The ADR-0060 summary, or the line saying none is written yet. */
+function SummaryOrNone(props: { readonly summary: CompanySummaryView | null }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const locale = useLocale();
 	const themesId = createUniqueId();
 	return (
-		<section aria-label={s().summaryHeading} data-field="company-summary">
-			<h4 class={HEADING}>{s().summaryHeading}</h4>
-			<Show
-				when={props.summary}
-				fallback={
-					<p class={`mt-1 ${BUSINESS_TEXT}`} data-field="company-summary-none">
-						{s().summaryNone}
+		<Show
+			when={props.summary}
+			fallback={
+				<p class={`mt-1 ${BUSINESS_TEXT}`} data-field="company-summary-none">
+					{s().summaryNone}
+				</p>
+			}
+		>
+			{(summary) => (
+				<div class="mt-1 space-y-2">
+					<p class={BUSINESS_TEXT} lang={locale()} data-field="company-summary-description">
+						{summary().description[locale()]}
 					</p>
-				}
-			>
-				{(summary) => (
-					<div class="mt-1 space-y-2">
-						<p class={BUSINESS_TEXT} lang={locale()} data-field="company-summary-description">
-							{summary().description[locale()]}
-						</p>
-						<div>
-							<h5 id={themesId} class="text-xs font-medium text-slate-700">
-								{s().themesHeading}
-							</h5>
-							<ul
-								class="mt-1 flex flex-wrap gap-1.5"
-								aria-labelledby={themesId}
-								data-field="company-summary-themes"
-							>
-								<For each={summary().themes}>
-									{(theme) => (
-										<li
-											class="rounded-full border border-slate-300 bg-slate-50 px-2.5 py-0.5 text-xs text-slate-800"
-											lang={locale()}
-										>
-											{theme[locale()]}
-										</li>
-									)}
-								</For>
-							</ul>
-						</div>
-						<p class="max-w-[70ch] text-xs text-slate-700" data-field="company-summary-source">
-							{s().summarySource(
-								summary().agentId,
-								summary().model,
-								formatPeriodEnd(summary().generatedAt.slice(0, 10), locale()),
-							)}
-						</p>
+					<div>
+						<h5 id={themesId} class="text-xs font-medium text-slate-700">
+							{s().themesHeading}
+						</h5>
+						<ul
+							class="mt-1 flex flex-wrap gap-1.5"
+							aria-labelledby={themesId}
+							data-field="company-summary-themes"
+						>
+							<For each={summary().themes}>
+								{(theme) => (
+									<li
+										class="rounded-full border border-slate-300 bg-slate-50 px-2.5 py-0.5 text-xs text-slate-800"
+										lang={locale()}
+									>
+										{theme[locale()]}
+									</li>
+								)}
+							</For>
+						</ul>
 					</div>
-				)}
-			</Show>
-		</section>
+					<p class="max-w-[70ch] text-xs text-slate-700" data-field="company-summary-source">
+						{s().summarySource(
+							summary().agentId,
+							summary().model,
+							formatPeriodEnd(summary().generatedAt.slice(0, 10), locale()),
+						)}
+					</p>
+				</div>
+			)}
+		</Show>
 	);
 }
 
@@ -305,9 +322,6 @@ function CompanyProfileGroup(props: {
 					</>
 				)}
 			</Show>
-			<p class="mt-1 max-w-[70ch] text-xs text-slate-700" data-field="company-profile-no-business">
-				{s().businessNotProvided}
-			</p>
 		</section>
 	);
 }

@@ -115,6 +115,67 @@ describe("company summaries (ADR-0060)", () => {
 		expect(completed.status).toBe(400);
 	});
 
+	it("serves a stored company overview (ADR-0064) beside the summary", async () => {
+		const harness = createHarness();
+		const overview = {
+			entry: {
+				feature: {
+					en: "Builds cars and trucks.",
+					ja: "乗用車・トラックを製造。",
+					evidence: [{ source: "S1", quote: "TSE 33-sector: 輸送用機器" }],
+				},
+				businesses: [],
+				segments: [],
+				overseasSales: null,
+				profile: [],
+				themes: [],
+			},
+			facts: {
+				listing: "tse-prime",
+				sector: "輸送用機器",
+				fiscalYearEnd: "03-31",
+				figures: [],
+				cites: { listing: null, sector: "S1", figures: null },
+			},
+			references: [
+				{
+					id: "S1",
+					title: { en: "J-Quants listed issue master", ja: "J-Quants 上場銘柄一覧" },
+					publisher: "JPX総研 (J-Quants)",
+					asOf: "2026-08-10",
+					url: "https://jpx-jquants.com/en/spec/eq-master",
+					note: null,
+				},
+			],
+			agentId: "claude-api",
+			model: "claude-haiku-5-5",
+			generatedAt: "2026-11-03T00:00:00.000Z",
+		};
+		await env.DB.prepare(
+			`INSERT INTO stock_company_summary (owner_id, market, symbol, queued_at, overview_json,
+				overview_facts_json, overview_references_json, overview_agent_id, overview_model,
+				overview_generated_at)
+			VALUES (?, 'JP', '7203', ?, ?, ?, ?, ?, ?, ?)`,
+		)
+			.bind(
+				harness.ownerId,
+				overview.generatedAt,
+				JSON.stringify(overview.entry),
+				JSON.stringify(overview.facts),
+				JSON.stringify(overview.references),
+				overview.agentId,
+				overview.model,
+				overview.generatedAt,
+			)
+			.run();
+		const profile = await body(
+			await harness.call("GET", "/stocks/jp:7203"),
+			stockProfileResponseSchema,
+		);
+		expect(profile.summary).toBeNull();
+		expect(profile.overview).toEqual(overview);
+	});
+
 	it("queues nothing while no AI agent is chosen in Settings", async () => {
 		const harness = createHarness({ companySummaries: true });
 		const token = await issueRunnerToken(harness);

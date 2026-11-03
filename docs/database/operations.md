@@ -224,6 +224,14 @@ table changes. Rollback: drop the table and delete the `company-summary`
 jobs (with their transitions and events) before starting an older build,
 whose claim schema does not know the kind.
 
+### 0029 — Company overview with evidence and references
+
+Migration `0029_company_overview.sql` (ADR-0064) adds six nullable columns
+to [`stock_company_summary`](tables/stock_company_summary.md) for the
+company overview (事業概要); no row changes. Rollback: drop the six columns
+in the order the migration's header gives, losing only the stored
+overviews; the version-28 code never reads them.
+
 ## Switching the database engine
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](../adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.

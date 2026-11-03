@@ -1,5 +1,7 @@
 import {
+	type CompanyOverviewView,
 	type CompanySummaryView,
+	companyOverviewViewSchema,
 	type EquityBusinessParagraph,
 	type EquityBusinessSource,
 	type StockBusiness,
@@ -386,9 +388,9 @@ describe("Company tab: a Japanese stock's J-Quants profile (ADR-0059 §3)", () =
 		expect(group.querySelector('[data-field="company-profile-source"]')?.textContent).toBe(
 			"As of Aug 10, 2026. Source: J-Quants (Listed Issue Master).",
 		);
-		expect(group.querySelector('[data-field="company-profile-no-business"]')?.textContent).toBe(
-			"J-Quants, the source of Japanese company data, has no business description, so the sector and market segment are shown instead.",
-		);
+		// The owner removed the line that J-Quants has no business description (2026-11-03).
+		expect(group.querySelector('[data-field="company-profile-no-business"]')).toBeNull();
+		expect(group.textContent).not.toContain("has no business description");
 		expect(within(group).queryByRole("link")).toBeNull();
 		expect(within(group).queryByRole("button")).toBeNull();
 		expect(document.querySelector('[data-field="company-business"]')).toBeNull();
@@ -447,9 +449,7 @@ describe("Company tab: a Japanese stock's J-Quants profile (ADR-0059 §3)", () =
 		expect(group.querySelector('[data-field="company-profile-source"]')?.textContent).toBe(
 			"2026年8月10日時点。出典: J-Quants（上場銘柄一覧）。",
 		);
-		expect(group.querySelector('[data-field="company-profile-no-business"]')?.textContent).toBe(
-			"日本企業のデータの取得元である J-Quants には事業内容の記載がないため、業種と市場区分を表示しています。",
-		);
+		expect(group.textContent).not.toContain("事業内容の記載がない");
 
 		page.setRoute({ stockId: "jp:6758", tab: "company" });
 		await waitFor(() =>
@@ -540,9 +540,9 @@ describe("Company tab: the AI-written summary and themes (ADR-0060)", () => {
 		api.summaryOf.set("jp:7203", TOYOTA_SUMMARY);
 		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" } });
 		const group = await summaryGroup();
-		expect(screen.getByRole("region", { name: "About the company" })).toBe(group);
+		expect(screen.getByRole("region", { name: "Business overview" })).toBe(group);
 		expect(
-			within(group).getByRole("heading", { level: 4, name: "About the company" }),
+			within(group).getByRole("heading", { level: 4, name: "Business overview" }),
 		).toBeTruthy();
 		expect(group.querySelector('[data-field="company-summary-description"]')?.textContent).toBe(
 			TOYOTA_SUMMARY.description.en,
@@ -571,7 +571,7 @@ describe("Company tab: the AI-written summary and themes (ADR-0060)", () => {
 		api.summaryOf.set("jp:7203", { ...TOYOTA_SUMMARY, model: null });
 		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" }, locale: "ja" });
 		const group = await summaryGroup();
-		expect(within(group).getByRole("heading", { level: 4, name: "企業の説明" })).toBeTruthy();
+		expect(within(group).getByRole("heading", { level: 4, name: "事業概要" })).toBeTruthy();
 		const description = group.querySelector('[data-field="company-summary-description"]');
 		expect(description?.textContent).toBe(TOYOTA_SUMMARY.description.ja);
 		expect(description?.getAttribute("lang")).toBe("ja");
@@ -583,6 +583,237 @@ describe("Company tab: the AI-written summary and themes (ADR-0060)", () => {
 		).toEqual(["自動車", "ハイブリッド車"]);
 		expect(group.querySelector('[data-field="company-summary-source"]')?.textContent).toBe(
 			"AI（claude-code）が 2026年11月2日 に作成。誤りを含む場合があります。",
+		);
+	});
+});
+
+/**
+ * Coca-Cola's company overview as stored (ADR-0064), cut down from the
+ * entry Claude Haiku 5.5 wrote on 2026-11-03 from the stored 10-K.
+ */
+const KO_OVERVIEW: CompanyOverviewView = companyOverviewViewSchema.parse({
+	entry: {
+		feature: {
+			en: "Total beverage company selling Coca-Cola, Sprite and Fanta in more than 200 countries.",
+			ja: "Coca-Cola、Sprite、Fantaなどを展開する総合飲料会社。200以上の国・地域で販売。",
+			evidence: [
+				{
+					source: "S2",
+					quote: "now sold in more than 200 countries and territories",
+				},
+			],
+		},
+		businesses: [
+			{
+				en: "Sparkling soft drinks: Coca-Cola, Sprite, Fanta.",
+				ja: "炭酸飲料。Coca-Cola、Sprite、Fanta",
+				evidence: [
+					{ source: "S2", quote: "including Coca-Cola, Sprite, Coca-Cola Zero Sugar, Fanta" },
+				],
+			},
+		],
+		segments: [
+			{
+				name: { en: "North America", ja: "北米" },
+				activity: {
+					en: "Fountain syrups sold to fountain retailers.",
+					ja: "ファウンテン用シロップを飲食店に販売",
+				},
+				salesSharePercent: null,
+				marginPercent: null,
+				evidence: [{ source: "S2", quote: "North America" }],
+			},
+			{
+				name: { en: "Bottling Investments", ja: "ボトリング投資" },
+				activity: null,
+				salesSharePercent: 21,
+				marginPercent: 4,
+				evidence: [{ source: "S2", quote: "Bottling Investments 21% (4%)" }],
+			},
+		],
+		overseasSales: null,
+		profile: [
+			{
+				field: "founded",
+				value: { en: "1919 (Delaware)", ja: "1919年(デラウェア州)" },
+				evidence: [{ source: "S2", quote: "incorporated in September 1919" }],
+			},
+		],
+		themes: [
+			{
+				label: { en: "Beverages", ja: "飲料" },
+				reason: {
+					en: "Sells beverages in more than 200 countries.",
+					ja: "200超の国・地域で飲料を販売。",
+					evidence: [{ source: "S2", quote: "more than 200 countries and territories" }],
+				},
+			},
+		],
+	},
+	facts: {
+		listing: "nyse",
+		sector: null,
+		fiscalYearEnd: "12-31",
+		figures: [
+			{
+				metric: "revenue",
+				fiscalYear: 2025,
+				periodEnd: "2025-12-31",
+				value: "47941000000",
+				currency: "USD",
+			},
+			{
+				metric: "operating-income",
+				fiscalYear: 2025,
+				periodEnd: "2025-12-31",
+				value: "13762000000",
+				currency: "USD",
+			},
+		],
+		cites: { listing: "S1", sector: null, figures: "S3" },
+	},
+	references: [
+		{
+			id: "S1",
+			title: { en: "SEC company tickers and exchanges", ja: "SEC 登録企業ティッカー一覧" },
+			publisher: "U.S. SEC",
+			asOf: null,
+			url: "https://www.sec.gov/files/company_tickers_exchange.json",
+			note: null,
+		},
+		{
+			id: "S2",
+			title: {
+				en: "Form 10-K, Item 1. Business (fiscal year ended 2025-12-31)",
+				ja: "Form 10-K 第1項「事業の内容」(2025-12-31 終了事業年度)",
+			},
+			publisher: "U.S. SEC EDGAR",
+			asOf: "2025-12-31",
+			url: "https://www.sec.gov/Archives/edgar/data/21344/000162828026010047/ko-20251231.htm",
+			note: { en: "Filed 2026-02-20.", ja: "2026-02-20 提出。" },
+		},
+		{
+			id: "S3",
+			title: {
+				en: "Form 10-K financial statements (fiscal year ended 2025-12-31)",
+				ja: "Form 10-K 財務諸表(2025-12-31 終了事業年度)",
+			},
+			publisher: "U.S. SEC EDGAR (XBRL)",
+			asOf: "2025-12-31",
+			url: "https://www.sec.gov/Archives/edgar/data/21344/000162828026010047/ko-20251231.htm",
+			note: null,
+		},
+	],
+	agentId: "claude-api",
+	model: "claude-haiku-5-5",
+	generatedAt: "2026-11-02T23:25:47.705Z",
+});
+
+async function overviewOf(): Promise<HTMLElement> {
+	return waitFor(() => {
+		const overview = document.querySelector<HTMLElement>('[data-field="company-overview"]');
+		if (overview === null) throw new Error("no overview yet");
+		return overview;
+	});
+}
+
+describe("Company tab: the company overview with evidence and references (ADR-0064)", () => {
+	it("replaces the summary under 事業概要 with 四季報-style rows, each field marked with its source", async () => {
+		api.summaryOf.set("us:KO", { ...TOYOTA_SUMMARY });
+		api.overviewOf.set("us:KO", KO_OVERVIEW);
+		mountStocks(api.backend, { route: { stockId: "us:KO", tab: "company" }, locale: "ja" });
+		const overview = await overviewOf();
+		const group = await summaryGroup();
+		expect(within(group).getByRole("heading", { level: 4, name: "事業概要" })).toBeTruthy();
+		// The overview replaces the ADR-0060 summary.
+		expect(group.querySelector('[data-field="company-summary-description"]')).toBeNull();
+		const labels = [...overview.querySelectorAll("dt")].map((term) => term.textContent);
+		expect(labels).toEqual(["【特色】", "【事業内容】", "【連結事業】", "【海外】", "【テーマ】"]);
+		const rows = [...overview.querySelectorAll("dd")].map((field) => field.textContent);
+		expect(rows[0]).toBe(`${KO_OVERVIEW.entry.feature?.ja}S2`);
+		// One segment a line: what it does when the sources say; a stated share and
+		// margin read like 四季報's "79(4)"; a segment without them shows its name.
+		const segments = overview.querySelector<HTMLElement>(
+			'[data-field="company-overview-segments"]',
+		);
+		if (segments === null) throw new Error("no segments");
+		expect(
+			within(segments)
+				.getAllByRole("listitem")
+				.map((item) => item.textContent),
+		).toEqual(["北米：ファウンテン用シロップを飲食店に販売S2", "ボトリング投資21(4)S2"]);
+		expect(rows[3]).toBe("出典に記載なし");
+		const mark = overview.querySelector("sup");
+		expect(mark?.textContent).toBe("S2");
+		expect(mark?.getAttribute("title")).toBe("出典 S2");
+	});
+
+	it("shows the key facts table, the 出所 lines and the cited references in small text; no evidence list, no results", async () => {
+		api.overviewOf.set("us:KO", KO_OVERVIEW);
+		mountStocks(api.backend, { route: { stockId: "us:KO", tab: "company" }, locale: "ja" });
+		const overview = await overviewOf();
+		const facts = overview.querySelector<HTMLElement>('[data-field="company-overview-key-facts"]');
+		if (facts === null) throw new Error("no key facts");
+		const factRows = within(facts)
+			.getAllByRole("row")
+			.map((row) => row.textContent);
+		expect(factRows).toEqual([
+			"市場NYSES1",
+			"決算期12月",
+			"設立1919年(デラウェア州)S2",
+			"従業員出典に記載なし",
+			"本社出典に記載なし",
+		]);
+		// The owner removed 業績 and 根拠 (2026-11-03): no figures, no quotes on the page.
+		expect(within(overview).queryByText("業績")).toBeNull();
+		expect(within(overview).queryByText("根拠(出典からの引用)")).toBeNull();
+		expect(overview.querySelector("details")).toBeNull();
+		expect(overview.textContent).not.toContain("47,941");
+		expect(overview.textContent).not.toContain("incorporated in September 1919");
+		const lines = [...overview.querySelectorAll('[data-field="company-overview-source-line"]')];
+		expect(lines[0]?.textContent).toBe(
+			"出所: S2 Form 10-K 第1項「事業の内容」(2025-12-31 終了事業年度)",
+		);
+		for (const line of lines) expect(line.className).toContain("text-xs");
+		const references = overview.querySelector<HTMLElement>(
+			'[data-field="company-overview-references"]',
+		);
+		if (references === null) throw new Error("no references");
+		// S3 (the financial statements) backs only the figures, which the page no longer shows.
+		const items = within(references).getAllByRole("listitem");
+		expect(items.map((item) => item.textContent?.slice(0, 4))).toEqual(["[S1]", "[S2]"]);
+		expect(items[1]?.textContent).toContain(
+			"[S2] Form 10-K 第1項「事業の内容」(2025-12-31 終了事業年度)。U.S. SEC EDGAR",
+		);
+		expect(within(references).getAllByRole("link")[1]?.getAttribute("href")).toBe(
+			KO_OVERVIEW.references[1]?.url,
+		);
+		expect(references.querySelector("ol")?.className).toContain("text-xs");
+	});
+
+	it("dates the overview by the browser's day and says it is AI-written, in English", async () => {
+		api.overviewOf.set("us:KO", KO_OVERVIEW);
+		mountStocks(api.backend, { route: { stockId: "us:KO", tab: "company" } });
+		const overview = await overviewOf();
+		expect([...overview.querySelectorAll("dt")].map((term) => term.textContent)).toEqual([
+			"Feature",
+			"Businesses",
+			"Segments",
+			"Overseas",
+			"Themes",
+		]);
+		const writtenBy = overview.querySelector('[data-field="company-overview-written-by"]');
+		const localDay = new Date(KO_OVERVIEW.generatedAt).toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+			year: "numeric",
+		});
+		expect(writtenBy?.textContent).toContain(
+			`Written by AI (claude-api, claude-haiku-5-5) on ${localDay}`,
+		);
+		// The owner removed the check and 会社四季報 sentences (2026-11-03).
+		expect(writtenBy?.textContent).toBe(
+			`Written by AI (claude-api, claude-haiku-5-5) on ${localDay} from the sources above only. It may contain mistakes.`,
 		);
 	});
 });

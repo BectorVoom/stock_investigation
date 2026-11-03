@@ -1,4 +1,5 @@
 import {
+	type CompanyOverviewView,
 	type CompanySummaryView,
 	type EquityCompanyView,
 	parseStockId,
@@ -43,6 +44,8 @@ export interface StocksServer {
 	readonly companyProfileOf: Map<string, StockCompanyProfileView>;
 	/** A stock's stored AI-written summary (ADR-0060); none when absent. */
 	readonly summaryOf: Map<string, CompanySummaryView>;
+	/** A stock's stored company overview (ADR-0064); none when absent. */
+	readonly overviewOf: Map<string, CompanyOverviewView>;
 }
 
 export function createStocksBackend(
@@ -53,6 +56,7 @@ export function createStocksBackend(
 	const businessOf = new Map<string, StockBusiness>();
 	const companyProfileOf = new Map<string, StockCompanyProfileView>();
 	const summaryOf = new Map<string, CompanySummaryView>();
+	const overviewOf = new Map<string, CompanyOverviewView>();
 	backend.on("GET", /^\/api\/v1\/stocks\/([^/?]+)$/, (request, match) => {
 		const stockId = decodeURIComponent(match[1] ?? "");
 		const parsed = parseStockId(stockId);
@@ -74,6 +78,7 @@ export function createStocksBackend(
 				(parsed.market === "JP" ? { status: "not-provided" } : { status: "not-tracked" }),
 			companyProfile: parsed.market === "JP" ? (companyProfileOf.get(stockId) ?? null) : null,
 			summary: summaryOf.get(stockId) ?? null,
+			overview: overviewOf.get(stockId) ?? null,
 			// The listing's stored company, tracked or not (ADR-0055).
 			company:
 				equities.companies.find(
@@ -104,7 +109,7 @@ export function createStocksBackend(
 			{ headers: { ETag: etag } },
 		);
 	});
-	return { backend, server, equities, businessOf, companyProfileOf, summaryOf };
+	return { backend, server, equities, businessOf, companyProfileOf, summaryOf, overviewOf };
 }
 
 /** A short digest of a body for its fake ETag (FNV-1a over UTF-16 units). */

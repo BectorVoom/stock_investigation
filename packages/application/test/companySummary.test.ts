@@ -83,7 +83,7 @@ function harness(options: {
 	let runs = 0;
 	const deps: CompanySummaryDeps = {
 		summaries: {
-			get: async () => null,
+			get: async () => ({ summary: null, overview: null }),
 			listSchedule: async () => options.schedule ?? [],
 			markQueued: async (_owner, market, symbol, at) => {
 				queued.push(`${market}:${symbol}@${at}`);

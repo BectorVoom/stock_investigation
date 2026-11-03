@@ -24,3 +24,6 @@ google-token.json
 google-token.json.*.tmp
 # Rust runner build output (ADR-0030); CARGO_TARGET_DIR may point elsewhere.
 /target
+
+# PoC output (scripts/poc/companyDescription/run.ts): regenerated per run, spends API tokens
+scripts/poc/companyDescription/output/

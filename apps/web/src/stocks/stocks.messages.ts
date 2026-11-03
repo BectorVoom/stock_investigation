@@ -129,11 +129,9 @@ export const stocksMessages = defineMessages({
 			`As of ${asOf}. Source: J-Quants (Listed Issue Master).`,
 		companyProfileNone:
 			"No company profile is stored for this stock yet. The server stores the profiles of Japanese stocks from J-Quants with the Japanese stock list; it appears here once stored.",
-		businessNotProvided:
-			"J-Quants, the source of Japanese company data, has no business description, so the sector and market segment are shown instead.",
 
-		/* ----- Company tab: AI-written summary and themes (ADR-0060) ----- */
-		summaryHeading: "About the company",
+		/* ----- Company tab: 事業概要 — the company overview (ADR-0064) or the AI-written summary and themes (ADR-0060) ----- */
+		summaryHeading: "Business overview",
 		themesHeading: "Themes",
 		/** Who wrote the summary and when; the date comes formatted. */
 		summarySource: (agent: string, model: string | null, date: string): string =>
@@ -223,10 +221,8 @@ export const stocksMessages = defineMessages({
 		companyProfileSource: (asOf) => `${asOf}時点。出典: J-Quants（上場銘柄一覧）。`,
 		companyProfileNone:
 			"この銘柄の企業概要はまだ保存されていません。サーバーは日本の銘柄一覧とあわせて J-Quants から日本株の企業概要を保存します。保存されるとここに表示されます。",
-		businessNotProvided:
-			"日本企業のデータの取得元である J-Quants には事業内容の記載がないため、業種と市場区分を表示しています。",
 
-		summaryHeading: "企業の説明",
+		summaryHeading: "事業概要",
 		themesHeading: "テーマ",
 		summarySource: (agent, model, date) =>
 			`AI（${model === null ? agent : `${agent}、${model}`}）が ${date} に作成。誤りを含む場合があります。`,

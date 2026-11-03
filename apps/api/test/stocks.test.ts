@@ -172,6 +172,7 @@ describe("GET /stocks/:stockId", () => {
 			business: { status: "not-provided" },
 			companyProfile: null,
 			summary: null,
+			overview: null,
 			company: null,
 		});
 
@@ -213,6 +214,7 @@ describe("GET /stocks/:stockId", () => {
 			business: { status: "not-tracked" },
 			companyProfile: null,
 			summary: null,
+			overview: null,
 			company: null,
 		});
 	});

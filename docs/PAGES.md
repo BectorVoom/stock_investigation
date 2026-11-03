@@ -414,7 +414,23 @@ Watchlist to get its data.
   listed stock and they appear once stored — and the tab re-reads sooner
   (5 s, doubling to 5 minutes) until they do; for a stock outside the
   stored stock lists, that it is not among them.
-- Company tab: first, About the company (企業の説明, ADR-0060): the
+- Company tab: first, Business overview (事業概要). When a company
+  overview is stored (ADR-0064) it is laid out like a 会社四季報 entry:
+  labelled rows 【特色】【事業内容】【連結事業】【海外】【テーマ】 (Feature,
+  Businesses, Segments, Overseas, Themes in English) — 事業内容 explains
+  what the company actually does, built from its business segments;
+  連結事業 lists one segment a line with what it does (「北米：…を販売」)
+  and, when stated, 四季報's share and margin (a note on the numbers only
+  then); テーマ are sub-industry tags (「自然食品」, not 「食品」) — each field followed
+  by a small superscript mark naming its numbered source (S1, S2…), "Not
+  stated in the sources" (出典に記載なし) for an empty row; a small 出所
+  (Source) line; a Key facts (基本情報) table — market, sector (Japan),
+  fiscal year end, founded, employees, headquarters — with its small 出所
+  line; the numbered References (出典) list of the sources the page cites —
+  stored records and public web pages such as the company's own site (its
+  kind and retrieval day noted) — with links (no evidence quotes and no figures are shown); and
+  "Written by AI (claude-api, claude-haiku-5-5) on <day> from the sources
+  above only. It may contain mistakes.", all in small text. Otherwise the ADR-0060 summary: the
   AI-written description in the UI language, the investment themes as a
   list of chips under "Themes" (テーマ), and "Written by AI (claude-code,
   <model>) on Nov 2, 2026. It may contain mistakes."; before one is
@@ -438,8 +454,7 @@ Watchlist to get its data.
   (17 sectors), market segment and scale category from
   J-Quants' Listed Issue Master — sector and segment names in J-Quants'
   Japanese words — then "As of Aug 10, 2026. Source: J-Quants (Listed
-  Issue Master)." and a line that J-Quants has no business description,
-  so the sector and segment are shown instead. A name or scale category
+  Issue Master)." A name or scale category
   J-Quants does not state says so ("Not stated by J-Quants", "None").
   Before a profile is stored (it comes with the Japanese stock list, and
   only with `JQUANTS_API_KEY`): one sentence that none is stored yet; the
