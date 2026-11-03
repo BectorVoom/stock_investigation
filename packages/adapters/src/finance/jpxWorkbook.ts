@@ -77,6 +77,26 @@ export function decodeWorkbookText(text: string): string {
 	);
 }
 
+/** JPX's English period kinds and the quarter each reports (a full year is the fourth). */
+const JPX_PERIOD_QUARTERS: ReadonlyMap<string, number> = new Map([
+	["first quarter", 1],
+	["second quarter", 2],
+	["third quarter", 3],
+	["full year", 4],
+]);
+
+/**
+ * The label shown for a JPX period, in Finnhub's form so every earnings
+ * label reads alike: `Second quarter` with a fiscal year-end of 2027-03-31
+ * becomes `Q2 2027` (the fiscal year is named by the year it ends in, as
+ * 2027年3月期 is; a full year is `Q4`). A period kind JPX has not used
+ * before is kept as written.
+ */
+export function jpxFiscalPeriodLabel(label: string, fiscalYearEnd: string): string {
+	const quarter = JPX_PERIOD_QUARTERS.get(label.trim().toLowerCase().replace(/\s+/g, " "));
+	return quarter === undefined ? label : `Q${quarter} ${fiscalYearEnd.slice(0, 4)}`;
+}
+
 /** `Second quarter` -> `second-quarter` for the `periodKey` suffix. */
 export function slugFiscalKind(label: string): string {
 	return label
@@ -349,9 +369,12 @@ function parseDataRow(
 
 	const labelCell = byColumn(cells, headers.label);
 	if (labelCell === null) return null;
-	const fiscalPeriodLabel = cellText(labelCell, shared).trim();
-	if (fiscalPeriodLabel === "" || fiscalPeriodLabel.length > 80) return null;
-	const periodKey = `fy${endConverted.value}-${slugFiscalKind(fiscalPeriodLabel)}`;
+	const rawLabel = cellText(labelCell, shared).trim();
+	if (rawLabel === "" || rawLabel.length > 80) return null;
+	// The key keeps JPX's own words, so an event keeps its identity (and its
+	// calendar UID) whatever label it is shown with.
+	const periodKey = `fy${endConverted.value}-${slugFiscalKind(rawLabel)}`;
+	const fiscalPeriodLabel = jpxFiscalPeriodLabel(rawLabel, endConverted.value);
 	if (!PERIOD_KEY_PATTERN.test(periodKey)) return null;
 
 	const nameCell = byColumn(cells, headers.name);

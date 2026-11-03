@@ -225,9 +225,9 @@ describe("earnings repository (FR-018)", () => {
 					)
 					.bind(stockId, periodKey, date, label)
 					.run();
-			await insert("jp:7203", "k-late", "2026-11-05", "Second quarter");
-			await insert("jp:7203", "k-early", "2026-10-05", "First quarter");
-			await insert("jp:7203", "k-undecided", null, "Third quarter");
+			await insert("jp:7203", "k-late", "2026-11-05", "Q2 2027");
+			await insert("jp:7203", "k-early", "2026-10-05", "Q1 2027");
+			await insert("jp:7203", "k-undecided", null, "Q3 2027");
 			await insert("us:AAPL", "2026-q4", "2026-10-29", "Q4 2026");
 			const rows = await earnings.getEvents("owner_1", ["jp:7203", "us:AAPL"]);
 			expect(rows.map((row) => [row.stockId, row.periodKey])).toEqual([

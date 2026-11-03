@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import {
 	decodeWorkbookText,
 	headerMatches,
+	jpxFiscalPeriodLabel,
 	parseJpxWorkbook,
 	slugFiscalKind,
 } from "../../src/finance/jpxWorkbook.ts";
@@ -93,6 +94,20 @@ describe("decodeWorkbookText", () => {
 	});
 });
 
+describe("jpxFiscalPeriodLabel", () => {
+	it("names a JPX period like Finnhub does: Q<quarter> <year the fiscal year ends>", () => {
+		expect(jpxFiscalPeriodLabel("First quarter", "2027-03-31")).toBe("Q1 2027");
+		expect(jpxFiscalPeriodLabel("Second quarter", "2027-03-31")).toBe("Q2 2027");
+		expect(jpxFiscalPeriodLabel("Third quarter", "2026-12-31")).toBe("Q3 2026");
+		expect(jpxFiscalPeriodLabel("Full year", "2026-09-30")).toBe("Q4 2026");
+		expect(jpxFiscalPeriodLabel("  second   QUARTER ", "2027-03-31")).toBe("Q2 2027");
+	});
+
+	it("keeps a period kind it does not know as JPX wrote it", () => {
+		expect(jpxFiscalPeriodLabel("Interim", "2027-03-31")).toBe("Interim");
+	});
+});
+
 describe("slugFiscalKind", () => {
 	it("slugs the English kind column", () => {
 		expect(slugFiscalKind("Second quarter")).toBe("second-quarter");
@@ -162,7 +177,7 @@ describe("parseJpxWorkbook", () => {
 				name: "SoftBank Group Corp.",
 				announcementDate: "2026-11-05",
 				fiscalPeriodEnd: "2027-03-31",
-				fiscalPeriodLabel: "Second quarter",
+				fiscalPeriodLabel: "Q2 2027",
 				periodKey: "fy2027-03-31-second-quarter",
 			},
 		]);
@@ -207,7 +222,7 @@ describe("parseJpxWorkbook", () => {
 				name: "SoftBank Group Corp.",
 				announcementDate: null,
 				fiscalPeriodEnd: "2027-03-31",
-				fiscalPeriodLabel: "Third quarter",
+				fiscalPeriodLabel: "Q3 2027",
 				periodKey: "fy2027-03-31-third-quarter",
 			},
 		]);

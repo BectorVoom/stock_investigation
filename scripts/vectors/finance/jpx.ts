@@ -22,6 +22,7 @@ import {
 import {
 	decodeWorkbookText,
 	headerMatches,
+	jpxFiscalPeriodLabel,
 	parseJpxWorkbook,
 	slugFiscalKind,
 } from "../../../packages/adapters/src/finance/jpxWorkbook.ts";
@@ -483,6 +484,27 @@ function headerCases(rng: Rng): unknown[] {
 	return [cases, slugs];
 }
 
+/** Shown labels for JPX periods (fixed cases: no draw from the shared generator). */
+function periodLabelCases(): unknown[] {
+	const labels = [
+		"First quarter",
+		"Second quarter",
+		"Third quarter",
+		"Full year",
+		"  second   QUARTER ",
+		"FULL YEAR",
+		"Second\tquarter",
+		"Interim",
+		"Second quarter results",
+		"",
+		"第２四半期",
+	];
+	const ends = ["2027-03-31", "2026-12-31", "2026-09-30", "1999-06-30"];
+	return labels.flatMap((label) =>
+		ends.map((end) => ({ label, end, output: jpxFiscalPeriodLabel(label, end) })),
+	);
+}
+
 /* ---------- index scraping ---------- */
 
 function indexCases(rng: Rng): unknown[] {
@@ -922,6 +944,7 @@ export async function jpxFiles(): Promise<{ path: string; content: unknown }[]> 
 				decode: decodeCases(rng),
 				headerMatches: headers,
 				slugs,
+				periodLabels: periodLabelCases(),
 			},
 		},
 		{ path: "finance/jpx_index.json", content: indexCases(rng) },

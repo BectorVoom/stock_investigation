@@ -269,10 +269,10 @@ test("adding a US and a JP stock fetches the fixture earnings dates by the serve
 	expect(appleStock?.name).toContain("Apple Inc");
 	expect(appleStock?.publisher).toBe("Finnhub");
 
-	// JPX fixture: Toyota second quarter, timing unknown.
+	// JPX fixture: Toyota second quarter (shown as Q2 2027, like Finnhub labels), timing unknown.
 	const toyota = upcoming(watchlist, "jp:7203");
 	toyotaDate = toyota?.announcementDate ?? "";
-	expect(toyota?.fiscalPeriodLabel).toBe("Second quarter");
+	expect(toyota?.fiscalPeriodLabel).toBe("Q2 2027");
 	expect(watchlist.stocks.find((stock) => stock.stockId === "jp:7203")?.name).toContain(
 		"Toyota Motor Corp.",
 	);

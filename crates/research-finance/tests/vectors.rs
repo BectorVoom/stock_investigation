@@ -330,7 +330,8 @@ async fn finnhub_matches_typescript() {
 
 use research_finance::jpx::{JPX_INDEX_URL, JpxEarningsSource, extract_jpx_workbook_urls};
 use research_finance::jpx_workbook::{
-	decode_workbook_text, header_matches, parse_jpx_workbook, slug_fiscal_kind,
+	decode_workbook_text, header_matches, jpx_fiscal_period_label, parse_jpx_workbook,
+	slug_fiscal_kind,
 };
 use research_finance::zip_reader::read_zip_entries;
 
@@ -421,6 +422,15 @@ fn jpx_workbook_matches_typescript() {
 	for case in array(&file, "slugs") {
 		if slug_fiscal_kind(text(case, "label")) != text(case, "output") {
 			failures.push(format!("slug {:?}", text(case, "label")));
+		}
+	}
+	for case in array(&file, "periodLabels") {
+		if jpx_fiscal_period_label(text(case, "label"), text(case, "end")) != text(case, "output") {
+			failures.push(format!(
+				"periodLabel {:?} {:?}",
+				text(case, "label"),
+				text(case, "end")
+			));
 		}
 	}
 	report(&failures);

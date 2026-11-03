@@ -45,7 +45,7 @@ const WATCHLIST: WatchlistResponse = {
 				{
 					periodKey: "fy2027-03-31-second-quarter",
 					announcementDate: null,
-					fiscalPeriodLabel: "Second quarter",
+					fiscalPeriodLabel: "Q2 2027",
 					fiscalPeriodEnd: "2027-03-31",
 					timing: "unknown",
 				},

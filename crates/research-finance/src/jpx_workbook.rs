@@ -212,6 +212,31 @@ fn decode_entity(after: &str) -> Option<(String, usize)> {
 	Some((replacement, consumed))
 }
 
+/// The label shown for a JPX period, in Finnhub's form so every earnings
+/// label reads alike: `Second quarter` with a fiscal year-end of 2027-03-31
+/// becomes `Q2 2027` (the fiscal year is named by the year it ends in; a
+/// full year is `Q4`). A period kind JPX has not used before is kept as
+/// written. Mirrors `jpxFiscalPeriodLabel` in the TypeScript adapter.
+#[must_use]
+pub fn jpx_fiscal_period_label(label: &str, fiscal_year_end: &str) -> String {
+	let normalized = trim(label)
+		.split_whitespace()
+		.collect::<Vec<_>>()
+		.join(" ")
+		.to_lowercase();
+	let quarter = match normalized.as_str() {
+		"first quarter" => 1,
+		"second quarter" => 2,
+		"third quarter" => 3,
+		"full year" => 4,
+		_ => return label.to_owned(),
+	};
+	format!(
+		"Q{quarter} {}",
+		fiscal_year_end.get(..4).unwrap_or(fiscal_year_end)
+	)
+}
+
 /// `Second quarter` becomes `second-quarter` for the period-key suffix.
 #[must_use]
 pub fn slug_fiscal_kind(label: &str) -> String {
@@ -565,14 +590,17 @@ fn parse_data_row(
 	if label.is_empty() || utf16_len(label) > MAX_LABEL_UTF16 {
 		return None;
 	}
+	// The key keeps JPX's own words, so an event keeps its identity (and its
+	// calendar UID) whatever label it is shown with.
 	let period_key = format!("fy{fiscal_period_end}-{}", slug_fiscal_kind(label));
+	let shown_label = jpx_fiscal_period_label(label, &fiscal_period_end);
 	let name_raw = by_column(cells, &headers.name).map_or("", |cell| trim(cell_text(cell, shared)));
 	// The contract schema is the last word: a row that cannot be stored is
 	// skipped, never half-kept.
 	crate::market_fetch::valid_event(&EarningsEvent {
 		period_key: period_key.clone(),
 		announcement_date: announcement_date.clone(),
-		fiscal_period_label: label.to_owned(),
+		fiscal_period_label: shown_label.clone(),
 		fiscal_period_end: Some(fiscal_period_end.clone()),
 		timing: EarningsTiming::Unknown,
 	})?;
@@ -587,7 +615,7 @@ fn parse_data_row(
 		name: (!name_raw.is_empty()).then(|| name_raw.to_owned()),
 		announcement_date,
 		fiscal_period_end,
-		fiscal_period_label: label.to_owned(),
+		fiscal_period_label: shown_label,
 		period_key,
 	})
 }

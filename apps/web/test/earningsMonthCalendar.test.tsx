@@ -39,7 +39,7 @@ const EVENTS: readonly CalendarDayEvent[] = [
 		stockId: "jp:7203",
 		symbol: "7203",
 		name: null,
-		fiscalPeriodLabel: "Second quarter",
+		fiscalPeriodLabel: "Q2 2027",
 		fiscalPeriodEnd: "2027-03-31",
 		timing: "unknown",
 		periodKey: "fy2027-03-31-second-quarter",

@@ -1125,14 +1125,14 @@
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-06-30-second-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -1153,14 +1153,14 @@
 								{
 									"periodKey": "fy2026-03-31-third-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-03-31",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -2114,7 +2114,7 @@
 								{
 									"periodKey": "fy2026-06-30-third-quarter",
 									"announcementDate": "2027-03-31",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -3943,28 +3943,28 @@
 								{
 									"periodKey": "fy2026-06-30-second-quarter",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-full-year",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-first-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -3978,28 +3978,28 @@
 								{
 									"periodKey": "fy2026-06-30-third-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-first-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-full-year",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-full-year",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -4380,7 +4380,7 @@
 								{
 									"periodKey": "fy2026-03-31-full-year",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -4431,7 +4431,7 @@
 								{
 									"periodKey": "fy2027-03-31-third-quarter",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
@@ -4452,7 +4452,7 @@
 								{
 									"periodKey": "fy2026-06-30-first-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -5792,7 +5792,7 @@
 								{
 									"periodKey": "fy2026-03-31-full-year",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -5812,14 +5812,14 @@
 								{
 									"periodKey": "fy2027-03-31-first-quarter",
 									"announcementDate": "2027-03-31",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -5938,7 +5938,7 @@
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -5959,7 +5959,7 @@
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -6006,35 +6006,35 @@
 								{
 									"periodKey": "fy2026-03-31-first-quarter",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-first-quarter",
 									"announcementDate": "2027-03-31",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy1900-03-01-full-year",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 1900",
 									"fiscalPeriodEnd": "1900-03-01",
 									"timing": "unknown"
 								}
@@ -6847,21 +6847,21 @@
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-first-quarter",
 									"announcementDate": "2027-03-31",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-first-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -6888,21 +6888,21 @@
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-first-quarter",
 									"announcementDate": "2027-03-31",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-first-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -7392,21 +7392,21 @@
 								{
 									"periodKey": "fy2026-03-31-first-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-first-quarter",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-01-13-full-year",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2027",
 									"fiscalPeriodEnd": "2027-01-13",
 									"timing": "unknown"
 								}
@@ -7420,21 +7420,21 @@
 								{
 									"periodKey": "fy2026-03-31-third-quarter",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-first-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -7448,21 +7448,21 @@
 								{
 									"periodKey": "fy2026-03-31-third-quarter",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-first-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -9933,14 +9933,14 @@
 								{
 									"periodKey": "fy2026-11-05-third-quarter",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-11-05",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -10040,7 +10040,7 @@
 								{
 									"periodKey": "fy2026-11-05-first-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-11-05",
 									"timing": "unknown"
 								}
@@ -14385,14 +14385,14 @@
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-06-30-second-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -14578,7 +14578,7 @@
 								{
 									"periodKey": "fy2026-11-05-first-quarter",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-11-05",
 									"timing": "unknown"
 								},
@@ -14718,14 +14718,14 @@
 								{
 									"periodKey": "fy2026-03-31-full-year",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -14739,14 +14739,14 @@
 								{
 									"periodKey": "fy2027-03-31-first-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-full-year",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -15924,21 +15924,21 @@
 								{
 									"periodKey": "fy2026-03-31-third-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-06-30-third-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -18369,14 +18369,14 @@
 								{
 									"periodKey": "fy2026-03-31-third-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-full-year",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -18631,14 +18631,14 @@
 								{
 									"periodKey": "fy2026-06-30-second-quarter",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								}
@@ -19074,21 +19074,21 @@
 								{
 									"periodKey": "fy1900-03-01-full-year",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 1900",
 									"fiscalPeriodEnd": "1900-03-01",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-second-quarter",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -19201,28 +19201,28 @@
 								{
 									"periodKey": "fy1900-03-01-full-year",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 1900",
 									"fiscalPeriodEnd": "1900-03-01",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-second-quarter",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -19236,28 +19236,28 @@
 								{
 									"periodKey": "fy1900-03-01-full-year",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 1900",
 									"fiscalPeriodEnd": "1900-03-01",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2027-03-31-second-quarter",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -19604,14 +19604,14 @@
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -19625,7 +19625,7 @@
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -19639,7 +19639,7 @@
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -19711,7 +19711,7 @@
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -19725,7 +19725,7 @@
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -19739,7 +19739,7 @@
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -19950,7 +19950,7 @@
 								{
 									"periodKey": "fy2027-03-31-second-quarter",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -20016,7 +20016,7 @@
 								{
 									"periodKey": "fy2027-03-31-second-quarter",
 									"announcementDate": "2027-04-16",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -21142,21 +21142,21 @@
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-06-30-first-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-06-30-first-quarter",
 									"announcementDate": "2027-03-31",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -21183,7 +21183,7 @@
 								{
 									"periodKey": "fy2027-03-31-third-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -21245,7 +21245,7 @@
 								{
 									"periodKey": "fy2027-03-31-third-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -21259,7 +21259,7 @@
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -21574,7 +21574,7 @@
 								{
 									"periodKey": "fy2026-06-30-third-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
@@ -22675,14 +22675,14 @@
 								{
 									"periodKey": "fy2026-06-30-second-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -22710,14 +22710,14 @@
 								{
 									"periodKey": "fy2026-06-30-second-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -22778,14 +22778,14 @@
 								{
 									"periodKey": "fy2026-06-30-second-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-second-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -22856,7 +22856,7 @@
 								{
 									"periodKey": "fy2027-03-31-second-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -23186,21 +23186,21 @@
 								{
 									"periodKey": "fy2026-03-31-third-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-full-year",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-06-30-full-year",
 									"announcementDate": "2026-11-06",
-									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodLabel": "Q4 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
@@ -23480,7 +23480,7 @@
 								{
 									"periodKey": "fy2027-03-31-third-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodLabel": "Q3 2027",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -23706,14 +23706,14 @@
 								{
 									"periodKey": "fy2026-06-30-first-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-first-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -23727,7 +23727,7 @@
 								{
 									"periodKey": "fy2026-06-30-second-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -23784,14 +23784,14 @@
 								{
 									"periodKey": "fy2026-06-30-first-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								},
 								{
 									"periodKey": "fy2026-03-31-first-quarter",
 									"announcementDate": "2026-10-13",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -23805,7 +23805,7 @@
 								{
 									"periodKey": "fy2026-06-30-second-quarter",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodLabel": "Q2 2026",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -24270,7 +24270,7 @@
 								{
 									"periodKey": "fy2026-03-31-first-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodLabel": "Q1 2026",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},

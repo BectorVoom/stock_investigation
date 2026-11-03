@@ -150,7 +150,7 @@ describe("earnings events", () => {
 		expectAccepted(earningsEventSchema, {
 			periodKey: "fy2027-03-31-second-quarter",
 			announcementDate: null,
-			fiscalPeriodLabel: "Second quarter",
+			fiscalPeriodLabel: "Q2 2027",
 			fiscalPeriodEnd: "2027-03-31",
 			timing: "unknown",
 		});
@@ -193,14 +193,14 @@ describe("watchlist stocks and responses", () => {
 				{
 					periodKey: "fy2026-03-31-second-quarter",
 					announcementDate: "2026-11-05",
-					fiscalPeriodLabel: "Second quarter",
+					fiscalPeriodLabel: "Q2 2027",
 					fiscalPeriodEnd: "2026-03-31",
 					timing: "unknown",
 				},
 				{
 					periodKey: "fy2027-03-31-second-quarter",
 					announcementDate: null,
-					fiscalPeriodLabel: "Second quarter",
+					fiscalPeriodLabel: "Q2 2027",
 					fiscalPeriodEnd: "2027-03-31",
 					timing: "unknown",
 				},

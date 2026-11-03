@@ -34,7 +34,7 @@ const TOYOTA_UNDECIDED: EarningsCalendarEvent = {
 	name: "Toyota Motor Corp.",
 	periodKey: "fy2027-03-31-second-quarter",
 	announcementDate: null,
-	fiscalPeriodLabel: "Second quarter",
+	fiscalPeriodLabel: "Q2 2027",
 	fiscalPeriodEnd: "2027-03-31",
 	timing: "unknown",
 	publisher: "Japan Exchange Group (JPX)",
@@ -121,12 +121,12 @@ describe("earningsCalendarTexts", () => {
 		const { summary, description } = earningsCalendarTexts({
 			symbol: "7203",
 			name: null,
-			fiscalPeriodLabel: "Second quarter",
+			fiscalPeriodLabel: "Q2 2027",
 			timing: "unknown",
 			publisher: "Japan Exchange Group (JPX)",
 			retrievedAt: "2026-10-11T03:00:00.000Z",
 		});
-		expect(summary).toBe("7203 7203 earnings (Second quarter)");
+		expect(summary).toBe("7203 7203 earnings (Q2 2027)");
 		expect(description).not.toContain("timing");
 		expect(description).toContain("Source: Japan Exchange Group (JPX), retrieved 2026-10-11.");
 	});
