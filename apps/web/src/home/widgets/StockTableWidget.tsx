@@ -397,7 +397,10 @@ export function ChangeCell(props: {
 			return { kind: "unavailable", reason: unavailableText("NO_DATA", modelText()) };
 		}
 		if (!change.ok)
-			return { kind: "unavailable", reason: changeErrorText(change.error, modelText()) };
+			return {
+				kind: "unavailable",
+				reason: changeErrorText(change.error, modelText(), "previous"),
+			};
 		// The signed text ("+0.52 USD") is the non-colour cue; the tone adds colour.
 		const direction = changeDirection(change.value.absoluteChange);
 		if (props.kind === "abs") {

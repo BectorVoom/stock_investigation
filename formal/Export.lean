@@ -1700,6 +1700,46 @@ def syncDaysVectors : List String := sdGridVectors ++ sdEpochVectors ++ sdRandom
 
 end SyncDaysVectors
 
+section PeriodChangeVectors
+open Research.PeriodChange
+
+/-- Every list of distinct items of `alphabet` up to length `n`, in every order. -/
+def arrangements {α : Type} [DecidableEq α] (alphabet : List α) : Nat → List (List α)
+  | 0 => [[]]
+  | n + 1 =>
+    [] :: (alphabet.flatMap fun a =>
+      (arrangements (alphabet.erase a) n).map fun rest => a :: rest)
+
+def pcPtJson (p : Pt) : String := jsonObj [("day", jsonInt p.day), ("value", jsonInt p.val)]
+
+def pcVec (latest : Int) (months : Nat) (tol : Int) (earlier : List Int) : String :=
+  let pts := (earlier.zipIdx.map fun (d, i) => (⟨d, (i : Int) + 1⟩ : Pt)) ++ [⟨latest, 100⟩]
+  let result := match periodChange pts months tol with
+    | .ok (b, l) => [("base", pcPtJson b), ("latest", pcPtJson l)]
+    | .error .noBase => [("error", jsonStr "NO_BASE_OBSERVATION")]
+    | .error .baseTooOld => [("error", jsonStr "BASE_TOO_OLD")]
+  jsonObj ([("months", jsonNat months), ("toleranceDays", jsonInt tol),
+    ("points", jsonArr (pts.map pcPtJson))] ++ result)
+
+/-- Latest days around month ends and leap days, each against the two real
+    configurations (1 month, 15 days; 1 year, 45 days), with every
+    arrangement of up to three earlier observations at offsets around the
+    mark and its tolerance (60, 16 and 15 days before, the day before, on,
+    the day after) — in and out of date order. -/
+def periodChangeVectors : List String := Id.run do
+  let mut out := []
+  for latest in ([gridDaysFromCivil 2024 3 31, gridDaysFromCivil 2023 3 31,
+      gridDaysFromCivil 2024 2 29, gridDaysFromCivil 2026 1 31,
+      gridDaysFromCivil 2026 10 15, gridDaysFromCivil 2025 3 1] : List Int) do
+    for (months, tol) in ([(1, 15), (12, 45)] : List (Nat × Int)) do
+      let mark := subMonthsDay latest months
+      let offsets : List Int := [-60, -46, -16, -15, -1, 0, 1]
+      for earlier in arrangements (offsets.map (mark + ·)) 3 do
+        out := pcVec latest months tol earlier :: out
+  return out.reverse
+
+end PeriodChangeVectors
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"materialSeries\": " ++ jsonArr materialSeriesVectors ++ ",")
@@ -1757,6 +1797,7 @@ def main : IO Unit := do
   IO.println ("\"financialFiscalYear\": [\n" ++ ",\n".intercalate fsFiscalYearVectors ++ "\n],")
   IO.println ("\"financialSubtract\": [\n" ++ ",\n".intercalate fsSubtractVectors ++ "\n],")
   IO.println ("\"businessSection\": [\n" ++ ",\n".intercalate bsVectors ++ "\n],")
+  IO.println ("\"periodChange\": [\n" ++ ",\n".intercalate periodChangeVectors ++ "\n],")
   IO.println ("\"stockSearch\": " ++ ssVectorsJson ++ ",")
   IO.println ("\"stockMentions\": " ++ StockMentionsVectors.vectorsJson)
   IO.println "}"

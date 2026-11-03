@@ -156,7 +156,7 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 	it("adds a Trend column after the 1-year change, named in the caption", () => {
 		const table = renderTable();
 		expect(table.querySelector("caption")?.textContent).toBe(
-			"US economy: latest value, previous value, changes and trend of each indicator",
+			"US economy: latest value, value a month earlier, changes and trend of each indicator",
 		);
 		const headers = within(table)
 			.getAllByRole("columnheader")
@@ -165,8 +165,8 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 			"Indicator",
 			"Latest value",
 			"As of",
-			"Previous",
-			"Change",
+			"1 month earlier",
+			"1-month change",
 			"1-year change",
 			"Trend",
 			"Source",
@@ -288,7 +288,7 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 	it("words the Trend column and its ranges in Japanese", async () => {
 		const table = renderTable("ja");
 		expect(table.querySelector("caption")?.textContent).toBe(
-			"US economy：各指標の最新値・前回値・変化・推移",
+			"US economy：各指標の最新値・前月値・変化・推移",
 		);
 		expect(within(table).getByRole("columnheader", { name: "推移" })).toBeTruthy();
 		expect(shown(trendCell(table, "VIX"))).toBe("1年");

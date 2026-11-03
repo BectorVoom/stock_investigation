@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	changeOverOneMonth,
 	changeOverOneYear,
 	latestChange,
 	type MarketPoint,
@@ -111,6 +112,74 @@ describe("changeOverOneYear", () => {
 		const change = expectOk(changeOverOneYear([point("2023-02-28", 40), point("2024-02-29", 60)]));
 		expect(change.absoluteChange).toBe(20);
 		expect(change.percentChange).toBeCloseTo(50, 10);
+	});
+});
+
+describe("changeOverOneMonth", () => {
+	it("equals the previous-observation change for a monthly series", () => {
+		// Mark: 2026-09-01 − 1 month = 2026-08-01, the previous observation.
+		// 3.2 − 3.0 = 0.2; 0.2 / 3.0 × 100 = 6.666….
+		const change = expectOk(
+			changeOverOneMonth([
+				point("2026-07-01", 2.9),
+				point("2026-08-01", 3.0),
+				point("2026-09-01", 3.2),
+			]),
+		);
+		expect(change.previous).toEqual(point("2026-08-01", 3.0));
+		expect(change.absoluteChange).toBeCloseTo(0.2, 10);
+		expect(change.percentChange).toBeCloseTo(20 / 3, 10);
+	});
+
+	it("compares a daily series with the newest observation on or before a month earlier", () => {
+		// Mark: 2026-10-15 − 1 month = 2026-09-15 (a weekday the series lacks):
+		// the base is 2026-09-14, not the previous day 2026-10-14.
+		// 21 − 15 = 6; 6 / 15 × 100 = 40.
+		const change = expectOk(
+			changeOverOneMonth([
+				point("2026-09-11", 14),
+				point("2026-09-14", 15),
+				point("2026-09-16", 16),
+				point("2026-10-14", 20),
+				point("2026-10-15", 21),
+			]),
+		);
+		expect(change.previous).toEqual(point("2026-09-14", 15));
+		expect(change.absoluteChange).toBe(6);
+		expect(change.percentChange).toBeCloseTo(40, 10);
+	});
+
+	it("clamps month ends: 31 March − 1 month is 29 February in a leap year", () => {
+		const change = expectOk(
+			changeOverOneMonth([
+				point("2024-02-28", 1),
+				point("2024-02-29", 2),
+				point("2024-03-01", 3),
+				point("2024-03-31", 5),
+			]),
+		);
+		expect(change.previous).toEqual(point("2024-02-29", 2));
+	});
+
+	it("has no value for a quarterly series: its previous observation is far before the mark", () => {
+		// Mark: 2026-07-01 − 1 month = 2026-06-01; base 2026-04-01 is 61 days earlier (> 15).
+		expect(expectErr(changeOverOneMonth([point("2026-04-01", 1), point("2026-07-01", 2)]))).toBe(
+			"BASE_TOO_OLD",
+		);
+		// Exactly 15 days before the mark is still a base: 2026-06-01 − 15 days = 2026-05-17.
+		expect(
+			expectOk(changeOverOneMonth([point("2026-05-17", 1), point("2026-07-01", 2)])).previous,
+		).toEqual(point("2026-05-17", 1));
+		expect(expectErr(changeOverOneMonth([point("2026-05-16", 1), point("2026-07-01", 2)]))).toBe(
+			"BASE_TOO_OLD",
+		);
+	});
+
+	it("reports a missing base when every earlier observation is within the last month", () => {
+		expect(expectErr(changeOverOneMonth([point("2026-10-01", 1)]))).toBe("NO_BASE_OBSERVATION");
+		expect(expectErr(changeOverOneMonth([point("2026-09-20", 1), point("2026-10-01", 2)]))).toBe(
+			"NO_BASE_OBSERVATION",
+		);
 	});
 });
 

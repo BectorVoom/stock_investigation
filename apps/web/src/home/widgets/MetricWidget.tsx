@@ -10,6 +10,7 @@ import { WidgetProvenance } from "../HomeFrame.tsx";
 import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	buildSparkline,
+	type ChangeBasis,
 	changeErrorText,
 	displayUnit,
 	formatChange,
@@ -140,10 +141,16 @@ function MetricBody(props: {
 									{displayUnit(props.series.unit)}
 								</span>
 							</span>
-							<ChangeLine label={m().change} change={summary().change} unit={props.series.unit} />
+							<ChangeLine
+								label={m().change}
+								change={summary().change}
+								basis="previous"
+								unit={props.series.unit}
+							/>
 							<ChangeLine
 								label={m().yearChange}
 								change={summary().yearChange}
+								basis="year"
 								unit={props.series.unit}
 							/>
 							<Sparkline
@@ -168,6 +175,7 @@ function ChangeLine(props: {
 	readonly change:
 		| ReturnType<typeof summarizeSeries>["change"]
 		| ReturnType<typeof summarizeSeries>["yearChange"];
+	readonly basis: ChangeBasis;
 	readonly unit: string;
 }): JSX.Element {
 	const m = useMessages(marketWidgetMessages);
@@ -177,7 +185,9 @@ function ChangeLine(props: {
 		props.change.ok ? formatChange(props.change.value, props.unit, modelText()) : null,
 	);
 	const errorText = () =>
-		props.change.ok ? null : common().unavailable(changeErrorText(props.change.error, modelText()));
+		props.change.ok
+			? null
+			: common().unavailable(changeErrorText(props.change.error, modelText(), props.basis));
 	return (
 		<span class="block text-xs tabular-nums text-slate-700">
 			{m().changeLabel(props.label)}

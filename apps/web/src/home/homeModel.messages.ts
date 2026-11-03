@@ -51,6 +51,7 @@ export const homeModelMessages = defineMessages({
 		down: "down",
 		unchanged: "unchanged",
 		needsMoreHistory: "needs more history",
+		noMonthAgoObservation: "no observation near the month-ago mark",
 		noYearAgoObservation: "no observation near the year-ago mark",
 		notANumber: "value is not a number",
 		/** The fixed wording per unavailable code, as the contract writes it. */
@@ -76,6 +77,7 @@ export const homeModelMessages = defineMessages({
 		down: "下落",
 		unchanged: "変化なし",
 		needsMoreHistory: "履歴が不足",
+		noMonthAgoObservation: "1か月前付近の観測値なし",
 		noYearAgoObservation: "1年前付近の観測値なし",
 		notANumber: "値が数値でない",
 		unavailableReason: (code, provider) => jaUnavailableReason(code, provider),

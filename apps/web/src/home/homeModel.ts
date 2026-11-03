@@ -10,14 +10,15 @@ import {
 import {
 	type ChangeError,
 	type ChartPreset,
+	changeOverOneMonth,
 	changeOverOneYear,
 	dayNumberToIso,
 	isoToDayNumber,
 	latestChange,
 	type MarketChange,
 	type MarketPoint,
+	type PeriodChangeError,
 	presetWindow,
-	type YearChangeError,
 } from "@research/domain";
 import type { MessagesOf } from "@research/i18n";
 import {
@@ -216,7 +217,11 @@ export function formatPctValue(percentChange: number | null, unit: string): stri
 
 export interface SeriesSummary {
 	readonly latest: MarketPoint | null;
+	/** Against the previous observation (prices: the previous close). */
 	readonly change: ReturnType<typeof latestChange>;
+	/** 前月比: against the value a calendar month earlier (indicators). */
+	readonly monthChange: ReturnType<typeof changeOverOneMonth>;
+	/** 前年比: against the value a calendar year earlier. */
 	readonly yearChange: ReturnType<typeof changeOverOneYear>;
 }
 
@@ -225,6 +230,7 @@ export function summarizeSeries(series: MarketSeries): SeriesSummary {
 	return {
 		latest: points.at(-1) ?? null,
 		change: latestChange(points),
+		monthChange: changeOverOneMonth(points),
 		yearChange: changeOverOneYear(points),
 	};
 }
@@ -262,13 +268,20 @@ function storedReason(
 	);
 }
 
-export function changeErrorText(error: ChangeError | YearChangeError, text: HomeModelText): string {
+/** What a change compares with: the previous observation, or the value a month or a year earlier. */
+export type ChangeBasis = "previous" | "month" | "year";
+
+export function changeErrorText(
+	error: ChangeError | PeriodChangeError,
+	text: HomeModelText,
+	basis: ChangeBasis,
+): string {
 	switch (error) {
 		case "NOT_ENOUGH_OBSERVATIONS":
 		case "NO_BASE_OBSERVATION":
 			return text.needsMoreHistory;
 		case "BASE_TOO_OLD":
-			return text.noYearAgoObservation;
+			return basis === "month" ? text.noMonthAgoObservation : text.noYearAgoObservation;
 		case "NON_FINITE":
 			return text.notANumber;
 	}

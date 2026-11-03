@@ -299,12 +299,14 @@ describe("home view", () => {
 		expect(refreshPosts()).toHaveLength(0);
 	});
 
-	it("D1: a previous value of 0 renders as 0, not as unavailable", async () => {
+	it("D1: a month-earlier value of 0 renders as 0, not as unavailable", async () => {
 		const t10y2y = home.series.find((entry) => entry.seriesId === "fred:T10Y2Y");
 		if (t10y2y === undefined) throw new Error("T10Y2Y fixture is missing");
+		// The 1-month change's base is the newest observation on or before
+		// 2026-09-08 (2026-10-08 − 1 month): the 0 of that day.
 		t10y2y.observations = [
-			["2026-10-06", 0],
-			["2026-10-07", 0],
+			["2026-09-08", 0],
+			["2026-10-07", 0.02],
 			["2026-10-08", 0.05],
 		];
 		mountApp(backend);
@@ -313,10 +315,10 @@ describe("home view", () => {
 		const economy = widgetById("w-us-economy");
 		const table = within(economy).getByRole("table", { name: /US economy/ });
 		const row = within(table).getByRole("row", { name: /10-Year Treasury Minus/ });
-		// Cells: th, Latest value, As of, Previous, Change, 1-year change, Trend, Source.
+		// Cells: th, Latest value, As of, 1 month earlier, 1-month change, 1-year change, Trend, Source.
 		const cells = within(row).getAllByRole("cell");
 		expect(cells).toHaveLength(7);
-		// Each value carries its unit; the Previous column holds the real 0
+		// Each value carries its unit; the 1 month earlier column holds the real 0
 		// (formatValue(0) is "0"), never "unavailable (...)".
 		expect(cells[0]?.textContent).toBe("0.05 %");
 		expect(cells[2]?.textContent).toBe("0 %");

@@ -34,7 +34,10 @@ export const marketWidgetMessages = defineMessages({
 		openChart: "Open chart: ",
 		/** A metric's chart opener: the series name, then its visible values. */
 		openChartOf: (title: string) => `Open chart: ${title}, `,
+		/** Change against the previous observation (the stock table's previous close). */
 		change: "Change",
+		/** Change against the value a calendar month earlier (the indicator widgets). */
+		monthChange: "1-month change",
 		yearChange: "1-year change",
 		/** A change line's label before its value. */
 		changeLabel: (label: string) => `${label}: `,
@@ -45,10 +48,11 @@ export const marketWidgetMessages = defineMessages({
 		// Tables.
 		asOf: "As of",
 		source: "Source",
-		previous: "Previous",
+		/** The indicator table's value a calendar month before the latest (the 1-month change's base). */
+		monthAgo: "1 month earlier",
 		/** What the table holds: each value carries its unit, so no Unit column. */
 		indicatorCaption: (title: string) =>
-			`${title}: latest value, previous value, changes and trend of each indicator`,
+			`${title}: latest value, value a month earlier, changes and trend of each indicator`,
 		indicator: "Indicator",
 		/** The Indicator table's sparkline column (ADR-0044 §1). */
 		trend: "Trend",
@@ -88,15 +92,16 @@ export const marketWidgetMessages = defineMessages({
 		openChart: "チャートを開く：",
 		openChartOf: (title) => `チャートを開く：${title}、`,
 		change: "前回比",
-		yearChange: "1年前比",
+		monthChange: "前月比",
+		yearChange: "前年比",
 		changeLabel: (label) => `${label}：`,
 		lastRefreshFailed: (reason) => `前回の更新に失敗（${reason}）`,
 		seriesLastRefreshFailed: (title, reason) => `${title}：前回の更新に失敗（${reason}）`,
 		seriesUnavailable: (title, reason) => `${title}：取得できません（${reason}）`,
 		asOf: "時点",
 		source: "出典",
-		previous: "前回値",
-		indicatorCaption: (title) => `${title}：各指標の最新値・前回値・変化・推移`,
+		monthAgo: "前月値",
+		indicatorCaption: (title) => `${title}：各指標の最新値・前月値・変化・推移`,
 		indicator: "指標",
 		trend: "推移",
 		trendDirection: (direction, preset) => `${TREND_SPAN_JA[preset]}で${TREND_WORD_JA[direction]}`,

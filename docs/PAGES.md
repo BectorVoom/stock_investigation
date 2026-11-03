@@ -97,7 +97,11 @@ former label); the per-widget actions open a text menu with leading icons.
   "unavailable (reason)" when a series has no usable data. A tap on a price
   widget opens the detailed chart viewer at the right place (the plot, the
   value block, the row's series — see the actions above; a Watchlist prices
-  row's stock too). The indicator table also draws each row's history
+  row's stock too). The indicator table's changes are 前月比 and 前年比
+  (1-month and 1-year change): against the value a calendar month and a
+  calendar year before the latest, with that month-earlier value as 前月値
+  (ADR-0065); the metric widget keeps 前回比 (previous observation) and 前年比.
+  The indicator table also draws each row's history
   (ADR-0044 §1): a Trend column with a sparkline over the row's range and
   the range named beside it (1Y for a daily or weekly series, 5Y monthly,
   Max coarser; shown in a Large frame, hidden in Small and Medium ones),

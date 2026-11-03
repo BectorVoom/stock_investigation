@@ -111,7 +111,7 @@ describe("Home market widgets in Japanese", () => {
 			name: /^チャートを開く：CBOE Volatility Index: VIX、/,
 		});
 		expect(opener.textContent).toContain("前回比：");
-		expect(opener.textContent).toContain("1年前比：");
+		expect(opener.textContent).toContain("前年比：");
 		// Up, said in words beside the ▲ mark; the numbers keep their notation.
 		expect(opener.textContent).toContain("▲ +0.33 (+2.19%) (上昇)");
 		expect(opener.textContent).toContain("取得できません（履歴が不足）");
@@ -186,8 +186,10 @@ describe("Home market widgets in Japanese", () => {
 	});
 
 	it("words an indicator table's caption and headers, with each value beside its unit", () => {
+		// 前月値 is the value a month before the latest (2026-09-09), not the previous day's.
 		const series = vix([
-			["2026-10-08", 15.08],
+			["2026-09-09", 15.08],
+			["2026-10-08", 15.2],
 			["2026-10-09", 15.41],
 		]);
 		renderJa(() => (
@@ -204,7 +206,7 @@ describe("Home market widgets in Japanese", () => {
 		));
 		const table = screen.getByRole("table");
 		expect(table.querySelector("caption")?.textContent).toBe(
-			"米国経済：各指標の最新値・前回値・変化・推移",
+			"米国経済：各指標の最新値・前月値・変化・推移",
 		);
 		const headers = within(table)
 			.getAllByRole("columnheader")
@@ -213,9 +215,9 @@ describe("Home market widgets in Japanese", () => {
 			"指標",
 			"最新値",
 			"時点",
-			"前回値",
-			"前回比",
-			"1年前比",
+			"前月値",
+			"前月比",
+			"前年比",
 			"推移",
 			"出典",
 		]);

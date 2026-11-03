@@ -11,6 +11,7 @@ import { WidgetProvenance } from "../HomeFrame.tsx";
 import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	buildSparkline,
+	type ChangeBasis,
 	changeErrorText,
 	displayUnit,
 	formatChange,
@@ -31,8 +32,12 @@ import { createSeriesViewer } from "./StockTableWidget.tsx";
 
 /**
  * One row per series (economic indicators): Indicator · Latest value ·
- * As of · Previous · Change · 1-year change · Trend · Source. The latest and
- * previous values carry their unit beside the number, like the stock table:
+ * As of · 1 month earlier · 1-month change · 1-year change · Trend · Source.
+ * The changes compare the latest value with the value a calendar month and
+ * a calendar year earlier (`changeOverOneMonth`, `changeOverOneYear`), so a
+ * daily and a monthly series mean the same thing by 前月比; "1 month earlier"
+ * is the 1-month change's base. The latest and
+ * month-earlier values carry their unit beside the number, like the stock table:
  * a separate Unit column read as part of the "Latest" header. The row header
  * is the series name, with the symbol in monospace as secondary text; for a
  * series with observations it is a native button named "Open chart: " plus
@@ -85,10 +90,10 @@ export function IndicatorTableWidget(props: {
 								{m().asOf}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								{m().previous}
+								{m().monthAgo}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								{m().change}
+								{m().monthChange}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
 								{m().yearChange}
@@ -205,13 +210,21 @@ function IndicatorRow(props: {
 										<time dateTime={good().latest.observedOn}>{good().latest.observedOn}</time>
 									</td>
 									<td class="py-1 pr-3 text-right tabular-nums">
-										<PreviousCell change={good().summary.change} unit={good().entry.unit} />
+										<MonthAgoCell change={good().summary.monthChange} unit={good().entry.unit} />
 									</td>
 									<td class="py-1 pr-3 text-right tabular-nums">
-										<FullChangeCell change={good().summary.change} unit={good().entry.unit} />
+										<FullChangeCell
+											change={good().summary.monthChange}
+											basis="month"
+											unit={good().entry.unit}
+										/>
 									</td>
 									<td class="py-1 pr-3 text-right tabular-nums">
-										<FullChangeCell change={good().summary.yearChange} unit={good().entry.unit} />
+										<FullChangeCell
+											change={good().summary.yearChange}
+											basis="year"
+											unit={good().entry.unit}
+										/>
 									</td>
 								</>
 							)}
@@ -317,19 +330,20 @@ function ValueWithUnit(props: { readonly value: string; readonly unit: string })
 	);
 }
 
-/** The previous observation's value, with its unit. */
-function PreviousCell(props: {
-	readonly change: ReturnType<typeof summarizeSeries>["change"];
+/** The 1-month change's base: the value a calendar month before the latest, with its unit. */
+function MonthAgoCell(props: {
+	readonly change: ReturnType<typeof summarizeSeries>["monthChange"];
 	readonly unit: string;
 }): JSX.Element {
 	// D1: the text is null only when the Result failed, never because of the
-	// number — a previous value of 0 is "0", a real value, not an absence.
+	// number — a base value of 0 is "0", a real value, not an absence.
 	const modelText = useMessages(homeModelMessages);
 	const common = useMessages(commonMessages);
 	const text = createMemo(() =>
 		props.change.ok ? formatValue(props.change.value.previous.value) : null,
 	);
-	const problem = () => (props.change.ok ? "" : changeErrorText(props.change.error, modelText()));
+	const problem = () =>
+		props.change.ok ? "" : changeErrorText(props.change.error, modelText(), "month");
 	return (
 		<Show when={text()} fallback={<span class="italic">{common().unavailable(problem())}</span>}>
 			{(value) => <ValueWithUnit value={value()} unit={props.unit} />}
@@ -339,8 +353,9 @@ function PreviousCell(props: {
 
 function FullChangeCell(props: {
 	readonly change:
-		| ReturnType<typeof summarizeSeries>["change"]
+		| ReturnType<typeof summarizeSeries>["monthChange"]
 		| ReturnType<typeof summarizeSeries>["yearChange"];
+	readonly basis: ChangeBasis;
 	readonly unit: string;
 }): JSX.Element {
 	const modelText = useMessages(homeModelMessages);
@@ -348,7 +363,8 @@ function FullChangeCell(props: {
 	const formatted = createMemo(() =>
 		props.change.ok ? formatChange(props.change.value, props.unit, modelText()) : null,
 	);
-	const problem = () => (props.change.ok ? "" : changeErrorText(props.change.error, modelText()));
+	const problem = () =>
+		props.change.ok ? "" : changeErrorText(props.change.error, modelText(), props.basis);
 	return (
 		<Show
 			when={formatted()}

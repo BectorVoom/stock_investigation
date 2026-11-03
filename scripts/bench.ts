@@ -67,6 +67,7 @@ import {
 	type CommandContext,
 	canonicalGoogleSyncDigestInput,
 	canonicalizeArticleUrl,
+	changeOverOneMonth,
 	changeOverOneYear,
 	classifyIpAddress,
 	type Dashboard,
@@ -2085,6 +2086,7 @@ const cases: Case[] = [
 		run: () => {
 			for (const entry of HOME_BENCH_SERIES) {
 				latestChange(entry.points);
+				changeOverOneMonth(entry.points);
 				changeOverOneYear(entry.points);
 			}
 			return buildHomeLineModel(HOME_BENCH_SERIES, "max");
