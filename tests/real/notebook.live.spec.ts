@@ -228,29 +228,22 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		await editor.getByRole("button", { name: "Save widget" }).click();
 		await expect(notebookWidgets(page)).toHaveCount(1, { timeout: 15_000 });
 
-		// Focus Notebook, select the note, ask for a chart from its numbers.
+		// Focus Notebook and ask for a chart from the note's numbers, naming the
+		// note (there is no widget selection, removed 2026-11-02).
 		await page.getByRole("button", { name: "Focus Notebook" }).first().click();
-		const note = notebookWidgets(page).first();
-		// Untitled frames (ADR-0021): a pointer selects with the grip.
-		await note.hover();
-		await note.locator(".wg-grip").click();
-		await expect(note).toHaveAttribute("data-widget-selected", "");
 		await instruct(
 			page,
-			"Create a line chart widget titled Revenue from the numbers in the selected note, right after it.",
+			"Create a line chart widget titled Revenue from the numbers in the note titled “Revenue note”, right after it.",
 		);
 		await expect(
 			page.locator('div[data-panel="notebook"] article[data-widget-type="chart"]'),
 		).toHaveCount(1);
 		await page.screenshot({ path: test.info().outputPath("2-notebook-first-chart.png") });
 
-		// Select the chart alone and ask for it to be large.
+		// Name the chart and ask for it to be large.
 		const chart = page.locator('div[data-panel="notebook"] article[data-widget-type="chart"]');
-		await chart.hover();
-		await chart.locator(".wg-grip").click();
-		await expect(chart).toHaveAttribute("data-widget-selected", "");
 		const sizeBefore = (await chart.getAttribute("data-widget-size")) ?? "";
-		await instruct(page, "Make this chart large.");
+		await instruct(page, "Make the chart titled Revenue large.");
 		await expect(chart).toHaveAttribute("data-widget-size", "large");
 		expect(sizeBefore).not.toBe("large");
 
@@ -501,14 +494,13 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		});
 		expect(saved.status).toBe(200);
 
-		// A reload clears the selection: the instruction is about the whole notebook.
+		// The instruction is about the whole notebook.
 		await page.reload();
 		await expect(notebookWidgets(page)).toHaveCount(199, { timeout: 60_000 });
 		// The open chat is a fresh Chat-first one: Notebook-first addresses
 		// the composer to the notebook assistant.
 		await page.getByRole("button", { name: "Focus Notebook" }).first().click();
-		const composer = page.getByRole("form", { name: "Notebook composer" });
-		await expect(composer.getByText("About the whole notebook")).toBeVisible();
+		await expect(page.getByRole("form", { name: "Notebook composer" })).toBeVisible();
 		const lastTitles = [fillerCount - 2, fillerCount - 1, fillerCount].map((n) => `Note ${n}`);
 		await instruct(
 			page,

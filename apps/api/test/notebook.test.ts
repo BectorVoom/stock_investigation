@@ -82,13 +82,13 @@ async function readNotebook(harness: ReturnType<typeof createHarness>, workspace
 async function assist(
 	harness: ReturnType<typeof createHarness>,
 	workspaceId: string,
-	request: { instruction: string; selectedWidgetIds: readonly string[]; notebookVersion: number },
+	request: { instruction: string; notebookVersion: number },
 	key: Record<string, string> = idempotencyKey(),
 ) {
 	const response = await harness.call(
 		"POST",
 		`/workspaces/${workspaceId}/notebook/assist`,
-		{ ...request, selectedWidgetIds: [...request.selectedWidgetIds] },
+		{ ...request },
 		key,
 	);
 	return response;
@@ -306,7 +306,6 @@ describe("notebook assist", () => {
 		const workspaceId = await createWorkspace(harness);
 		const response = await assist(harness, workspaceId, {
 			instruction: "Summarise",
-			selectedWidgetIds: [],
 			notebookVersion: 0,
 		});
 		expect(response.status).toBe(422);
@@ -323,7 +322,7 @@ describe("notebook assist", () => {
 			await assist(
 				harness,
 				workspaceId,
-				{ instruction: "Summarise this", selectedWidgetIds: ["w-1"], notebookVersion: 1 },
+				{ instruction: "Summarise this", notebookVersion: 1 },
 				key,
 			),
 			notebookAssistResponseSchema,
@@ -339,7 +338,7 @@ describe("notebook assist", () => {
 			await assist(
 				harness,
 				workspaceId,
-				{ instruction: "Summarise this", selectedWidgetIds: ["w-1"], notebookVersion: 1 },
+				{ instruction: "Summarise this", notebookVersion: 1 },
 				key,
 			),
 			notebookAssistResponseSchema,
@@ -359,31 +358,30 @@ describe("notebook assist", () => {
 		const workspaceId = await createWorkspace(harness);
 		const first = await assist(harness, workspaceId, {
 			instruction: "First",
-			selectedWidgetIds: [],
 			notebookVersion: 0,
 		});
 		expect(first.status).toBe(202);
 		const second = await assist(harness, workspaceId, {
 			instruction: "Second",
-			selectedWidgetIds: [],
 			notebookVersion: 0,
 		});
 		expect(second.status).toBe(409);
 		expect(await errorCode(second)).toBe("NOTEBOOK_ASSIST_ACTIVE");
 	});
 
-	it("rejects unknown selected widget ids", async () => {
+	it("rejects a request that still names selected widgets (selection removed 2026-11-02)", async () => {
 		const harness = createHarness();
 		await saveSettings(harness);
 		const workspaceId = await createWorkspace(harness);
 		await saveNotebook(harness, workspaceId, [textWidget("w-1")], 0);
-		const response = await assist(harness, workspaceId, {
-			instruction: "Change it",
-			selectedWidgetIds: ["w-missing"],
-			notebookVersion: 1,
-		});
-		expect(response.status).toBe(422);
-		expect(await errorCode(response)).toBe("INVALID_NOTEBOOK_SELECTION");
+		const response = await harness.call(
+			"POST",
+			`/workspaces/${workspaceId}/notebook/assist`,
+			{ instruction: "Change it", selectedWidgetIds: ["w-1"], notebookVersion: 1 },
+			idempotencyKey(),
+		);
+		expect(response.status).toBe(400);
+		expect(await errorCode(response)).toBe("VALIDATION_FAILED");
 	});
 
 	it("claims the stored notebook at its version with the frozen agent choices", async () => {
@@ -394,7 +392,6 @@ describe("notebook assist", () => {
 		await saveNotebook(harness, workspaceId, [textWidget("w-1")], 0);
 		const queued = await assist(harness, workspaceId, {
 			instruction: "Summarise this",
-			selectedWidgetIds: ["w-1"],
 			notebookVersion: 1,
 		});
 		expect(queued.status).toBe(202);
@@ -402,7 +399,7 @@ describe("notebook assist", () => {
 		if (job?.kind !== "notebook-assist") throw new Error("expected the notebook-assist job");
 		expect(job.workspaceId).toBe(workspaceId);
 		expect(job.instruction).toBe("Summarise this");
-		expect(job.selectedWidgetIds).toEqual(["w-1"]);
+		expect(job).not.toHaveProperty("selectedWidgetIds");
 		expect(job.notebookVersion).toBe(1);
 		expect(job.notebook.widgets.map((widget) => widget.widgetId)).toEqual(["w-1"]);
 		expect(job.agent).toMatchObject({ agentId: "claude-code", effort: "medium" });
@@ -417,7 +414,6 @@ describe("notebook assist", () => {
 		await saveNotebook(harness, workspaceId, [textWidget("w-1", "kept", "Keep")], 0);
 		const queued = await assist(harness, workspaceId, {
 			instruction: "Add a note",
-			selectedWidgetIds: [],
 			notebookVersion: 1,
 		});
 		expect(queued.status).toBe(202);
@@ -474,7 +470,6 @@ describe("notebook assist", () => {
 		await saveNotebook(harness, workspaceId, [textWidget("w-1", "one")], 0);
 		await assist(harness, workspaceId, {
 			instruction: "Add a note",
-			selectedWidgetIds: [],
 			notebookVersion: 1,
 		});
 		// The owner edits while the assistant works.
@@ -512,7 +507,6 @@ describe("notebook assist", () => {
 		await saveNotebook(harness, workspaceId, [textWidget("w-1", "kept")], 0);
 		await assist(harness, workspaceId, {
 			instruction: "Remove it",
-			selectedWidgetIds: [],
 			notebookVersion: 1,
 		});
 		const job = await claim(harness, token);
@@ -538,7 +532,6 @@ describe("notebook assist", () => {
 		await saveNotebook(harness, workspaceId, [textWidget("w-1", "kept", "Keep me")], 0);
 		await assist(harness, workspaceId, {
 			instruction: "Tidy up",
-			selectedWidgetIds: [],
 			notebookVersion: 1,
 		});
 		const job = await claim(harness, token);
@@ -567,7 +560,6 @@ describe("notebook assist", () => {
 		await saveNotebook(harness, workspaceId, [textWidget("w-1")], 0);
 		await assist(harness, workspaceId, {
 			instruction: "Add a note",
-			selectedWidgetIds: [],
 			notebookVersion: 1,
 		});
 		const job = await claim(harness, token);
@@ -600,7 +592,6 @@ describe("notebook assist", () => {
 		await saveNotebook(harness, workspaceId, [textWidget("w-1")], 0);
 		await assist(harness, workspaceId, {
 			instruction: "Add a note",
-			selectedWidgetIds: [],
 			notebookVersion: 1,
 		});
 		const job = await claim(harness, token);
@@ -626,7 +617,6 @@ describe("notebook assist", () => {
 		await saveNotebook(harness, workspaceId, [textWidget("w-1")], 0);
 		await assist(harness, workspaceId, {
 			instruction: "Add a note",
-			selectedWidgetIds: [],
 			notebookVersion: 1,
 		});
 		const job = await claim(harness, token);
@@ -648,7 +638,6 @@ describe("notebook delete cascade", () => {
 		await saveNotebook(harness, workspaceId, [textWidget("w-1")], 0);
 		await assist(harness, workspaceId, {
 			instruction: "Add a note",
-			selectedWidgetIds: [],
 			notebookVersion: 1,
 		});
 		const job = await claim(harness, token);

@@ -11,8 +11,6 @@ import type { WidgetSize } from "../core/types.ts";
 export interface WidgetGridStrings {
 	/** The polite announcement after a completed move (1-based position). */
 	readonly moveAnnouncement: (title: string, position: number, total: number) => string;
-	/** Accessible name and tooltip of a frame's select toggle. */
-	readonly selectWidget: (title: string) => string;
 	/** Accessible name and tooltip of a size option, e.g. "medium (2 × 2)". */
 	readonly sizeOptionName: (size: WidgetSize) => string;
 	/** The size option's visible letter. */
@@ -24,7 +22,6 @@ const SHORT: { readonly [S in WidgetSize]: string } = { small: "S", medium: "M",
 export const ENGLISH_WIDGET_GRID_STRINGS: WidgetGridStrings = {
 	moveAnnouncement: (title, position, total) =>
 		`Moved “${title}” to position ${position} of ${total}.`,
-	selectWidget: (title) => `Select “${title}”`,
 	sizeOptionName: (size) => `${size} (${WIDGET_SIZE_SHAPES[size]})`,
 	sizeOptionShort: (size) => SHORT[size],
 };

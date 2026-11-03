@@ -335,27 +335,30 @@ describe("turns and owner API schemas", () => {
 		]);
 		expectAccepted(undoNotebookRequestSchema, { expectedVersion: 2 });
 		expectRejected(undoNotebookRequestSchema, { expectedVersion: 0 }, ["expectedVersion"]);
-		expectAccepted(notebookAssistRequestSchema, {
+		expectAccepted(notebookAssistRequestSchema, { instruction: "Summarise", notebookVersion: 2 });
+		expectRejected(notebookAssistRequestSchema, { instruction: "  ", notebookVersion: 0 });
+		// Widget selection was removed (2026-11-02): a request naming one is refused.
+		expectRejected(notebookAssistRequestSchema, {
 			instruction: "Summarise",
 			selectedWidgetIds: ["w-1"],
 			notebookVersion: 2,
-		});
-		expectRejected(notebookAssistRequestSchema, {
-			instruction: "  ",
-			selectedWidgetIds: [],
-			notebookVersion: 0,
 		});
 	});
 
 	it("stores the notebook-assist job request with its agent choices", () => {
 		const stored = {
 			instruction: "Summarise",
-			selectedWidgetIds: ["w-1"],
 			notebookVersion: 2,
 			agent: { agentId: "claude-code", model: null, effort: "medium" },
 		} as const;
 		const parsed = expectAccepted(notebookAssistJobRequestSchema, stored);
 		expect(parsed.agent).toMatchObject({ agentId: "claude-code", effort: "medium" });
+		// A job queued before selection was removed still parses; its selection is dropped.
+		const legacy = expectAccepted(notebookAssistJobRequestSchema, {
+			...stored,
+			selectedWidgetIds: ["w-1"],
+		});
+		expect(legacy).toEqual(stored);
 		expectRejected(notebookAssistJobRequestSchema, without(stored, "instruction"), ["instruction"]);
 		// A research request never parses as a notebook request and back.
 		expectRejected(notebookAssistJobRequestSchema, {

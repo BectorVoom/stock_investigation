@@ -1190,7 +1190,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						workspaceId: notebookWorkspaceId,
 						agent: { ...notebookClaim.agent },
 						instruction: notebookClaim.instruction,
-						selectedWidgetIds: [...notebookClaim.selectedWidgetIds],
 						notebook: notebookClaim.notebook,
 						notebookVersion: notebookClaim.notebookVersion,
 						conversationContext: [...notebookClaim.conversationContext],

@@ -4,10 +4,13 @@ import { createScriptedAgent } from "../../../examples/extensions/scriptedAgent.
 import { notebookAssistPrompt } from "../src/index.ts";
 import { chartWidget, notebookFixture, textWidget } from "./support.ts";
 
-function promptFor(instruction: string, selected: readonly string[]): string {
+/** A notebook of "Notes" (w-text) and "Revenue" (w-chart): the instruction names widgets by title. */
+function promptFor(instruction: string): string {
 	return notebookAssistPrompt({
-		notebook: notebookFixture([textWidget("w-text", "Body of w-text."), chartWidget("w-chart")]),
-		selectedWidgetIds: selected,
+		notebook: notebookFixture([
+			textWidget("w-text", "Body of w-text.", { title: "Notes" }),
+			chartWidget("w-chart", { title: "Revenue" }),
+		]),
 		instruction,
 		conversationContext: [],
 		fenceToken: "fence-test",
@@ -53,7 +56,7 @@ async function notebookReply(prompt: string): Promise<{ reply: unknown; commands
 describe("scripted agent: notebook-assistant contract", () => {
 	it("gold adds a gold price line chart before the chart rule", async () => {
 		const { reply, commands } = await notebookReply(
-			promptFor("Create a chart of gold prices over the past year.", []),
+			promptFor("Create a chart of gold prices over the past year."),
 		);
 		expect(reply).toBe("Added a gold price chart.");
 		expect(commands).toEqual([
@@ -68,7 +71,7 @@ describe("scripted agent: notebook-assistant contract", () => {
 	});
 
 	it("chart adds a revenue line chart", async () => {
-		const { reply, commands } = await notebookReply(promptFor("Please add a chart.", []));
+		const { reply, commands } = await notebookReply(promptFor("Please add a chart."));
 		expect(reply).toBe("Added a revenue chart.");
 		expect(commands).toEqual([
 			{
@@ -93,9 +96,9 @@ describe("scripted agent: notebook-assistant contract", () => {
 		]);
 	});
 
-	it("larger resizes every selected widget to large", async () => {
+	it("larger resizes every named widget to large", async () => {
 		const { reply, commands } = await notebookReply(
-			promptFor("Make it larger, please.", ["w-text", "w-chart"]),
+			promptFor("Make Notes and Revenue larger, please."),
 		);
 		expect(reply).toBe("Made it larger.");
 		expect(commands).toEqual([
@@ -104,8 +107,8 @@ describe("scripted agent: notebook-assistant contract", () => {
 		]);
 	});
 
-	it("explain adds a text widget after the first selected widget", async () => {
-		const { reply, commands } = await notebookReply(promptFor("Explain this.", ["w-chart"]));
+	it("explain adds a text widget after the first named widget", async () => {
+		const { reply, commands } = await notebookReply(promptFor("Explain Revenue."));
 		expect(reply).toBe("Added an explanation.");
 		// w-chart is at position 1, so the explanation lands at index 2.
 		expect(commands).toEqual([
@@ -119,8 +122,8 @@ describe("scripted agent: notebook-assistant contract", () => {
 		]);
 	});
 
-	it("explain omits toIndex when nothing is selected", async () => {
-		const { reply, commands } = await notebookReply(promptFor("Explain.", []));
+	it("explain omits toIndex when no widget is named", async () => {
+		const { reply, commands } = await notebookReply(promptFor("Explain."));
 		expect(reply).toBe("Added an explanation.");
 		expect(commands).toEqual([
 			{
@@ -132,34 +135,34 @@ describe("scripted agent: notebook-assistant contract", () => {
 		]);
 	});
 
-	it("bar updates every selected widget to a bar chart", async () => {
-		const { reply, commands } = await notebookReply(promptFor("Switch to bar.", ["w-chart"]));
+	it("bar updates every named widget to a bar chart", async () => {
+		const { reply, commands } = await notebookReply(promptFor("Switch Revenue to bar."));
 		expect(reply).toBe("Switched to a bar chart.");
 		expect(commands).toEqual([
 			{ kind: "update", widgetId: "w-chart", config: { chartType: "bar" } },
 		]);
 	});
 
-	it("duplicate duplicates every selected widget", async () => {
-		const { reply, commands } = await notebookReply(promptFor("Duplicate it.", ["w-text"]));
+	it("duplicate duplicates every named widget", async () => {
+		const { reply, commands } = await notebookReply(promptFor("Duplicate Notes."));
 		expect(reply).toBe("Duplicated it.");
 		expect(commands).toEqual([{ kind: "duplicate", widgetId: "w-text" }]);
 	});
 
-	it("remove proposes every selected widget", async () => {
-		const { reply, commands } = await notebookReply(promptFor("Remove this.", ["w-text"]));
+	it("remove proposes every named widget", async () => {
+		const { reply, commands } = await notebookReply(promptFor("Remove Notes."));
 		expect(reply).toBe("Proposed removing it.");
 		expect(commands).toEqual([{ kind: "remove", widgetId: "w-text" }]);
 	});
 
 	it("answers anything else with no commands", async () => {
-		const { reply, commands } = await notebookReply(promptFor("Tidy up.", ["w-text"]));
+		const { reply, commands } = await notebookReply(promptFor("Tidy up Notes."));
 		expect(reply).toBe("Noted.");
 		expect(commands).toEqual([]);
 	});
 
 	it("takes the first matching rule in table order", async () => {
-		const { reply } = await notebookReply(promptFor("Add a larger bar chart.", []));
+		const { reply } = await notebookReply(promptFor("Add a larger bar chart."));
 		expect(reply).toBe("Added a revenue chart.");
 	});
 

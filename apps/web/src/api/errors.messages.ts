@@ -34,7 +34,6 @@ export const apiErrorMessages = defineMessages({
 			"The stored Home arrangement could not be read. Reset to the default arrangement to continue.",
 		STORED_NOTEBOOK_UNREADABLE: "The stored notebook could not be read.",
 		INVALID_NOTEBOOK: "The notebook content is not valid.",
-		INVALID_NOTEBOOK_SELECTION: "The selection names widgets that are not in the notebook.",
 		NOTHING_TO_UNDO: "There is nothing to undo.",
 		AGENT_NOT_CONFIGURED: "No AI agent is configured. Choose one in Settings → AI agent.",
 		NOTEBOOK_ASSIST_ACTIVE:
@@ -72,7 +71,6 @@ export const apiErrorMessages = defineMessages({
 			"保存されたホームの配置を読み込めません。既定の配置に戻すと続行できます。",
 		STORED_NOTEBOOK_UNREADABLE: "保存されたノートブックを読み込めません。",
 		INVALID_NOTEBOOK: "ノートブックの内容が正しくありません。",
-		INVALID_NOTEBOOK_SELECTION: "選択の中に、ノートブックにないウィジェットがあります。",
 		NOTHING_TO_UNDO: "取り消せる変更がありません。",
 		AGENT_NOT_CONFIGURED:
 			"AI エージェントが設定されていません。設定 → AI エージェントで選んでください。",

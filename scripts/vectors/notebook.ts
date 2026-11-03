@@ -4,7 +4,10 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { notebookAssistPrompt } from "../../packages/application/src/notebook/prompts.ts";
+import {
+	NOTEBOOK_CONTEXT_PREFIX,
+	notebookAssistPrompt,
+} from "../../packages/application/src/notebook/prompts.ts";
 import { benchmarkNotebook, heavyChartsNotebook } from "./notebook/benchmark.ts";
 import { encodeNumbers } from "./notebook/record.ts";
 import type { VectorExporter, VectorFile } from "./shared.ts";
@@ -65,7 +68,6 @@ export const notebookExporter: VectorExporter = {
 				files.push({ path: `notebook/transcripts-${files.length}.json`, content: part });
 			const prompt = notebookAssistPrompt({
 				notebook: { widgets: [] },
-				selectedWidgetIds: [],
 				instruction: "Task",
 				conversationContext: [],
 				fenceToken: "token",
@@ -74,7 +76,7 @@ export const notebookExporter: VectorExporter = {
 			files.push({ path: "notebook/benchmark.json", content: encodeNumbers(benchmarkNotebook()) });
 			files.push({ path: "notebook/heavy.json", content: encodeNumbers(heavyChartsNotebook()) });
 			const promptParts = {
-				head: prompt.split("Selected widget ids:")[0],
+				head: prompt.split(NOTEBOOK_CONTEXT_PREFIX)[0],
 				tail: prompt.slice(prompt.indexOf("Return exactly one JSON object")),
 			};
 			files.push({ path: "notebook/prompt.json", content: promptParts });

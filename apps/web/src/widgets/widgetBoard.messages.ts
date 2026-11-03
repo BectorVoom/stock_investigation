@@ -15,7 +15,7 @@ const JAPANESE_SIZES: { readonly [S in WidgetSize]: string } = {
 
 /**
  * The shared widget board's words (ADR-0024): the per-widget menu, the
- * header buttons and the selection toolbar, the same on Home and in the
+ * header buttons, the same on Home and in the
  * Notebook (Cut, Copy, Duplicate, Remove and Undo are `commonMessages`). A
  * widget's title is the owner's and is quoted, never translated.
  */
@@ -30,13 +30,6 @@ export const widgetBoardMessages = defineMessages({
 		actionsMenu: (title: string) => `Actions for ${title}`,
 		pasteWidgets: "Paste widgets",
 		addWidget: "Add widget",
-		selectedWidgets: "Selected widgets",
-		selectedCount: (count: number) => `${count} selected`,
-		duplicateSelected: "Duplicate selected widgets",
-		cutSelected: "Cut selected widgets",
-		copySelected: "Copy selected widgets",
-		removeSelected: "Remove selected widgets",
-		clearSelection: "Clear selection",
 		dismiss: "Dismiss",
 	},
 	ja: {
@@ -49,13 +42,6 @@ export const widgetBoardMessages = defineMessages({
 		actionsMenu: (title) => `「${title}」の操作メニュー`,
 		pasteWidgets: "ウィジェットを貼り付け",
 		addWidget: "ウィジェットを追加",
-		selectedWidgets: "選択したウィジェット",
-		selectedCount: (count) => `${count} 件を選択中`,
-		duplicateSelected: "選択したウィジェットを複製",
-		cutSelected: "選択したウィジェットを切り取り",
-		copySelected: "選択したウィジェットをコピー",
-		removeSelected: "選択したウィジェットを削除",
-		clearSelection: "選択を解除",
 		dismiss: "閉じる",
 	},
 });

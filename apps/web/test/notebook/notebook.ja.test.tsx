@@ -71,7 +71,6 @@ function renderJapaneseNotebook(): NotebookSession {
 				view={WORKSPACE_VIEW}
 				mode="notebook"
 				clipboard={clipboard}
-				onAskAssistant={() => undefined}
 			/>
 		</LocaleProvider>
 	));
@@ -99,7 +98,7 @@ afterEach(() => {
 
 describe("the Notebook in Japanese", () => {
 	it("words the panel, the bodies and the board, and keeps the owner's titles", async () => {
-		const session = renderJapaneseNotebook();
+		renderJapaneseNotebook();
 		await waitFor(
 			() => expect(document.querySelectorAll("article[data-widget-id]")).toHaveLength(3),
 			{
@@ -140,11 +139,9 @@ describe("the Notebook in Japanese", () => {
 				"1 件のウィジェットをコピーしました。",
 			),
 		);
-		// The selection toolbar's count.
-		session.select("nb-text", "replace");
-		session.select("nb-table", "toggle");
-		await waitFor(() => expect(screen.getByText("2 件を選択中")).toBeDefined());
-		expect(screen.getByRole("toolbar", { name: "選択したウィジェット" })).toBeDefined();
+		// Widget selection was removed (2026-11-02): no selection toolbar, no Ask AI.
+		expect(screen.queryByRole("toolbar", { name: "選択したウィジェット" })).toBeNull();
+		expect(within(menu).queryByRole("menuitem", { name: "AI に質問" })).toBeNull();
 	});
 
 	it("gives a new widget its starter words in Japanese", async () => {

@@ -303,7 +303,6 @@ export async function runNotebookAssistTurn(
 	await deps.reporter.state("collecting");
 	const promptInput = {
 		notebook: input.notebook,
-		selectedWidgetIds: input.selectedWidgetIds,
 		instruction: input.instruction,
 		conversationContext: input.conversationContext,
 	};

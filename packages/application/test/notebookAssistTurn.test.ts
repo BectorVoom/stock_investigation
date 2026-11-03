@@ -166,7 +166,6 @@ describe("notebook-assistant turn: happy paths", () => {
 		const { run, requests } = setup([replyWith([ADD_CHART])], {
 			input: {
 				instruction: "Add a revenue chart, please.",
-				selectedWidgetIds: ["w-text"],
 				conversationContext: [{ role: "owner", text: "Focus on revenue." }],
 			},
 		});
@@ -174,7 +173,8 @@ describe("notebook-assistant turn: happy paths", () => {
 		expect(outcome.kind).toBe("assisted");
 		const prompt = requests[0]?.prompt ?? "";
 		expect(prompt.startsWith(NOTEBOOK_ASSIST_TURN_MARKER)).toBe(true);
-		expect(prompt).toContain('Selected widget ids: ["w-text"]');
+		expect(prompt).toContain("Notebook context: every widget below is shown");
+		expect(prompt).not.toContain("Selected widget ids");
 		expect(prompt).toContain('"add"');
 		expect(prompt).toContain('"duplicate"');
 		expect(prompt).toContain('"remove"');
@@ -215,7 +215,7 @@ describe("notebook-assistant turn: happy paths", () => {
 });
 
 describe("notebook-assistant turn: prompt narrowing and fencing", () => {
-	it("shows selected widgets in full and the rest as summaries", async () => {
+	it("shows every widget's content when the notebook fits", async () => {
 		const { run, requests } = setup(
 			[replyWith([{ kind: "resize", widgetId: "w-text", size: "large" }])],
 			{
@@ -224,7 +224,6 @@ describe("notebook-assistant turn: prompt narrowing and fencing", () => {
 						textWidget("w-text", "Secret body alpha."),
 						chartWidget("w-chart"),
 					]),
-					selectedWidgetIds: ["w-text"],
 				},
 			},
 		);
@@ -232,12 +231,11 @@ describe("notebook-assistant turn: prompt narrowing and fencing", () => {
 		expect(outcome.kind).toBe("assisted");
 		const prompt = requests[0]?.prompt ?? "";
 		expect(prompt).toContain("Secret body alpha.");
-		expect(prompt).toContain("w-chart");
-		// The unselected chart travels as id/type/title/size/position only: no series data.
-		expect(prompt).not.toContain('"name":"Revenue"');
+		// Nothing is narrowed to a selection any more: the chart's series travel too.
+		expect(prompt).toContain('"name":"Revenue"');
 	});
 
-	it("truncates text and table bodies when nothing is selected", async () => {
+	it("truncates text and table bodies", async () => {
 		const base = tableWidget("w-table");
 		if (base.type !== "table") throw new Error("fixture");
 		const bigTable = {
@@ -249,7 +247,6 @@ describe("notebook-assistant turn: prompt narrowing and fencing", () => {
 		const { run, requests } = setup([replyWith([])], {
 			input: {
 				notebook: notebookFixture([textWidget("w-big", "x".repeat(3000)), bigTable]),
-				selectedWidgetIds: [],
 			},
 		});
 		const outcome = await run();
@@ -283,12 +280,10 @@ describe("notebook-assistant turn: prompt narrowing and fencing", () => {
 	});
 
 	it("fails closed when the prompt would exceed its byte budget", async () => {
-		const widgets = Array.from({ length: 40 }, (_, index) =>
-			textWidget(`w-${index}`, "y".repeat(8000)),
-		);
-		const ids = widgets.map((widget) => widget.widgetId);
+		// Widget content is always budgeted, so only an input the API would
+		// never accept (an instruction far over its limit) can reach the guard.
 		const { run, requests } = setup([replyWith([])], {
-			input: { notebook: notebookFixture(widgets), selectedWidgetIds: ids },
+			input: { instruction: "z".repeat(NOTEBOOK_PROMPT_BUDGET_BYTES) },
 		});
 		const outcome = await run();
 		if (outcome.kind !== "failed") {
@@ -488,12 +483,12 @@ describe("notebook-assistant prompt budget", () => {
 		expect(new TextEncoder().encode(prompt).byteLength).toBeLessThan(NOTEBOOK_PROMPT_BUDGET_BYTES);
 	});
 
-	it("shows a full notebook with nothing selected as previews within budget, the rest as summaries", async () => {
+	it("shows a full notebook as previews within budget, the rest as summaries", async () => {
 		const widgets = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) =>
 			textWidget(`w-${index}`, `${"y".repeat(NOTEBOOK_LIMITS.maxTextChars - 10)} end-${index}`),
 		);
 		const { run, requests } = setup([replyWith([])], {
-			input: { notebook: notebookFixture(widgets), selectedWidgetIds: [] },
+			input: { notebook: notebookFixture(widgets) },
 		});
 		const outcome = await run();
 		expect(outcome.kind).toBe("assisted");
@@ -515,14 +510,14 @@ describe("notebook-assistant prompt budget", () => {
 		);
 	});
 
-	it("cuts chart series to the preview length when nothing is selected", async () => {
+	it("cuts chart series to the preview length", async () => {
 		const points = Array.from({ length: NOTEBOOK_LIMITS.maxChartPoints }, (_, index) => ({
 			x: `p-${index}`,
 			y: index,
 		}));
 		const chart = { ...chartWidget("w-chart"), series: [{ name: "S", points }] };
 		const { run, requests } = setup([replyWith([])], {
-			input: { notebook: notebookFixture([chart]), selectedWidgetIds: [] },
+			input: { notebook: notebookFixture([chart]) },
 		});
 		expect((await run()).kind).toBe("assisted");
 		const prompt = requests[0]?.prompt ?? "";

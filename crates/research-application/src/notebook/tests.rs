@@ -270,23 +270,19 @@ impl PipelineReporter for Reporter {
 fn job(input: &Value) -> TestResult<NotebookAssistJob> {
 	let mut job = input.clone();
 	let notebook = research_contracts::validate::<Notebook>(field(input, "notebook"))?;
-	let ids = strings(field(input, "selectedWidgetIds"));
 	let allow = field(input, "allowUnverifiedToolIsolation")
 		.as_bool()
 		.unwrap_or(false);
 	if let Value::Object(object) = &mut job {
 		object.remove("allowUnverifiedToolIsolation");
-		object.insert("selectedWidgetIds", Value::Array(Vec::new()));
 		object.insert("conversationContext", Value::Array(Vec::new()));
+		object.insert("instruction", Value::from("Instruction."));
 	}
 	let ClaimedJob::NotebookAssist(mut job) = research_contracts::validate::<ClaimedJob>(&job)?
 	else {
 		panic!("notebook claim required");
 	};
-	// Existing tests deliberately exceed the selection bound to exercise the
-	// application prompt budget directly. Production claims stay validated.
-	job.selected_widget_ids = ids;
-	// Likewise the prompt's own 4000-byte history budget lies beyond the claim's
+	// The prompt's own 4000-byte history budget lies beyond the claim's
 	// 2400-byte context bound; the vectors drive it with longer histories.
 	job.conversation_context = array(field(input, "conversationContext"))
 		.iter()
@@ -299,6 +295,9 @@ fn job(input: &Value) -> TestResult<NotebookAssistJob> {
 			text: text(field(message, "text")).to_owned(),
 		})
 		.collect();
+	// Likewise the prompt's fail-closed byte budget is reached only by an
+	// instruction beyond the claim's 2000-character bound.
+	job.instruction = text(field(input, "instruction")).to_owned();
 	job.notebook = notebook;
 	let _ = allow;
 	Ok(job)
@@ -511,7 +510,6 @@ fn notebook_performance_budgets() -> TestResult {
 	let prompt = || {
 		notebook_assist_prompt(&NotebookAssistPromptInput {
 			notebook: &notebook,
-			selected_widget_ids: &[],
 			instruction: "Tidy this notebook.",
 			conversation_context: &[],
 			fence_token: "bench-fence",
@@ -674,7 +672,6 @@ async fn panic_and_cancellation_wait_for_producer_cleanup() -> TestResult {
 			effort: research_contracts::jobs::Effort::Medium,
 		},
 		instruction: "Test.".to_owned(),
-		selected_widget_ids: Vec::new(),
 		notebook,
 		notebook_version: 4,
 		conversation_context: Vec::new(),

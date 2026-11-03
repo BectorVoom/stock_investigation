@@ -1,6 +1,6 @@
 # ADR-0024: One widget specification for Home and the Notebook
 
-**Status:** Accepted · **Date:** 2026-10-15
+**Status:** Accepted · **Date:** 2026-10-15 · Widget selection removed by [ADR-0061](0061-no-widget-selection.md)
 
 ## Context
 

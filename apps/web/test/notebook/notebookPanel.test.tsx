@@ -30,13 +30,11 @@ const NOTEBOOK_PUT = /^\/api\/v1\/workspaces\/([^/?]+)\/notebook$/;
 let backend: FakeBackend;
 let server: NotebookServerState;
 let session!: NotebookSession;
-let asked: string[][];
 let origins: unknown[];
 const rootDisposers: (() => void)[] = [];
 
 function createSession(clipboard?: WidgetClipboardStore): void {
 	const api = createApiClient({ fetch: backend.fetch });
-	asked = [];
 	origins = [];
 	// The session lives in its own root, next to where OpenWorkspace will
 	// keep it: creating it inside `render` would re-create it on every
@@ -59,9 +57,6 @@ function createSession(clipboard?: WidgetClipboardStore): void {
 			view={WORKSPACE_VIEW}
 			mode="notebook"
 			clipboard={clipboard}
-			onAskAssistant={(ids) => {
-				asked.push([...ids]);
-			}}
 			onOpenOrigin={(origin) => {
 				origins.push(origin);
 			}}
@@ -128,7 +123,6 @@ async function chooseMenuItem(widgetId: string, itemName: string): Promise<void>
 
 beforeEach(() => {
 	resetGlobalFetchCalls();
-	asked = [];
 	origins = [];
 	const fixtures = notebookFixtures();
 	({ backend, server } = createNotebookBackend([
@@ -176,37 +170,19 @@ describe("notebook panel", () => {
 		expect(articles()).toHaveLength(0);
 	});
 
-	it("marks selected frames and shows the contextual bar", async () => {
+	it("offers no widget selection: no select toggle, no selection bar, no Ask AI", async () => {
 		createSession();
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
-		session.select("nb-text", "replace");
-		await waitFor(() => expect(screen.queryByText("1 selected")).not.toBeNull());
-		expect(articleById("nb-text").getAttribute("data-widget-selected")).not.toBeNull();
-		expect(articleById("nb-metric").getAttribute("data-widget-selected")).toBeNull();
-		fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
-		await waitFor(() => expect(screen.queryByText("1 selected")).toBeNull());
+		// Widget selection was removed (2026-11-02).
+		expect(document.querySelector(".wg-select-toggle")).toBeNull();
+		const grip = articleById("nb-text").querySelector(".wg-grip");
+		if (!(grip instanceof Element)) throw new Error("no widget grip");
+		fireEvent.click(grip);
 		expect(articleById("nb-text").getAttribute("data-widget-selected")).toBeNull();
-	});
-
-	it("clears the selection on Escape with focus inside the panel", async () => {
-		createSession();
-		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
-		session.select("nb-text", "replace");
-		await waitFor(() => expect(screen.queryByText("1 selected")).not.toBeNull());
-		const panel = document.querySelector('section[data-panel="notebook"]');
-		if (!(panel instanceof HTMLElement)) throw new Error("no notebook panel");
-		fireEvent.keyDown(panel, { key: "Escape" });
-		await waitFor(() => expect(screen.queryByText("1 selected")).toBeNull());
-	});
-
-	it("asks the assistant about the selection from the bar", async () => {
-		createSession();
-		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
-		session.select("nb-text", "replace");
-		session.select("nb-metric", "toggle");
-		await waitFor(() => expect(screen.queryByText("2 selected")).not.toBeNull());
-		fireEvent.click(screen.getByRole("button", { name: "Ask AI about the selected widgets" }));
-		expect(asked).toEqual([["nb-text", "nb-metric"]]);
+		expect(screen.queryByRole("toolbar", { name: "Selected widgets" })).toBeNull();
+		fireEvent.click(actionsButton(articleById("nb-text")));
+		const menu = await waitFor(() => lastOpenMenu());
+		expect(within(menu).queryByRole("menuitem", { name: "Ask AI" })).toBeNull();
 	});
 
 	it("changes a widget size through its menu", async () => {
@@ -233,23 +209,6 @@ describe("notebook panel", () => {
 		const live = document.querySelector("output[aria-live='polite']");
 		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
 		await waitFor(() => expect(live.textContent).toBe("Moved “Headline” to position 1 of 5."));
-	});
-
-	it("removes several selected widgets at once in one save, without a dialog", async () => {
-		createSession();
-		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
-		session.select("nb-text", "replace");
-		session.select("nb-table", "toggle");
-		await waitFor(() => expect(screen.queryByText("2 selected")).not.toBeNull());
-		fireEvent.click(screen.getByRole("button", { name: "Remove selected widgets" }));
-		await waitFor(() => expect(articles()).toHaveLength(3));
-		expect(document.querySelector("dialog")).toBeNull();
-		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1);
-		expect(document.querySelector('article[data-widget-id="nb-text"]')).toBeNull();
-		expect(document.querySelector('article[data-widget-id="nb-table"]')).toBeNull();
-		await waitFor(() =>
-			expect(actionLiveRegion().textContent).toBe("Removed 2 widgets. Undo restores them."),
-		);
 	});
 
 	it("removes one widget from its menu without a dialog and announces it", async () => {
@@ -408,7 +367,7 @@ describe("notebook panel", () => {
 		expect(reread).toEqual(clipboard.content());
 	});
 
-	it("pastes a copy after another widget and selects exactly the pasted widget", async () => {
+	it("pastes a copy after another widget", async () => {
 		const { store: clipboard } = createMemoryClipboard();
 		createSession(clipboard);
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
@@ -426,56 +385,8 @@ describe("notebook panel", () => {
 		const pasted = ids[2];
 		if (pasted === null || pasted === undefined || ["nb-text", "nb-metric"].includes(pasted))
 			throw new Error("the pasted widget has no fresh id");
-		// The selection lands once the paste save resolves.
-		await waitFor(() => expect(screen.queryByText("1 selected")).not.toBeNull(), {
-			timeout: 10_000,
-		});
-		const selected = articles().filter(
-			(article) => article.getAttribute("data-widget-selected") !== null,
-		);
-		expect(selected.map((article) => article.getAttribute("data-widget-id"))).toEqual([pasted]);
-		expect(selected[0]?.textContent).toContain("First paragraph.");
+		expect(articles()[2]?.textContent).toContain("First paragraph.");
 		await waitFor(() => expect(actionLiveRegion().textContent).toBe("Pasted 1 widget."), {
-			timeout: 10_000,
-		});
-	});
-
-	it("cuts and pastes several selected widgets from the toolbar and header", async () => {
-		const { store: clipboard } = createMemoryClipboard();
-		createSession(clipboard);
-		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
-		session.select("nb-text", "replace");
-		session.select("nb-table", "toggle");
-		await waitFor(() => expect(screen.queryByText("2 selected")).not.toBeNull());
-		fireEvent.click(screen.getByRole("button", { name: "Cut selected widgets" }));
-		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1));
-		await waitFor(() => expect(articles()).toHaveLength(3));
-		expect(articles().map((article) => article.getAttribute("data-widget-id"))).toEqual([
-			"nb-metric",
-			"nb-chart",
-			"nb-research",
-		]);
-		// The cut announces only once its save resolves; pasting before that
-		// is disabled (the header button disables while a save is in flight).
-		await waitFor(() => expect(actionLiveRegion().textContent).toBe("Cut 2 widgets."), {
-			timeout: 10_000,
-		});
-		// Nothing is selected after a cut, so the header paste lands at the end.
-		fireEvent.click(screen.getByRole("button", { name: "Paste widgets" }));
-		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(2));
-		await waitFor(() => expect(articles()).toHaveLength(5));
-		const ids = articles().map((article) => article.getAttribute("data-widget-id"));
-		expect(ids.slice(0, 3)).toEqual(["nb-metric", "nb-chart", "nb-research"]);
-		const pasted = ids.slice(3);
-		expect(new Set(pasted).size).toBe(2);
-		expect(pasted).not.toContain("nb-text");
-		expect(pasted).not.toContain("nb-table");
-		await waitFor(() => expect(screen.queryByText("2 selected")).not.toBeNull());
-		const selected = articles().filter(
-			(article) => article.getAttribute("data-widget-selected") !== null,
-		);
-		expect(selected.map((article) => article.getAttribute("data-widget-id"))).toEqual(pasted);
-		await waitFor(() => expect(actionLiveRegion().textContent).toBe("Pasted 2 widgets."), {
 			timeout: 10_000,
 		});
 	});
@@ -506,65 +417,44 @@ describe("notebook panel", () => {
 		expect(articles()).toHaveLength(5);
 	});
 
-	it("copies with Ctrl+C and pastes with Ctrl+V on the selected widgets", async () => {
+	it("pastes with Ctrl+V at the end; Ctrl+C copies no widget", async () => {
 		const { store: clipboard } = createMemoryClipboard();
 		createSession(clipboard);
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		const panel = document.querySelector('section[data-panel="notebook"]');
 		if (!(panel instanceof HTMLElement)) throw new Error("no notebook panel");
-		session.select("nb-chart", "replace");
+		// With no selection, Ctrl+C has no widgets to copy: it stays the browser's.
 		fireEvent.keyDown(panel, { key: "c", ctrlKey: true });
+		expect(clipboard.content()).toBeNull();
+		await chooseMenuItem("nb-chart", "Copy");
 		expect(clipboard.content()?.entries.map((item) => item.core.widgetId)).toEqual(["nb-chart"]);
-		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(0);
 		fireEvent.keyDown(panel, { key: "v", ctrlKey: true });
 		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1));
 		await waitFor(() => expect(articles()).toHaveLength(6));
 		const pastedIds = articles().map((article) => article.getAttribute("data-widget-id"));
-		expect(pastedIds.slice(0, 3)).toEqual(["nb-text", "nb-metric", "nb-chart"]);
-		expect(pastedIds.slice(4)).toEqual(["nb-table", "nb-research"]);
-		expect(pastedIds[3]).not.toBe("nb-chart");
-		expect(articles()[3]?.textContent).toContain("Demand");
+		expect(pastedIds.slice(0, 5)).toEqual([
+			"nb-text",
+			"nb-metric",
+			"nb-chart",
+			"nb-table",
+			"nb-research",
+		]);
+		expect(pastedIds[5]).not.toBe("nb-chart");
+		expect(articles()[5]?.textContent).toContain("Demand");
 	});
 
-	it("acts with focus on the body, where a header-click selection leaves it", async () => {
-		const { store: clipboard } = createMemoryClipboard();
-		createSession(clipboard);
-		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
-		// Selecting by clicking the header strip, like an owner does.
-		const grip = articleById("nb-text").querySelector(".wg-grip");
-		if (!(grip instanceof Element)) throw new Error("no widget grip");
-		fireEvent.click(grip);
-		await waitFor(() => expect(screen.queryByText("1 selected")).not.toBeNull());
-		fireEvent.keyDown(document.body, { key: "c", ctrlKey: true });
-		expect(clipboard.content()?.entries.map((item) => item.core.widgetId)).toEqual(["nb-text"]);
-		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(0);
-	});
-
-	it("leaves text fields and text selections to the browser", async () => {
+	it("leaves Ctrl+V inside a text field to the browser", async () => {
 		const { store: clipboard } = createMemoryClipboard();
 		createSession(clipboard);
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		const panel = document.querySelector('section[data-panel="notebook"]');
 		if (!(panel instanceof HTMLElement)) throw new Error("no notebook panel");
-		session.select("nb-text", "replace");
-		// Inside a text field the shortcut is the field's.
+		await chooseMenuItem("nb-text", "Copy");
 		const field = document.createElement("textarea");
 		panel.appendChild(field);
-		fireEvent.keyDown(field, { key: "c", ctrlKey: true });
-		expect(clipboard.content()).toBeNull();
+		fireEvent.keyDown(field, { key: "v", ctrlKey: true });
+		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(0);
 		field.remove();
-		// A non-empty text selection is a text copy, never a widget copy.
-		const body = articleById("nb-text").querySelector(".wg-body");
-		if (!(body instanceof HTMLElement)) throw new Error("no widget body");
-		const selection = window.getSelection();
-		if (selection === null) throw new Error("no window selection");
-		selection.removeAllRanges();
-		const range = document.createRange();
-		range.selectNodeContents(body);
-		selection.addRange(range);
-		fireEvent.keyDown(panel, { key: "c", ctrlKey: true });
-		expect(clipboard.content()).toBeNull();
-		selection.removeAllRanges();
 	});
 
 	it("navigates to a widget's source only when it has one", async () => {
@@ -621,9 +511,6 @@ describe("notebook panel", () => {
 				registry={registry}
 				view={WORKSPACE_VIEW}
 				mode="chat"
-				onAskAssistant={(ids) => {
-					asked.push([...ids]);
-				}}
 			/>
 		));
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });

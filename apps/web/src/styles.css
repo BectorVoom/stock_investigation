@@ -120,13 +120,12 @@ html:root {
 
 /*
  * Notebook (ADR-0020): the quiet variant shows a widget's boundary only on
- * hover/focus (`--wg-border-hover`) and when selected (`--wg-selected`) —
- * neutral greys, never a colourful outline. Home uses the card variant and
+ * hover/focus (`--wg-border-hover`) — a neutral grey, never a colourful
+ * outline. Home uses the card variant and
  * never reads them.
  */
 :root {
 	--wg-border-hover: var(--color-slate-300);
-	--wg-selected: var(--color-slate-400);
 }
 
 /*

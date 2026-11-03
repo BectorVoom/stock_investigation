@@ -60,13 +60,12 @@ import { widgetTypeMessages } from "./widgetTypes.messages.ts";
  * The one widget board of the app (ADR-0024): everything the owner can do to
  * widgets, the same on Home and in the Notebook — the per-widget menu (Edit…,
  * Size, Cut, Copy, Paste after, Duplicate, Move, the page's own items,
- * Remove), the add menu, Paste widgets and Undo, the selection toolbar, the
- * ⌘X / ⌘C / ⌘V shortcuts, drag-and-drop reorder, the editors and the polite
+ * Remove), the add menu, Paste widgets and Undo, the ⌘V shortcut,
+ * drag-and-drop reorder, the editors and the polite
  * announcements. Remove acts at once (Undo restores it).
  *
  * The board owns behaviour, not layout: each page places the parts it
- * returns (header buttons, selection toolbar, announcements, the frames'
- * menus, the dialogs) where its own layout wants them, and keeps its own
+ * returns (header buttons, announcements, the frames' menus, the dialogs) where its own layout wants them, and keeps its own
  * look (Home: titled, bordered frames in viewport columns; Notebook:
  * untitled quiet frames in container columns). Saving belongs to the page's
  * session: the Notebook's server-versioned session, Home's dashboard save.
@@ -81,10 +80,6 @@ export interface WidgetBoardSession<W extends WidgetCore> {
 	readonly widgets: Accessor<readonly W[]>;
 	/** True while a save or undo is in flight: actions are disabled. */
 	readonly pending: Accessor<boolean>;
-	/** Selected widget ids in page order. */
-	readonly selection: Accessor<readonly string[]>;
-	/** `replace` selects one widget alone (or clears with null); `toggle` adds or removes it. */
-	readonly select: (widgetId: string | null, mode: "replace" | "toggle") => void;
 	/** Applies an owner edit and saves it; resolves true when saved. */
 	readonly edit: (change: (widgets: readonly W[]) => readonly W[]) => Promise<boolean>;
 	/** Replaces one widget's content, title and size, keeping whatever the page stores beside them. */
@@ -224,13 +219,6 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	};
 	const atEnd = (current: readonly W[]): number => current.length;
 
-	/** The selection in page order (the session keeps it ordered; this re-checks). */
-	const orderedSelection = (): readonly string[] => {
-		const selected = new Set(session.selection());
-		return widgets()
-			.filter((widget) => selected.has(widget.widgetId))
-			.map((widget) => widget.widgetId);
-	};
 	const editing = (): W | null => {
 		const id = editorId();
 		if (id === null) return null;
@@ -472,9 +460,8 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	};
 
 	/**
-	 * Paste after one widget (its menu), else after the last selected widget
-	 * (header, ⌘V), else at the end — as one save, selecting exactly the
-	 * pasted widgets. The clipboard keeps its content for another paste.
+	 * Paste after one widget (its menu), else at the end (header, ⌘V) — as
+	 * one save. The clipboard keeps its content for another paste.
 	 */
 	const pasteAfter = (afterWidgetId: string | null): void => {
 		const scope = options.scope();
@@ -487,18 +474,13 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			if (skipped > 0) setPasteNotice(skippedResearchNoticeText(skipped, clipboardWords()));
 			return;
 		}
-		const current = widgets();
-		const fallback = orderedSelection();
-		const anchorId = afterWidgetId ?? fallback[fallback.length - 1] ?? null;
-		let toIndex = current.length;
-		if (anchorId !== null) {
-			const anchor = indexOf(anchorId);
+		let toIndex = widgets().length;
+		if (afterWidgetId !== null) {
+			const anchor = indexOf(afterWidgetId);
 			if (anchor >= 0) toIndex = anchor + 1;
 		}
 		void insert(accepted, () => toIndex).then((ids) => {
 			if (ids === null || disposed) return;
-			session.select(null, "replace");
-			for (const id of ids) session.select(id, "toggle");
 			announceAction(clipboardCountText(ids.length, "Pasted", clipboardWords()));
 			setPasteNotice(skipped > 0 ? skippedResearchNoticeText(skipped, clipboardWords()) : null);
 		});
@@ -533,20 +515,17 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	let scopeElement: HTMLElement | undefined;
 
 	/**
-	 * ⌘X / ⌘C / ⌘V (Ctrl on other systems) on the selected widgets. A
-	 * document-level listener: selecting a widget by clicking its header
-	 * leaves focus on `<body>` (the header strip is not focusable), so the
-	 * page section would never see the key. It acts only when focus is inside
-	 * the page section or on `<body>` itself — never from another panel's
-	 * control — and `preventDefault`s only when it acts, so a text copy stays
-	 * the browser's.
+	 * ⌘V (Ctrl+V on other systems) pastes the clipboard's widgets at the end.
+	 * A document-level listener, so it also works while focus is on `<body>`.
+	 * It acts only when focus is inside the page section or on `<body>` itself
+	 * — never from another panel's control — and `preventDefault`s only when
+	 * it acts, so a text paste stays the browser's.
 	 */
 	const onDocumentKeyDown = (event: KeyboardEvent): void => {
 		if (event.defaultPrevented) return;
 		if (!event.metaKey && !event.ctrlKey) return;
 		if (event.altKey) return;
-		const key = event.key.toLowerCase();
-		if (key !== "x" && key !== "c" && key !== "v") return;
+		if (event.key.toLowerCase() !== "v") return;
 		const target = event.target;
 		if (target instanceof HTMLElement && target.closest(CLIPBOARD_GUARD_SELECTOR) !== null) return;
 		const inScope =
@@ -554,37 +533,15 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			target === document.documentElement ||
 			(target instanceof Node && scopeElement !== undefined && scopeElement.contains(target));
 		if (!inScope) return;
-		if (key === "v") {
-			if (options.clipboard.isEmpty() || pending()) return;
-			event.preventDefault();
-			pasteAfter(null);
-			return;
-		}
-		const selected = orderedSelection();
-		if (selected.length === 0) return;
-		// A non-empty text selection belongs to the browser (quoting text).
-		const textSelection = window.getSelection();
-		if (textSelection !== null && !textSelection.isCollapsed) return;
+		if (options.clipboard.isEmpty() || pending()) return;
 		event.preventDefault();
-		if (key === "x") cutIds(selected);
-		else copyIds(selected);
+		pasteAfter(null);
 	};
 
 	onMount(() => {
 		document.addEventListener("keydown", onDocumentKeyDown);
 		onCleanup(() => document.removeEventListener("keydown", onDocumentKeyDown));
 	});
-
-	/** Escape on the page section clears the selection (not from editors, menus or dialogs). */
-	const onSectionKeyDown = (event: KeyboardEvent): void => {
-		if (event.key !== "Escape") return;
-		if (dialogOpen()) return;
-		const target = event.target;
-		if (target instanceof HTMLElement && target.closest("[data-rich-text-editor]") !== null) return;
-		if (target instanceof HTMLElement && target.closest('[role="menu"],dialog,sl-dialog') !== null)
-			return;
-		if (session.selection().length > 0) session.select(null, "replace");
-	};
 
 	/* ---------- Menus ---------- */
 
@@ -720,50 +677,6 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		</>
 	);
 
-	/** The toolbar over a selection; `children` adds the page's own actions first (Ask AI). */
-	const SelectionToolbar = (props: { readonly children?: JSX.Element }): JSX.Element => (
-		<Show when={session.selection().length > 0}>
-			<div
-				role="toolbar"
-				aria-label={m().selectedWidgets}
-				class="flex flex-wrap items-center gap-1 rounded bg-slate-100 p-1"
-			>
-				<span class="px-1 text-xs text-slate-700">
-					{m().selectedCount(session.selection().length)}
-				</span>
-				{props.children}
-				<IconButton
-					label={m().duplicateSelected}
-					icon="plus-square"
-					disabled={pending()}
-					onClick={() => duplicateIds(orderedSelection())}
-				/>
-				<IconButton
-					label={m().cutSelected}
-					icon="scissors"
-					disabled={pending()}
-					onClick={() => cutIds(orderedSelection())}
-				/>
-				<IconButton
-					label={m().copySelected}
-					icon="copy"
-					onClick={() => copyIds(orderedSelection())}
-				/>
-				<IconButton
-					label={m().removeSelected}
-					icon="trash"
-					disabled={pending()}
-					onClick={() => removeIds(orderedSelection())}
-				/>
-				<IconButton
-					label={m().clearSelection}
-					icon="x-lg"
-					onClick={() => session.select(null, "replace")}
-				/>
-			</div>
-		</Show>
-	);
-
 	/** The move announcer, the action live region and the paste notice. */
 	const Announcements = (): JSX.Element => (
 		<>
@@ -847,10 +760,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		entries,
 		pending,
 		dialogOpen,
-		isSelected: (widgetId: string): boolean => session.selection().includes(widgetId),
-		select: session.select,
 		onDrop,
-		onSectionKeyDown,
 		/** Registers the page section: the clipboard shortcuts act inside it. */
 		attach: (element: HTMLElement): void => {
 			scopeElement = element;
@@ -860,7 +770,6 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		saveWidget,
 		ActionsMenu,
 		HeaderButtons,
-		SelectionToolbar,
 		Announcements,
 		Dialogs,
 	};

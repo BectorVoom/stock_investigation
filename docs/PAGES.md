@@ -35,8 +35,8 @@ Page layout (frame, panels, headings, shared parts) follows
 **Purpose**
 
 Check market prices, charts and economic indicators at a glance on widgets you arrange.
-The widgets are the Notebook's (ADR-0024): the same types, menu, selection,
-clipboard and Undo; like every widget it shows no title (the title stays its
+The widgets are the Notebook's (ADR-0024): the same types, menu, clipboard
+and Undo (no widget selection, ADR-0061); like every widget it shows no title (the title stays its
 accessible name), and Home takes every type except a research result.
 
 **User actions**
@@ -53,11 +53,10 @@ accessible name), and Home takes every type except a research result.
   range, days ahead), edit a Text widget in place, or change its size from the
   menu (Size: Small / Medium / Large).
 - Duplicate, Cut, Copy and Paste after (one clipboard with the Notebooks: a
-  widget copied on Home pastes into a chat's notebook and back); ⌘X / ⌘C / ⌘V
-  on selected widgets. Home has no Paste widgets toolbar button (ADR-0024
-  amendment); the Notebook keeps it.
-- Select widgets (header click, Shift/Ctrl/⌘ to add) and act on the selection
-  from its toolbar (Duplicate, Cut, Copy, Remove, Clear).
+  widget copied on Home pastes into a chat's notebook and back); ⌘V pastes
+  the clipboard at the end. Home has no Paste widgets toolbar button
+  (ADR-0024 amendment); the Notebook keeps it. Widgets cannot be selected:
+  each header holds only the grip and the actions menu (ADR-0061).
 - Undo the last changes of this visit (up to 20; a reload clears them).
 - Move a widget earlier/later.
 - Drag a widget to a new position (the grip in the frame's top-right control
@@ -553,12 +552,11 @@ Ask research questions and read the answers, with their sources and run progress
 - Load earlier messages.
 - Write and submit a question (agent choices are not made here — they are chosen once in Settings → AI agent),
   or address the composer at the Notebook assistant instead (the default in
-  Notebook-first and with widgets selected; the selection travels as removable
-  chips, or the whole notebook when nothing is selected).
+  Notebook-first; the instruction names the widgets it is about, ADR-0061).
 - Save an answer or a research result into the Notebook ("Add to Notebook");
   saved ones say "In notebook" and offer no second save.
-- Ask the notebook assistant about selected widgets, undo its turn, and confirm
-  or keep its proposed removals.
+- Ask the notebook assistant to change the notebook, undo its turn, and
+  confirm or keep its proposed removals.
 - Jump from a widget to where it came from (its chat message).
 - Watch a run's progress.
 - Cancel, retry or approve a run. A retry runs on the backend and model saved
@@ -575,7 +573,7 @@ Ask research questions and read the answers, with their sources and run progress
   Chat ≈ 75–80 % / Notebook ≈ 20–25 % of the space right of the Chats panel
   (`3fr`/`1fr`); Notebook-first is the reverse. Switching changes only the
   grid template: the workspace session, the notebook session, the thread, the
-  composer draft, the selection and scroll positions survive, and both panels
+  composer draft and scroll positions survive, and both panels
   stay mounted in the same DOM order. The secondary panel collapses to a
   narrow rail in both states. Below `lg` the two states keep their meaning as
   a two-tab switcher ("Chat" / "Notebook") whose default tab follows the
@@ -626,8 +624,7 @@ Ask research questions and read the answers, with their sources and run progress
   round + button at the input's leading edge opens the "Composer mode" menu
   with Research and Notebook, the current one checked (ADR-0023, as in
   ChatGPT) — Notebook shows as a removable "Notebook" chip beside the +,
-  hides the research-only fields, shows the selection chips and sends the
-  instruction to the notebook assistant) and the
+  hides the research-only fields and sends the instruction to the notebook assistant) and the
   evidence records drawer for one run, session notices and load errors.
 - The Notebook panel: the widgets saved from this conversation and made here,
   with the notebook assistant one instruction away; a collapsed secondary
@@ -660,12 +657,11 @@ Ask research questions and read the answers, with their sources and run progress
   tasks, not this chat's. Titles stay in the data but the frames hide them.
 - The Notebook's widget list scrolls inside the panel, below its fixed header
   and toolbar; dragging near its top or bottom edge scrolls it.
-- Cut, copy and paste widgets (ADR-0023): Cut / Copy / Paste after in each
-  widget's menu, Cut / Copy in the selection toolbar, a Paste button in the
-  Notebook header, and ⌘X / ⌘C / ⌘V (Ctrl elsewhere) on the selected widgets
-  when focus is not in a text field. Cut removes at once (Undo restores);
-  paste inserts fresh copies after the last selected widget (or at the end)
-  and selects them. One app-wide widget clipboard (kept in this browser), so
+- Cut, copy and paste widgets (ADR-0023, ADR-0061): Cut / Copy / Paste after
+  in each widget's menu, a Paste button in the Notebook header, and ⌘V
+  (Ctrl elsewhere) when focus is not in a text field. Cut removes at once
+  (Undo restores); Paste after inserts fresh copies after that widget, the
+  header button and ⌘V at the end. One app-wide widget clipboard (kept in this browser), so
   widgets move between chats; a research result stays in its own chat.
 - Text widgets edit in place, Notion style: click the note (or Enter on it)
   and type formatted text — `# `/`## `/`### ` headings, `- `, `1. `, `[] `

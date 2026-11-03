@@ -361,8 +361,7 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 		/**
 		 * Stores the instruction as the owner's chat message (the same path a
 		 * research question takes, `runId` set) and queues a `notebook-assist`
-		 * job carrying the instruction, the selection, the version the owner
-		 * saw, and the agent choices currently saved in Settings → AI agent.
+		 * job carrying the instruction, the version the owner saw, and the agent choices currently saved in Settings → AI agent.
 		 */
 		async assistNotebook(
 			ownerId: string,
@@ -374,7 +373,6 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 				JSON.stringify({
 					workspaceId,
 					instruction: request.instruction,
-					selectedWidgetIds: request.selectedWidgetIds,
 					notebookVersion: request.notebookVersion,
 				}),
 			);
@@ -405,18 +403,6 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 			const agentId = saved.settings.defaultAgentId;
 			const stored = await deps.notebooks.get(ownerId, workspaceId);
 			if (stored === "unreadable") return fail("STORED_NOTEBOOK_UNREADABLE", UNREADABLE_QUEUED);
-			const known = new Set(
-				(stored === null ? EMPTY_NOTEBOOK : stored.notebook).widgets.map(
-					(widget) => widget.widgetId,
-				),
-			);
-			const unknown = request.selectedWidgetIds.filter((id) => !known.has(id));
-			if (unknown.length > 0) {
-				return fail(
-					"INVALID_NOTEBOOK_SELECTION",
-					`The selection names widgets that are not in the notebook: ${unknown.join(", ")}.`,
-				);
-			}
 			const active = await deps.jobs.findActiveNotebookAssist(ownerId, workspaceId);
 			if (active !== null) {
 				return fail(
@@ -438,7 +424,6 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 				kind: "notebook-assist",
 				request: {
 					instruction: request.instruction,
-					selectedWidgetIds: [...request.selectedWidgetIds],
 					notebookVersion: request.notebookVersion,
 					agent: {
 						agentId,
@@ -505,7 +490,7 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 					actor: "owner",
 					action: "notebook.assist.create",
 					resource: job.runId,
-					detail: `selected=${request.selectedWidgetIds.length}`,
+					detail: `version=${request.notebookVersion}`,
 					at: now,
 				});
 			}
@@ -530,7 +515,6 @@ export interface NotebookClaimRefusal {
 export interface NotebookClaimData {
 	readonly agent: NotebookAssistJobRequest["agent"];
 	readonly instruction: string;
-	readonly selectedWidgetIds: readonly string[];
 	readonly notebook: Notebook;
 	readonly notebookVersion: number;
 	readonly conversationContext: readonly ConversationContextMessage[];
@@ -543,8 +527,8 @@ export interface NotebookClaimDeps {
 
 /**
  * The claim-time payload of a notebook-assist job: the notebook as stored at
- * claim time and its version, the request's instruction and selection (ids no
- * longer in the notebook are dropped), the frozen agent choices, and the
+ * claim time and its version, the request's instruction, the frozen agent
+ * choices, and the
  * bounded conversation context the research claim also carries.
  */
 export async function prepareNotebookAssistClaim(
@@ -562,7 +546,6 @@ export async function prepareNotebookAssistClaim(
 	}
 	const notebook = stored === null ? EMPTY_NOTEBOOK : stored.notebook;
 	const notebookVersion = stored === null ? 0 : stored.version;
-	const present = new Set(notebook.widgets.map((widget) => widget.widgetId));
 	const rows =
 		job.contextAnchorSeq === null
 			? []
@@ -573,7 +556,6 @@ export async function prepareNotebookAssistClaim(
 	return ok({
 		agent: request.agent,
 		instruction: request.instruction,
-		selectedWidgetIds: request.selectedWidgetIds.filter((id) => present.has(id)),
 		notebook,
 		notebookVersion,
 		conversationContext: buildConversationContextBeforeAnchor(rows, job.contextAnchorSeq),

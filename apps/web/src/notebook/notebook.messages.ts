@@ -5,10 +5,8 @@ import { defineMessages } from "@research/i18n";
 export const notebookPanelMessages = defineMessages({
 	en: {
 		notebook: "Notebook",
-		askAi: "Ask AI",
 		goToSource: "Go to source",
 		dismiss: "Dismiss",
-		askAboutSelected: "Ask AI about the selected widgets",
 		/** The noun of "Loading notebook…". */
 		loadingLabel: "notebook",
 		loadFailed: "Could not load the notebook.",
@@ -16,10 +14,8 @@ export const notebookPanelMessages = defineMessages({
 	},
 	ja: {
 		notebook: "ノートブック",
-		askAi: "AI に質問",
 		goToSource: "元のメッセージへ移動",
 		dismiss: "閉じる",
-		askAboutSelected: "選択したウィジェットについて AI に質問",
 		loadingLabel: "ノートブック",
 		loadFailed: "ノートブックを読み込めませんでした。",
 		empty: "チャットの回答、チャート、表を保存すると、ここにノートブックができます。",

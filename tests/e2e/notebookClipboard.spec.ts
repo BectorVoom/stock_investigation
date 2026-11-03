@@ -14,8 +14,8 @@ import { E2E_ORIGIN } from "./fixtures.ts";
  *
  * Contract coverage: cut a widget via its menu → gone, Undo brings it back;
  * Remove via its menu → gone at once with no dialog, Undo brings it back;
- * copy + paste after another widget → order correct, pasted widget selected;
- * keyboard ⌘/Ctrl+C then ⌘/Ctrl+V on a header-selected widget; cut in one
+ * copy + paste after another widget → order correct; menu Copy then
+ * ⌘/Ctrl+V pastes at the end (there is no widget selection); cut in one
  * chat and paste in a second chat, including after `page.reload()`; text
  * copy inside a Text widget's editor is not intercepted.
  */
@@ -175,7 +175,7 @@ test("remove via the menu acts at once with no dialog; Undo brings it back", asy
 	await expect(widgetIds()).resolves.toEqual(["nb-seed-0", "nb-seed-1"]);
 });
 
-test("copy and paste after another widget keeps order and selects the paste", async () => {
+test("copy and paste after another widget keeps order", async () => {
 	const alpha = notebookWidgets().filter({ hasText: "Alpha note" });
 	await alpha.locator("button[data-widget-actions]").click();
 	await page.getByRole("menuitem", { name: "Copy", exact: true }).click();
@@ -183,36 +183,28 @@ test("copy and paste after another widget keeps order and selects the paste", as
 	await beta.locator("button[data-widget-actions]").click();
 	await page.getByRole("menuitem", { name: "Paste after", exact: true }).click();
 	await expect(notebookWidgets()).toHaveCount(3);
-	await expect(notebookRegion().getByText("1 selected")).toBeVisible();
-	// The pasted copy lands directly after Beta with a fresh id, selected alone.
+	// The pasted copy lands directly after Beta with a fresh id.
 	const ids = await widgetIds();
 	expect(ids[0]).toBe("nb-seed-0");
 	expect(ids[1]).toBe("nb-seed-1");
 	expect(ids[2]).not.toBe("nb-seed-0");
-	const selected = await notebookWidgets().evaluateAll((nodes) =>
-		nodes
-			.filter((node) => node.hasAttribute("data-widget-selected"))
-			.map((node) => node.getAttribute("data-widget-id")),
-	);
-	expect(selected).toEqual([ids[2]]);
-	await reviewShot("selection-toolbar.png");
 	await reviewShot("header-paste.png");
 });
 
-test("keyboard copy and paste act on a header-selected widget", async () => {
-	// A click on the grip selects the widget alone (ADR-0021).
+test("the keyboard paste puts the clipboard's widgets at the end", async () => {
 	const beta = notebookWidgets().filter({ hasText: "Beta note" });
-	await beta.hover();
-	await beta.locator(".wg-grip").click();
-	await expect(notebookRegion().getByText("1 selected")).toBeVisible();
-	await page.keyboard.press(`${mod}+C`);
+	await beta.locator("button[data-widget-actions]").click();
+	await page.getByRole("menuitem", { name: "Copy", exact: true }).click();
 	const idsBefore = await widgetIds();
-	const pasted = notebookWidgets().nth(2);
-	await pasted.hover();
-	await pasted.locator(".wg-grip").click();
+	// A grip click selects nothing (widget selection was removed, 2026-11-02);
+	// it leaves focus in the page, where the paste shortcut acts.
+	const third = notebookWidgets().nth(2);
+	await third.hover();
+	await third.locator(".wg-grip").click();
+	await expect(notebookWidgets().nth(2)).not.toHaveAttribute("data-widget-selected", "");
 	await page.keyboard.press(`${mod}+V`);
 	await expect(notebookWidgets()).toHaveCount(4);
-	// Pasted after the third widget with a fresh id.
+	// Pasted at the end with a fresh id.
 	const ids = await widgetIds();
 	expect(ids.slice(0, 3)).toEqual(idsBefore);
 	expect(ids[3]).not.toBeNull();

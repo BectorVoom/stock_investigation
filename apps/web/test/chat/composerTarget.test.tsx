@@ -96,7 +96,6 @@ describe("composer target (integration)", () => {
 		const notebook = await screen.findByRole("form", { name: "Notebook composer" });
 		expect(within(notebook).queryByText(/Options:/)).toBeNull();
 		expect(within(notebook).queryByText(/Change in Settings/)).toBeNull();
-		expect(within(notebook).getByText("About the whole notebook")).toBeDefined();
 		expect(within(notebook).getByRole("button", { name: "Send instruction" })).toBeDefined();
 		expect(within(notebook).getByRole("button", { name: "Leave Notebook mode" })).toBeDefined();
 	});
@@ -124,7 +123,7 @@ describe("composer target (integration)", () => {
 		await screen.findByRole("form", { name: "Research composer" });
 	});
 
-	it("sends the instruction with the selection and notebook version", async () => {
+	it("sends the instruction with the notebook version and no widget selection", async () => {
 		server.notebook = makeNotebookResponse({
 			notebook: { widgets: [makeNotebookWidget()] },
 			version: 4,
@@ -145,7 +144,6 @@ describe("composer target (integration)", () => {
 		const sent = backend.requestsTo("POST", /notebook\/assist$/)[0];
 		expect(sent?.body).toEqual({
 			instruction: "make it larger",
-			selectedWidgetIds: [],
 			notebookVersion: 4,
 		});
 		expect(sent?.headers["idempotency-key"]).toMatch(/^idem-[0-9a-f-]{36}$/);
@@ -243,7 +241,6 @@ describe("composer target (unit)", () => {
 	function mountNotebook(
 		props: {
 			readonly target?: ComposerTarget;
-			readonly selection?: readonly { readonly widgetId: string; readonly title: string }[];
 			readonly onSubmitNotebook?: (
 				instruction: string,
 				key: string,
@@ -251,7 +248,6 @@ describe("composer target (unit)", () => {
 		} = {},
 	) {
 		const onTargetChange = vi.fn();
-		const onRemoveSelection = vi.fn();
 		const agents: Remote<AgentsResponse> = { status: "ready", value: AGENTS };
 		const settings: Remote<AgentSettingsResponse> = {
 			status: "ready",
@@ -279,31 +275,16 @@ describe("composer target (unit)", () => {
 				})}
 				target={props.target ?? "notebook"}
 				onTargetChange={onTargetChange}
-				selection={props.selection ?? []}
-				onRemoveSelection={onRemoveSelection}
 				onSubmitNotebook={props.onSubmitNotebook}
 			/>
 		));
-		return { onTargetChange, onRemoveSelection };
+		return { onTargetChange };
 	}
 
-	it("shows selected widgets as removable chips, and the whole-notebook hint when empty", () => {
-		const { onRemoveSelection } = mountNotebook({
-			selection: [
-				{ widgetId: "nb_1", title: "Revenue" },
-				{ widgetId: "nb_2", title: "Costs" },
-			],
-		});
-		const list = screen.getByRole("list", { name: "Selected widgets" });
-		expect(within(list).getByText("Revenue")).toBeDefined();
-		expect(within(list).getByText("Costs")).toBeDefined();
-		fireEvent.click(screen.getByRole("button", { name: "Remove Revenue from selection" }));
-		expect(onRemoveSelection).toHaveBeenCalledWith("nb_1");
-		cleanup();
-
-		mountNotebook({ selection: [] });
-		expect(screen.getByText("About the whole notebook")).toBeDefined();
+	it("shows no selected-widget chips or whole-notebook hint (selection removed 2026-11-02)", () => {
+		mountNotebook({});
 		expect(screen.queryByRole("list", { name: "Selected widgets" })).toBeNull();
+		expect(screen.queryByText("About the whole notebook")).toBeNull();
 	});
 
 	it("disables sending without a submit handler or instruction", () => {

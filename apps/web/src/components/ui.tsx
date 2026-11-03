@@ -157,8 +157,7 @@ function IconGlyphPaths(props: { readonly name: IconButtonName }): JSX.Element {
 					<path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
 				</>
 			);
-		// Notebook panel (MIT Bootstrap Icons, like every glyph above): the
-		// selection bar and widget menus need duplicate and ask actions.
+		// Widget menus (MIT Bootstrap Icons, like every glyph above).
 		case "copy":
 			return (
 				<path
@@ -187,8 +186,7 @@ function IconGlyphPaths(props: { readonly name: IconButtonName }): JSX.Element {
 			return (
 				<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
 			);
-		// Duplicate in the Notebook: "copy" now means Copy (ADR-0023), and the
-		// two sit side by side in the selection toolbar.
+		// Duplicate: "copy" means Copy (ADR-0023), so Duplicate has its own glyph.
 		case "plus-square":
 			return (
 				<>

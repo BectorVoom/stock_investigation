@@ -25,8 +25,10 @@ function notebookJob(
 		workspaceId: "ws_test",
 		agent: { agentId: "scripted", model: null, effort: "medium" },
 		instruction: "Please add a chart.",
-		selectedWidgetIds: [],
-		notebook: notebookFixture([textWidget("w-text", "Body of w-text."), chartWidget("w-chart")]),
+		notebook: notebookFixture([
+			textWidget("w-text", "Body of w-text.", { title: "Notes" }),
+			chartWidget("w-chart"),
+		]),
 		notebookVersion: 7,
 		conversationContext: [],
 		...overrides,
@@ -101,11 +103,7 @@ describe("notebook-assist jobs (ADR-0020)", () => {
 	it("returns removals as proposals without commands", async () => {
 		const { api, calls } = createFakeApi();
 		const harness = createDeps(api);
-		await executeJob(
-			notebookJob({ instruction: "Remove it.", selectedWidgetIds: ["w-text"] }),
-			harness.deps,
-			never,
-		);
+		await executeJob(notebookJob({ instruction: "Remove Notes." }), harness.deps, never);
 		const completion = calls.completions[0];
 		expect(completion).toMatchObject({
 			outcome: "notebook-assisted",
@@ -118,11 +116,7 @@ describe("notebook-assist jobs (ADR-0020)", () => {
 	it("passes duplicate commands through for the API to apply", async () => {
 		const { api, calls } = createFakeApi();
 		const harness = createDeps(api);
-		await executeJob(
-			notebookJob({ instruction: "Duplicate it.", selectedWidgetIds: ["w-text"] }),
-			harness.deps,
-			never,
-		);
+		await executeJob(notebookJob({ instruction: "Duplicate Notes." }), harness.deps, never);
 		const completion = calls.completions[0];
 		expect(completion).toMatchObject({
 			outcome: "notebook-assisted",
@@ -154,17 +148,9 @@ describe("notebook-assist jobs (ADR-0020)", () => {
 	it("fails closed when the prompt would exceed its byte budget", async () => {
 		const { api, calls } = createFakeApi();
 		const harness = createDeps(api);
-		const widgets = Array.from({ length: 40 }, (_, index) =>
-			textWidget(`w-${index}`, "y".repeat(8000)),
-		);
-		await executeJob(
-			notebookJob({
-				notebook: notebookFixture(widgets),
-				selectedWidgetIds: widgets.map((widget) => widget.widgetId),
-			}),
-			harness.deps,
-			never,
-		);
+		// Widget content is always budgeted; only an instruction far over the
+		// API's own limit can push the prompt over.
+		await executeJob(notebookJob({ instruction: "z".repeat(130_000) }), harness.deps, never);
 		expect(calls.completions).toEqual([
 			expect.objectContaining({
 				outcome: "failed",

@@ -123,7 +123,6 @@ function mountNotebook(clipboard?: WidgetClipboardStore): void {
 			view={WORKSPACE_VIEW}
 			mode="notebook"
 			clipboard={clipboard}
-			onAskAssistant={() => {}}
 		/>
 	));
 }

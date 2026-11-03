@@ -19,7 +19,7 @@ describe("titleHidden overlay stylesheet", () => {
 		expect(css).toMatch(
 			/\.wg-frame\[data-widget-title-hidden\]\s+\.wg-header\s*\{[^}]*pointer-events:\s*none/,
 		);
-		for (const control of ["wg-grip", "wg-select-toggle", "wg-header-actions"]) {
+		for (const control of ["wg-grip", "wg-header-actions"]) {
 			expect(css).toContain(`.wg-frame[data-widget-title-hidden] .${control}`);
 		}
 		expect(css).toMatch(/\.wg-frame\[data-widget-title-hidden\][\s\S]*?pointer-events:\s*auto/);

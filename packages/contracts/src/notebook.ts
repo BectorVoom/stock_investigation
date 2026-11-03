@@ -36,8 +36,6 @@ export const NOTEBOOK_LIMITS = {
 	maxWidgets: 200,
 	/** Bounds one owner instruction to the notebook assistant. */
 	maxInstructionChars: 2_000,
-	/** At most this many selected widgets travel with one instruction. */
-	maxSelectedWidgets: 12,
 	/** At most this many commands are applied from one assistant turn. */
 	maxCommandsPerTurn: 12,
 	maxReplyChars: 2_000,
@@ -228,8 +226,6 @@ export type UndoNotebookRequest = z.infer<typeof undoNotebookRequestSchema>;
 /** An instruction to the notebook assistant (Idempotency-Key header required). */
 export const notebookAssistRequestSchema = z.strictObject({
 	instruction: z.string().trim().min(1).max(NOTEBOOK_LIMITS.maxInstructionChars),
-	/** The explicit context target; empty means "the notebook as a whole". */
-	selectedWidgetIds: z.array(idSchema).max(NOTEBOOK_LIMITS.maxSelectedWidgets),
 	/** The notebook version the owner was looking at. */
 	notebookVersion: z.number().int().nonnegative(),
 });

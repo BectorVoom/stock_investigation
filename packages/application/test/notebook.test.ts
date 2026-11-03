@@ -330,7 +330,6 @@ function service(f: Fakes, rateLimiter?: RateLimiter, records = recordsWith()) {
 
 const ASSIST: NotebookAssistRequest = {
 	instruction: "Summarise this",
-	selectedWidgetIds: [],
 	notebookVersion: 0,
 };
 
@@ -590,7 +589,7 @@ describe("assistNotebook", () => {
 			await service(f).assistNotebook(
 				OWNER,
 				WORKSPACE,
-				{ instruction: "Summarise this", selectedWidgetIds: ["w-1"], notebookVersion: 1 },
+				{ instruction: "Summarise this", notebookVersion: 1 },
 				"idem-key-1",
 			),
 		);
@@ -601,12 +600,15 @@ describe("assistNotebook", () => {
 		expect(job.workspaceId).toBe(WORKSPACE);
 		expect(job.request).toMatchObject({
 			instruction: "Summarise this",
-			selectedWidgetIds: ["w-1"],
 			notebookVersion: 1,
 			agent: { agentId: "claude-code", model: "model-1", effort: "medium" },
 		});
 		expect(f.enqueued[0]?.text).toBe("Summarise this");
-		expect(f.auditEntries).toMatchObject([{ action: "notebook.assist.create", actor: "owner" }]);
+		expect(f.auditEntries).toMatchObject([
+			{ action: "notebook.assist.create", actor: "owner", detail: "version=1" },
+		]);
+		// No widget selection travels any more (removed 2026-11-02).
+		expect(job.request).not.toHaveProperty("selectedWidgetIds");
 	});
 
 	it("replays the same result for the same key without a second write", async () => {
@@ -629,7 +631,6 @@ describe("assistNotebook", () => {
 				state: "pending",
 				request: {
 					instruction: "Summarise this",
-					selectedWidgetIds: [],
 					notebookVersion: 0,
 					agent: { agentId: "claude-code", model: null, effort: "medium" },
 				},
@@ -663,7 +664,7 @@ describe("assistNotebook", () => {
 				createdAt: NOW,
 				updatedAt: NOW,
 			},
-			fingerprint: "hash:96",
+			fingerprint: "hash:73",
 		});
 		const first = unwrap(await service(f).assistNotebook(OWNER, WORKSPACE, ASSIST, "idem-key-1"));
 		expect(first.replayed).toBe(true);
@@ -681,7 +682,6 @@ describe("assistNotebook", () => {
 				state: "pending",
 				request: {
 					instruction: "Other",
-					selectedWidgetIds: [],
 					notebookVersion: 0,
 					agent: { agentId: "claude-code", model: null, effort: "medium" },
 				},
@@ -731,25 +731,6 @@ describe("assistNotebook", () => {
 			"AGENT_NOT_CONFIGURED",
 		);
 		expect(message).toContain("Settings → AI agent");
-	});
-
-	it("rejects unknown selected widget ids", async () => {
-		const f = fakes();
-		f.notebookStore.record = {
-			notebook: { widgets: [textWidget("w-1")] },
-			version: 1,
-			updatedAt: NOW,
-		};
-		const message = expectFail(
-			await service(f).assistNotebook(
-				OWNER,
-				WORKSPACE,
-				{ instruction: "x", selectedWidgetIds: ["w-9"], notebookVersion: 1 },
-				"idem-key-1",
-			),
-			"INVALID_NOTEBOOK_SELECTION",
-		);
-		expect(message).toContain("w-9");
 	});
 
 	it("refuses a second turn while one is active", async () => {
@@ -804,7 +785,6 @@ describe("prepareNotebookAssistClaim", () => {
 			state: "claimed",
 			request: {
 				instruction: "Summarise",
-				selectedWidgetIds: ["w-1", "w-gone"],
 				notebookVersion: 0,
 				agent: { agentId: "claude-code", model: null, effort: "medium" },
 			},
@@ -841,7 +821,7 @@ describe("prepareNotebookAssistClaim", () => {
 		};
 	}
 
-	it("carries the stored notebook and drops selection ids that left", async () => {
+	it("carries the stored notebook, its version and the instruction", async () => {
 		const f = fakes();
 		f.notebookStore.record = {
 			notebook: { widgets: [textWidget("w-1")] },
@@ -855,7 +835,7 @@ describe("prepareNotebookAssistClaim", () => {
 		);
 		if (!claimed.ok) throw new Error("expected a claim payload");
 		expect(claimed.value.notebookVersion).toBe(2);
-		expect(claimed.value.selectedWidgetIds).toEqual(["w-1"]);
+		expect(claimed.value).not.toHaveProperty("selectedWidgetIds");
 		expect(claimed.value.instruction).toBe("Summarise");
 		expect(claimed.value.agent).toMatchObject({ agentId: "claude-code" });
 	});
@@ -882,7 +862,6 @@ describe("notebookAssistedEffects", () => {
 			state: "claimed",
 			request: {
 				instruction: "Summarise",
-				selectedWidgetIds: [],
 				notebookVersion: 1,
 				agent: { agentId: "claude-code", model: null, effort: "medium" },
 			},

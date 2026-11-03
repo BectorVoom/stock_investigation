@@ -374,7 +374,6 @@ async fn prompt(
 	let build = move |job: &NotebookAssistJob| {
 		notebook_assist_prompt(&NotebookAssistPromptInput {
 			notebook: &job.notebook,
-			selected_widget_ids: &job.selected_widget_ids,
 			instruction: &job.instruction,
 			conversation_context: &job.conversation_context,
 			fence_token: &token,

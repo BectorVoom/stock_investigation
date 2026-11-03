@@ -271,7 +271,6 @@ function mountPanel(
 			registry={registry}
 			view={WORKSPACE_VIEW}
 			mode="notebook"
-			onAskAssistant={() => {}}
 			visibility={visibility}
 		/>
 	));

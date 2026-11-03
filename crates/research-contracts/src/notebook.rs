@@ -18,8 +18,6 @@ pub mod limits {
 	pub const MAX_WIDGETS: usize = 200;
 	/// Characters of one owner instruction.
 	pub const MAX_INSTRUCTION_CHARS: usize = 2_000;
-	/// Selected widgets travelling with one instruction.
-	pub const MAX_SELECTED_WIDGETS: usize = 12;
 	/// Commands applied from one assistant turn.
 	pub const MAX_COMMANDS_PER_TURN: usize = 12;
 	/// Characters of the assistant's reply.

@@ -1,6 +1,6 @@
 # ADR-0020: Chat-first to Notebook-first workspace on the widget grid
 
-**Status:** Accepted · **Date:** 2026-10-14
+**Status:** Accepted · **Date:** 2026-10-14 · Widget selection removed by [ADR-0061](0061-no-widget-selection.md)
 
 ## Context
 

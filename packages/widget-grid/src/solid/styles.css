@@ -13,7 +13,6 @@
 	--wg-surface: #ffffff;
 	--wg-border: #e2e8f0;
 	--wg-border-hover: #cbd5e1;
-	--wg-selected: #94a3b8;
 	--wg-text: #0f172a;
 	--wg-text-muted: #475569;
 	--wg-accent: #2563eb;
@@ -229,16 +228,9 @@
 	white-space: nowrap;
 }
 
-/* Selected frames (both variants): a 1px ring plus border in the neutral
- * `--wg-selected` tone — a boundary, never a colourful fill. */
-.wg-frame[data-widget-selected] {
-	border-color: var(--wg-selected, #94a3b8);
-	box-shadow: 0 0 0 1px var(--wg-selected, #94a3b8);
-}
-
 /* Quiet variant (`variant="quiet"`): frames are separated by tone and space
- * only — no hairline, no shadow. A subtle boundary appears on hover,
- * focus-within and selection. */
+ * only — no hairline, no shadow. A subtle boundary appears on hover and
+ * focus-within. */
 .wg-grid[data-widget-variant="quiet"] .wg-frame {
 	border-color: transparent;
 	box-shadow: none;
@@ -247,11 +239,6 @@
 .wg-grid[data-widget-variant="quiet"] .wg-frame:hover,
 .wg-grid[data-widget-variant="quiet"] .wg-frame:focus-within {
 	border-color: var(--wg-border-hover, #cbd5e1);
-}
-
-.wg-grid[data-widget-variant="quiet"] .wg-frame[data-widget-selected] {
-	border-color: var(--wg-selected, #94a3b8);
-	box-shadow: 0 0 0 1px var(--wg-selected, #94a3b8);
 }
 
 /* The host's actions slot, wrapped so the quiet variant can fade it with the
@@ -266,66 +253,26 @@
 	padding: 0;
 }
 
-/* Compact select toggle (the keyboard and assistive-technology path to
- * selection): a check-circle button in the header strip. */
-.wg-select-toggle {
-	box-sizing: border-box;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 1.75rem;
-	height: 1.75rem;
-	margin: 0;
-	padding: 0;
-	background-color: transparent;
-	border: none;
-	border-radius: 0.5rem;
-	color: var(--wg-text-muted, #475569);
-	cursor: pointer;
-	flex-shrink: 0;
-}
-
-.wg-select-toggle:hover {
-	color: var(--wg-text, #0f172a);
-}
-
-.wg-select-toggle:focus-visible {
-	outline: 2px solid var(--wg-focus, #1d4ed8);
-	outline-offset: 2px;
-}
-
-.wg-select-toggle[aria-pressed="true"] {
-	color: var(--wg-text, #0f172a);
-	box-shadow: inset 0 0 0 1px var(--wg-selected, #94a3b8);
-}
-
-/* Quiet reveal: the grip, the actions slot and the select toggle fade in on
- * hover, focus-within and selection. Opacity only, so everything stays in the
+/* Quiet reveal: the grip and the actions slot fade in on hover and
+ * focus-within. Opacity only, so everything stays in the
  * accessibility tree and keeps its place in the tab order. */
 .wg-grid[data-widget-variant="quiet"] .wg-grip,
-.wg-grid[data-widget-variant="quiet"] .wg-header-actions,
-.wg-grid[data-widget-variant="quiet"] .wg-select-toggle {
+.wg-grid[data-widget-variant="quiet"] .wg-header-actions {
 	opacity: 0;
 	transition: opacity 150ms ease;
 }
 
 .wg-grid[data-widget-variant="quiet"] .wg-frame:hover .wg-grip,
 .wg-grid[data-widget-variant="quiet"] .wg-frame:focus-within .wg-grip,
-.wg-grid[data-widget-variant="quiet"] .wg-frame[data-widget-selected] .wg-grip,
 .wg-grid[data-widget-variant="quiet"] .wg-frame:hover .wg-header-actions,
-.wg-grid[data-widget-variant="quiet"] .wg-frame:focus-within .wg-header-actions,
-.wg-grid[data-widget-variant="quiet"] .wg-frame[data-widget-selected] .wg-header-actions,
-.wg-grid[data-widget-variant="quiet"] .wg-frame:hover .wg-select-toggle,
-.wg-grid[data-widget-variant="quiet"] .wg-frame:focus-within .wg-select-toggle,
-.wg-grid[data-widget-variant="quiet"] .wg-frame[data-widget-selected] .wg-select-toggle {
+.wg-grid[data-widget-variant="quiet"] .wg-frame:focus-within .wg-header-actions {
 	opacity: 1;
 }
 
 /* Devices without hover never hide the controls they cannot reveal. */
 @media (hover: none) {
 	.wg-grid[data-widget-variant="quiet"] .wg-grip,
-	.wg-grid[data-widget-variant="quiet"] .wg-header-actions,
-	.wg-grid[data-widget-variant="quiet"] .wg-select-toggle {
+	.wg-grid[data-widget-variant="quiet"] .wg-header-actions {
 		opacity: 1;
 		transition: none;
 	}
@@ -333,8 +280,7 @@
 
 @media (prefers-reduced-motion: reduce) {
 	.wg-grid[data-widget-variant="quiet"] .wg-grip,
-	.wg-grid[data-widget-variant="quiet"] .wg-header-actions,
-	.wg-grid[data-widget-variant="quiet"] .wg-select-toggle {
+	.wg-grid[data-widget-variant="quiet"] .wg-header-actions {
 		transition: none;
 	}
 }
@@ -342,11 +288,10 @@
 /* Untitled frames (`titleHidden`, ADR-0021): the Notebook hides titles while
  * Home keeps them. The title stays the accessible name (rendered
  * visually-hidden); the body starts at the top of the frame and the header
- * becomes an overlay pinned to the top edge, holding only the grip, the
- * select toggle and the actions. Only the controls take pointer events, so
- * text and charts under the overlay stay usable; the grip keeps a 28 px hit
- * target and stays the drag handle (a grip click still selects through the
- * header click). The controls fade exactly like the quiet reveal above
+ * becomes an overlay pinned to the top edge, holding only the grip and the
+ * actions. Only the controls take pointer events, so text and charts under
+ * the overlay stay usable; the grip keeps a 28 px hit target and stays the
+ * drag handle. The controls fade exactly like the quiet reveal above
  * (opacity only, so nothing shifts), stay visible on devices without hover,
  * and never animate under reduced motion. */
 .wg-frame[data-widget-title-hidden] {
@@ -372,27 +317,11 @@
 /* Legible on the edge: the controls carry the frame surface and a hairline
  * border in the border colour, rounded, with no shadow. */
 .wg-frame[data-widget-title-hidden] .wg-grip,
-.wg-frame[data-widget-title-hidden] .wg-select-toggle,
 .wg-frame[data-widget-title-hidden] .wg-header-actions {
 	pointer-events: auto;
 	background-color: var(--wg-surface, #ffffff);
 	border: 1px solid var(--wg-border, #e2e8f0);
 	border-radius: 0.5rem;
-}
-
-/* The cluster stays two controls wide (grip and actions), so even a small
- * frame keeps most of its first line free: a pointer selects with the grip
- * (a click that is not a drag), and the select toggle — the keyboard path —
- * appears only when focused from the keyboard or when the frame is selected.
- * It stays in the tab order and the accessibility tree throughout. */
-.wg-frame[data-widget-title-hidden]
-.wg-select-toggle:not(:focus-visible):not([aria-pressed="true"]) {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	overflow: hidden;
-	clip-path: inset(50%);
-	pointer-events: none;
 }
 
 /* A 28 px desktop hit target around the 16 px grip glyph (HIG). */

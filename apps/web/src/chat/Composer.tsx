@@ -90,9 +90,6 @@ export function Composer(props: {
 	/** "Research" sends a question; "Notebook" sends the text to the notebook assistant. */
 	readonly target?: ComposerTarget;
 	readonly onTargetChange?: (target: ComposerTarget) => void;
-	/** Widgets the instruction is about, in notebook order (empty: the whole notebook). */
-	readonly selection?: readonly { readonly widgetId: string; readonly title: string }[];
-	readonly onRemoveSelection?: (widgetId: string) => void;
 	/** Reports the draft text upward, so the target can follow what names the notebook. */
 	readonly onDraftChange?: (text: string) => void;
 	readonly onSubmitNotebook?: (
@@ -380,31 +377,6 @@ export function Composer(props: {
 						{m().openAgentSettings}
 					</a>
 				</Notice>
-			</Show>
-			<Show when={isNotebook()}>
-				<Show
-					when={(props.selection ?? []).length > 0}
-					fallback={<p class="text-xs text-slate-600">{m().wholeNotebook}</p>}
-				>
-					<ul aria-label={m().selectedWidgets} class="flex flex-wrap gap-1">
-						<For each={props.selection ?? []}>
-							{(item) => (
-								<li class="inline-flex min-h-6 items-center gap-1 rounded bg-slate-200 py-0.5 pl-2 pr-1 text-xs text-slate-900">
-									<span>{item.title}</span>
-									<button
-										type="button"
-										aria-label={m().removeFromSelection(item.title)}
-										title={m().removeFromSelection(item.title)}
-										onClick={() => props.onRemoveSelection?.(item.widgetId)}
-										class="flex min-h-6 min-w-6 items-center justify-center rounded-full hover:bg-slate-300"
-									>
-										<span aria-hidden="true">×</span>
-									</button>
-								</li>
-							)}
-						</For>
-					</ul>
-				</Show>
 			</Show>
 			<div class="flex items-end gap-2 rounded-2xl bg-slate-100 p-2 focus-within:ring-2 focus-within:ring-blue-700">
 				<ActionMenu

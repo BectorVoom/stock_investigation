@@ -99,7 +99,6 @@ js_enum! {
 		StoredDashboardUnreadable = "STORED_DASHBOARD_UNREADABLE",
 		StoredNotebookUnreadable = "STORED_NOTEBOOK_UNREADABLE",
 		InvalidNotebook = "INVALID_NOTEBOOK",
-		InvalidNotebookSelection = "INVALID_NOTEBOOK_SELECTION",
 		NothingToUndo = "NOTHING_TO_UNDO",
 		AgentNotConfigured = "AGENT_NOT_CONFIGURED",
 		NotebookAssistActive = "NOTEBOOK_ASSIST_ACTIVE",

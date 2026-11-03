@@ -13,7 +13,7 @@ import { WidgetFrame, WidgetGrid } from "@research/widget-grid";
 import "@research/widget-grid/styles.css";
 import { type JSX, Match, Show, Switch } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { BUTTON, Empty, ErrorNotice, IconButton, Loading, Notice } from "../components/ui.tsx";
+import { BUTTON, Empty, ErrorNotice, Loading, Notice } from "../components/ui.tsx";
 import { ensureHomeIconLibraries } from "../home/shoelace.ts";
 import { documentVisibility, type VisibilitySource } from "../lib/polling.ts";
 import { WidgetBody } from "../widgets/WidgetBody.tsx";
@@ -27,10 +27,10 @@ import type { WorkspaceMode } from "./types.ts";
 /**
  * The Notebook panel (ADR-0020): persistent widgets on the shared
  * `@research/widget-grid` package (container columns, quiet variant,
- * untitled frames, header-click selection). One panel, two modes: `chat` is
- * the narrow secondary panel, `notebook` the dominant workspace. Every
- * widget action is the shared board's (ADR-0024), the same as on Home; the
- * Notebook adds Ask AI and Go to source.
+ * untitled frames). One panel, two modes: `chat` is the narrow secondary
+ * panel, `notebook` the dominant workspace. Every widget action is the
+ * shared board's (ADR-0024), the same as on Home; the Notebook adds Go to
+ * source.
  */
 export interface NotebookPanelProps {
 	readonly session: NotebookSession;
@@ -39,8 +39,6 @@ export interface NotebookPanelProps {
 	readonly view: WorkspaceView | null;
 	/** Chat-first renders the narrow secondary panel; Notebook-first the dominant one. */
 	readonly mode: WorkspaceMode;
-	/** "Ask AI" on widgets: selects them and moves focus to the composer. */
-	readonly onAskAssistant: (widgetIds: readonly string[]) => void;
 	/** Host controls in the panel header (the mode switch, collapse). */
 	readonly headerActions?: JSX.Element;
 	/** Navigates to where a widget came from (its chat message). */
@@ -95,13 +93,6 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 			maxSeries: NOTEBOOK_LIMITS.maxMarketSeries,
 		},
 		pageItems: (widget) => [
-			{
-				value: "ask",
-				label: m().askAi,
-				icon: "chat",
-				disabled: pending(),
-				onSelect: () => props.onAskAssistant([widget.widgetId]),
-			},
 			...(widget.origin.messageId !== null
 				? [
 						{
@@ -122,7 +113,6 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 			data-mode={props.mode}
 			class="flex min-h-0 min-w-0 flex-1 flex-col gap-2"
 			ref={(element) => board.attach(element)}
-			onKeyDown={(event) => board.onSectionKeyDown(event)}
 		>
 			<div class="flex items-center gap-1">
 				<h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
@@ -145,14 +135,6 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 					</Notice>
 				)}
 			</Show>
-
-			<board.SelectionToolbar>
-				<IconButton
-					label={m().askAboutSelected}
-					icon="chat"
-					onClick={() => props.onAskAssistant(props.session.selection())}
-				/>
-			</board.SelectionToolbar>
 
 			<board.Announcements />
 
@@ -192,8 +174,6 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 								<WidgetFrame
 									widget={entry}
 									titleHidden
-									selected={board.isSelected(entry.widgetId)}
-									onSelectChange={(id, mode) => board.select(id, mode)}
 									actions={<board.ActionsMenu widget={entry.widget} index={index()} />}
 								>
 									<WidgetBody

@@ -1322,7 +1322,7 @@ async fn an_unregistered_notebook_backend_fails_without_retry_too() {
 	let api = FakeApi::new(ApiScript::default());
 	let harness = harness(Arc::clone(&api), Options::default());
 	let job: ClaimedJob = parse(&format!(
-		r#"{{{},"workspaceId":"ws_test","agent":{{"agentId":"codex","model":null,"effort":"medium"}},"instruction":"Make it larger.","selectedWidgetIds":[],"notebook":{{"widgets":[]}},"notebookVersion":4,"conversationContext":[]}}"#,
+		r#"{{{},"workspaceId":"ws_test","agent":{{"agentId":"codex","model":null,"effort":"medium"}},"instruction":"Make it larger.","notebook":{{"widgets":[]}},"notebookVersion":4,"conversationContext":[]}}"#,
 		lease("notebook-assist", "run_notebook", 3, 20_000)
 	))
 	.unwrap();
@@ -2257,7 +2257,7 @@ fn collect_events(api: &FakeApi, prefix: &str, into: &mut Vec<Golden>) {
 fn notebook_job() -> ClaimedJob {
 	let widget = r#"{"widgetId":"w-text","title":"Title w-text","size":"medium","createdAt":"2026-10-11T00:00:00.000Z","updatedAt":"2026-10-11T00:00:00.000Z","revision":1,"origin":{"kind":"owner","messageId":null,"runId":null,"componentId":null},"type":"text","text":"Body of w-text."}"#;
 	parse(&format!(
-		r#"{{{},"workspaceId":"ws_test","agent":{{"agentId":"scripted","model":null,"effort":"medium"}},"instruction":"Make it larger.","selectedWidgetIds":["w-text"],"notebook":{{"widgets":[{widget}]}},"notebookVersion":4,"conversationContext":[]}}"#,
+		r#"{{{},"workspaceId":"ws_test","agent":{{"agentId":"scripted","model":null,"effort":"medium"}},"instruction":"Make it larger.","notebook":{{"widgets":[{widget}]}},"notebookVersion":4,"conversationContext":[]}}"#,
 		lease("notebook-assist", "run_notebook", 3, 20_000)
 	))
 	.unwrap()

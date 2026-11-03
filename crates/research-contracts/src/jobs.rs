@@ -744,8 +744,6 @@ pub struct NotebookAssistJob {
 	pub agent: NotebookAssistAgent,
 	/// Owner instruction (trimmed, 1..2000).
 	pub instruction: String,
-	/// Selected widgets (≤ 12).
-	pub selected_widget_ids: Vec<String>,
 	/// The notebook as the owner saw it.
 	pub notebook: Notebook,
 	/// Its version.
@@ -1031,7 +1029,6 @@ impl ClaimedJob {
 						workspace_id: "workspaceId" => id,
 						agent: "agent" => NotebookAssistAgent::decode,
 						instruction: "instruction" => string(INSTRUCTION),
-						selected_widget_ids: "selectedWidgetIds" => array(id, &[ArrCheck::Max(notebook_limits::MAX_SELECTED_WIDGETS)]),
 						notebook: "notebook" => Notebook::decode,
 						notebook_version: "notebookVersion" => uint(NON_NEGATIVE_INT),
 						conversation_context: "conversationContext" => decode_conversation_context,
@@ -1043,7 +1040,6 @@ impl ClaimedJob {
 							"workspaceId",
 							"agent",
 							"instruction",
-							"selectedWidgetIds",
 							"notebook",
 							"notebookVersion",
 							"conversationContext",
@@ -1055,7 +1051,6 @@ impl ClaimedJob {
 						workspace_id: rest.workspace_id,
 						agent: rest.agent,
 						instruction: rest.instruction,
-						selected_widget_ids: rest.selected_widget_ids,
 						notebook: rest.notebook,
 						notebook_version: rest.notebook_version,
 						conversation_context: rest.conversation_context,
@@ -1157,7 +1152,6 @@ struct NotebookRest {
 	workspace_id: String,
 	agent: NotebookAssistAgent,
 	instruction: String,
-	selected_widget_ids: Vec<String>,
 	notebook: Notebook,
 	notebook_version: u64,
 	conversation_context: Vec<ConversationContextMessage>,

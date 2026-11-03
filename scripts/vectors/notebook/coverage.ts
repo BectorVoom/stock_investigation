@@ -346,12 +346,8 @@ export async function coverageTurns(): Promise<void> {
 	await run([GOOD], { notebook, conversationContext: history });
 	await run([GOOD], { notebook, conversationContext: history.slice(0, 3) });
 
-	// The repair prompt in all three selection modes.
-	await run([BAD, GOOD], {
-		notebook,
-		selectedWidgetIds: ["c1", "tb1", "r1"],
-		conversationContext: history,
-	});
+	// The repair prompt with and without earlier conversation, and for a notebook too large to show.
+	await run([BAD, GOOD], { notebook, conversationContext: history });
 	await run([BAD, GOOD], { notebook });
 	const big = notebookSchema.parse({
 		widgets: [
@@ -362,5 +358,4 @@ export async function coverageTurns(): Promise<void> {
 		],
 	});
 	await run([BAD, GOOD], { notebook: big });
-	await run([BAD, GOOD], { notebook: big, selectedWidgetIds: ["big-0", "c1"] });
 }

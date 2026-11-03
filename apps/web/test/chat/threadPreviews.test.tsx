@@ -44,7 +44,6 @@ vi.mock("../../src/notebook/notebookSession.ts", async () => {
 				turns: [...notebookControl.seedTurns],
 			});
 			const [state, setState] = createSignal<SeededResponse>(seed);
-			const [selection, setSelection] = createSignal<readonly string[]>([]);
 			return {
 				state,
 				widgets: () => state().notebook.widgets,
@@ -52,16 +51,6 @@ vi.mock("../../src/notebook/notebookSession.ts", async () => {
 				notice: () => null,
 				dismissNotice: () => undefined,
 				pending: () => false,
-				selection,
-				select: (widgetId: string | null, mode: "replace" | "toggle") => {
-					if (widgetId === null) return setSelection([]);
-					if (mode === "replace") return setSelection([widgetId]);
-					setSelection((current) =>
-						current.includes(widgetId)
-							? current.filter((id) => id !== widgetId)
-							: [...current, widgetId],
-					);
-				},
 				turns: () => state().turns,
 				reload: async () => {
 					notebookControl.reloadCalls += 1;

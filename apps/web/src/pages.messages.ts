@@ -35,7 +35,7 @@ const JAPANESE: { readonly [V in ViewName]: { readonly title: string; readonly p
 		settings: {
 			title: "設定",
 			purpose:
-				"ワークスペースの動作を設定します: AI エージェント、カレンダー、ランナー、データのエクスポート。",
+				"ワークスペースの動作を設定します: AI エージェント、カレンダー、言語、データのエクスポート。",
 		},
 	};
 

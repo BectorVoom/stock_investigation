@@ -57,8 +57,7 @@ export interface OpenWorkspaceProps {
  * Notebook-first — over ONE workspace session and ONE notebook session
  * shared by both panels (no duplicated polling). Switching states changes
  * only proportions and visibility: both panels stay mounted in the same DOM
- * order, so the thread, the composer draft, the selection and scroll
- * positions survive. The notebook session is created once here, next to the
+ * order, so the thread, the composer draft and scroll positions survive. The notebook session is created once here, next to the
  * workspace session, and never re-created by a layout change.
  */
 export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
@@ -103,25 +102,16 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 	let suggestionNonce = 0;
 
 	// The composer target: the owner's manual choice wins; otherwise Notebook
-	// when Notebook-first, when widgets are selected, or when the draft
-	// names the notebook or a widget or asks for a chart — otherwise Research.
+	// when Notebook-first or when the draft names the notebook or a widget or asks for a chart — otherwise Research.
 	const [targetManual, setTargetManual] = createSignal<ComposerTarget | null>(null);
 	const [composerDraft, setComposerDraft] = createSignal("");
 	const target = createMemo((): ComposerTarget => {
 		const manual = targetManual();
 		if (manual !== null) return manual;
-		if (props.mode === "notebook" || notebookSession.selection().length > 0) return "notebook";
+		if (props.mode === "notebook") return "notebook";
 		if (addressesNotebook(composerDraft())) return "notebook";
 		return "research";
 	});
-	const selectedWidgets = createMemo(() => {
-		const ids = new Set(notebookSession.selection());
-		return notebookSession
-			.widgets()
-			.filter((widget) => ids.has(widget.widgetId))
-			.map((widget) => ({ widgetId: widget.widgetId, title: widget.title }));
-	});
-
 	// Assistant-proposed removals the owner kept, remembered per workspace.
 	const [kept, setKept] = createSignal<Readonly<Record<string, true>>>(
 		readKeptRemovals(props.workspaceId),
@@ -225,18 +215,6 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		setKept(next);
 	};
 
-	/** "Ask AI" on widgets: selects them, targets the Notebook assistant, focuses the composer. */
-	const askAssistant = (widgetIds: readonly string[]): void => {
-		notebookSession.select(null, "replace");
-		for (const widgetId of widgetIds) notebookSession.select(widgetId, "toggle");
-		setTargetManual("notebook");
-		focusComposerBox();
-		// Fallback for engines where the panel is still committing: retry once.
-		setTimeout(() => {
-			focusComposerBox();
-		}, 100);
-	};
-
 	const submitNotebook = (
 		instruction: string,
 		idempotencyKey: string,
@@ -245,7 +223,6 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 			props.workspaceId,
 			{
 				instruction,
-				selectedWidgetIds: [...notebookSession.selection()],
 				notebookVersion: notebookSession.state()?.version ?? 0,
 			},
 			idempotencyKey,
@@ -440,13 +417,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 							runs={session.runs()}
 							target={target()}
 							onTargetChange={setTargetManual}
-							selection={selectedWidgets()}
 							onDraftChange={setComposerDraft}
-							onRemoveSelection={(widgetId) => {
-								if (notebookSession.selection().includes(widgetId)) {
-									notebookSession.select(widgetId, "toggle");
-								}
-							}}
 							onSubmitNotebook={submitNotebook}
 						/>
 					}
@@ -508,7 +479,6 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 					registry={props.registry}
 					view={session.view()}
 					mode={props.mode}
-					onAskAssistant={askAssistant}
 					onOpenOrigin={openOrigin}
 					headerActions={
 						<>

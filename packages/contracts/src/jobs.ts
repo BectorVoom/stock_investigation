@@ -427,22 +427,35 @@ export const subscribedSourceRefSchema = z.strictObject({
 export type SubscribedSourceRef = z.infer<typeof subscribedSourceRefSchema>;
 
 /**
- * The stored request for a `notebook-assist` job (ADR-0020): the owner's
- * instruction, the explicit selection, the notebook version the owner saw,
- * and the agent choices saved in Settings → AI agent at that moment. Stored
- * in `request_json` like every other job input; the claim carries the live
- * notebook instead of a copy.
+ * A job stored before widget selection was removed (2026-11-02) also holds
+ * `selectedWidgetIds`; it is dropped on read, so such a queued job still runs.
  */
-export const notebookAssistJobRequestSchema = z.strictObject({
-	instruction: z.string().trim().min(1).max(NOTEBOOK_LIMITS.maxInstructionChars),
-	selectedWidgetIds: z.array(idSchema).max(NOTEBOOK_LIMITS.maxSelectedWidgets),
-	notebookVersion: z.number().int().nonnegative(),
-	agent: z.strictObject({
-		agentId: agentIdSchema,
-		model: z.string().min(1).max(100).nullable(),
-		effort: effortSchema,
+function withoutLegacySelection(value: unknown): unknown {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) return value;
+	if (!("selectedWidgetIds" in value)) return value;
+	const { selectedWidgetIds: _legacy, ...rest } = value;
+	return rest;
+}
+
+/**
+ * The stored request for a `notebook-assist` job (ADR-0020): the owner's
+ * instruction, the notebook version the owner saw, and the agent choices
+ * saved in Settings → AI agent at that moment. Stored in `request_json` like
+ * every other job input; the claim carries the live notebook instead of a
+ * copy.
+ */
+export const notebookAssistJobRequestSchema = z.preprocess(
+	withoutLegacySelection,
+	z.strictObject({
+		instruction: z.string().trim().min(1).max(NOTEBOOK_LIMITS.maxInstructionChars),
+		notebookVersion: z.number().int().nonnegative(),
+		agent: z.strictObject({
+			agentId: agentIdSchema,
+			model: z.string().min(1).max(100).nullable(),
+			effort: effortSchema,
+		}),
 	}),
-});
+);
 export type NotebookAssistJobRequest = z.infer<typeof notebookAssistJobRequestSchema>;
 
 /** The agent choices saved in Settings → AI agent, frozen into a job when it is queued. */
@@ -554,7 +567,6 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 			effort: effortSchema,
 		}),
 		instruction: z.string().trim().min(1).max(NOTEBOOK_LIMITS.maxInstructionChars),
-		selectedWidgetIds: z.array(idSchema).max(NOTEBOOK_LIMITS.maxSelectedWidgets),
 		notebook: notebookSchema,
 		notebookVersion: z.number().int().nonnegative(),
 		conversationContext: conversationContextSchema,

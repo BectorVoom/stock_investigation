@@ -41,7 +41,7 @@ export const PAGES = [
 		view: "settings",
 		title: "Settings",
 		purpose:
-			"Configure how the workspace runs: the AI agent, the calendar, the runner and data export.",
+			"Configure how the workspace runs: the AI agent, the calendar, the language and data export.",
 	},
 ] as const;
 

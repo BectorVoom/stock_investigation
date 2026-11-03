@@ -1992,12 +1992,11 @@ const cases: Case[] = [
 		},
 	},
 	{
-		name: "build the no-selection assistant prompt for a full notebook",
+		name: "build the assistant prompt for a full notebook",
 		budgetMs: 5,
 		run: () =>
 			notebookAssistPrompt({
 				notebook: notebookBench,
-				selectedWidgetIds: [],
 				instruction: "Tidy this notebook.",
 				conversationContext: [],
 				fenceToken: "bench-fence",

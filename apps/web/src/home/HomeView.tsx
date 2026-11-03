@@ -128,7 +128,6 @@ export function HomeView(props: {
 	const [busy, setBusy] = createSignal(false);
 	const [resetOpen, setResetOpen] = createSignal(false);
 	const [resetOpener, setResetOpener] = createSignal<HTMLElement | null>(null);
-	const [selection, setSelection] = createSignal<readonly string[]>([]);
 	/** Earlier widget lists of this page visit, newest last (Undo). */
 	const [history, setHistory] = createSignal<readonly (readonly HomeWidget[])[]>([]);
 	onCleanup(() => {
@@ -448,8 +447,6 @@ export function HomeView(props: {
 		if (kind === "undo") setHistory((kept) => kept.slice(0, -1));
 		else setHistory((kept) => [...kept, current.dashboard.widgets].slice(-HOME_UNDO_DEPTH));
 		dashboard.set(saved.value);
-		const live = new Set(saved.value.dashboard.widgets.map((widget) => widget.widgetId));
-		setSelection((selected) => selected.filter((id) => live.has(id)));
 		// V4: data is reloaded after every successful save, so widgets never
 		// show "unavailable … source not stated" for observations the server
 		// already holds.
@@ -479,24 +476,6 @@ export function HomeView(props: {
 	const homeSession: WidgetBoardSession<HomeWidget> = {
 		widgets: () => widgets(),
 		pending: () => busy(),
-		selection,
-		select: (widgetId, mode) => {
-			if (widgetId === null) {
-				setSelection([]);
-				return;
-			}
-			const order = widgets().map((widget) => widget.widgetId);
-			if (mode === "replace") {
-				setSelection(order.includes(widgetId) ? [widgetId] : []);
-				return;
-			}
-			setSelection((current) => {
-				const next = current.includes(widgetId)
-					? current.filter((id) => id !== widgetId)
-					: [...current, widgetId];
-				return order.filter((id) => next.includes(id));
-			});
-		},
 		edit: (change) => queueSave(() => change(widgets())),
 		replaceWidget: (core) => {
 			const next = asHomeWidget(core);
@@ -639,7 +618,6 @@ export function HomeView(props: {
 			aria-label={m().widgetsLabel}
 			class="space-y-3"
 			ref={(element) => board.attach(element)}
-			onKeyDown={(event) => board.onSectionKeyDown(event)}
 		>
 			{/* V2: a failed data GET with no data is an error state, never a
 			    loading skeleton beside the error. */}
@@ -687,7 +665,6 @@ export function HomeView(props: {
 				</div>
 			</section>
 
-			<board.SelectionToolbar />
 			<board.Announcements />
 
 			{/* V2: the dashboard GET has its own error state (stable code, Try
@@ -744,8 +721,6 @@ export function HomeView(props: {
 									<WidgetFrame
 										widget={entry}
 										titleHidden
-										selected={board.isSelected(entry.widgetId)}
-										onSelectChange={(id, mode) => board.select(id, mode)}
 										actions={<board.ActionsMenu widget={entry.widget} index={index()} />}
 									>
 										{/*

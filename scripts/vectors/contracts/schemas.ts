@@ -969,7 +969,6 @@ const claimedJobs: Json[] = [
 		workspaceId: "ws_1",
 		agent: { agentId: "opencode", model: "opencode/big-pickle", effort: "high" },
 		instruction: "Make the chart a bar chart.",
-		selectedWidgetIds: ["w-3"],
 		notebook,
 		notebookVersion: 4,
 		conversationContext: conversation,

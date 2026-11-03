@@ -442,33 +442,14 @@ describe("notebook session", () => {
 		}
 	});
 
-	it("removes widgets and prunes the selection", async () => {
+	it("removes widgets", async () => {
 		const fixtures = notebookFixtures();
 		const { session, dispose } = setup([fixtures.text, fixtures.metric]);
 		try {
 			await waitForLoaded(session);
-			session.select("nb-text", "replace");
-			session.select("nb-metric", "toggle");
-			expect(session.selection()).toEqual(["nb-text", "nb-metric"]);
 			const saved = await session.removeWidgets(["nb-text"]);
 			expect(saved).toBe(true);
 			expect(session.widgets().map((widget) => widget.widgetId)).toEqual(["nb-metric"]);
-			expect(session.selection()).toEqual(["nb-metric"]);
-		} finally {
-			dispose();
-		}
-	});
-
-	it("keeps the selection in notebook order", async () => {
-		const fixtures = notebookFixtures();
-		const { session, dispose } = setup([fixtures.text, fixtures.metric]);
-		try {
-			await waitForLoaded(session);
-			session.select("nb-metric", "replace");
-			session.select("nb-text", "toggle");
-			expect(session.selection()).toEqual(["nb-text", "nb-metric"]);
-			session.select(null, "replace");
-			expect(session.selection()).toEqual([]);
 		} finally {
 			dispose();
 		}

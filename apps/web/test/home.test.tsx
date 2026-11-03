@@ -1900,16 +1900,19 @@ describe("Home follows the one widget specification (ADR-0024)", () => {
 		expect(ids()[1]).toBe("w-gold");
 	});
 
-	it("selects widgets and acts on the selection from its toolbar", async () => {
+	it("gives each widget header one button, its actions menu: no select toggle or selection bar", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		fireEvent.click(within(widgetById("w-vix")).getByRole("button", { name: /^Select / }));
-		fireEvent.click(within(widgetById("w-gold")).getByRole("button", { name: /^Select / }));
-		const toolbar = await screen.findByRole("toolbar", { name: "Selected widgets" });
-		expect(toolbar.textContent).toContain("2 selected");
-		fireEvent.click(within(toolbar).getByRole("button", { name: "Remove selected widgets" }));
-		await waitFor(() => expect(widgets()).toHaveLength(5));
-		expect(homePuts()).toHaveLength(1);
+		// Widget selection was removed (2026-11-02).
+		for (const widget of widgets()) {
+			const header = widget.querySelector("[data-widget-drag-handle]");
+			if (!(header instanceof HTMLElement)) throw new Error("no widget header");
+			const buttons = [...header.querySelectorAll("button")];
+			expect(buttons).toHaveLength(1);
+			expect(buttons[0]?.getAttribute("aria-label") ?? buttons[0]?.textContent).toMatch(/actions$/);
+			fireEvent.click(header);
+			expect(widget.hasAttribute("data-widget-selected")).toBe(false);
+		}
 		expect(screen.queryByRole("toolbar", { name: "Selected widgets" })).toBeNull();
 	});
 

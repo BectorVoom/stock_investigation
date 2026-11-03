@@ -113,10 +113,8 @@ export async function generatedTurns(): Promise<void> {
 			};
 		});
 		const notebook = notebookSchema.parse({ widgets });
-		const ids = index % 2 === 0 ? [] : widgets.slice(0, 12).map((w) => w.widgetId);
 		await run([good], {
 			notebook,
-			selectedWidgetIds: ids,
 			conversationContext: Array.from({ length: 6 }, (_, n) => ({
 				role: n % 2 === 0 ? "owner" : "assistant",
 				text: "😀".repeat(90),

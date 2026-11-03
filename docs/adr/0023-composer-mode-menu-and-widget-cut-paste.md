@@ -1,6 +1,6 @@
 # ADR-0023: The composer's modes live in a + menu; Notebook widgets cut, copy and paste
 
-**Status:** Accepted · **Date:** 2026-10-15 · Amends ADR-0020 and ADR-0021
+**Status:** Accepted · **Date:** 2026-10-15 · Amends ADR-0020 and ADR-0021 · Widget selection removed by [ADR-0061](0061-no-widget-selection.md)
 (the composer's target control) and the Notebook panel's widget actions.
 
 ## Context

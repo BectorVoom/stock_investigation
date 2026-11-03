@@ -7,10 +7,7 @@ import type {
 	ToolIsolation,
 } from "@research/contracts";
 import { COMPANY_SUMMARY_TURN_MARKER } from "../../packages/application/src/companySummaryTurn.ts";
-import {
-	NOTEBOOK_ASSIST_TURN_MARKER,
-	SELECTED_WIDGET_IDS_PREFIX,
-} from "../../packages/application/src/notebook/prompts.ts";
+import { NOTEBOOK_ASSIST_TURN_MARKER } from "../../packages/application/src/notebook/prompts.ts";
 
 /**
  * Example agent backend: replays scripted replies instead of calling a model.
@@ -55,20 +52,30 @@ function notebookInstruction(prompt: string): string {
 	return (fenced ?? prompt).toLowerCase();
 }
 
-/** Selected widget ids read back from the `Selected widget ids: [...]` prompt line. */
-function notebookSelectedIds(prompt: string): string[] {
-	const line = prompt
-		.split("\n")
-		.find((candidate) => candidate.startsWith(SELECTED_WIDGET_IDS_PREFIX));
-	if (line === undefined) return [];
-	let parsed: unknown = null;
-	try {
-		parsed = JSON.parse(line.slice(SELECTED_WIDGET_IDS_PREFIX.length).trim()) as unknown;
-	} catch {
-		return [];
+/**
+ * The widgets the instruction names: every widget whose title (compared
+ * lower-cased) appears in the instruction, in notebook order, read back from
+ * the `position N: {...}` widget lines.
+ */
+function notebookNamedIds(prompt: string, instruction: string): string[] {
+	const named: string[] = [];
+	const pattern = /^position \d+: (\{.*\})$/gm;
+	for (let match = pattern.exec(prompt); match !== null; match = pattern.exec(prompt)) {
+		let parsed: unknown = null;
+		try {
+			parsed = JSON.parse(match[1] ?? "") as unknown;
+		} catch {
+			continue;
+		}
+		if (typeof parsed !== "object" || parsed === null) continue;
+		const widgetId = "widgetId" in parsed ? parsed.widgetId : undefined;
+		const title = "title" in parsed ? parsed.title : undefined;
+		if (typeof widgetId !== "string" || typeof title !== "string" || title.trim() === "") continue;
+		if (instruction.includes(title.trim().toLowerCase()) && !named.includes(widgetId)) {
+			named.push(widgetId);
+		}
 	}
-	if (!Array.isArray(parsed)) return [];
-	return parsed.filter((entry): entry is string => typeof entry === "string");
+	return named;
 }
 
 /** Grid positions read back from the `position N: {... "widgetId": "..." ...}` widget lines. */
@@ -87,21 +94,22 @@ function notebookPositions(prompt: string): Map<string, number> {
 
 /**
  * Deterministic reply for a notebook-assistant prompt (ADR-0020). The FIRST
- * rule whose phrase the (lower-cased) instruction contains wins:
+ * rule whose phrase the (lower-cased) instruction contains wins; "named"
+ * widgets are those whose title the instruction contains:
  *
  * | instruction contains | reply | commands |
  * | `gold` | `Added a gold price chart.` | `add` a `line-chart` titled `Gold price, past year` |
  * | `chart` | `Added a revenue chart.` | `add` a line `chart` titled `Revenue` |
- * | `larger` | `Made it larger.` | `resize` every selected id to `large` |
- * | `explain` | `Added an explanation.` | `add` a `text` explanation after the first selected widget |
- * | `bar` | `Switched to a bar chart.` | `update` every selected id with `{ chartType: "bar" }` |
- * | `duplicate` | `Duplicated it.` | `duplicate` every selected id |
- * | `remove` | `Proposed removing it.` | `remove` every selected id |
+ * | `larger` | `Made it larger.` | `resize` every named widget to `large` |
+ * | `explain` | `Added an explanation.` | `add` a `text` explanation after the first named widget |
+ * | `bar` | `Switched to a bar chart.` | `update` every named widget with `{ chartType: "bar" }` |
+ * | `duplicate` | `Duplicated it.` | `duplicate` every named widget |
+ * | `remove` | `Proposed removing it.` | `remove` every named widget |
  * | anything else | `Noted.` | none |
  */
 function scriptedNotebookAssistReply(prompt: string): string {
 	const instruction = notebookInstruction(prompt);
-	const selected = notebookSelectedIds(prompt);
+	const named = notebookNamedIds(prompt, instruction);
 	const positions = notebookPositions(prompt);
 	const answer = (reply: string, commands: readonly unknown[]): string =>
 		JSON.stringify({ reply, commands });
@@ -142,11 +150,11 @@ function scriptedNotebookAssistReply(prompt: string): string {
 	if (instruction.includes("larger")) {
 		return answer(
 			"Made it larger.",
-			selected.map((widgetId) => ({ kind: "resize", widgetId, size: "large" })),
+			named.map((widgetId) => ({ kind: "resize", widgetId, size: "large" })),
 		);
 	}
 	if (instruction.includes("explain")) {
-		const first = selected[0];
+		const first = named[0];
 		const position = first === undefined ? undefined : positions.get(first);
 		return answer("Added an explanation.", [
 			{
@@ -161,19 +169,19 @@ function scriptedNotebookAssistReply(prompt: string): string {
 	if (instruction.includes("bar")) {
 		return answer(
 			"Switched to a bar chart.",
-			selected.map((widgetId) => ({ kind: "update", widgetId, config: { chartType: "bar" } })),
+			named.map((widgetId) => ({ kind: "update", widgetId, config: { chartType: "bar" } })),
 		);
 	}
 	if (instruction.includes("duplicate")) {
 		return answer(
 			"Duplicated it.",
-			selected.map((widgetId) => ({ kind: "duplicate", widgetId })),
+			named.map((widgetId) => ({ kind: "duplicate", widgetId })),
 		);
 	}
 	if (instruction.includes("remove")) {
 		return answer(
 			"Proposed removing it.",
-			selected.map((widgetId) => ({ kind: "remove", widgetId })),
+			named.map((widgetId) => ({ kind: "remove", widgetId })),
 		);
 	}
 	return answer("Noted.", []);

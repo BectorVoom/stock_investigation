@@ -90,11 +90,13 @@ describe("stylesheet metrics match core/sizes.ts", () => {
 		expect(css).toContain(".wg-grid-container");
 	});
 
-	it("themes the quiet variant and selection through custom properties", () => {
+	it("themes the quiet variant through custom properties, with no selection styles", () => {
 		expect(css).toContain("--wg-border-hover");
-		expect(css).toContain("--wg-selected");
 		expect(css).toContain('[data-widget-variant="quiet"]');
-		expect(css).toContain("[data-widget-selected]");
+		// Selection was removed (2026-11-02): no selected state or select toggle is styled.
+		expect(css).not.toContain("--wg-selected");
+		expect(css).not.toContain("[data-widget-selected]");
+		expect(css).not.toContain("wg-select-toggle");
 		// The viewport breakpoint never restyles a container-sized grid.
 		expect(css).toContain(':not([data-widget-columns-from="container"])');
 		// The quiet reveal stays in the accessibility tree and honours motion

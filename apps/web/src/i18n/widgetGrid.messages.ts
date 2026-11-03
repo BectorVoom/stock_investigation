@@ -16,7 +16,6 @@ export const widgetGridMessages = defineMessages({
 	ja: {
 		moveAnnouncement: (title, position, total) =>
 			`「${title}」を ${total} 件中 ${position} 番目に移動しました。`,
-		selectWidget: (title) => `「${title}」を選択`,
 		sizeOptionName: (size) => JAPANESE_SIZES[size],
 		sizeOptionShort: ENGLISH_WIDGET_GRID_STRINGS.sizeOptionShort,
 	},

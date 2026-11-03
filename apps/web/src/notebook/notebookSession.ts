@@ -34,10 +34,6 @@ export interface NotebookSession {
 	readonly dismissNotice: () => void;
 	/** True while a save or undo is in flight. */
 	readonly pending: Accessor<boolean>;
-	/** Selected widget ids in notebook order: the explicit context target for the assistant. */
-	readonly selection: Accessor<readonly string[]>;
-	/** `replace` selects one widget alone (or clears with null); `toggle` adds or removes it. */
-	readonly select: (widgetId: string | null, mode: "replace" | "toggle") => void;
 	readonly turns: Accessor<readonly NotebookTurn[]>;
 	readonly reload: () => Promise<void>;
 	/**
@@ -125,16 +121,6 @@ export function adoptWidgetIdentity(
 	});
 }
 
-function orderSelection(
-	selection: readonly string[],
-	widgets: readonly NotebookWidget[],
-): readonly string[] {
-	const order = new Map(widgets.map((widget, index) => [widget.widgetId, index] as const));
-	return [...selection]
-		.filter((id) => order.has(id))
-		.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
-}
-
 /**
  * `words` gives the notices' words in the current language (the caller
  * passes `useMessages(notebookSessionMessages)`); English without it.
@@ -158,7 +144,6 @@ export function createNotebookSession(
 		};
 	};
 	const [pending, setPending] = createSignal(false);
-	const [selection, setSelection] = createSignal<readonly string[]>([]);
 
 	let disposed = false;
 	onCleanup(() => {
@@ -178,11 +163,7 @@ export function createNotebookSession(
 	// must cross persistence before it can become a rendered widget.
 	const displayed = (): readonly NotebookWidget[] => confirmedWidgets(state());
 
-	const pruneSelection = (widgets: readonly NotebookWidget[]): void => {
-		setSelection((current) => orderSelection(current, widgets));
-	};
-
-	/** Installs a server state, reusing unchanged widget objects and pruning the selection. */
+	/** Installs a server state, reusing unchanged widget objects. */
 	const installConfirmed = (next: NotebookResponse): void => {
 		readGate.invalidate();
 		setState((previous) => {
@@ -190,7 +171,6 @@ export function createNotebookSession(
 			const widgets = adoptWidgetIdentity(prevWidgets, next.notebook.widgets);
 			return { ...next, notebook: { widgets: [...widgets] } };
 		});
-		pruneSelection(next.notebook.widgets);
 	};
 
 	const reload = async (): Promise<void> => {
@@ -275,7 +255,6 @@ export function createNotebookSession(
 					for (const entry of queue) next = entry.change(next);
 					setDraft(next);
 				}
-				pruneSelection(displayed());
 				setNotice({ kind: "notSaved", failure: result.error });
 				for (const entry of batch) entry.resolve(false);
 			}
@@ -338,24 +317,6 @@ export function createNotebookSession(
 		notice,
 		dismissNotice: () => setNotice(null),
 		pending,
-		selection,
-		select: (widgetId, mode) => {
-			if (widgetId === null) {
-				setSelection([]);
-				return;
-			}
-			const widgets = displayed();
-			if (mode === "replace") {
-				setSelection(widgets.some((widget) => widget.widgetId === widgetId) ? [widgetId] : []);
-				return;
-			}
-			setSelection((current) => {
-				const next = current.includes(widgetId)
-					? current.filter((id) => id !== widgetId)
-					: [...current, widgetId];
-				return orderSelection(next, widgets);
-			});
-		},
 		turns: () => state()?.turns ?? [],
 		reload,
 		edit,

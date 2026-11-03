@@ -15,18 +15,19 @@ import { E2E_ORIGIN, E2E_PORT, FEED_URL, HEADLINE } from "./fixtures.ts";
  * scripted backend; "Add to Notebook" for one chart and the answer; Focus
  * Notebook → Notebook-first with thread and draft intact; reload → still
  * Notebook-first; drag a widget (order kept across reload); size through
- * the menu (`data-widget-size` persists); select the chart and drive the
- * scripted notebook assistant ("make it larger" resizes, turn card shows
- * "resized", Undo restores; "explain this" adds a text widget after the
- * selection; "remove it" proposes, Remove deletes); Focus Chat →
+ * the menu (`data-widget-size` persists); drive the scripted notebook
+ * assistant by naming the chart ("make <title> larger" resizes, turn card
+ * shows "resized", Undo restores; "explain <title>" adds a text widget
+ * after it; "remove <title>" proposes, Remove deletes); Focus Chat →
  * Chat-first with all history intact.
  *
  * The scripted agent's notebook behaviour (task C) answers by the first
- * matching keyword: `chart` adds a line chart "Revenue", `larger` resizes
- * the selection to large, `explain` adds a text widget "Explanation" after
- * the first selected, `bar` sets selected charts to bar, `duplicate`
- * duplicates the selection, `remove` proposes removing the selection,
- * otherwise "Noted." with no change.
+ * matching keyword; "named" widgets are those whose title the instruction
+ * contains (there is no widget selection, removed 2026-11-02): `chart` adds
+ * a line chart "Revenue", `larger` resizes the named widgets to large,
+ * `explain` adds a text widget "Explanation" after the first named one,
+ * `bar` sets named charts to bar, `duplicate` duplicates the named widgets,
+ * `remove` proposes removing them, otherwise "Noted." with no change.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -305,19 +306,27 @@ test("a size change through the menu persists", async () => {
 	await expect(notebookWidgets().first()).toHaveAttribute("data-widget-size", "small");
 });
 
-test("selecting the chart targets the notebook assistant; larger resizes with Undo", async () => {
-	// A click on the grip (the untitled frame's drag handle, not a drag)
-	// selects the widget alone (ADR-0021).
+/** The chart widget's title (the frames hide it visually; it stays their accessible name). */
+async function chartTitle(): Promise<string> {
+	const title = ((await notebookWidgets().first().locator("h3").textContent()) ?? "").trim();
+	// The scripted agent's earlier rules would win for these words.
+	expect(title).not.toMatch(/gold|chart/i);
+	return title;
+}
+
+test("naming the chart targets it; larger resizes with Undo", async () => {
 	const chart = notebookWidgets().first();
-	await chart.hover();
-	await chart.locator(".wg-grip").click();
+	// Widget selection was removed (2026-11-02): no select toggle, and a grip click selects nothing.
+	await expect(chart.locator(".wg-select-toggle")).toHaveCount(0);
 	const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
 	await expect(notebookComposer).toBeVisible();
-	await expect(notebookComposer.getByRole("list", { name: "Selected widgets" })).toBeVisible();
-	await notebookComposer.getByRole("textbox", { name: "Instruction" }).fill("make it larger");
+	await expect(notebookComposer.getByRole("list", { name: "Selected widgets" })).toHaveCount(0);
+	await notebookComposer
+		.getByRole("textbox", { name: "Instruction" })
+		.fill(`make ${await chartTitle()} larger`);
 	await notebookComposer.getByRole("button", { name: "Send instruction" }).click();
 
-	// The assistant resized the selection: the turn card says so.
+	// The assistant resized the named chart: the turn card says so.
 	const turn = page.locator("[data-notebook-turn]");
 	await expect(turn).toContainText(/resized/i, { timeout: 60_000 });
 	await expect(chart).toHaveAttribute("data-widget-size", "large");
@@ -326,16 +335,17 @@ test("selecting the chart targets the notebook assistant; larger resizes with Un
 	await expect(chart).not.toHaveAttribute("data-widget-size", "large");
 });
 
-test("explain adds a text widget after the selection; remove proposes and Remove deletes", async () => {
+test("explain adds a text widget after the named chart; remove proposes and Remove deletes", async () => {
 	const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
-	await notebookComposer.getByRole("textbox", { name: "Instruction" }).fill("explain this");
+	const title = await chartTitle();
+	await notebookComposer.getByRole("textbox", { name: "Instruction" }).fill(`explain ${title}`);
 	await notebookComposer.getByRole("button", { name: "Send instruction" }).click();
 	const widgets = notebookWidgets();
 	await expect(widgets).toHaveCount(3, { timeout: 60_000 });
 	await expect(widgets.nth(1)).toContainText("Explanation");
 	await reviewShot("notebook-first.png");
 
-	await notebookComposer.getByRole("textbox", { name: "Instruction" }).fill("remove it");
+	await notebookComposer.getByRole("textbox", { name: "Instruction" }).fill(`remove ${title}`);
 	await notebookComposer.getByRole("button", { name: "Send instruction" }).click();
 	const turn = page.locator("[data-notebook-turn]").last();
 	await expect(turn.getByText(/Remove “.*”?/)).toBeVisible({ timeout: 60_000 });

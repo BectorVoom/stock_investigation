@@ -339,7 +339,6 @@ export function assistInput(
 		readonly runId?: string;
 		readonly workspaceId?: string;
 		readonly instruction?: string;
-		readonly selectedWidgetIds?: readonly string[];
 		readonly notebook?: Notebook;
 		readonly notebookVersion?: number;
 		readonly conversationContext?: NotebookAssistTurnInput["conversationContext"];
@@ -360,7 +359,6 @@ export function assistInput(
 		workspaceId: options.workspaceId ?? "ws_test",
 		agent: options.agent ?? { agentId: "scripted", model: null, effort: "medium" },
 		instruction: options.instruction ?? "Make it larger.",
-		selectedWidgetIds: [...(options.selectedWidgetIds ?? [])],
 		notebook: options.notebook ?? notebookFixture(),
 		notebookVersion: options.notebookVersion ?? 4,
 		conversationContext: options.conversationContext ?? [],

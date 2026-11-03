@@ -91,11 +91,8 @@ const onSave = (widgetId: string, toIndex: number) =>
   the host's menu, and `children` for the body. Both stay live. The frame is
   an `article` with `data-widget-id`, `data-widget-type` and
   `data-widget-size`; the header strip carries `data-widget-drag-handle`; the
-  body is a `tabindex="0"` `role="group"` labelled by the title.
-  `selected` marks the frame with `data-widget-selected`; with
-  `onSelectChange(widgetId, mode)` a header click selects (`"replace"`, or
-  `"toggle"` with Shift/Ctrl/Meta) and the header gains a select toggle
-  button — see below. Without `onSelectChange` nothing changes.
+  body is a `tabindex="0"` `role="group"` labelled by the title. Frames
+  are not selectable (selection was removed on 2026-11-02).
 - `WidgetSizePicker` props: `value`, `sizes` (optional subset the type
   allows, defaults to all three), `onChange`, `label` (the accessible group
   name, for example `Size of “Revenue”`) and `disabled` (optional). One
@@ -158,38 +155,15 @@ as above.
 </WidgetGrid>;
 ```
 
-### Quiet variant and selection
+### Quiet variant
 
 `variant="quiet"` drops the frame hairline and shadow: widgets are separated
 by surface tone and spacing, and a subtle boundary (`--wg-border-hover`)
-appears on `:hover`, `:focus-within` and selection. The grip, the actions
-slot and the select toggle fade in on hover / focus-within / selection, stay
-in the accessibility tree throughout, are always visible on devices without
-hover, and never animate under `prefers-reduced-motion`. The default
-`variant="card"` is exactly today's look.
-
-Selection is opt-in per frame: `selected` marks the frame with
-`data-widget-selected` (a 1–2 px `--wg-selected` ring in both variants) and
-`onSelectChange(widgetId, mode)` is called by a header click that is neither
-a drag (the drag engine swallows the click a completed drag fires) nor on a
-control: `"replace"` normally, `"toggle"` with Shift, Ctrl or Meta held. With
-`onSelectChange` the header also renders a compact check-circle toggle
-(`aria-pressed`, named `Select “<title>”`) — the keyboard and
-assistive-technology path, revealed with the grip in the quiet variant.
-
-```tsx
-<WidgetGrid widgets={widgets()} variant="quiet" onReorder={onSave}>
-  {(widget) => (
-    <WidgetFrame
-      widget={widget}
-      selected={selectedIds().has(widget.widgetId)}
-      onSelectChange={(id, mode) => updateSelection(id, mode)}
-    >
-      {body(widget)}
-    </WidgetFrame>
-  )}
-</WidgetGrid>;
-```
+appears on `:hover` and `:focus-within`. The grip and the actions slot fade
+in on hover / focus-within, stay in the accessibility tree throughout, are
+always visible on devices without hover, and never animate under
+`prefers-reduced-motion`. The default `variant="card"` is exactly today's
+look.
 
 ### Untitled frames
 
@@ -197,10 +171,9 @@ assistive-technology path, revealed with the grip in the quiet variant.
 title stays the accessible name of the frame and its body (rendered
 visually-hidden, the frame carries `data-widget-title-hidden`), the body
 starts at the top of the frame, and the header becomes an overlay pinned to
-the top edge holding only the grip, the select toggle and the actions slot.
-Only the controls take pointer events, so text and charts under the overlay
-stay usable; the grip keeps a 28 px hit target and stays the drag handle
-(a grip click still selects). The controls fade exactly like the quiet
+the top edge holding only the grip and the actions slot. Only the controls
+take pointer events, so text and charts under the overlay stay usable; the
+grip keeps a 28 px hit target and stays the drag handle. The controls fade exactly like the quiet
 reveal above (opacity only, so nothing shifts; always visible on devices
 without hover). The Notebook hides titles; Home keeps them.
 
@@ -225,7 +198,6 @@ defaults. Set them on any ancestor of the grid (this app maps them in
 | `--wg-surface` | `#ffffff` | frame background |
 | `--wg-border` | `#e2e8f0` | frame hairline |
 | `--wg-border-hover` | `#cbd5e1` | quiet-variant boundary on hover/focus |
-| `--wg-selected` | `#94a3b8` | selected boundary (1–2 px ring/outline) |
 | `--wg-text` | `#0f172a` | title text |
 | `--wg-text-muted` | `#475569` | grip glyph |
 | `--wg-accent` | `#2563eb` | lifted-widget 2 px ring |
@@ -240,8 +212,7 @@ defaults. Set them on any ancestor of the grid (this app maps them in
 `data-widget-grid` on the grid; `data-widget-columns-from` (`viewport` or
 `container`) and `data-widget-variant` (`card` or `quiet`) beside it;
 `data-widget-id`, `data-widget-type` and `data-widget-size` on each widget
-`article`, plus `data-widget-selected` when the host selects it and
-`data-widget-title-hidden` with `titleHidden`;
+`article`, plus `data-widget-title-hidden` with `titleHidden`;
 `data-widget-drag-handle` on the header strip; `data-widget-dragging` on the
 lifted widget while dragged; `data-widget-placeholder` (plus
 `data-widget-size`) on the slot shown during a drag.
