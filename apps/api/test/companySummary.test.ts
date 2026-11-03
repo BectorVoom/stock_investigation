@@ -1,5 +1,10 @@
 import { env } from "cloudflare:test";
-import { claimJobResponseSchema, runBudget, stockProfileResponseSchema } from "@research/contracts";
+import {
+	claimJobResponseSchema,
+	runBudget,
+	stockProfileResponseSchema,
+	themeSearchResponseSchema,
+} from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	advanceToPublishing,
@@ -96,6 +101,32 @@ describe("company summaries (ADR-0060)", () => {
 			model: null,
 			generatedAt: harness.time.clock.nowIso(),
 		});
+
+		// The stored themes are searchable at once (ADR-0066): the trigger
+		// derived `theme_names` in the completion's batch.
+		const searched = await body(
+			await harness.call("GET", "/stocks/theme-search?q=HYBRID"),
+			themeSearchResponseSchema,
+		);
+		expect(searched).toEqual({
+			query: "HYBRID",
+			hits: [
+				{
+					stockId: "jp:7203",
+					market: "JP",
+					symbol: "7203",
+					name: "TOYOTA MOTOR CORPORATION",
+					localName: "トヨタ自動車",
+					themes: [{ en: "Hybrid vehicles", ja: "ハイブリッド車" }],
+				},
+			],
+			truncated: false,
+		});
+		const japanese = await body(
+			await harness.call("GET", `/stocks/theme-search?q=${encodeURIComponent("自動車")}`),
+			themeSearchResponseSchema,
+		);
+		expect(japanese.hits.map((hit) => hit.themes)).toEqual([[{ en: "Automobiles", ja: "自動車" }]]);
 	});
 
 	it("refuses a summary for another stock than the one the job was queued for", async () => {
@@ -191,5 +222,18 @@ describe("company summaries (ADR-0060)", () => {
 			await body(await harness.runner(token, "/jobs/claim", CLAIM_BODY), claimJobResponseSchema)
 		).job;
 		expect(job).toBeNull();
+	});
+});
+
+describe("theme search (ADR-0066)", () => {
+	it("answers no hits when nothing is stored, and 400 without a query", async () => {
+		const harness = createHarness();
+		const empty = await body(
+			await harness.call("GET", "/stocks/theme-search?q=robotics"),
+			themeSearchResponseSchema,
+		);
+		expect(empty).toEqual({ query: "robotics", hits: [], truncated: false });
+		expect((await harness.call("GET", "/stocks/theme-search")).status).toBe(400);
+		expect((await harness.call("GET", "/stocks/theme-search?q=%20")).status).toBe(400);
 	});
 });

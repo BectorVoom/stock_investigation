@@ -20,6 +20,7 @@ export * from "./stockCompanyProfile.ts";
 export * from "./stockDirectory.ts";
 export * from "./stockPrices.ts";
 export * from "./stocks.ts";
+export * from "./themeSearch.ts";
 export * from "./ui.ts";
 export * from "./watchlist.ts";
 export * from "./widgets.ts";

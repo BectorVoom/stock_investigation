@@ -232,9 +232,19 @@ company overview (事業概要); no row changes. Rollback: drop the six columns
 in the order the migration's header gives, losing only the stored
 overviews; the version-28 code never reads them.
 
-### 0030 — Japanese earnings labels like US ones
+### 0030 — Searchable theme names
 
-Migration `0030_jpx_quarter_labels.sql` changes no table. It rewrites the
+Migration `0030_company_theme_names.sql` (ADR-0066) adds `theme_names` to
+[`stock_company_summary`](tables/stock_company_summary.md) — the shown
+themes as `[en, ja]` pairs, which the theme search reads — fills it once for
+every row with a stored summary or overview, and creates the two triggers
+that keep it in step on every insert and every update of `themes_json` or
+`overview_json`. Rollback: drop the two triggers, then the column; the
+version-29 code never reads it.
+
+### 0031 — Japanese earnings labels like US ones
+
+Migration `0031_jpx_quarter_labels.sql` changes no table. It rewrites the
 stored labels of Japanese earnings events in
 [`earnings_events`](tables/earnings_events.md) from JPX's words
 (`Second quarter`) to the `Q2 2027` form the parsers write since

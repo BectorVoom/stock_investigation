@@ -13,6 +13,7 @@ import { formatPeriodEnd } from "../equities/financialFormat.ts";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import { companyOverviewMessages } from "./companyOverview.messages.ts";
 import { fiscalMonthText, localDayOf, sourceIdsOf } from "./companyOverviewModel.ts";
+import { ThemeLink } from "./ThemeSearch.tsx";
 
 /** Body text: the app's size and a comfortable reading measure. */
 const BODY = "max-w-[70ch] text-sm leading-relaxed text-slate-900";
@@ -136,7 +137,7 @@ export function CompanyOverview(props: { readonly overview: CompanyOverviewView 
 										lang={locale()}
 										title={theme.reason[locale()]}
 									>
-										{theme.label[locale()]}
+										<ThemeLink name={theme.label[locale()]} />
 										<Marks evidence={theme.reason.evidence} />
 									</li>
 								)}

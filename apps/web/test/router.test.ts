@@ -11,6 +11,7 @@ import {
 	settingsHash,
 	stockHash,
 	TASKS_HASH,
+	themeSearchHash,
 } from "../src/router.ts";
 
 function route(overrides: Partial<Route>): Route {
@@ -19,6 +20,7 @@ function route(overrides: Partial<Route>): Route {
 		workspaceId: null,
 		section: null,
 		stock: null,
+		theme: null,
 		...overrides,
 	};
 }
@@ -126,6 +128,30 @@ describe("router", () => {
 		expect(stockHash("us:AAPL")).toBe("#/stocks/us:AAPL");
 		expect(stockHash("jp:7974", "company")).toBe("#/stocks/jp:7974/company");
 		expect(stockHash("us:BRK.B", "news")).toBe("#/stocks/us:BRK.B/news");
+	});
+
+	it("parses and builds a theme search, opening plain Stocks for a blank or broken one (ADR-0066)", () => {
+		expect(parseHash("#/stocks/themes/Hybrid%20vehicles")).toEqual(
+			route({ view: "stocks", theme: "Hybrid vehicles" }),
+		);
+		expect(parseHash(`#/stocks/themes/${encodeURIComponent("無農薬野菜")}`)).toEqual(
+			route({ view: "stocks", theme: "無農薬野菜" }),
+		);
+		expect(themeSearchHash("無農薬 野菜")).toBe(
+			`#/stocks/themes/${encodeURIComponent("無農薬 野菜")}`,
+		);
+		expect(parseHash(themeSearchHash("a/b?c#d"))).toEqual(
+			route({ view: "stocks", theme: "a/b?c#d" }),
+		);
+		for (const hash of [
+			"#/stocks/themes",
+			"#/stocks/themes/",
+			"#/stocks/themes/%20",
+			"#/stocks/themes/%E0%A4%A",
+			`#/stocks/themes/${"x".repeat(101)}`,
+		]) {
+			expect(parseHash(hash), hash).toEqual(route({ view: "stocks" }));
+		}
 	});
 
 	it("round-trips every route", () => {

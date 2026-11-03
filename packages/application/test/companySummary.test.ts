@@ -88,6 +88,7 @@ function harness(options: {
 			markQueued: async (_owner, market, symbol, at) => {
 				queued.push(`${market}:${symbol}@${at}`);
 			},
+			searchThemes: async () => [],
 		},
 		watchlist: { listStocks: async () => options.stocks ?? [AAPL] },
 		settings: {

@@ -44,6 +44,17 @@ const scheduleRowSchema = z.object({
 });
 
 const themesSchema = z.array(companySummaryThemeSchema);
+
+/** `theme_names`: the shown themes as `[en, ja]` pairs (migration 0030). */
+const themeNamesSchema = z.array(z.tuple([z.string(), z.string()]));
+
+const themeRowSchema = z.object({
+	market: z.enum(["US", "JP"]),
+	symbol: z.string(),
+	theme_names: z.string(),
+	name: z.string().nullable(),
+	local_name: z.string().nullable(),
+});
 const referencesSchema = z.array(overviewReferenceSchema);
 
 export function createCompanySummaryRepository(db: SqlDatabase): CompanySummaryRepository {
@@ -112,6 +123,37 @@ export function createCompanySummaryRepository(db: SqlDatabase): CompanySummaryR
 					symbol: r.symbol,
 					queuedAt: r.queued_at,
 					generatedAt: r.generated_at,
+				};
+			});
+		},
+		async searchThemes(ownerId, needle) {
+			// The owner's rows (the primary key's prefix), narrowed by `instr`
+			// over the derived `theme_names` JSON; `lower` folds ASCII only, as
+			// the needle is folded (`themeNeedle`). The caller keeps the themes
+			// that really match (`matchingThemes`).
+			const { results } = await db
+				.prepare(
+					`SELECT scs.market, scs.symbol, scs.theme_names, sd.name, sd.local_name
+					FROM stock_company_summary AS scs
+					LEFT JOIN stock_directory AS sd
+						ON sd.owner_id = scs.owner_id AND sd.market = scs.market AND sd.symbol = scs.symbol
+					WHERE scs.owner_id = ? AND scs.theme_names IS NOT NULL
+						AND instr(lower(scs.theme_names), ?) > 0
+					ORDER BY scs.market, scs.symbol`,
+				)
+				.bind(ownerId, needle)
+				.all();
+			return results.map((row) => {
+				const r = decode(TABLE, themeRowSchema, row);
+				return {
+					market: r.market,
+					symbol: r.symbol,
+					name: r.name,
+					localName: r.local_name,
+					themes: parseJsonColumn(TABLE, themeNamesSchema, r.theme_names).map(([en, ja]) => ({
+						en,
+						ja,
+					})),
 				};
 			});
 		},

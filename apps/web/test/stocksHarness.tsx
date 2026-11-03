@@ -7,7 +7,13 @@ import {
 	type StockCompanyProfileView,
 	type StockProfileResponse,
 } from "@research/contracts";
-import { stockPriceSeriesId } from "@research/domain";
+import {
+	formatStockId,
+	matchingThemes,
+	normalizeThemeQuery,
+	stockPriceSeriesId,
+	type ThemeName,
+} from "@research/domain";
 import type { Locale } from "@research/i18n";
 import { LocaleProvider } from "@research/i18n/solid";
 import { fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
@@ -109,6 +115,39 @@ export function createStocksBackend(
 			{ headers: { ETag: etag } },
 		);
 	});
+	// The theme search (ADR-0066) over the shown themes — the overview's,
+	// else the summary's — with the real matching rules, in market and symbol order.
+	backend.on("GET", /^\/api\/v1\/stocks\/theme-search\?/, (request) => {
+		const words = new URL(request.path, "http://fake").searchParams.get("q") ?? "";
+		const query = normalizeThemeQuery(words);
+		if (query === null) return jsonResponse({ query: null, hits: [], truncated: false });
+		const stockIds = [...new Set([...summaryOf.keys(), ...overviewOf.keys()])].sort();
+		const hits = stockIds.flatMap((stockId) => {
+			const parsed = parseStockId(stockId);
+			if (parsed === null) return [];
+			const overview = overviewOf.get(stockId);
+			const shown: ThemeName[] =
+				overview !== undefined
+					? overview.entry.themes.map((theme) => theme.label)
+					: [...(summaryOf.get(stockId)?.themes ?? [])];
+			const themes = matchingThemes(shown, query);
+			if (themes.length === 0) return [];
+			const row = server.directory.rows.find(
+				(entry) => entry.market === parsed.market && entry.symbol === parsed.symbol,
+			);
+			return [
+				{
+					stockId: formatStockId(parsed.market, parsed.symbol),
+					market: parsed.market,
+					symbol: parsed.symbol,
+					name: row?.name ?? null,
+					localName: row?.localName ?? null,
+					themes,
+				},
+			];
+		});
+		return jsonResponse({ query, hits, truncated: false });
+	});
 	return { backend, server, equities, businessOf, companyProfileOf, summaryOf, overviewOf };
 }
 
@@ -129,6 +168,12 @@ export interface MountedStocks {
 	readonly navigations: { readonly stock: StockRoute | null; readonly replace: boolean }[];
 	/** Changes the route as the browser would (Back, a link). */
 	readonly setRoute: (stock: StockRoute | null) => void;
+	/** The theme search's words in the URL (ADR-0066). */
+	readonly theme: () => string | null;
+	/** Every theme search the page asked for, in order. */
+	readonly themeSearches: string[];
+	/** Changes the theme search's words as the browser would (a link, Back). */
+	readonly setTheme: (words: string | null) => void;
 }
 
 /** Renders the Stocks page over `backend` with a route the test controls (as `App` passes the URL's). */
@@ -136,6 +181,7 @@ export function mountStocks(
 	backend: FakeBackend,
 	options: {
 		readonly route?: StockRoute | null;
+		readonly theme?: string | null;
 		readonly locale?: Locale;
 		readonly visibility?: VisibilitySource;
 	} = {},
@@ -143,20 +189,29 @@ export function mountStocks(
 	const api = createApiClient({ fetch: backend.fetch });
 	const [route, setRoute] = createSignal<StockRoute | null>(options.route ?? null);
 	const navigations: { stock: StockRoute | null; replace: boolean }[] = [];
+	const [theme, setTheme] = createSignal<string | null>(options.theme ?? null);
+	const themeSearches: string[] = [];
 	render(() => (
 		<LocaleProvider locale={() => options.locale ?? "en"}>
 			<StocksView
 				api={api}
 				visibility={options.visibility ?? ALWAYS_VISIBLE}
 				stock={route()}
+				theme={theme()}
 				onNavigate={(stock, navigation) => {
 					navigations.push({ stock, replace: navigation?.replace === true });
+					setTheme(null);
 					setRoute(stock);
+				}}
+				onThemeSearch={(words) => {
+					themeSearches.push(words);
+					setRoute(null);
+					setTheme(words);
 				}}
 			/>
 		</LocaleProvider>
 	));
-	return { api, route, navigations, setRoute };
+	return { api, route, navigations, setRoute, theme, themeSearches, setTheme };
 }
 
 /** Renders the Registered stocks page (the stock list and the Stock lists section) over `backend`. */

@@ -30,6 +30,7 @@ import { CompanyOverview } from "./CompanyOverview.tsx";
 import { rereadWhileAwaiting, stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import type { StockTabProps } from "./stockTabs.ts";
+import { ThemeLink } from "./ThemeSearch.tsx";
 
 /** One term and its description in a description list. */
 function Item(props: { readonly term: string; readonly children: JSX.Element }): JSX.Element {
@@ -235,7 +236,7 @@ function SummaryOrNone(props: { readonly summary: CompanySummaryView | null }): 
 										class="rounded-full border border-slate-300 bg-slate-50 px-2.5 py-0.5 text-xs text-slate-800"
 										lang={locale()}
 									>
-										{theme[locale()]}
+										<ThemeLink name={theme[locale()]} />
 									</li>
 								)}
 							</For>

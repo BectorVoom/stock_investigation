@@ -121,7 +121,7 @@ Grouped as in `db/schema.sql`. Conventions shared by every table (`owner_id`, co
 | [`stock_directory`](tables/stock_directory.md) | One row per exchange-listed US or Japanese stock, a local copy of the SEC and JPX lists that the stock search (Stocks page, a list's Add stock dialog) reads (ADR-0034). |
 | [`stock_directory_meta`](tables/stock_directory_meta.md) | One row per owner and market describing the stored stock directory list: row count, source date, download time and the fold version of its search keys (ADR-0034). |
 | [`stock_company_profile`](tables/stock_company_profile.md) | One row per Japanese directory stock holding its company profile from J-Quants' Listed Issue Master: English name, TSE 17- and 33-sector classification, scale category and market segment, as of the master's date (ADR-0059 §3). |
-| [`stock_company_summary`](tables/stock_company_summary.md) | One row per stock the server has queued an AI-written company summary for: when it was queued and, once written, the description and investment themes in English and Japanese, the agent and model that wrote them and when (ADR-0060); and the company overview (事業概要) with its evidence and references (ADR-0064). |
+| [`stock_company_summary`](tables/stock_company_summary.md) | One row per stock the server has queued an AI-written company summary for: when it was queued and, once written, the description and investment themes in English and Japanese, the agent and model that wrote them and when (ADR-0060); and the company overview (事業概要) with its evidence and references (ADR-0064); and the shown themes' names, which the theme search reads (ADR-0066). |
 
 ### 10. Owner settings and runner
 

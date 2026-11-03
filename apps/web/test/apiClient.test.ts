@@ -974,6 +974,36 @@ describe("stock directory (ADR-0034)", () => {
 		expect(backend.requests).toHaveLength(1);
 	});
 
+	it("searches themes with the trimmed words in the URL, never sending blank words (ADR-0066)", async () => {
+		const { backend, api } = setup();
+		backend.on("GET", /stocks\/theme-search\?/, () =>
+			jsonResponse({
+				query: "野菜",
+				hits: [
+					{
+						stockId: "jp:1380",
+						market: "JP",
+						symbol: "1380",
+						name: null,
+						localName: "秋川牧園",
+						themes: [{ en: "Organic Vegetables", ja: "無農薬野菜" }],
+					},
+				],
+				truncated: false,
+			}),
+		);
+		const found = await api.searchThemes(" 野菜 ");
+		expect(found.ok).toBe(true);
+		if (!found.ok) return;
+		expect(found.value.hits.map((hit) => hit.stockId)).toEqual(["jp:1380"]);
+		const url = new URL(backend.requests[0]?.path ?? "", "http://x");
+		expect(url.pathname).toBe("/api/v1/stocks/theme-search");
+		expect(Object.fromEntries(url.searchParams)).toEqual({ q: "野菜" });
+		const blank = await api.searchThemes("  ");
+		expect(blank.ok).toBe(false);
+		expect(backend.requests).toHaveLength(1);
+	});
+
 	it("passes the caller's abort to fetch and ends as a network failure", async () => {
 		let seen: AbortSignal | null = null;
 		const fetch: FetchLike = (_input, init) => {

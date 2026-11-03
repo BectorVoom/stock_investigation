@@ -6,15 +6,22 @@ import {
 	type StockNewsResponse,
 	type StockPricesResponse,
 	type StockProfileResponse,
+	THEME_SEARCH_LIMITS,
+	type ThemeSearchHit,
+	type ThemeSearchResponse,
 	type WatchMarket,
 } from "@research/contracts";
 import {
 	articleMention,
+	formatStockId,
+	matchingThemes,
 	mentionLikePattern,
+	normalizeThemeQuery,
 	ok,
 	type StockMentionTerm,
 	stockMentionTerms,
 	stockPriceSeriesId,
+	themeNeedle,
 } from "@research/domain";
 import { decodeArticleCursor, encodeArticleCursor } from "./articleCursor.ts";
 import type { EquitySyncService } from "./equitySync.ts";
@@ -49,8 +56,8 @@ export interface StockPageDeps {
 	/** The company's view with its sync state, tracked or not (ADR-0055). */
 	readonly equityCompanies: Pick<EquitySyncService, "company">;
 	readonly watchlist: Pick<WatchlistRepository, "getStock">;
-	/** AI-written company summaries (ADR-0060). */
-	readonly companySummaries: Pick<CompanySummaryRepository, "get">;
+	/** AI-written company summaries (ADR-0060) and their searchable themes (ADR-0066). */
+	readonly companySummaries: Pick<CompanySummaryRepository, "get" | "searchThemes">;
 }
 
 /** A validated stock id with its parts. */
@@ -211,6 +218,38 @@ export function createStockPageService(deps: StockPageDeps) {
 				overview: stored.overview,
 				// Deleted between the two reads: as if never stored.
 				company: company?.ok === true ? company.value.view : null,
+			};
+		},
+
+		/**
+		 * `GET /stocks/theme-search?q=` (ADR-0066): the owner's stocks whose
+		 * shown themes contain the query. The database narrows the rows by
+		 * the folded, JSON-escaped query; each stock keeps only the themes
+		 * that contain it, and a stock with none (a match across two names
+		 * or on the JSON punctuation) is dropped. At most `maxResults`, in
+		 * market and symbol order.
+		 */
+		async themeSearch(ownerId: string, rawQuery: string): Promise<ThemeSearchResponse> {
+			const query = normalizeThemeQuery(rawQuery);
+			if (query === null) return { query: null, hits: [], truncated: false };
+			const rows = await deps.companySummaries.searchThemes(ownerId, themeNeedle(query));
+			const hits: ThemeSearchHit[] = [];
+			for (const row of rows) {
+				const themes = matchingThemes(row.themes, query);
+				if (themes.length === 0) continue;
+				hits.push({
+					stockId: formatStockId(row.market, row.symbol),
+					market: row.market,
+					symbol: row.symbol,
+					name: row.name,
+					localName: row.localName,
+					themes,
+				});
+			}
+			return {
+				query,
+				hits: hits.slice(0, THEME_SEARCH_LIMITS.maxResults),
+				truncated: hits.length > THEME_SEARCH_LIMITS.maxResults,
 			};
 		},
 

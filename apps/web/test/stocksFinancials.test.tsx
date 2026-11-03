@@ -1,4 +1,4 @@
-import type { EquityCompanyView } from "@research/contracts";
+import type { EarningsEvent, EquityCompanyView } from "@research/contracts";
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StockRoute } from "../src/router.ts";
@@ -6,6 +6,7 @@ import { makeCompany, NINTENDO, nintendoSynced } from "./equitiesHarness.ts";
 import { errorResponse } from "./fakeBackend.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 import { createStocksBackend, mountStocks, type StocksServer } from "./stocksHarness.tsx";
+import { makeStock } from "./watchlistHarness.ts";
 
 /**
  * The Stocks page's Financial statements and Company tabs (ADR-0049 §5,
@@ -254,7 +255,8 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		expect(panel().textContent).toContain(
 			"No financial statements are stored for this stock yet. The server fetches the statements of every listed stock; they appear here once stored.",
 		);
-		expect(panel().textContent).not.toContain("Watchlist");
+		// The statements do not depend on the Watchlist (ADR-0058); only the earnings line does.
+		expect(none.textContent).not.toContain("Watchlist");
 		expect(within(panel()).queryByRole("button")).toBeNull();
 		cleanup();
 
@@ -361,6 +363,90 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		mountStocks(api.backend, { route: APPLE });
 		await statementShown();
 		expect(api.backend.requests.every((request) => request.path.startsWith("/api/v1/"))).toBe(true);
+	});
+});
+
+describe("Financial statements tab: next earnings date (ADR-0067)", () => {
+	// NOW is 2026-10-31 (a Saturday).
+	const NEXT: EarningsEvent = {
+		periodKey: "2026-q4",
+		announcementDate: "2026-11-05",
+		fiscalPeriodLabel: "Q4 2026",
+		fiscalPeriodEnd: "2026-09-27",
+		timing: "after-close",
+	};
+	const EVENTS: EarningsEvent[] = [
+		{
+			periodKey: "2026-q3",
+			announcementDate: "2026-07-30",
+			fiscalPeriodLabel: "Q3 2026",
+			fiscalPeriodEnd: "2026-06-27",
+			timing: "after-close",
+		},
+		NEXT,
+	];
+
+	function earningsLine(): Promise<HTMLElement> {
+		return waitFor(() => {
+			const element = panel().querySelector('[data-field="next-earnings"]');
+			if (!(element instanceof HTMLElement)) throw new Error("no earnings line");
+			return element;
+		});
+	}
+
+	function watched(events: EarningsEvent[]): StocksServer {
+		const api = serve();
+		api.server.stocks = [makeStock({ events })];
+		return api;
+	}
+
+	it("shows a Watchlist stock's next announcement above its statements, past ones skipped", async () => {
+		const api = watched(EVENTS);
+		mountStocks(api.backend, { route: APPLE });
+		const line = await earningsLine();
+		expect(line.getAttribute("data-kind")).toBe("scheduled");
+		expect(line.querySelector("dt")?.textContent).toBe("Next earnings date");
+		expect(line.querySelector("time")?.getAttribute("datetime")).toBe("2026-11-05");
+		expect(line.querySelector("dd")?.textContent).toBe(
+			"Thu, 5 November 2026 after market close · in 5 daysFor Q4 2026, fiscal year ending Sep 27, 2026Source: Finnhub",
+		);
+		expect(
+			within(line)
+				.getByRole("link", { name: /Finnhub/ })
+				.getAttribute("href"),
+		).toBe("https://finnhub.io/");
+		// It comes first, then the statements; it reads nothing of its own.
+		await statementShown();
+		expect(panel().firstElementChild).toBe(line);
+		expect(api.backend.requestsTo("GET", /earnings/)).toEqual([]);
+	});
+
+	it("words it in Japanese", async () => {
+		const api = watched(EVENTS);
+		mountStocks(api.backend, { route: APPLE, locale: "ja" });
+		const line = await earningsLine();
+		expect(line.querySelector("dt")?.textContent).toBe("次回決算発表日");
+		expect(line.querySelector("dd")?.textContent).toBe(
+			"2026年11月5日（木） 大引け後 · あと 5 日対象: Q4 2026（2026年9月期）出典: Finnhub",
+		);
+	});
+
+	it("says when the next date is not decided, and when the stock is not on the Watchlist", async () => {
+		const undecided = watched([{ ...NEXT, announcementDate: null, timing: "unknown" }]);
+		mountStocks(undecided.backend, { route: APPLE });
+		const line = await earningsLine();
+		expect(line.getAttribute("data-kind")).toBe("undecided");
+		expect(line.querySelector("dd")?.textContent).toBe(
+			"Not decided yetFor Q4 2026, fiscal year ending Sep 27, 2026Source: Finnhub",
+		);
+		cleanup();
+
+		mountStocks(serve().backend, { route: APPLE });
+		const none = await earningsLine();
+		expect(none.getAttribute("data-kind")).toBe("not-watched");
+		expect(none.querySelector("dd")?.textContent).toBe(
+			"Earnings dates are kept for Watchlist stocks. Add this stock to the Watchlist to see its next one.",
+		);
 	});
 });
 

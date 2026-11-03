@@ -5,6 +5,8 @@ import {
 	stockNewsResponseSchema,
 	stockPricesResponseSchema,
 	stockProfileResponseSchema,
+	themeSearchQuerySchema,
+	themeSearchResponseSchema,
 	watchlistStockIdSchema,
 } from "@research/contracts";
 import { attempt, type EventLogger } from "@research/effects";
@@ -75,6 +77,26 @@ export function registerStockRoutes(api: Hono<AppEnv>, logger: EventLogger): voi
 		const searched = fingerprint(JSON.stringify([digest.terms, digest.cursor]));
 		return `stock.news.${digest.stock.stockId}.${digest.articles.articleCount}.${newest?.retrievedAt ?? "none"}.${newest?.articleId ?? "none"}.${searched}`;
 	};
+
+	/**
+	 * The theme search (ADR-0066): the owner's stocks whose shown themes
+	 * contain `q`. "theme-search" is never a stock id (`us:AAPL`), so it
+	 * cannot shadow a stock; it is registered first all the same.
+	 */
+	api.get("/stocks/theme-search", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const query = yield* readQuery(c, themeSearchQuerySchema);
+				const result = yield* attempt("stocks.theme_search", () =>
+					c.var.services.stockPages.themeSearch(owner(c), query.q),
+				);
+				const parsed = themeSearchResponseSchema.parse(result);
+				return conditionalJson(c, `stock.themes.${fingerprint(JSON.stringify(parsed))}`, parsed);
+			}),
+		),
+	);
 
 	api.get("/stocks/:stockId", (c) =>
 		respond(

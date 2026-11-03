@@ -1,5 +1,5 @@
 /**
- * Migration 0030 on an existing version-29 database: stored JPX labels
+ * Migration 0031 on an existing version-30 database: stored JPX labels
  * become `Q<quarter> <fiscal year>` like Finnhub's, keyed rows and every
  * other label stay as they were, and a second run changes nothing.
  */
@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { applySqlMigrations, openNodeSqlite, readSqlMigrations } from "@research/adapters/sqlite";
 import { expect, it } from "vitest";
 
-const MIGRATION = "0030_jpx_quarter_labels.sql";
+const MIGRATION = "0031_jpx_quarter_labels.sql";
 
 it("relabels stored JPX periods and leaves everything else alone", async () => {
 	const db = openNodeSqlite(":memory:");
@@ -15,9 +15,9 @@ it("relabels stored JPX periods and leaves everything else alone", async () => {
 		const migrations = readSqlMigrations(
 			fileURLToPath(new URL("../../../../infra/migrations", import.meta.url)),
 		);
-		const before30 = migrations.filter((migration) => migration.name < MIGRATION);
-		expect(before30.at(-1)?.name).toBe("0029_company_overview.sql");
-		applySqlMigrations(db, before30);
+		const before31 = migrations.filter((migration) => migration.name < MIGRATION);
+		expect(before31.at(-1)?.name).toBe("0030_company_theme_names.sql");
+		applySqlMigrations(db, before31);
 		const rows: readonly (readonly [string, string, string, string | null])[] = [
 			["jp:7203", "fy2027-03-31-second-quarter", "Second quarter", "2027-03-31"],
 			["jp:6758", "fy2027-03-31-first-quarter", "first quarter", "2027-03-31"],
@@ -58,7 +58,7 @@ it("relabels stored JPX periods and leaves everything else alone", async () => {
 			["jp:9984", "fy2026-12-31-third-quarter", "Q3 2026"],
 			["us:AAPL", "2026-q4", "Q4 2026"],
 		]);
-		// A second run is a no-op (the runner records 0030 as applied).
+		// A second run is a no-op (the runner records 0031 as applied).
 		applySqlMigrations(db, migrations);
 		expect(await read()).toEqual(after);
 	} finally {

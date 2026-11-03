@@ -1,4 +1,4 @@
--- Japanese earnings periods labelled like US ones, version 30.
+-- Japanese earnings periods labelled like US ones, version 31.
 --
 -- What changes: no table or column. The stored display labels of Japanese
 -- (JPX) earnings events in `earnings_events.fiscal_period_label` are
