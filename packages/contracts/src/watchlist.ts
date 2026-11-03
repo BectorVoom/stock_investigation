@@ -150,6 +150,11 @@ export const earningsEventSchema = z.strictObject({
 	/** Null when the source lists the announcement with the date undecided. */
 	announcementDate: isoDateSchema.nullable(),
 	fiscalPeriodLabel: z.string().trim().min(1).max(80),
+	/**
+	 * The last day of the fiscal year the period belongs to (JPX's fiscal
+	 * year-end: Q2 of the year to March 2027 says 2027-03-31), not of the
+	 * quarter; null when the source does not give it (Finnhub).
+	 */
 	fiscalPeriodEnd: isoDateSchema.nullable(),
 	timing: earningsTimingSchema,
 });

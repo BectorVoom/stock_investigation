@@ -26,7 +26,7 @@ A successful refresh of a stock deletes its stored events and inserts the fresh 
 | `period_key` | TEXT | No | - | Fiscal period identifier matching `[a-z0-9-]{1,48}` (`earningsEventSchema`). |
 | `announcement_date` | TEXT | Yes | - | Announcement date, `YYYY-MM-DD`; NULL when the source lists the period with the date undecided. |
 | `fiscal_period_label` | TEXT | No | - | Display label of the fiscal period, 1-80 characters: `Q<quarter> <fiscal year>` (`Q2 2027`) from both Finnhub and JPX (a JPX full year is `Q4`; the fiscal year is the year it ends in). |
-| `fiscal_period_end` | TEXT | Yes | - | Last day of the fiscal period, `YYYY-MM-DD`; NULL when the source does not give it. |
+| `fiscal_period_end` | TEXT | Yes | - | Last day of the fiscal year the period belongs to (JPX's `Fiscal Year-end`, so a second quarter of the year to March 2027 stores `2027-03-31`), `YYYY-MM-DD`; NULL when the source does not give it (Finnhub). |
 | `timing` | TEXT | No | - | `before-open`, `after-close`, `during-session` or `unknown` (`earningsTimingSchema`, checked on read). |
 
 ## Constraints

@@ -346,7 +346,10 @@ Watchlist to get its data.
   Candlestick, with a volume panel, when the stored prices carry the day's
   bars (ADR-0056), else in Line; switch Line ↔ Candlestick with Chart type.
   Nothing it does is saved.
-- Financial statements tab: switch the statement (income statement, balance
+- Financial statements tab: read the next earnings date (次回決算発表日) at
+  the top — date, weekday, time of day, days away, fiscal period and source
+  — for a Watchlist stock; any other stock says to add it to the Watchlist
+  (ADR-0067). Switch the statement (income statement, balance
   sheet, cash flow) and 5 or 10 years; open a value's revision history;
   open "Filings (n)" to list the annual filings with links to SEC or to
   the J-Quants record (it needs a J-Quants API key to open).

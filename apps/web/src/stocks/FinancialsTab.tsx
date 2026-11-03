@@ -19,6 +19,7 @@ import { financialsMessages } from "../equities/financials.messages.ts";
 import { SegmentedControl } from "../equities/SegmentedControl.tsx";
 import { StatementTable } from "../equities/StatementTable.tsx";
 import { FilingsTable } from "./FilingsTable.tsx";
+import { NextEarnings } from "./NextEarnings.tsx";
 import { rereadWhileAwaiting, stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import type { StockTabProps } from "./stockTabs.ts";
@@ -30,7 +31,9 @@ import type { StockTabProps } from "./stockTabs.ts";
  * Financial statement and Financial history widgets): the statement
  * switch, 5 or 10 years, the statement table with its marks and revisions,
  * and the filings in a disclosure closed by default whose read starts when
- * it is opened. Reads attach only while the tab is shown (rule 4).
+ * it is opened. Reads attach only while the tab is shown (rule 4). Above
+ * them, the next earnings announcement from the stock's Watchlist entry
+ * (ADR-0067), which reads nothing.
  *
  * The server syncs the statements of every stock in the stored stock
  * lists, on the Watchlist or not (ADR-0058 §3), so the tab takes the
@@ -71,6 +74,7 @@ export function FinancialsTab(props: StockTabProps): JSX.Element {
 
 	return (
 		<div class="@container space-y-3" data-field="stock-financials-tab">
+			<NextEarnings stock={props.stock().watchlist} />
 			<Show when={profile().failure()}>
 				{(failure) => (
 					<ErrorNotice
