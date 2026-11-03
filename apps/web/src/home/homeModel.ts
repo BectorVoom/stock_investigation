@@ -1,5 +1,4 @@
 import {
-	type MarketFrequency,
 	type MarketObservationTuple,
 	type MarketRange,
 	type MarketSeries,
@@ -319,28 +318,15 @@ export function awaitsFirstSync(
 const MATERIALS_PREFIX = "materials:";
 
 /** The range an Indicator table row's Trend covers and its chart viewer opens at. */
-export type IndicatorTrendPreset = Extract<ChartPreset, "1y" | "5y" | "max">;
+export type IndicatorTrendPreset = Extract<ChartPreset, "1y">;
 
 /**
- * The Trend range of an Indicator table row (ADR-0044 §1), by the series'
- * native frequency, so a monthly indicator never opens on twelve points:
- * daily and weekly series cover one year, monthly five, and quarterly,
- * annual and unknown ones the whole held history. The row's chart viewer
- * opens at the same preset.
+ * The Trend range of every Indicator table row (ADR-0044 §1, amended
+ * 2026-11-03): one year, whatever the series' frequency, so the column reads
+ * alike down the table (推移 1年). The row's chart viewer opens at the same
+ * preset; its preset buttons still reach 5 years and the whole history.
  */
-export function indicatorTrendPreset(frequency: MarketFrequency): IndicatorTrendPreset {
-	switch (frequency) {
-		case "daily":
-		case "weekly":
-			return "1y";
-		case "monthly":
-			return "5y";
-		case "quarterly":
-		case "annual":
-		case "unknown":
-			return "max";
-	}
-}
+export const INDICATOR_TREND_PRESET: IndicatorTrendPreset = "1y";
 
 /**
  * The points the chart viewer shows when it opens at `preset` on these

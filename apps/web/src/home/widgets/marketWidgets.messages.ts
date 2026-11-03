@@ -3,8 +3,6 @@ import type { ChangeDirection, IndicatorTrendPreset } from "../homeModel.ts";
 
 const TREND_SPAN_EN: { readonly [P in IndicatorTrendPreset]: string } = {
 	"1y": "1 year",
-	"5y": "5 years",
-	max: "the whole held history",
 };
 const TREND_WORD_EN: { readonly [D in ChangeDirection]: string } = {
 	up: "up",
@@ -13,8 +11,6 @@ const TREND_WORD_EN: { readonly [D in ChangeDirection]: string } = {
 };
 const TREND_SPAN_JA: { readonly [P in IndicatorTrendPreset]: string } = {
 	"1y": "1年",
-	"5y": "5年",
-	max: "保有する全期間",
 };
 const TREND_WORD_JA: { readonly [D in ChangeDirection]: string } = {
 	up: "上昇",

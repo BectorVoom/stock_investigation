@@ -51,13 +51,16 @@ stored observations the page already has (ADR-0043):
   "Open chart: " plus the visible name and symbol; no button for a series
   without observations).
 
-The range follows the series' native frequency, so a monthly indicator does
-not open on twelve points: daily and weekly series use 1 year, monthly 5
-years, quarterly, annual and unknown the whole stored history (`max`). The
-Trend column and the viewer's first range are the same. The Trend column
+*Amended 2026-11-03 (owner: "Please consistent 推移 1 year"):* every row's
+range is 1 year, whatever the series' frequency (`INDICATOR_TREND_PRESET`),
+so the column reads alike down the table (推移 1年); a monthly row draws 13
+points and a quarterly one 5. (Before, the range followed the native
+frequency: daily and weekly 1 year, monthly 5 years, coarser the whole
+history.) The Trend column and the viewer's first range are the same; the
+viewer's preset buttons still reach 5 years and the whole history. The Trend column
 shows only in Large frames (`@2xl`, 42rem): a Medium table with it needed
 697 px in a 582 px frame and cut off the Source column. A screen reader hears
-the direction over the range ("up over 5 years"); a row without values shows
+the direction over the range ("up over 1 year"); a row without values shows
 a dash read as "unavailable", never a bare range label.
 
 ### 2. Database access for historical market data

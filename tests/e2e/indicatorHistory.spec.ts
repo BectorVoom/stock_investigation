@@ -6,8 +6,8 @@ import { E2E_ORIGIN } from "./fixtures.ts";
  * The Indicator table's history (ADR-0044 §1) end to end: two imported
  * material series (database-only, so no provider and no runner is involved)
  * on a wide and a narrow Indicator table. The wide table shows each row's
- * Trend sparkline with its range (5Y for the monthly series, 1Y for the
- * daily one); the narrow one hides the Trend column by its container width
+ * Trend sparkline with its range (1Y for every row, the monthly series and
+ * the daily one alike); the narrow one hides the Trend column by its container width
  * (asserted on computed layout, not classes); a tap on a row name opens the
  * detailed chart viewer at that row's range. The dashboard is restored
  * afterwards for the specs that share this database.
@@ -193,16 +193,22 @@ test("a wide Indicator table draws each row's Trend with its range", async () =>
 	const header = wide.getByRole("columnheader", { name: "Trend", exact: true });
 	await expect(header).toBeVisible();
 	expect(await trendDisplays(wide)).toEqual(["table-cell", "table-cell", "table-cell"]);
-	const monthly = wide.locator("[data-field='indicator-trend'][data-trend-preset='5y']");
+	// Every row covers one year, whatever its frequency.
+	await expect(wide.locator("[data-field='indicator-trend'][data-trend-preset='1y']")).toHaveCount(
+		2,
+	);
+	const trendOf = (name: RegExp) =>
+		wide.getByRole("row", { name }).locator("[data-field='indicator-trend']");
+	const monthly = trendOf(/Synthetic lithium carbonate/);
 	// The range name is shown; the direction over it is what a screen reader hears.
-	await expect(monthly.locator("span[aria-hidden='true']")).toHaveText("5Y");
-	await expect(monthly.locator(".sr-only")).toHaveText("up over 5 years");
+	await expect(monthly.locator("span[aria-hidden='true']")).toHaveText("1Y");
+	await expect(monthly.locator(".sr-only")).toHaveText("up over 1 year");
 	const monthlyLine = monthly.locator("svg[data-sparkline-direction='up']");
 	await expect(monthlyLine).toBeVisible();
 	const box = await monthlyLine.boundingBox();
 	expect(box?.width).toBe(72);
 	expect(box?.height).toBe(24);
-	const daily = wide.locator("[data-field='indicator-trend'][data-trend-preset='1y']");
+	const daily = trendOf(/Synthetic cobalt metal/);
 	await expect(daily.locator("span[aria-hidden='true']")).toHaveText("1Y");
 	await expect(daily.locator(".sr-only")).toHaveText("down over 1 year");
 	await expect(daily.locator("svg[data-sparkline-direction='down']")).toBeVisible();
@@ -250,11 +256,11 @@ test("a row name opens the chart viewer at the row's Trend range", async () => {
 	const wide = page.locator('article[data-widget-id="ih-wide"]');
 	await wide.getByRole("button", { name: /^Open chart:\s*Synthetic lithium carbonate/ }).click();
 	await expect(viewer()).toBeVisible();
-	await expect(viewer().getByRole("button", { name: "5Y", exact: true })).toHaveAttribute(
+	await expect(viewer().getByRole("button", { name: "1Y", exact: true })).toHaveAttribute(
 		"aria-pressed",
 		"true",
 	);
-	expect(await viewerRange()).toEqual({ from: "2021-09-01", to: "2026-09-01" });
+	expect(await viewerRange()).toEqual({ from: "2025-09-01", to: "2026-09-01" });
 	await page.keyboard.press("Escape");
 	await expect(viewer()).toBeHidden();
 
@@ -281,9 +287,9 @@ test("the Trend column reads in Japanese", async ({ browser }) => {
 		await expect(wide.getByRole("columnheader", { name: "推移", exact: true })).toBeVisible();
 		await expect(
 			wide.locator(
-				"[data-field='indicator-trend'][data-trend-preset='5y'] span[aria-hidden='true']",
+				"[data-field='indicator-trend'][data-trend-preset='1y'] span[aria-hidden='true']",
 			),
-		).toHaveText("5年");
+		).toHaveText(["1年", "1年"]);
 		await wide.screenshot({ path: "test-results/indicator-history-wide-ja.png" });
 	} finally {
 		await context.close();

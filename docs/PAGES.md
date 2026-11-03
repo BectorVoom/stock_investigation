@@ -73,8 +73,8 @@ accessible name), and Home takes every type except a research result.
 - Open a price widget's detailed chart viewer (ADR-0025): the line-chart plot
   (all its series, opening at the widget's range), a metric's value block
   (its series, 1y), a stock-table row's name (that row's series, 1y) or an
-  indicator-table row's name (that row's series, at its Trend range: 1y
-  daily/weekly, 5y monthly, max coarser — ADR-0044 §1) — each an "Open
+  indicator-table row's name (that row's series, at its Trend range, 1y
+  for every row — ADR-0044 §1) — each an "Open
   chart" button. The viewer offers range presets plus exact
   From/To dates, chart type (Line / Candlestick for one series with bars,
   ADR-0056; opens in Line) / interval / scale / values controls, moving
@@ -103,8 +103,8 @@ former label); the per-widget actions open a text menu with leading icons.
   (ADR-0065); the metric widget keeps 前回比 (previous observation) and 前年比.
   The indicator table also draws each row's history
   (ADR-0044 §1): a Trend column with a sparkline over the row's range and
-  the range named beside it (1Y for a daily or weekly series, 5Y monthly,
-  Max coarser; shown in a Large frame, hidden in Small and Medium ones),
+  the range named beside it (1Y on every row, whatever the series'
+  frequency; shown in a Large frame, hidden in Small and Medium ones),
   and a tap on a row's name opens
   the viewer at that same range. While Home stays open and visible it
   re-reads its data (conditionally) every minute and on every return to the

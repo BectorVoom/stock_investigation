@@ -16,8 +16,8 @@ import {
 	displayUnit,
 	formatChange,
 	formatValue,
+	INDICATOR_TREND_PRESET,
 	type IndicatorTrendPreset,
-	indicatorTrendPreset,
 	presetPoints,
 	seriesMissingReason,
 	staleFailureReason,
@@ -49,12 +49,11 @@ import { createSeriesViewer } from "./StockTableWidget.tsx";
  * observations the page already holds: the Metric widget's decorative
  * sparkline (`aria-hidden`; green when the range ends above its start, red
  * below, dotted start line) with the range it covers beside it in the chart
- * viewer's own preset wording ("1Y", "5Y", "Max"). The range follows the
- * series' native frequency (`indicatorTrendPreset`: daily and weekly 1 year,
- * monthly 5 years, coarser the whole history) and the viewer opens at the
- * same preset over the same points (`presetPoints`), so the two never
- * disagree. The line and the range name are `aria-hidden`; a screen reader
- * hears the direction over the range ("up over 5 years"). A row with fewer
+ * viewer's own preset wording ("1Y"). Every row covers one year
+ * (`INDICATOR_TREND_PRESET`), whatever the series' frequency, and the viewer
+ * opens at the same preset over the same points (`presetPoints`), so the two
+ * never disagree. The line and the range name are `aria-hidden`; a screen reader
+ * hears the direction over the range ("up over 1 year"). A row with fewer
  * than two points in its range shows the range and no line, and a row
  * without values a dash read as "unavailable" — never a blank cell. The
  * Trend column shows only from the `@2xl` container width (42rem) up, i.e.
@@ -157,9 +156,7 @@ function IndicatorRow(props: {
 	const missingReason = () => seriesMissingReason(props.series, modelText());
 	const stale = () =>
 		props.series === null ? null : staleFailureReason(props.series, modelText());
-	const preset = createMemo(() =>
-		indicatorTrendPreset(props.series === null ? "unknown" : props.series.frequency),
-	);
+	const preset = (): IndicatorTrendPreset => INDICATOR_TREND_PRESET;
 	const trendPoints = createMemo(() =>
 		props.series === null ? [] : presetPoints(toPoints(props.series.observations), preset()),
 	);

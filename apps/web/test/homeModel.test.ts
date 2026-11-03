@@ -13,7 +13,7 @@ import {
 	formatSignedDelta,
 	formatValue,
 	hasFredSeries,
-	indicatorTrendPreset,
+	INDICATOR_TREND_PRESET,
 	isPercentUnit,
 	presetPoints,
 	seriesById,
@@ -365,13 +365,8 @@ describe("home view-model", () => {
 		expect(awaitsFirstSync([], byId)).toBe(false);
 	});
 
-	it("picks an indicator's Trend range by its native frequency (ADR-0044 §1)", () => {
-		expect(indicatorTrendPreset("daily")).toBe("1y");
-		expect(indicatorTrendPreset("weekly")).toBe("1y");
-		expect(indicatorTrendPreset("monthly")).toBe("5y");
-		expect(indicatorTrendPreset("quarterly")).toBe("max");
-		expect(indicatorTrendPreset("annual")).toBe("max");
-		expect(indicatorTrendPreset("unknown")).toBe("max");
+	it("gives every indicator's Trend one year, whatever its frequency (ADR-0044 §1, amended)", () => {
+		expect(INDICATOR_TREND_PRESET).toBe("1y");
 	});
 
 	it("selects the points the chart viewer opens on at a preset", () => {

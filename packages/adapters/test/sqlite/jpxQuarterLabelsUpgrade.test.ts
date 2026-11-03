@@ -44,7 +44,7 @@ it("relabels stored JPX periods and leaves everything else alone", async () => {
 					.prepare(
 						"SELECT stock_id, period_key, fiscal_period_label FROM earnings_events ORDER BY stock_id",
 					)
-					.all<{ stock_id: string; period_key: string; fiscal_period_label: string }>()
+					.all()
 			).results.map((row) => [row.stock_id, row.period_key, row.fiscal_period_label]);
 
 		applySqlMigrations(db, migrations);
