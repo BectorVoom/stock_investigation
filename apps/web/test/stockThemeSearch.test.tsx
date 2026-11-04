@@ -161,7 +161,7 @@ function rowSymbols(table: HTMLElement): string[] {
 }
 
 describe("Stocks page: theme results pages (ADR-0070)", () => {
-	it("shows 50 stocks a page with Previous, the page numbers and Next", async () => {
+	it("shows 50 stocks a page with the page numbers", async () => {
 		const ids = cloudStocks(120);
 		const page = mountStocks(api.backend, { theme: "cloud" });
 		const table = await resultsTable();
@@ -170,16 +170,18 @@ describe("Stocks page: theme results pages (ADR-0070)", () => {
 			"Stocks with a theme containing “cloud” · 1–50 of 120 stocks",
 		);
 		const pages = screen.getByRole("navigation", { name: "Result pages" });
-		expect(pagerText(pages)).toBe("Previous 1Page 1 2 3 Next");
-		// On page 1, Previous and the current page are not links.
+		expect(pagerText(pages)).toBe("1Page 1 2 3");
+		// No Previous / Next (removed 2026-11-04); the current page is not a link.
 		expect(within(pages).queryByRole("link", { name: "Previous" })).toBeNull();
+		expect(within(pages).queryByRole("link", { name: "Next" })).toBeNull();
 		expect(within(pages).queryByRole("link", { name: "Page 1" })).toBeNull();
 		expect(pages.querySelector('[aria-current="page"]')?.textContent).toBe("1Page 1");
 		expect(within(pages).getByRole("link", { name: "Page 3" }).getAttribute("href")).toBe(
 			"#/stocks/themes/cloud/3",
 		);
-		const next = within(pages).getByRole("link", { name: "Next" });
-		expect(next.getAttribute("href")).toBe("#/stocks/themes/cloud/2");
+		expect(within(pages).getByRole("link", { name: "Page 2" }).getAttribute("href")).toBe(
+			"#/stocks/themes/cloud/2",
+		);
 
 		fireEvent.click(within(pages).getByRole("link", { name: "Page 2" }));
 		expect(page.themeSearches).toEqual([{ words: "cloud", page: 2 }]);
@@ -201,7 +203,7 @@ describe("Stocks page: theme results pages (ADR-0070)", () => {
 		mountStocks(api.backend, { theme: "cloud" });
 		await resultsTable();
 		const pages = screen.getByRole("navigation", { name: "Result pages" });
-		expect(pagerText(pages)).toBe("Previous 1Page 1 2 3 4 … 10 Next");
+		expect(pagerText(pages)).toBe("1Page 1 2 3 4 … 10");
 	});
 
 	it("opens at the URL's page and shows the last page's rest", async () => {
@@ -214,8 +216,7 @@ describe("Stocks page: theme results pages (ADR-0070)", () => {
 		);
 		const pages = screen.getByRole("navigation", { name: "Result pages" });
 		expect(pages.querySelector('[aria-current="page"]')?.textContent).toBe("3Page 3");
-		expect(within(pages).queryByRole("link", { name: "Next" })).toBeNull();
-		expect(within(pages).getByRole("link", { name: "Previous" }).getAttribute("href")).toBe(
+		expect(within(pages).getByRole("link", { name: "Page 2" }).getAttribute("href")).toBe(
 			"#/stocks/themes/cloud/2",
 		);
 		expect(within(pages).getByRole("link", { name: "Page 1" }).getAttribute("href")).toBe(
@@ -240,7 +241,6 @@ describe("Stocks page: theme results pages (ADR-0070)", () => {
 		);
 		const pages = screen.getByRole("navigation", { name: "検索結果のページ" });
 		expect(within(pages).getByRole("link", { name: "2 ページ" })).toBeTruthy();
-		expect(within(pages).getByRole("link", { name: "次へ" })).toBeTruthy();
 	});
 });
 
@@ -305,7 +305,7 @@ describe("Stocks page: a theme result's stock beside the results (ADR-0070)", ()
 		const table = await resultsTable();
 		fireEvent.click(within(table).getAllByRole("link")[0] as HTMLElement);
 		await screen.findByRole("complementary", { name: "Chosen stock" });
-		fireEvent.click(screen.getByRole("link", { name: "Next" }));
+		fireEvent.click(screen.getByRole("link", { name: "Page 2" }));
 		await waitFor(() =>
 			expect(rowSymbols(document.querySelector("table") as HTMLElement)).toEqual(ids.slice(50)),
 		);

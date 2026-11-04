@@ -366,8 +366,7 @@ function ResultsTable(props: {
 }
 
 /**
- * Previous, the page numbers ("1 2 3 4 … 10", `pageNumbers`) and Next under
- * the table, shown only when the results span more than one page. Each is a
+ * The page numbers ("1 2 3 4 … 10", `pageNumbers`) under the table, shown only when the results span more than one page. Each is a
  * link to its page's URL (so it opens in a new tab too); a plain click moves
  * in place. The current page is not a link.
  */
@@ -381,7 +380,7 @@ function Pagination(props: {
 	const PageLink = (link: {
 		readonly page: number;
 		readonly label: string;
-		readonly ariaLabel?: string;
+		readonly ariaLabel: string;
 		readonly field: string;
 	}): JSX.Element => (
 		<a
@@ -398,31 +397,10 @@ function Pagination(props: {
 			{link.label}
 		</a>
 	);
-	const Disabled = (item: { readonly label: string; readonly field: string }): JSX.Element => (
-		<span
-			class={`${PAGE_ITEM} cursor-not-allowed opacity-50`}
-			aria-disabled="true"
-			data-field={item.field}
-		>
-			{item.label}
-		</span>
-	);
 	return (
 		<Show when={props.answer.pageCount > 1}>
 			<nav aria-label={t().pagesLabel} data-field="theme-search-pages">
 				<ul class="flex flex-wrap items-center gap-1">
-					<li>
-						<Show
-							when={props.answer.page > 1}
-							fallback={<Disabled label={t().previousPage} field="theme-page-previous" />}
-						>
-							<PageLink
-								page={props.answer.page - 1}
-								label={t().previousPage}
-								field="theme-page-previous"
-							/>
-						</Show>
-					</li>
 					<For each={items()}>
 						{(item) => (
 							<li>
@@ -460,14 +438,6 @@ function Pagination(props: {
 							</li>
 						)}
 					</For>
-					<li>
-						<Show
-							when={props.answer.page < props.answer.pageCount}
-							fallback={<Disabled label={t().nextPage} field="theme-page-next" />}
-						>
-							<PageLink page={props.answer.page + 1} label={t().nextPage} field="theme-page-next" />
-						</Show>
-					</li>
 				</ul>
 			</nav>
 		</Show>

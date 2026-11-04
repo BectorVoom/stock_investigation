@@ -34,21 +34,21 @@ the results.
    Back restores the page.
 3. **The page controls** (changed 2026-11-04, the owner: page numbers
    "1, 2, 3, 4, …"). Under the table, when there is more than one page, in
-   a navigation landmark "Result pages" (検索結果のページ): Previous (前へ),
-   the page numbers, Next (次へ). The numbers are every page up to seven;
+   a navigation landmark "Result pages" (検索結果のページ): the page
+   numbers alone, with no Previous / Next (removed later on 2026-11-04 at
+   the owner's request). The numbers are every page up to seven;
    beyond that the first and last page, the current page and its
    neighbours, and the first or last four near either end — `1 2 3 4 … 10`,
    `1 … 5 6 7 … 12`, `1 … 7 8 9 10` (`pageNumbers`; "…" always stands for
-   two or more pages). Each number and Previous / Next is a link to its
-   page's URL ("Page 3", 3 ページ, as its accessible name), so it can open
+   two or more pages). Each number is a link to its page's URL ("Page 3", 3 ページ, as its accessible name), so it can open
    in a new tab; a plain click moves to that page as a new history entry.
    The current page is highlighted, marked `aria-current="page"` and not a
-   link; on the first page Previous is shown disabled, on the last Next.
+   link.
    The caption names the range ("1–50 of 120 stocks", 120 銘柄中 1–50).
    Once the new page is shown, focus moves to the caption and it is
    scrolled into view. With one page the caption says the count and no
    controls are shown. (The first version had First / Previous / "Page n
-   of m" / Next / Last.)
+   of m" / Next / Last; the second Previous / numbers / Next.)
 4. **A stock opens beside the results.** A plain click on a stock's name
    shows that stock in a panel ("Chosen stock", 選んだ銘柄) to the right of
    the results; the URL does not change. On screens narrower than `lg`

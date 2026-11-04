@@ -18,8 +18,6 @@ export const themeSearchMessages = defineMessages({
 		resultRange: (from: number, to: number, total: number): string =>
 			`${from}–${to} of ${total} stocks`,
 		pagesLabel: "Result pages",
-		previousPage: "Previous",
-		nextPage: "Next",
 		/** A page number's accessible name. */
 		pageLabel: (page: number): string => `Page ${page}`,
 		/** The panel beside the results that shows a clicked stock. */
@@ -46,8 +44,6 @@ export const themeSearchMessages = defineMessages({
 		resultCount: (count) => `${count} 銘柄`,
 		resultRange: (from, to, total) => `${total} 銘柄中 ${from}–${to}`,
 		pagesLabel: "検索結果のページ",
-		previousPage: "前へ",
-		nextPage: "次へ",
 		pageLabel: (page) => `${page} ページ`,
 		panelLabel: "選んだ銘柄",
 		openStockPage: "銘柄のページで開く",
