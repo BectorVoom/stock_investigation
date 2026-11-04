@@ -711,21 +711,28 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			);
 		},
 		/**
-		 * The theme search (ADR-0066): the owner's stocks whose shown themes
-		 * contain `q`. Checked against the contract first, so a blank query
-		 * never leaves the browser.
+		 * The theme search (ADR-0066): one page (ADR-0070) of the owner's
+		 * stocks whose shown themes contain `q`. Checked against the contract
+		 * first, so a blank query never leaves the browser.
 		 */
-		searchThemes: (q: string, signal?: AbortSignal): Promise<ApiResult<ThemeSearchResponse>> => {
+		searchThemes: (
+			q: string,
+			page: number,
+			signal?: AbortSignal,
+		): Promise<ApiResult<ThemeSearchResponse>> => {
 			const query = validate(
 				themeSearchQuerySchema,
-				{ q },
+				{ q, page },
 				{ kind: "invalid-request", status: null },
 			);
 			if (!query.ok) return Promise.resolve(query);
 			return requestJson(
 				{
 					method: "GET",
-					path: withQuery(`${API_PREFIX}/stocks/theme-search`, { q: query.value.q }),
+					path: withQuery(`${API_PREFIX}/stocks/theme-search`, {
+						q: query.value.q,
+						page: String(query.value.page),
+					}),
 					...(signal === undefined ? {} : { signal }),
 				},
 				themeSearchResponseSchema,

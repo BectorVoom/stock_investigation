@@ -263,12 +263,19 @@ export function createStockPageService(deps: StockPageDeps) {
 		 * shown themes contain the query. The database narrows the rows by
 		 * the folded, JSON-escaped query; each stock keeps only the themes
 		 * that contain it, and a stock with none (a match across two names
-		 * or on the JSON punctuation) is dropped. At most `maxResults`, in
-		 * market and symbol order.
+		 * or on the JSON punctuation) is dropped. The stocks, in market and
+		 * symbol order, are answered `pageSize` at a time: `page` is 1-based
+		 * and a page past the last answers the last.
 		 */
-		async themeSearch(ownerId: string, rawQuery: string): Promise<ThemeSearchResponse> {
+		async themeSearch(
+			ownerId: string,
+			rawQuery: string,
+			requestedPage = 1,
+		): Promise<ThemeSearchResponse> {
+			const { pageSize } = THEME_SEARCH_LIMITS;
 			const query = normalizeThemeQuery(rawQuery);
-			if (query === null) return { query: null, hits: [], truncated: false };
+			if (query === null)
+				return { query: null, hits: [], page: 1, pageSize, total: 0, pageCount: 1 };
 			const rows = await deps.companySummaries.searchThemes(ownerId, themeNeedle(query));
 			const hits: ThemeSearchHit[] = [];
 			for (const row of rows) {
@@ -283,10 +290,16 @@ export function createStockPageService(deps: StockPageDeps) {
 					themes,
 				});
 			}
+			const pageCount = Math.max(1, Math.ceil(hits.length / pageSize));
+			const page = Math.min(Math.max(1, Math.trunc(requestedPage)), pageCount);
+			const start = (page - 1) * pageSize;
 			return {
 				query,
-				hits: hits.slice(0, THEME_SEARCH_LIMITS.maxResults),
-				truncated: hits.length > THEME_SEARCH_LIMITS.maxResults,
+				hits: hits.slice(start, start + pageSize),
+				page,
+				pageSize,
+				total: hits.length,
+				pageCount,
 			};
 		},
 

@@ -1,7 +1,8 @@
 import { defineMessages } from "@research/i18n";
 
 /**
- * The Stocks page's theme search (ADR-0066): its box, its results and the
+ * The Stocks page's theme search (ADR-0066, ADR-0070): its box, its pages
+ * of results, the panel showing a chosen stock and the
  * Company tab's theme links. Theme names and stock names are data.
  */
 export const themeSearchMessages = defineMessages({
@@ -13,8 +14,19 @@ export const themeSearchMessages = defineMessages({
 		/** The results table's caption. */
 		resultsCaption: (words: string): string => `Stocks with a theme containing “${words}”`,
 		resultCount: (count: number): string => (count === 1 ? "1 stock" : `${count} stocks`),
-		truncated: (shown: number): string =>
-			`Showing the first ${shown}. Use more specific words to see the rest.`,
+		/** The caption's count when the results span pages. */
+		resultRange: (from: number, to: number, total: number): string =>
+			`${from}–${to} of ${total} stocks`,
+		pagesLabel: "Result pages",
+		firstPage: "First",
+		previousPage: "Previous",
+		nextPage: "Next",
+		lastPage: "Last",
+		pageOf: (page: number, count: number): string => `Page ${page} of ${count}`,
+		/** The panel beside the results that shows a clicked stock. */
+		panelLabel: "Chosen stock",
+		openStockPage: "Open on its own page",
+		closePanel: "Close the stock",
 		none: (words: string): string =>
 			`No stock has a theme containing “${words}”. Only stocks with a business overview or an AI-written summary have themes.`,
 		nothingToMatch: "These words are longer than any theme, so no theme can contain them.",
@@ -34,7 +46,16 @@ export const themeSearchMessages = defineMessages({
 		submit: "検索",
 		resultsCaption: (words) => `「${words}」を含むテーマの銘柄`,
 		resultCount: (count) => `${count} 銘柄`,
-		truncated: (shown) => `最初の ${shown} 銘柄を表示しています。語を絞ると残りも表示されます。`,
+		resultRange: (from, to, total) => `${total} 銘柄中 ${from}–${to}`,
+		pagesLabel: "検索結果のページ",
+		firstPage: "最初",
+		previousPage: "前へ",
+		nextPage: "次へ",
+		lastPage: "最後",
+		pageOf: (page, count) => `${page} / ${count} ページ`,
+		panelLabel: "選んだ銘柄",
+		openStockPage: "銘柄のページで開く",
+		closePanel: "銘柄を閉じる",
 		none: (words) =>
 			`「${words}」を含むテーマの銘柄はありません。テーマがあるのは、事業概要または AI の要約がある銘柄だけです。`,
 		nothingToMatch: "どのテーマよりも長い語のため、一致するテーマはありません。",
