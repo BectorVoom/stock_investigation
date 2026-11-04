@@ -86,6 +86,7 @@ fn main() {
 	let options = Options {
 		base_url: BASE_URL,
 		max_chars: 20_000,
+		whole_document: false,
 	};
 	let article = article_html(0);
 	let deep = deep_nesting_html();

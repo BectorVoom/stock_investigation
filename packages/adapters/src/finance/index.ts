@@ -191,6 +191,7 @@ export {
 	secBusinessParagraphs,
 	secMarkdownBlocks,
 	secSectionMark,
+	secSectionMarks,
 } from "./secBusiness.ts";
 export {
 	createSecClient,

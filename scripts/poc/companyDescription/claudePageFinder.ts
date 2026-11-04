@@ -173,19 +173,27 @@ export function pagesFromResults(picked: readonly string[], results: readonly st
 }
 
 /** The instruction for one stock. */
-export function pageFinderPrompt(stock: StockSources, excludedHosts: readonly string[]): string {
+export function pageFinderPrompt(
+	stock: StockSources,
+	excludedHosts: readonly string[],
+	toolName = "web_search",
+): string {
 	const japanese = stock.stock.market === "JP";
 	const exchange = japanese ? "Tokyo Stock Exchange" : "a US exchange";
 	return [
 		`Find web pages that describe the business of this listed company: ${stock.name.ja}${stock.name.ja === stock.name.en ? "" : ` (${stock.name.en})`}, ${exchange}, code ${stock.stock.symbol}.`,
-		`Use the web_search tool, at most ${MAX_SEARCHES} searches${japanese ? ", in Japanese (e.g. 「<company name> 事業内容 会社概要」)" : ""}.`,
+		`Use the ${toolName} tool, at most ${MAX_SEARCHES} searches${japanese ? ", in Japanese (e.g. 「<company name> 事業内容 会社概要」)" : ""}.`,
 		`From the search results, pick up to ${MAX_PICKED_PAGES} pages, best first:`,
 		"1. the company's own website: its business, products or services, company profile (会社概要) or investor-relations pages;",
 		"2. regulators and stock exchanges (EDINET, SEC, JPX, TDnet);",
 		"3. other pages that describe this company's business in prose.",
+		"Include, when the results have one, a page that gives the company's sales by country or region (地域別売上高, 所在地別, 地域ごとの情報, revenue by geographic area).",
 		"Only pages about this company itself: not a subsidiary, a parent, or another company with a similar name.",
 		`Never pick: ${excludedHosts.join(", ")}; social media, forums, Q&A sites, job boards, or data aggregators that only list figures.`,
 		"Pick only URLs that appear in your search results. Do not write a URL from memory.",
+		"Pick web pages (HTML), not PDF files: a PDF cannot be read.",
+		"From sec.gov, pick only a short document such as a press release: an annual or fund report (10-K, 20-F, 40-F, N-CSR) or a prospectus is too large to read.",
+		"For a fund, trust or ETF, pick first the fund manager's own page for this fund (its objective, holdings and manager).",
 		'Answer with one JSON object and nothing else: {"pages": [{"url": "https://...", "kind": "official" | "regulator" | "other"}]}. When nothing suitable was found, answer {"pages": []}.',
 	].join("\n");
 }

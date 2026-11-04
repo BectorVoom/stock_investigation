@@ -48,7 +48,7 @@ An arbitrary page's terms are unknown, so the workspace keeps the minimum: a Mar
 - A `div`/`section`/`ul`/`ol`/`header` whose `id`/`class` carries a whole conventional token (`nav`, `menu`, `sidebar`, `footer`, …) is dropped outside main content.
 - An `<a>` that differs from the page URL only by its fragment becomes plain text, and a skip-hint link is dropped entirely.
 - Without a main element, a `ul`/`ol` of five or more items that are each exactly one link is dropped as a menu.
-- Without a main element, the Markdown starts at the article `<h1>` (the single one, or the last one followed by 200 characters of paragraph text).
+- Without a main element, the Markdown starts at the article `<h1>` (the single one, or the last one followed by 200 characters of paragraph text). Not for a document read whole (`wholeDocument`, 2026-11-04): an SEC annual report's only `<h1>` may head its exhibit index, and this rule dropped its Item 1 (ADR-0053 §3a).
 - Whitespace around inline emphasis and links is preserved outside the markers so `**Data source:** U.S.` keeps its space.
 - Whatever the heuristics drop is counted (`boilerplateBlocks`, `menuLists`, `leadingBlocks`), stored in the archive front matter and named in the model text, so the cut is never silent.
 - Motivating real run: three eia.gov "Today in Energy" articles saved as 14,923 / 13,673 / 19,965 bytes with 77 / 77 / 24 link-only list lines (38% / 42% / 9% of each file) and the article's own heading on line 48, so the 4,000-character model window showed mostly site menu instead of article text.

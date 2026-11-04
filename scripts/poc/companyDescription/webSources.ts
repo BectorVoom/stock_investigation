@@ -37,11 +37,39 @@ export const MAX_WEB_PAGES = 3;
 export const MAX_WEB_PAGE_ATTEMPTS = 6;
 /** Page text the model may quote, per page. */
 export const MAX_WEB_TEXT_CHARS = 10_000;
+/** Of a longer page: its start, and an excerpt at its sales-by-region table (【海外】). */
+const PAGE_HEAD_CHARS = 8_000;
+const REGION_EXCERPT_CHARS = 2_000;
+const REGION_EXCERPT_LEAD_CHARS = 200;
+/** Headings of a table of sales by country or region. */
+const REGION_SALES_HEADING =
+	/地域ごとの情報|所在地別|地域別(?:の)?売上|仕向地別|海外売上高|geographic(?:al)? (?:area|information|region)|revenues? by (?:geograph|region|country)/i;
+
+/**
+ * The text a page contributes: all of it up to MAX_WEB_TEXT_CHARS, else its
+ * start and an excerpt at its first sales-by-region table after the start.
+ * Cutting at 10,000 characters dropped the region tables of long pages
+ * (有価証券報告書 texts), so 【海外】 could not name the countries
+ * (ADR-0064 §5f). A quote cannot span the "…" between the two parts.
+ */
+export function pageTextForModel(text: string): string {
+	if (text.length <= MAX_WEB_TEXT_CHARS) return text;
+	const head = text.slice(0, PAGE_HEAD_CHARS);
+	const rest = text.slice(PAGE_HEAD_CHARS);
+	const match = REGION_SALES_HEADING.exec(rest);
+	if (match === null) return text.slice(0, MAX_WEB_TEXT_CHARS);
+	const start = Math.max(0, match.index - REGION_EXCERPT_LEAD_CHARS);
+	return `${head}\n…\n${rest.slice(start, start + REGION_EXCERPT_CHARS)}`;
+}
 
 export const EXCLUDED_HOST_SUFFIXES = [
 	"wikipedia.org",
 	"wikiwand.com",
 	"weblio.jp",
+	// User-written wikis, like Wikipedia (ニコニコ大百科 came back for Sony, 2026-11-04).
+	"dic.nicovideo.jp",
+	"dic.pixiv.net",
+	"fandom.com",
 	"x.com",
 	"twitter.com",
 	"facebook.com",
@@ -94,6 +122,24 @@ export const EXCLUDED_HOST_SUFFIXES = [
 	"zoominfo.com",
 	"rocketreach.co",
 	"datanyze.com",
+	// Pages the runner's fetcher cannot read (bot walls, script-only pages): at most
+	// 15% of their picks were read in the 2026-11-04 runs (roic.ai 2 of 74, CEF
+	// Connect 11 of 82, barchart.com 0 of 45), so a pick there wasted a page.
+	"roic.ai",
+	"cefconnect.com",
+	"gurufocus.com",
+	"simplywall.st",
+	"stocknear.com",
+	"barchart.com",
+	"capedge.com",
+	"craft.co",
+	"pitchbook.com",
+	"app.edgar.tools",
+	"ycharts.com",
+	"rallies.ai",
+	"morningstar.com.au",
+	"financialreports.eu",
+	"business.mammothtimes.com",
 ];
 
 /**
@@ -453,7 +499,7 @@ function pageSource(id: SourceId, page: ReadPage, kind: PageKind): CompanySource
 			en: `${KIND_LABEL[kind].en[0]?.toUpperCase()}${KIND_LABEL[kind].en.slice(1)}. Retrieved ${day}.`,
 			ja: `${KIND_LABEL[kind].ja}。${day} 取得。`,
 		},
-		text: page.text.slice(0, MAX_WEB_TEXT_CHARS),
+		text: pageTextForModel(page.text),
 	};
 }
 

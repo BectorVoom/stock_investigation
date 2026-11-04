@@ -373,6 +373,10 @@ const TEN_K_BLOCKS: readonly string[] = [
 	"| Item 1. | Business | 3 |\n| --- | --- | --- |\n| Item 1A. | Risk Factors | 9 |",
 	"Item 1",
 	"Item 1.",
+	"Business",
+	"BUSINESS.",
+	"Item 1. *Business*",
+	"Items 1. and 2. Business and Properties.",
 	"Item 12. Business Combinations",
 	"Item 1A",
 	"ITEM 1A. RISK FACTORS",
@@ -421,6 +425,7 @@ const TEN_K_BLOCKS: readonly string[] = [
 const TWENTY_F_BLOCKS: readonly string[] = [
 	"Item 4. Information on the Company",
 	"ITEM 4. INFORMATION ON THE COMPANY",
+	"Item 4. Information On Our Company",
 	"**Item 4.\u00a0Information on the Company**",
 	"Item 4",
 	"Item 4.",
@@ -538,6 +543,21 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 			"We seek to be the most customer-centric company.",
 			"| Item 1A. | Risk Factors |\n| --- | --- |",
 		].join("\n\n"),
+		// The start heading split in two (Capital City Bank Group), and its look-alikes.
+		[
+			"Item 1.",
+			"Business",
+			"Overview",
+			"The Company is a financial holding company.",
+			"Item 1A.",
+			"Risk Factors",
+		].join("\n\n"),
+		["Item 1", "Business.", "Banking", "We lend.", "Item 2"].join("\n\n"),
+		["Item 1.", "Businesses", "We lend.", "Item 2"].join("\n\n"),
+		["Business", "We lend.", "Item 2"].join("\n\n"),
+		["Item 1. *Business*", "*Overview*", "AXT makes substrates.", "Item 1A. *Risk Factors*"].join(
+			"\n\n",
+		),
 	];
 	for (let count = 0; count < 200; count += 1) markdowns.push(randomTenKMarkdown(rng));
 	// Over the stored-text limit: the leading paragraphs are kept, truncated.
@@ -552,6 +572,7 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 	const page = htmlToMarkdown(fixtureText(SEC_FIXTURE_TEN_K.fileName), {
 		baseUrl: SEC_FIXTURE_TEN_K.url,
 		maxChars: 4_000_000,
+		wholeDocument: true,
 	});
 	markdowns.push(page.markdown);
 	// 20-F documents (ADR-0058 §5): Item 4.B, else Item 4, and a cross-reference only.
@@ -588,6 +609,7 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 		htmlToMarkdown(fixtureText(SEC_FOREIGN_FIXTURE_TWENTY_F.fileName), {
 			baseUrl: SEC_FOREIGN_FIXTURE_TWENTY_F.url,
 			maxChars: 4_000_000,
+			wholeDocument: true,
 		}).markdown,
 	];
 	for (let count = 0; count < 200; count += 1) twentyFMarkdowns.push(randomTwentyFMarkdown(rng));
@@ -675,6 +697,17 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 			...TEN_K_BLOCKS.map((block) => secBlock(block).text),
 			...TWENTY_F_BLOCKS.map((block) => secBlock(block).text),
 			"Items 1 & 2 — Business",
+			"Items 1. and 2. Business and Properties.",
+			"Items 1. & 2.Business",
+			"Item 1.. Business",
+			"Item 1.and 2 Business",
+			"Item 1. *Business*",
+			"*Item 1. Business*",
+			"Item 1A. *Risk Factors*",
+			`*${"Item 1. Business".padEnd(60, "x")}*`,
+			"Item 4. Information On Our Company",
+			"Item 4 Information on ourCompany",
+			"Item 4 Information on our  Company.",
 			"item1business",
 			"Item 1 - Business",
 			"Item 1A Business",

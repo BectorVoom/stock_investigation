@@ -264,6 +264,20 @@ server fills both with its first `earnings-calendar-sync` per market.
 Rollback: drop `stock_earnings_calendar_market`, then
 `stock_earnings_calendar`; the version-31 code never reads them.
 
+### 0033 — Business descriptions read again
+
+Migration `0033_reread_business_descriptions.sql` (ADR-0053 §3a) changes no
+table. It deletes every `not-found` row of a 10-K or 20-F in
+[`equity_business_description`](tables/equity_business_description.md)
+(the reader before 2026-11-04 lost Item 1 of most of them) and makes each
+such company's scheduled sync in
+[`equity_sync_state`](tables/equity_sync_state.md) due now (never later;
+an unscheduled one is left alone), so its next `financial-sync` reads the
+report again: one SEC request per company, about 900 on the development
+database. A 40-F's row stays (never downloaded). Rollback: none needed for
+an older release; a report still without a readable section is stored as
+`not-found` again.
+
 ## Switching the database engine
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](../adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.

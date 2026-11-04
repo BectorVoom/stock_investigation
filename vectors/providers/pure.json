@@ -697,6 +697,14 @@
 			"output": false
 		},
 		{
+			"input": "a used-up credit balance",
+			"output": false
+		},
+		{
+			"input": "claude-api/error-400-credit-balance.json",
+			"output": true
+		},
+		{
 			"input": "fails %s at once as PROVIDER_PAYMENT_REQUIRED, keeping the status",
 			"output": false
 		},
@@ -858,14 +866,6 @@
 		},
 		{
 			"input": "skips event names, pings, unknown events and non-text deltas",
-			"output": false
-		},
-		{
-			"input": "event: message_start",
-			"output": false
-		},
-		{
-			"input": "{\"kind\":\"ignored\"}",
 			"output": false
 		}
 	],
@@ -1351,6 +1351,14 @@
 			"output": null
 		},
 		{
+			"input": "a used-up credit balance",
+			"output": null
+		},
+		{
+			"input": "claude-api/error-400-credit-balance.json",
+			"output": null
+		},
+		{
 			"input": "fails %s at once as PROVIDER_PAYMENT_REQUIRED, keeping the status",
 			"output": null
 		},
@@ -1613,6 +1621,14 @@
 		{
 			"input": "claude-api-stream-error-overloaded",
 			"output": "unavailable"
+		},
+		{
+			"input": "fails the live used-up credit balance 400 at once as PROVIDER_PAYMENT_REQUIRED",
+			"output": null
+		},
+		{
+			"input": "claude-api-error-400-credit-balance",
+			"output": null
 		},
 		{
 			"input": "fails the documented spend-cap 429 at once as PROVIDER_PAYMENT_REQUIRED",

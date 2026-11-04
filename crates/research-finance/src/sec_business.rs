@@ -36,8 +36,10 @@ use research_js::utf16::utf16_len;
 use research_js::whitespace::{self, is_js_whitespace};
 use serde::{Deserialize, Serialize};
 
-/// A 10-K's (or 20-F's) primary document: 1–13 MB on the companies checked (ADR-0053 §2).
-pub const SEC_TEN_K_MAX_BYTES: usize = 16_000_000;
+/// A 10-K's (or 20-F's) primary document: 1–13 MB on the companies first
+/// checked (ADR-0053 §2); Regency Centers' and BlackRock TCP Capital's are
+/// 21 MB (2026-11-04).
+pub const SEC_TEN_K_MAX_BYTES: usize = 32_000_000;
 /// Markdown kept of a primary document; Item 1 sits in its first part.
 pub const SEC_TEN_K_MAX_MARKDOWN_CHARS: usize = 4_000_000;
 /// The start heading is short: "Items 1 and 2. Business and Properties" is 38.
@@ -168,20 +170,23 @@ fn word_ends(text: &str) -> bool {
 		.is_some_and(|character| character.is_ascii_alphanumeric() || character == '_')
 }
 
-/// `/^items?\s*1(?:\s*(?:and|&)\s*2)?\s*[.:\-–—]?\s*business\b/i`.
+/// `/^items?\s*1\.?(?:\s*(?:and|&)\s*2\.?)?\s*[.:\-–—]?\s*business\b/i`.
+/// A "." taken after a number is never needed back: the punctuation that
+/// could take it instead is optional and followed by the same "business".
 fn is_start_heading(text: &str) -> bool {
 	let Some(rest) = strip_ascii_ci(text, "item") else {
 		return false;
 	};
 	let rest = rest.strip_prefix(&['s', 'S'][..]).unwrap_or(rest);
-	let Some(mut rest) = spaces(rest).strip_prefix('1') else {
+	let Some(rest) = spaces(rest).strip_prefix('1') else {
 		return false;
 	};
+	let mut rest = rest.strip_prefix('.').unwrap_or(rest);
 	// The optional "and 2": when it matches, nothing else after "1" could.
 	let joined = spaces(rest);
 	if let Some(after) = strip_ascii_ci(joined, "and").or_else(|| joined.strip_prefix('&')) {
 		if let Some(after) = spaces(after).strip_prefix('2') {
-			rest = after;
+			rest = after.strip_prefix('.').unwrap_or(after);
 		}
 	}
 	let rest = spaces(rest);
@@ -239,19 +244,25 @@ fn is_overview_heading(text: &str) -> bool {
 		.is_some_and(word_ends)
 }
 
-/// `/^item\s*4\s*[.:\-–—]?\s*information\s+on\s+the\s+company\b/i`.
+/// `/^item\s*4\s*[.:\-–—]?\s*information\s+on\s+(?:the|our)\s+company\b/i`.
 fn is_company_heading(text: &str) -> bool {
 	let Some(rest) = strip_ascii_ci(text, "item").and_then(|rest| spaces(rest).strip_prefix('4'))
 	else {
 		return false;
 	};
 	let mut rest = spaces(heading_punctuation(spaces(rest)));
-	for word in ["information", "on", "the"] {
+	for word in ["information", "on"] {
 		let Some(after) = strip_ascii_ci(rest, word).and_then(spaces1) else {
 			return false;
 		};
 		rest = after;
 	}
+	let Some(rest) = strip_ascii_ci(rest, "the")
+		.or_else(|| strip_ascii_ci(rest, "our"))
+		.and_then(spaces1)
+	else {
+		return false;
+	};
 	strip_ascii_ci(rest, "company").is_some_and(word_ends)
 }
 
@@ -307,6 +318,11 @@ fn is_bare_item_one(text: &str) -> bool {
 	strip_ascii_ci(text, "item")
 		.and_then(|rest| spaces(rest).strip_prefix('1'))
 		.is_some_and(|rest| rest.is_empty() || rest == ".")
+}
+
+/// `/^business\.?$/i`: the title of a start heading split from its bare "Item 1.".
+fn is_split_start_title(text: &str) -> bool {
+	strip_ascii_ci(text, "business").is_some_and(|rest| rest.is_empty() || rest == ".")
 }
 
 /// `/^item\s*4\.?$/i`.
@@ -372,9 +388,12 @@ pub fn sec_markdown_blocks(markdown: &str) -> Vec<SecBlock> {
 }
 
 /// `secSectionMark`: what a block is to the search for one section
-/// (ADR-0053 §3, ADR-0058 §5).
+/// (ADR-0053 §3, ADR-0058 §5), read without italic `*` markers
+/// ("Item 1. *Business*").
 #[must_use]
 pub fn sec_section_mark(text: &str, section: SecBusinessSection) -> SectionMark {
+	let plain = text.replace('*', "");
+	let text = plain.as_str();
 	let length = utf16_len(text);
 	let start = match section {
 		SecBusinessSection::TenKItemOne => is_start_heading(text),
@@ -394,6 +413,29 @@ pub fn sec_section_mark(text: &str, section: SecBusinessSection) -> SectionMark 
 	} else {
 		SectionMark::Other
 	}
+}
+
+/// `secSectionMarks`: every block's mark for one section — `sec_section_mark`,
+/// and in a 10-K a "Business" block right after a bare "Item 1." block also
+/// starts the section (the heading split in two).
+#[must_use]
+pub fn sec_section_marks(blocks: &[SecBlock], section: SecBusinessSection) -> Vec<SectionMark> {
+	let mut marks: Vec<SectionMark> = blocks
+		.iter()
+		.map(|block| sec_section_mark(&block.text, section))
+		.collect();
+	if section == SecBusinessSection::TenKItemOne {
+		for (index, pair) in blocks.windows(2).enumerate() {
+			if let [previous, block] = pair {
+				if is_bare_item_one(&previous.text) && is_split_start_title(&block.text) {
+					if let Some(mark) = marks.get_mut(index + 1) {
+						*mark = SectionMark::Start;
+					}
+				}
+			}
+		}
+	}
+	marks
 }
 
 /// A block of the section that is page furniture, not description (rule 3).
@@ -463,11 +505,7 @@ pub fn sec_business_blocks(markdown: &str, form: SecDescribedForm) -> Option<Vec
 		.map(|block| u64::try_from(utf16_len(&block.text)).unwrap_or(u64::MAX))
 		.collect();
 	let bounds = form.sections().iter().find_map(|section| {
-		let marks: Vec<SectionMark> = blocks
-			.iter()
-			.map(|block| sec_section_mark(&block.text, *section))
-			.collect();
-		business_section_bounds(&marks, &sizes)
+		business_section_bounds(&sec_section_marks(&blocks, *section), &sizes)
 	})?;
 	let texts: Vec<String> = blocks
 		.into_iter()
@@ -507,6 +545,8 @@ mod tests {
 			"Items 1 & 2 — Business",
 			"item1business",
 			"Item 1: Business Overview",
+			"Items 1. and 2. Business and Properties.",
+			"Item 1. *Business*",
 		] {
 			assert_eq!(
 				sec_section_mark(start, SecBusinessSection::TenKItemOne),
@@ -556,6 +596,7 @@ mod tests {
 			("item4bbusiness overview", TwentyFItemFourB),
 			("Item 4. Information on the Company", TwentyFItemFour),
 			("ITEM 4 — INFORMATION ON THE COMPANY", TwentyFItemFour),
+			("Item 4. Information On Our Company", TwentyFItemFour),
 		] {
 			assert_eq!(
 				sec_section_mark(text, section),
@@ -594,6 +635,32 @@ mod tests {
 				SectionMark::Other,
 				"{other}"
 			);
+		}
+	}
+
+	#[test]
+	fn a_start_heading_split_from_its_bare_item_one_starts_the_section() {
+		let body =
+			"The Company is a financial holding company with banking offices in three states.";
+		let markdown = [
+			"Item 1. Business",
+			"Item 1A. Risk Factors",
+			"PART I",
+			"Item 1.",
+			"Business",
+			"Overview",
+			body,
+			"Item 1A.",
+			"Risk Factors",
+		]
+		.join("\n\n");
+		assert_eq!(
+			sec_business_blocks(&markdown, SecDescribedForm::TenK),
+			Some(vec!["Overview".to_owned(), body.to_owned()])
+		);
+		for lookalike in [["Item 1.", "Businesses"], ["Item 2.", "Business"]] {
+			let markdown = [lookalike[0], lookalike[1], body, "Item 2"].join("\n\n");
+			assert_eq!(sec_business_blocks(&markdown, SecDescribedForm::TenK), None);
 		}
 	}
 

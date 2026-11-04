@@ -221,6 +221,40 @@ page. A page robots.txt refuses, an address or redirect the safety policy
 rejects, and a PDF (the tool returns PDFs as binary) are never read this
 way.
 
+### 2d. Claude Code instead of the Claude API (2026-11-04)
+
+When the API's prepaid credit ran out, the owner asked for the Haiku 5.5
+agent through Claude Code. `run.ts --backend claude-code` (now the
+default) runs Haiku 5.5 with the `claude` CLI on the owner's subscription
+login:
+
+- writing turns go through the claude-code adapter (no tools; a turn
+  whose CLI reports any tool or an API key fails closed);
+- page searches run `claude -p` with the WebSearch tool alone
+  (`claudeCodePageFinder.ts`): the CLI's init line must list only
+  WebSearch, no MCP server and `apiKeySource` "none", and the child gets
+  no `ANTHROPIC_*` variable, so the run can never bill an API key; a
+  picked URL is read only when it appeared in the search results, as
+  before;
+- there is no web-fetch fallback: Claude Code's WebFetch returns a model's
+  summary, not the page's words, so no quote could be checked;
+- the plan's usage is shared with the owner's own Claude Code work: the
+  run pauses when the 5-hour window is 80% used (until it resets) and
+  stops when the 7-day window is (`PlanGate`, from each search turn's
+  `rate_limit_event`); a rate-limited writing turn waits 30 minutes;
+- ニコニコ大百科 and other user-written wikis are excluded like Wikipedia;
+  the search prompt asks for HTML pages, not PDFs;
+- (2026-11-04, review of the first 2,383 stocks) sites whose pages the
+  runner's fetcher could read at most 15% of the time are excluded (bot
+  walls and script-only pages: roic.ai 2 of 74, CEF Connect 11 of 82,
+  barchart.com 0 of 45, GuruFocus, Simply Wall St, stocknear, CapEdge,
+  Craft, PitchBook, YCharts and others), and the prompt asks for a short
+  SEC document only (an annual or fund report or a prospectus is over the
+  fetcher's 2 MiB: 908 such picks were refused) and, for a fund, the fund
+  manager's own page first.
+
+`--backend claude-api` keeps the metered API path.
+
 ### 5b. Empty rows and bare segments (2026-11-04)
 
 トヨタ紡織's entry showed 【連結事業】 as four region names (米州, アジア,
@@ -308,6 +342,15 @@ The stock list also holds preferred shares, warrants, units and rights
   (472 of the 532: "AHL-PD" → AHL) takes a copy of its issuer's entry: its
   business is the issuer's. No model turn; the copies are made after every
   other stock, so the issuer's entry exists first.
+- (2026-11-04) Nasdaq writes such a listing without a hyphen, and a note
+  or another share class has a symbol of its own: 70 of the first 171
+  stocks the full run could not write were these (EFSCP, HBANP, EDBLW,
+  GPACU, DUKB, FCNCN), searched as companies and finding nothing. A
+  listing now also takes the entry of a listing under the same company
+  name whose symbol is its issuer's: the issuer's symbol followed by more
+  letters (EFSC → EFSCP), or a class-A share of the same root (FCNCA →
+  FCNCN). An exchange-traded note only shares its bank's name (BMO's
+  FLYD, Deutsche Bank's DZZ) and is written as itself.
 - A fund, trust, ETF or blank-check company (SPAC) is written like any
   stock, and the prompt tells the model to describe it as one: its
   investment objective or purpose, what it holds or seeks, who manages or
@@ -333,6 +376,14 @@ shares (`overseasSalesFromDraft` in `@research/contracts`):
 - a region's share is its stated share, else its amount over the total; the
   overseas share is the stated one, else the total less the home amount
   over the total; one decimal place, largest region first;
+- a table without a total row (Sony's, Hitachi's 地域別売上高) adds up: the
+  model copies the home amount and every other row, その他 included (up
+  to 12; the page shows the largest six), and quotes the header row so
+  each amount can be matched to its region;
+- a long page keeps its sales-by-region table: past 10,000 characters a
+  page contributes its first 8,000 and a 2,000-character excerpt at its
+  first region-sales heading (`pageTextForModel`), and the page search
+  asks for a page of sales by country or region;
 - the stored entry keeps `percent` (nullable) and `regions` (`name`,
   `percent`), not the amounts. An entry stored before this has no
   `regions` and still reads (`regions` defaults to empty); it gains them

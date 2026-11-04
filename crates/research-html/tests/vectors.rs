@@ -247,6 +247,8 @@ struct ConvertCase {
 	base_url: String,
 	#[serde(rename = "maxChars")]
 	max_chars: usize,
+	#[serde(rename = "wholeDocument", default)]
+	whole_document: bool,
 	output: Page,
 }
 
@@ -263,6 +265,7 @@ fn replay(file: &str, minimum: usize) {
 				Options {
 					base_url: &case.base_url,
 					max_chars: case.max_chars,
+					whole_document: case.whole_document,
 				},
 			)
 		})
@@ -408,6 +411,7 @@ fn converts_the_bench_pages() {
 			&Options {
 				base_url: &case.base_url,
 				max_chars: case.max_chars,
+				whole_document: false,
 			},
 		);
 		if let Some(markdown) = &case.markdown {

@@ -156,6 +156,72 @@ export function isOutOfCredit(failure: string): boolean {
 	return failure.startsWith("PROVIDER_PAYMENT_REQUIRED");
 }
 
+/** A 5-hour window this full pauses the run until it resets: the owner's own Claude Code use shares it. */
+export const PLAN_PAUSE_UTILIZATION = 0.8;
+/** A 7-day window this full stops the run: waiting would take days. */
+export const PLAN_STOP_UTILIZATION = 0.8;
+/** How long a rate-limited writing turn waits when no window says when it resets. */
+export const PLAN_RATE_LIMIT_PAUSE_MS = 30 * 60_000;
+
+interface PlanWindowUse {
+	readonly name: string;
+	readonly utilization: number;
+	readonly resetsAtMs: number;
+	readonly status: string;
+}
+
+/**
+ * The subscription plan's usage limits as Claude Code reports them (the
+ * `rate_limit_event` of each page-search turn), for a run on the
+ * claude-code backend (ADR-0064 §2d). The run pauses before the 5-hour
+ * window is used up and stops before the 7-day one is, so the owner keeps
+ * room for their own work.
+ */
+export class PlanGate {
+	pausedUntilMs = 0;
+	/** Why the run must stop (the 7-day window), or null. */
+	exhaustedBy: string | null = null;
+	private readonly now: () => number;
+
+	constructor(now: () => number = Date.now) {
+		this.now = now;
+	}
+
+	observe(status: { readonly status: string; readonly windows: readonly PlanWindowUse[] }): void {
+		for (const window of status.windows) {
+			const full = window.status !== "allowed" || status.status === "rejected";
+			if (window.name === "seven_day") {
+				if (full || window.utilization >= PLAN_STOP_UTILIZATION) {
+					this.exhaustedBy ??= `the plan's 7-day usage is at ${Math.round(window.utilization * 100)}% (resets ${new Date(window.resetsAtMs).toISOString()})`;
+				}
+			} else if (full || window.utilization >= PLAN_PAUSE_UTILIZATION) {
+				this.pauseUntil(
+					window.resetsAtMs,
+					`${window.name} at ${Math.round(window.utilization * 100)}%`,
+				);
+			}
+		}
+	}
+
+	/** A writing turn was rate-limited: wait for the window, or PLAN_RATE_LIMIT_PAUSE_MS. */
+	rateLimited(): void {
+		this.pauseUntil(this.now() + PLAN_RATE_LIMIT_PAUSE_MS, "a turn was rate-limited");
+	}
+
+	private pauseUntil(untilMs: number, why: string): void {
+		if (untilMs <= this.pausedUntilMs) return;
+		this.pausedUntilMs = untilMs;
+		console.log(`plan usage: ${why}; pausing until ${new Date(untilMs).toISOString()}`);
+	}
+
+	/** Waits out a pause. */
+	async ready(sleep: (ms: number) => Promise<void>): Promise<void> {
+		while (this.exhaustedBy === null && this.now() < this.pausedUntilMs) {
+			await sleep(Math.min(60_000, this.pausedUntilMs - this.now()));
+		}
+	}
+}
+
 /** Search failures in a row (after each search's own retries) that pause all searches. */
 export const MAX_SEARCH_FAILURES_IN_A_ROW = 5;
 /** How long searches pause after that. */

@@ -55,6 +55,9 @@ describe("secSectionMark", () => {
 		"Item 1 — Business",
 		"Item 1: Business Overview",
 		"Items 1 and 2. Business and Properties",
+		"Items 1. and 2. Business and Properties.",
+		"Item 1. *Business*",
+		"*Item 1. Business*",
 	])("marks %s as the start", (text) => {
 		expect(secSectionMark(text, "10-K item 1")).toBe("start");
 	});
@@ -209,6 +212,25 @@ describe("secBusinessParagraphs", () => {
 		expect(secBusinessParagraphs(markdown, "10-K").paragraphs).toHaveLength(2);
 	});
 
+	it("reads a start heading split into a bare Item 1. and Business (Capital City Bank Group)", () => {
+		const markdown = doc(
+			"Item 1. Business",
+			"Item 1A. Risk Factors",
+			"PART I",
+			"Item 1.",
+			"Business",
+			"Overview",
+			DESCRIBES,
+			"Item 1A.",
+			"Risk Factors",
+			RISK,
+		);
+		expect(secBusinessBlocks(markdown, "10-K")).toEqual(["Overview", DESCRIBES]);
+		// Only "Business" (or "Business.") right after a bare "Item 1." starts it.
+		expect(secBusinessBlocks(doc("Item 1.", "Businesses", DESCRIBES, "Item 2"), "10-K")).toBe(null);
+		expect(secBusinessBlocks(doc("Business", DESCRIBES, "Item 2"), "10-K")).toBe(null);
+	});
+
 	it("finds nothing without the section, with an empty one, or without an end", () => {
 		const none = { paragraphs: [], truncated: false };
 		const tenK = (markdown: string) => secBusinessParagraphs(markdown, "10-K");
@@ -246,6 +268,7 @@ describe("a 20-F's Item 4.B (ADR-0058 §5)", () => {
 		["Item 4. B. Business Overview", "20-F item 4B"],
 		["Item 4. Information on the Company", "20-F item 4"],
 		["ITEM 4 — INFORMATION ON THE COMPANY", "20-F item 4"],
+		["Item 4. Information On Our Company", "20-F item 4"],
 	] as const)("marks %s as the start of %s", (text, section) => {
 		expect(secSectionMark(text, section)).toBe("start");
 	});

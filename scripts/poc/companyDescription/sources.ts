@@ -78,10 +78,10 @@ export function watchlistStocks(databasePath: string): StockKey[] {
  * the web — then the rest. A US company with a stored 10-K business
  * section needs no web search and may come anywhere.
  */
-export function directoryStocks(databasePath: string): StockKey[] {
+export function directoryStocks(databasePath: string): DirectoryListing[] {
 	return query(
 		databasePath,
-		`SELECT d.market, d.symbol
+		`SELECT d.market, d.symbol, d.name
 		 FROM stock_directory AS d
 		 LEFT JOIN stock_company_profile AS p ON p.market = d.market AND p.symbol = d.symbol
 		 ORDER BY
@@ -95,8 +95,13 @@ export function directoryStocks(databasePath: string): StockKey[] {
 		         ELSE 6
 		     END,
 		     d.market DESC, d.symbol`,
-		stockKeyRow,
+		stockKeyRow.extend({ name: z.string() }),
 	);
+}
+
+/** A stock-list stock with the company name the list gives it. */
+export interface DirectoryListing extends StockKey {
+	readonly name: string;
 }
 
 /** The stocks whose overview is already stored: "MARKET:SYMBOL" → when it was written. */
@@ -111,16 +116,58 @@ export function storedOverviewKeys(databasePath: string): Map<string, string> {
 }
 
 /**
- * The issuer of a US preferred share, warrant, unit or right ("AHL-PD" →
- * "AHL", "AAC-WT" → "AAC") when the issuer is itself in `listed`, else
- * null. 472 of the 532 such listings have one (2026-11-04).
+ * Whether `issuer` is the symbol of the company that issued `security`,
+ * both listed under one company name: the issuer's symbol followed by more
+ * letters (Nasdaq's preferred, warrant, unit and right suffixes: EFSC →
+ * EFSCP, GRAB → GRABW, GPAC → GPACU; a note: DUK → DUKB), or a class-A
+ * stock and another class of the same root (FCNCA → FCNCN, LBTYA →
+ * LBTYK). An exchange-traded note shares only its bank's name (BMO's FLYD,
+ * Deutsche Bank's DZZ): it is not the bank's business, so it matches
+ * neither.
  */
-export function issuerOf(stock: StockKey, listed: ReadonlySet<string>): StockKey | null {
-	if (stock.market !== "US") return null;
-	const match = /^([A-Z0-9.]+)-[A-Z]{1,3}$/.exec(stock.symbol);
-	const base = match?.[1];
-	if (base === undefined || !listed.has(`US:${base}`)) return null;
-	return { market: "US", symbol: base };
+export function isIssuerSymbol(issuer: string, security: string): boolean {
+	if (issuer === security) return false;
+	if (security.length > issuer.length) return security.startsWith(issuer);
+	return (
+		issuer.length >= 3 &&
+		security.length === issuer.length &&
+		issuer.endsWith("A") &&
+		security.slice(0, -1) === issuer.slice(0, -1)
+	);
+}
+
+/**
+ * The issuer of a US preferred share, warrant, unit, right or note, found
+ * among the stock list's listings, or null. "AHL-PD" → AHL and "AAC-WT" →
+ * AAC when that symbol is listed (472 of the 532 hyphenated listings,
+ * 2026-11-04); else a listing under the same company name whose symbol is
+ * the issuer's (`isIssuerSymbol`; the shortest when several are): 70 of
+ * the first 171 stocks the 2026-11-04 run could not write were such
+ * listings (EFSCP, HBANP, EDBLW, FCNCN), searched as companies of their own.
+ */
+export function issuerFinder(
+	directory: readonly DirectoryListing[],
+): (stock: StockKey) => StockKey | null {
+	const listed = new Set(directory.map((key) => `${key.market}:${key.symbol}`));
+	const nameOf = new Map<string, string>();
+	const symbolsOf = new Map<string, string[]>();
+	for (const listing of directory) {
+		if (listing.market !== "US") continue;
+		nameOf.set(listing.symbol, listing.name);
+		const symbols = symbolsOf.get(listing.name);
+		if (symbols === undefined) symbolsOf.set(listing.name, [listing.symbol]);
+		else symbols.push(listing.symbol);
+	}
+	return (stock) => {
+		if (stock.market !== "US") return null;
+		const base = /^([A-Z0-9.]+)-[A-Z]{1,3}$/.exec(stock.symbol)?.[1];
+		if (base !== undefined && listed.has(`US:${base}`)) return { market: "US", symbol: base };
+		const name = nameOf.get(stock.symbol);
+		const issuer = (name === undefined ? [] : (symbolsOf.get(name) ?? []))
+			.filter((symbol) => isIssuerSymbol(symbol, stock.symbol))
+			.sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0))[0];
+		return issuer === undefined ? null : { market: "US", symbol: issuer };
+	};
 }
 
 /** A stock's whole stored overview (entry, facts, references, who wrote it), or null. */

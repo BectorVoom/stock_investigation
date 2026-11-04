@@ -445,7 +445,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -2676,7 +2676,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -2799,7 +2799,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -2999,7 +2999,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -4329,7 +4329,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -5574,7 +5574,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -5716,7 +5716,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -5839,7 +5839,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -8167,7 +8167,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -8318,7 +8318,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -8469,7 +8469,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -8619,7 +8619,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -8769,7 +8769,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -8928,7 +8928,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -9075,7 +9075,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",
@@ -9230,7 +9230,7 @@
 						{
 							"url": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
 							"accept": "text/html",
-							"maxBytes": 16000000,
+							"maxBytes": 32000000,
 							"timeoutMs": 30000,
 							"allowedHosts": [
 								"data.sec.gov",

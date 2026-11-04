@@ -295,6 +295,16 @@ describe("htmlToMarkdown rule 5: start at the article heading", () => {
 		expect(page.markdown).toBe("just text\n\nmore text");
 		expect(page.omitted.leadingBlocks).toBe(0);
 	});
+
+	it("keeps everything before the only h1 in a whole document (a 10-K's exhibit index)", () => {
+		const html = `<p>Item 1. Business</p><p>${"We drill wells. ".repeat(20)}</p><h1>Exhibits not filed herewith.</h1><p>${"word ".repeat(150)}</p>`;
+		const options = { baseUrl: "https://www.sec.gov/", maxChars: 20_000 };
+		expect(htmlToMarkdown(html, options).omitted.leadingBlocks).toBe(2);
+		const page = htmlToMarkdown(html, { ...options, wholeDocument: true });
+		expect(page.markdown.startsWith("Item 1. Business\n\nWe drill wells.")).toBe(true);
+		expect(page.markdown).toContain("# Exhibits not filed herewith.");
+		expect(page.omitted.leadingBlocks).toBe(0);
+	});
 });
 
 describe("htmlToMarkdown rule 6: whitespace in emphasis", () => {

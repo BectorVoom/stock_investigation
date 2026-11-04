@@ -1055,6 +1055,18 @@
 		}
 	},
 	{
+		"input": "data:a used-up credit balance",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/error-400-credit-balance.json",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
 		"input": "data:fails %s at once as PROVIDER_PAYMENT_REQUIRED, keeping the status",
 		"output": {
 			"kind": "malformed"
@@ -1612,6 +1624,27 @@
 		"input": "data:claude-api-stream-error-overloaded",
 		"output": {
 			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:fails the live used-up credit balance 400 at once as PROVIDER_PAYMENT_REQUIRED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api-error-400-credit-balance",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"code\":\"PROVIDER_PAYMENT_REQUIRED\",\"retryable\":false,\"upstreamStatus\":400}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
 		}
 	},
 	{

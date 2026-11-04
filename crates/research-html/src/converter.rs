@@ -28,6 +28,10 @@ pub struct Options<'a> {
 	pub base_url: &'a str,
 	/// Markdown budget in UTF-16 code units.
 	pub max_chars: usize,
+	/// Keep every block of a page without a main element: no article start
+	/// at its `<h1>` (rule 5). For documents such as a 10-K, whose only
+	/// `<h1>` may head the exhibit index (`wholeDocument`).
+	pub whole_document: bool,
 }
 
 /// Heuristic drops, so a reader knows the Markdown is not the whole page.
@@ -392,7 +396,7 @@ impl Links {
 /// `htmlToMarkdown`: total — any input gives a page.
 #[must_use]
 pub fn html_to_markdown(html: &str, options: &Options<'_>) -> MarkdownPage {
-	let mut converter = Converter::new(options.base_url, options.max_chars);
+	let mut converter = Converter::new(options.base_url, options.max_chars, options.whole_document);
 	parser::parse(html, &mut converter);
 	converter.finish()
 }
@@ -409,6 +413,7 @@ struct Converter {
 	open_tag_positions: Vec<Vec<usize>>,
 	links: Links,
 	max_chars: usize,
+	whole_document: bool,
 	body_seen: bool,
 	body_depth: usize,
 	main_depth: usize,
@@ -450,7 +455,7 @@ struct Converter {
 }
 
 impl Converter {
-	fn new(base_url: &str, max_chars: usize) -> Self {
+	fn new(base_url: &str, max_chars: usize, whole_document: bool) -> Self {
 		Self {
 			stack: vec![Frame::Section {
 				tag: None,
@@ -463,6 +468,7 @@ impl Converter {
 			open_tag_positions: Vec::new(),
 			links: Links::new(base_url),
 			max_chars,
+			whole_document,
 			body_seen: false,
 			body_depth: 0,
 			main_depth: 0,
@@ -1398,7 +1404,11 @@ impl Converter {
 				visible.push(block);
 			}
 		}
-		// Rule 5: start at the article when the page offers no main element.
+		// Rule 5: start at the article when the page offers no main element
+		// (not in a whole document).
+		if self.whole_document {
+			return visible;
+		}
 		let h1_indices: Vec<usize> = visible
 			.iter()
 			.enumerate()

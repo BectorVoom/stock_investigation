@@ -397,6 +397,7 @@ impl Tool for WebTool {
 					&research_html::Options {
 						base_url: &base,
 						max_chars: MAX_RETRIEVED_TEXT_CHARS,
+						whole_document: false,
 					},
 				)
 			})

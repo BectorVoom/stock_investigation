@@ -71,6 +71,14 @@ export interface MarkdownPage {
 export interface HtmlToMarkdownOptions {
 	readonly baseUrl: string;
 	readonly maxChars: number;
+	/**
+	 * Keep every block of a page without a main element: no article start at
+	 * its `<h1>` (rule 5). For documents, not web pages: a 10-K's only `<h1>`
+	 * may head its exhibit index, and rule 5 then dropped Item 1 with
+	 * everything else before it (913 SEC reports read as having no business
+	 * section, 2026-11-04).
+	 */
+	readonly wholeDocument?: boolean;
 }
 
 /** Elements dropped with everything inside them (plus HTML comments, below). */
@@ -424,14 +432,19 @@ export function htmlToMarkdown(html: string, options: HtmlToMarkdownOptions): Ma
 			typeof options.maxChars === "number" && Number.isFinite(options.maxChars)
 				? Math.max(0, Math.floor(options.maxChars))
 				: 0;
-		return convert(html, baseUrl, maxChars);
+		return convert(html, baseUrl, maxChars, options.wholeDocument === true);
 	} catch {
 		// Total function: malformed input, hostile nesting and binary garbage all end here.
 		return { title: null, markdown: "", truncated: false, omitted: ZERO_OMITTED };
 	}
 }
 
-function convert(html: string, baseUrl: string, maxChars: number): MarkdownPage {
+function convert(
+	html: string,
+	baseUrl: string,
+	maxChars: number,
+	wholeDocument: boolean,
+): MarkdownPage {
 	const root: Frame = { kind: "section", tag: "", inMain: false, inline: [], blocks: [] };
 	const stack: Frame[] = [root];
 	const dropped: string[] = [];
@@ -1291,9 +1304,10 @@ function convert(html: string, baseUrl: string, maxChars: number): MarkdownPage 
 			else kept.push(block);
 		}
 		visible = kept;
-		// Rule 5: start at the article when the page offers no main element.
+		// Rule 5: start at the article when the page offers no main element
+		// (not in a whole document: no `<h1>` is looked for).
 		const h1Indices: number[] = [];
-		for (let index = 0; index < visible.length; index += 1) {
+		for (let index = 0; !wholeDocument && index < visible.length; index += 1) {
 			const block = visible[index];
 			if (block !== undefined && isH1Block(block.text)) h1Indices.push(index);
 		}

@@ -17,6 +17,13 @@ copied. Its editorial forecast paragraphs have no counterpart (ADR-0060: no
 forecasts). Every field comes from the server's own stored records or
 from up to three public web pages (ADR-0064 §2a).
 
+## Backend
+
+`--backend claude-code` (the default) runs Haiku 5.5 through the Claude
+Code CLI on the owner's subscription (writing turns without tools, page
+searches with WebSearch only, pausing near the plan's usage limits);
+`--backend claude-api` uses the metered Claude API. ADR-0064 §2d.
+
 ## The template
 
 | 四季報's label | Who fills it | Rule |
@@ -137,8 +144,11 @@ are read, by the runner's own `web.fetch_page`:
   licensed editorial blurbs or quote pages (Nikkei, 株予報, みんかぶ, 株探,
   Yahoo Finance), machine-written profiles (Tavily's, MarkLines' AI
   analysis), contact-list aggregators, job boards and recruiting pages
-  (also by host name: …tenshoku…, …career…, recruit.…) and plain http are
-  never used;
+  (also by host name: …tenshoku…, …career…, recruit.…), sites the fetcher
+  could read at most 15% of the time (roic.ai, CEF Connect, barchart.com,
+  GuruFocus, Simply Wall St…, 2026-11-04) and plain http are never used;
+  from sec.gov the search picks only short documents (a 10-K or N-CSR is
+  over the fetcher's 2 MiB) and, for a fund, the fund manager's page first;
 - a page that cannot be read gives its place to the next result (at most
   six tried). A refused redirect (many Japanese sites send "/company" to
   "http://…/company/") is tried once more as the https URL with the slash;
@@ -146,8 +156,9 @@ are read, by the runner's own `web.fetch_page`:
   (script-rendered) page, a page over 2 MiB or a timeout is read once more
   with the Claude API's web fetch tool (`fetchText`, ADR-0064 §2c); never
   a page robots.txt refuses, a rejected address, or a PDF;
-- a preferred share, warrant, unit or right whose issuer is listed
-  ("AHL-PD" → AHL) copies its issuer's entry after every other stock is
+- a preferred share, warrant, unit, right or note whose issuer is listed
+  ("AHL-PD" → AHL; under the same company name, EFSCP → EFSC, FCNCN →
+  FCNCA) copies its issuer's entry after every other stock is
   done (ADR-0064 §5e); funds, trusts and SPACs are described as such;
 - by default only a stock without a stored business text (every Japanese
   stock, a US one without a 10-K Item 1) is searched, about USD 0.02 a

@@ -9,6 +9,11 @@ reads the business section of the newest annual report).
 40-F is recorded as not found without a download; the newest original 10-K,
 20-F or 40-F is the report described.
 
+**Amended 2026-11-04** (§3a): the primary document is converted as a whole
+document (no article start at its `<h1>`), more heading forms are read, the
+cap is 32,000,000 bytes, and migration 0033 has every report stored as
+`not-found` read again.
+
 ## Context
 
 The owner asked (2026-11-01):
@@ -56,7 +61,8 @@ read (`source_document_id`, form, filing date, period end, link), `status`
   accession; a valid report date and a plain primary-document name). When
   its accession differs from `describedDocumentId`, it downloads that
   primary document (`https://www.sec.gov/Archives/edgar/data/{cik}/{folder}/{primaryDocument}`,
-  the filing's own `sourceUrl`; one paced request, 16,000,000-byte cap) and
+  the filing's own `sourceUrl`; one paced request, 32,000,000-byte cap,
+  16,000,000 before §3a) and
   extracts the section (§3). A primary document over the cap is recorded
   as `not-found` (a retry would not make it smaller). A company syncs once a day, and a new 10-K
   arrives once a year, so this is about one request per company per year.
@@ -89,7 +95,8 @@ characters. Its blocks (blank-line separated; a table block's cells joined
 with spaces) are marked:
 
 - **start** — the block is "Item 1. Business" in any case and punctuation,
-  "Items 1 and 2. Business and Properties", at most 60 characters;
+  "Items 1 and 2. Business and Properties", at most 60 characters (§3a
+  adds more forms);
 - **end** — the block starts "Item 1A", "1B", "1C", "2" or "3", at most 120
   characters;
 - **other** — everything else.
@@ -113,6 +120,37 @@ and defined-terms boilerplate).
 Checked against the live 10-Ks of Apple, Microsoft, Coca-Cola, JPMorgan
 Chase and Amazon (2026-11-01): each found the body heading, not the table
 of contents, and each section opens with what the company does.
+
+### 3a. Reports read as having no section (2026-11-04)
+
+913 of 5,422 stored descriptions (773 10-K, 140 20-F) were `not-found`,
+among them EOG Resources, Freeport-McMoRan and e.l.f. Beauty. Of 40 of
+them read again by hand, 38 have the section; the reader lost it because:
+
+- **The converter's article start** (ADR-0009: a page without a main
+  element starts at its `<h1>`). A 10-K has no main element, and its only
+  `<h1>` is often a heading of the exhibit index at the end: everything
+  before it, Item 1 included, was dropped (EOG: 1,294 blocks; 28 of the
+  40). The primary document is now converted with `wholeDocument` (Rust
+  `whole_document`), which keeps every block; web pages are unchanged.
+- **Heading forms not read**: "Items 1. and 2. Business and Properties."
+  (a period after each number), "Item 1. *Business*" (italic `*` markers
+  are ignored when a block is marked), "Item 1." and "Business" in two
+  blocks (a "Business" or "Business." block right after a bare "Item 1."
+  block starts the section, `secSectionMarks`), and a 20-F's "Item 4.
+  Information On Our Company".
+- **Size**: Regency Centers' and BlackRock TCP Capital's 10-Ks are 21 MB;
+  the cap is now 32,000,000 bytes.
+
+With these, 36 of the 40 are read; the other 4 are 20-Fs that put the
+description in an annual-report layout without Item headings (Unilever,
+Shell, ArcelorMittal, InterContinental Hotels) and stay `not-found`.
+`not-found` is stored like a success, so migration 0033 deletes the
+`not-found` rows of 10-Ks and 20-Fs and makes each such company's
+scheduled sync due now: its next `financial-sync` reads the report again
+(one SEC request each). Read again by the Rust runner on the development
+database (2026-11-04, about 40 minutes): 782 of the 913 now have the
+section (693 of 773 10-Ks, 89 of 140 20-Fs); 131 stay `not-found`.
 
 ### 4. Paragraphs
 
@@ -163,7 +201,7 @@ Below Listing, a **Business** group (事業内容):
 ## Consequences
 
 - A tracked US company costs one more SEC request per new 10-K (about once a
-  year), up to 16 MB; existing companies get theirs at their next daily
+  year), up to 32 MB (16 MB before §3a); existing companies get theirs at their next daily
   sync. A Japanese company costs nothing extra, except one CSV download for
   a stored report read before this change.
 - The section finder is heuristic: a filing that words its headings

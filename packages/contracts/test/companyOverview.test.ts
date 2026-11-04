@@ -163,6 +163,42 @@ describe("【海外】 countries and shares (ADR-0064 §5f)", () => {
 		});
 	});
 
+	it("adds up a table without a total row: the home amount and every region", () => {
+		// Sony's 地域別売上高 (億円, 2026/3): no total row (2026-11-04).
+		const sony = overseasSalesFromDraft({
+			percent: null,
+			totalAmount: null,
+			homeAmount: 13_332,
+			regions: [
+				region("米国", null, 40_644),
+				region("欧州", null, 28_268),
+				region("アジア・太平洋地域", null, 16_949),
+				region("中国", null, 14_287),
+				region("その他地域", null, 11_316),
+			],
+			evidence,
+		});
+		// Total 124,796: overseas 111,464.
+		expect(sony?.percent).toBe(89.3);
+		expect(sony?.regions.map((item) => `${item.name.ja} ${item.percent}`)).toEqual([
+			"米国 32.6",
+			"欧州 22.7",
+			"アジア・太平洋地域 13.6",
+			"中国 11.4",
+			"その他地域 9.1",
+		]);
+		// A row without an amount leaves the sum unknown.
+		expect(
+			overseasSalesFromDraft({
+				percent: null,
+				totalAmount: null,
+				homeAmount: 13_332,
+				regions: [region("米国", null, 40_644), region("欧州", 20, null)],
+				evidence,
+			})?.regions,
+		).toEqual([{ name: { en: "欧州", ja: "欧州" }, percent: 20 }]);
+	});
+
 	it("keeps a stated overseas share and drops a region with no share and no total", () => {
 		expect(
 			overseasSalesFromDraft({

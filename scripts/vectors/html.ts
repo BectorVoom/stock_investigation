@@ -44,6 +44,8 @@ interface ConvertCase {
 	readonly html: string | readonly Piece[];
 	readonly baseUrl: string;
 	readonly maxChars: number;
+	/** Present (true) only for a whole-document case (rule 5 off). */
+	readonly wholeDocument?: true;
 	readonly output: MarkdownPage;
 }
 
@@ -111,6 +113,18 @@ function testsFile(): VectorFile {
 				output: convert(html, { baseUrl: input.baseUrl, maxChars }),
 			});
 		}
+		// The same page read as a whole document (SEC filings: no article start).
+		cases.push({
+			html: input.html,
+			baseUrl: input.baseUrl,
+			maxChars: input.maxChars,
+			wholeDocument: true,
+			output: convert(html, {
+				baseUrl: input.baseUrl,
+				maxChars: input.maxChars,
+				wholeDocument: true,
+			}),
+		});
 	}
 	return { path: "html/convert-tests.json", content: cases };
 }

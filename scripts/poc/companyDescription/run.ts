@@ -6,7 +6,16 @@
  *
  *   node --env-file=.env scripts/poc/companyDescription/run.ts [--db <sqlite file>] [--out <dir>]
  *     [--store] [--all] [--limit <n>] [--concurrency <n>] [--force] [--rewrite-before <ISO>]
- *     [--no-web | --web-all] [--search claude|tavily] [MARKET:SYMBOL ...]
+ *     [--no-web | --web-all] [--search claude|tavily] [--backend claude-code|claude-api]
+ *     [MARKET:SYMBOL ...]
+ *
+ * Backend (ADR-0064 §2d): `claude-code` (the default) runs Haiku 5.5 through
+ * the Claude Code CLI on the owner's subscription login — writing turns with
+ * no tools (the claude-code adapter), page searches with WebSearch only
+ * (claudeCodePageFinder.ts) — pausing when the plan's 5-hour window is
+ * nearly used and stopping when its 7-day window is (runPolicy.ts
+ * `PlanGate`); there is no web-fetch fallback. `claude-api` uses the metered
+ * Claude API (ANTHROPIC_API_KEY) as before.
  *
  * Which stocks: the ones named, else every stock-list stock with `--all`
  * (sources.ts `directoryStocks` gives the order), else the Watchlist. A
@@ -52,9 +61,14 @@
 import { randomBytes } from "node:crypto";
 import { appendFileSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { createClaudeApiRuntime, createNodeProcessRunner } from "@research/adapters/providers";
-import { parseAgentEvent, type ToolDefinition } from "@research/agent-core";
+import {
+	createClaudeApiRuntime,
+	createClaudeCodeRuntime,
+	createNodeProcessRunner,
+} from "@research/adapters/providers";
+import { type AgentRuntime, parseAgentEvent, type ToolDefinition } from "@research/agent-core";
 import { CLAUDE_API_AGENT_ID, type CompanyOverviewView } from "@research/contracts";
+import { createClaudeCodePageFinder } from "./claudeCodePageFinder.ts";
 import { createClaudePageFinder } from "./claudePageFinder.ts";
 import { checkDescription, describeProblems, keepVerified } from "./evidence.ts";
 import { companyDescriptionPrompt } from "./prompt.ts";
@@ -66,6 +80,7 @@ import {
 	KEPT_STORED,
 	mayReplace,
 	NO_BUSINESS_SOURCE,
+	PlanGate,
 	recentlyUnreadableIn,
 	type SearchProvider,
 	storeRefusal,
@@ -74,7 +89,7 @@ import {
 } from "./runPolicy.ts";
 import {
 	directoryStocks,
-	issuerOf,
+	issuerFinder,
 	ownerOf,
 	readStockSources,
 	type StockKey,
@@ -98,6 +113,8 @@ import {
 
 const MODEL = "claude-haiku-5-5";
 const TURN_DEADLINE_MS = 300_000;
+/** Rate-limited writing turns one stock waits out before it counts as failed. */
+const PLAN_RATE_LIMIT_WAITS = 10;
 
 function devDatabasePath(): string {
 	const directory = "data-dev/d1/v3/d1/miniflare-D1DatabaseObject";
@@ -113,7 +130,10 @@ function devDatabasePath(): string {
 
 type WebPolicy = "missing-text" | "all" | "none";
 
+type Backend = "claude-code" | "claude-api";
+
 interface Args {
+	readonly backend: Backend;
 	readonly db: string;
 	readonly out: string;
 	readonly store: boolean;
@@ -141,6 +161,7 @@ function parseArgs(argv: readonly string[]): Args {
 	let store = false;
 	let web: WebPolicy = "missing-text";
 	let search: SearchProvider = "claude";
+	let backend: Backend = "claude-code";
 	let all = false;
 	let limit: number | null = null;
 	let concurrency = 1;
@@ -161,6 +182,12 @@ function parseArgs(argv: readonly string[]): Args {
 				throw new Error(`--search expects claude or tavily, got ${value}`);
 			}
 			search = value;
+		} else if (arg === "--backend") {
+			const value = argv[++index];
+			if (value !== "claude-code" && value !== "claude-api") {
+				throw new Error(`--backend expects claude-code or claude-api, got ${value}`);
+			}
+			backend = value;
 		} else if (arg === "--all") all = true;
 		else if (arg === "--force") force = true;
 		else if (arg === "--rewrite-before") {
@@ -182,6 +209,7 @@ function parseArgs(argv: readonly string[]): Args {
 	if (all && stocks.length > 0)
 		throw new Error("--all and MARKET:SYMBOL arguments exclude each other");
 	return {
+		backend,
 		db: db ?? devDatabasePath(),
 		out,
 		store,
@@ -196,11 +224,16 @@ function parseArgs(argv: readonly string[]): Args {
 	};
 }
 
-const agent = createClaudeApiRuntime({
+const providerEnvironment = {
 	processRunner: createNodeProcessRunner(),
 	fetch: globalThis.fetch,
 	env: process.env,
-});
+};
+/** The writing turns' runtime and the agent id stored with the entry; set by `main` from `--backend`. */
+let agent: AgentRuntime = createClaudeCodeRuntime(providerEnvironment);
+let agentId: string = "claude-code";
+/** An empty directory the CLI runs in (no project files, no CLAUDE.md); set by `main`. */
+let scratchDirectory: string | null = null;
 
 interface TurnResult {
 	readonly text: string;
@@ -222,7 +255,8 @@ async function modelTurn(prompt: string, runId: string): Promise<TurnResult> {
 		},
 		{
 			signal: AbortSignal.timeout(TURN_DEADLINE_MS),
-			scratchDirectory: null,
+			// The claude-code adapter runs the CLI in it; the API ignores it.
+			scratchDirectory: scratchDirectory,
 			model: MODEL,
 			effort: "medium",
 		},
@@ -275,7 +309,7 @@ function overviewView(
 			cites: stock.cites,
 		},
 		references: stock.sources.map(({ text: _text, ...reference }) => reference),
-		agentId: CLAUDE_API_AGENT_ID,
+		agentId,
 		model: MODEL,
 		generatedAt,
 	};
@@ -431,10 +465,37 @@ async function readSourcesWithRetries(db: string, key: StockKey): Promise<StockS
 function pageSearchFor(
 	provider: SearchProvider,
 	tavily: ToolDefinition | null,
+	backend: Backend,
+	out: string,
+	plan: PlanGate,
 ): { readonly find: PageSearch; readonly fallbackRead: FallbackRead | null } {
 	if (provider === "tavily") {
 		if (tavily === null) throw new Error("--search tavily needs TAVILY_API_KEY");
 		return { find: tavilyPageSearch(tavily), fallbackRead: null };
+	}
+	if (backend === "claude-code") {
+		const finder = createClaudeCodePageFinder({
+			env: process.env,
+			workingDirectory: join(out, "claude-code-cwd"),
+			blockedDomains: EXCLUDED_HOST_SUFFIXES,
+			onPlanStatus: (status) => plan.observe(status),
+		});
+		return {
+			find: async (stock, log) => {
+				const found = await finder.find(stock);
+				if (!found.ok) {
+					if (found.code === "PLAN_RATE_LIMITED") plan.rateLimited();
+					return found;
+				}
+				log.push(
+					`Haiku agent (Claude Code): ${found.searches} search(es), ${found.urls.length} picked pages`,
+				);
+				log.push(...found.log);
+				return { ok: true, urls: found.urls, order: "as-given", costUsd: 0 };
+			},
+			// Claude Code's WebFetch returns a model's summary, not the page's words: no quote could be checked.
+			fallbackRead: null,
+		};
 	}
 	const apiKey = process.env.ANTHROPIC_API_KEY?.trim() ?? "";
 	if (apiKey === "") throw new Error("--search claude needs ANTHROPIC_API_KEY");
@@ -457,13 +518,23 @@ function pageSearchFor(
 
 async function main(): Promise<void> {
 	const args = parseArgs(process.argv.slice(2));
+	if (args.backend === "claude-api") {
+		agent = createClaudeApiRuntime(providerEnvironment);
+		agentId = CLAUDE_API_AGENT_ID;
+	}
 	const probe = await agent.probe();
 	if (probe.availability.status !== "available") {
-		throw new Error(`Claude API unavailable: ${probe.availability.reasonCode}`);
+		throw new Error(`${args.backend} unavailable: ${probe.availability.reasonCode}`);
 	}
 	mkdirSync(args.out, { recursive: true });
+	scratchDirectory = join(args.out, "claude-code-cwd");
+	mkdirSync(scratchDirectory, { recursive: true });
+	const plan = new PlanGate();
 	const webTools = args.web === "none" ? null : createWebTools(join(args.out, "pages"));
-	const search = webTools === null ? null : pageSearchFor(args.search, webTools.search);
+	const search =
+		webTools === null
+			? null
+			: pageSearchFor(args.search, webTools.search, args.backend, args.out, plan);
 	const findPages = search?.find ?? null;
 	const fallbackRead = search?.fallbackRead ?? null;
 	const web = new WebBudget(findPages !== null);
@@ -478,7 +549,7 @@ async function main(): Promise<void> {
 					.map(([key]) => key),
 	);
 	const directory = directoryStocks(args.db);
-	const listed = new Set(directory.map((key) => `${key.market}:${key.symbol}`));
+	const issuerOf = issuerFinder(directory);
 	const candidates = args.stocks ?? (args.all ? directory : watchlistStocks(args.db));
 	const logFile = join(args.out, "run.jsonl");
 	const unreadable = args.force
@@ -502,6 +573,7 @@ async function main(): Promise<void> {
 
 	async function writeOne(key: StockKey): Promise<StockOutcome> {
 		const label = `${key.market}:${key.symbol}`;
+		await plan.ready(sleep);
 		let sources = await readSourcesWithRetries(args.db, key);
 		const searchesWeb =
 			webTools !== null &&
@@ -561,6 +633,12 @@ async function main(): Promise<void> {
 			} catch (error) {
 				failure = error instanceof Error ? error.message : String(error);
 				if (isOutOfCredit(failure)) stopReason ??= failure;
+				if (args.backend === "claude-code" && /RATE_LIMIT/.test(failure)) {
+					// The plan's window is used up: wait for it instead of failing the stock.
+					plan.rateLimited();
+					await plan.ready(sleep);
+					if (plan.exhaustedBy === null && attempt < PLAN_RATE_LIMIT_WAITS) continue;
+				}
 				if (attempt >= TRANSIENT_RETRIES || !isTransient(failure)) break;
 				await sleep(TRANSIENT_PAUSE_MS * (attempt + 1));
 			}
@@ -629,11 +707,12 @@ async function main(): Promise<void> {
 
 	async function worker(queue: readonly StockKey[], counter: { next: number }): Promise<void> {
 		for (let key = queue[counter.next++]; key !== undefined; key = queue[counter.next++]) {
+			stopReason ??= plan.exhaustedBy;
 			// Stocks not started are left for the next run, not logged as failed.
 			if (stopReason !== null) return;
 			let outcome: StockOutcome;
 			try {
-				const issuer = issuerOf(key, listed);
+				const issuer = issuerOf(key);
 				outcome = issuer === null ? await writeOne(key) : await copyFromIssuer(key, issuer);
 			} catch (error) {
 				// A source or store failure for one stock must not stop the others.
@@ -661,8 +740,8 @@ async function main(): Promise<void> {
 	}
 
 	// Issuers first, then the listings that copy their entries.
-	const derived = stocks.filter((key) => issuerOf(key, listed) !== null);
-	const primary = stocks.filter((key) => issuerOf(key, listed) === null);
+	const derived = stocks.filter((key) => issuerOf(key) !== null);
+	const primary = stocks.filter((key) => issuerOf(key) === null);
 	for (const queue of [primary, derived]) {
 		const counter = { next: 0 };
 		await Promise.all(Array.from({ length: args.concurrency }, () => worker(queue, counter)));

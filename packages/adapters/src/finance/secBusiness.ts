@@ -9,7 +9,7 @@
  *    non-empty cells are joined with one space; any other block loses a
  *    leading `#` heading marker. Both lose `**` / `__` emphasis markers, and
  *    whitespace runs collapse.
- * 2. Each block is marked (`secSectionMark`) for a section and
+ * 2. Each block is marked (`secSectionMarks`) for a section and
  *    `businessSectionBounds` picks it: the table of contents names the item
  *    too, and some filings repeat it as a running page header. A form's
  *    sections are tried in turn (`SEC_SECTIONS_OF_FORM`); the first found
@@ -39,8 +39,12 @@ import {
 	type SectionMark,
 } from "@research/domain";
 
-/** A 10-K's (or 20-F's) primary document: 1–13 MB on the companies checked (ADR-0053 §2). */
-export const SEC_TEN_K_MAX_BYTES = 16_000_000;
+/**
+ * A 10-K's (or 20-F's) primary document: 1–13 MB on the companies first
+ * checked (ADR-0053 §2); Regency Centers' and BlackRock TCP Capital's are
+ * 21 MB (2026-11-04).
+ */
+export const SEC_TEN_K_MAX_BYTES = 32_000_000;
 /** Markdown kept of a primary document; Item 1 sits in its first part. */
 export const SEC_TEN_K_MAX_MARKDOWN_CHARS = 4_000_000;
 /** The start heading is short: "Items 1 and 2. Business and Properties" is 38. */
@@ -73,15 +77,18 @@ const HEADING_MARKER = /^#+\s*/;
 const EMPHASIS_MARKER = /\*\*|__/g;
 const WHITESPACE_RUN = /\s+/g;
 
-/** "Item 1. Business", "ITEM 1 — BUSINESS", "Items 1 and 2. Business and Properties". */
-const START_HEADING = /^items?\s*1(?:\s*(?:and|&)\s*2)?\s*[.:\-–—]?\s*business\b/i;
+/**
+ * "Item 1. Business", "ITEM 1 — BUSINESS", "Items 1 and 2. Business and
+ * Properties", "Items 1. and 2. Business and Properties." (Freeport-McMoRan).
+ */
+const START_HEADING = /^items?\s*1\.?(?:\s*(?:and|&)\s*2\.?)?\s*[.:\-–—]?\s*business\b/i;
 /** "Item 1A", "Item 1B", "Item 1C", "Item 2", "Item 3", with or without a title. */
 const END_HEADING = /^item\s*(?:1a|1b|1c|2|3)\b/i;
 
 /** "Item 4.B Business Overview", "4B. Business overview", "B. Business Overview". */
 const OVERVIEW_HEADING = /^(?:(?:item\s*)?4\s*\.?\s*)?b\s*[.:\-–—]?\s*business\s+overview\b/i;
-/** "Item 4. Information on the Company". */
-const COMPANY_HEADING = /^item\s*4\s*[.:\-–—]?\s*information\s+on\s+the\s+company\b/i;
+/** "Item 4. Information on the Company", "Item 4. Information On Our Company". */
+const COMPANY_HEADING = /^item\s*4\s*[.:\-–—]?\s*information\s+on\s+(?:the|our)\s+company\b/i;
 /**
  * What follows Item 4.B in a 20-F: "Item 4.C" / "4.D" (with or without a
  * title), "C. Organizational Structure", "D. Property, Plants and
@@ -98,6 +105,10 @@ const PAGE_BREAK = /^-{3,}$/;
 const TABLE_OF_CONTENTS = /^table of contents$/i;
 const PART_HEADING = /^part\s+[ivx]+$/i;
 const BARE_ITEM_ONE = /^item\s*1\.?$/i;
+/** The title of a start heading split from its bare "Item 1." (Capital City Bank Group). */
+const SPLIT_START_TITLE = /^business\.?$/i;
+/** Italic emphasis left in a heading: "Item 1. *Business*" (AXT, Mason Industrial). */
+const ITALIC_MARKER = /\*/g;
 const BARE_ITEM_FOUR = /^item\s*4\.?$/i;
 const FORM_10K = /form 10-k/i;
 const FORM_20F = /form 20-f/i;
@@ -157,11 +168,34 @@ function isEndHeading(text: string, section: SecBusinessSection): boolean {
 		: TWENTY_F_END_HEADINGS.some((heading) => heading.test(text));
 }
 
-/** What a block is to the search for one section (ADR-0053 §3, ADR-0058 §5). */
+/**
+ * What a block is to the search for one section (ADR-0053 §3, ADR-0058 §5),
+ * read without italic `*` markers.
+ */
 export function secSectionMark(text: string, section: SecBusinessSection): SectionMark {
-	if (text.length <= MAX_START_CHARS && isStartHeading(text, section)) return "start";
-	if (text.length <= MAX_END_CHARS && isEndHeading(text, section)) return "end";
+	const plain = text.replace(ITALIC_MARKER, "");
+	if (plain.length <= MAX_START_CHARS && isStartHeading(plain, section)) return "start";
+	if (plain.length <= MAX_END_CHARS && isEndHeading(plain, section)) return "end";
 	return "other";
+}
+
+/**
+ * Every block's mark for one section: `secSectionMark`, and in a 10-K a
+ * "Business" block right after a bare "Item 1." block also starts the
+ * section (the heading split in two).
+ */
+export function secSectionMarks(
+	blocks: readonly SecBlock[],
+	section: SecBusinessSection,
+): SectionMark[] {
+	const marks = blocks.map((block) => secSectionMark(block.text, section));
+	if (section !== "10-K item 1") return marks;
+	for (let index = 1; index < blocks.length; index += 1) {
+		const previous = blocks[index - 1]?.text ?? "";
+		const text = blocks[index]?.text ?? "";
+		if (BARE_ITEM_ONE.test(previous) && SPLIT_START_TITLE.test(text)) marks[index] = "start";
+	}
+	return marks;
 }
 
 /** A block of the section that is page furniture, not description (rule 3 above). */
@@ -227,7 +261,7 @@ export function secBusinessBlocks(
 	const blocks = secMarkdownBlocks(markdown);
 	const sizes = blocks.map((block) => block.text.length);
 	for (const section of SEC_SECTIONS_OF_FORM[form]) {
-		const marks = blocks.map((block) => secSectionMark(block.text, section));
+		const marks = secSectionMarks(blocks, section);
 		const bounds = businessSectionBounds(marks, sizes);
 		if (bounds === null) continue;
 		const texts: string[] = [];

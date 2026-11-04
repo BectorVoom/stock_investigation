@@ -440,6 +440,8 @@ export function secAnnualReportDescription(
 	const page = htmlToMarkdown(html, {
 		baseUrl: source.sourceUrl,
 		maxChars: SEC_TEN_K_MAX_MARKDOWN_CHARS,
+		// A 10-K's only `<h1>` may head its exhibit index (ADR-0053 §3).
+		wholeDocument: true,
 	});
 	return businessDescriptionOf(source, secBusinessParagraphs(page.markdown, source.form));
 }

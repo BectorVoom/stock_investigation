@@ -2,7 +2,13 @@ import type { ToolDefinition } from "@research/agent-core";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+	claudeCodeSearchArgs,
+	subscriptionEnv,
+	urlsOfSearchResult,
+} from "../../scripts/poc/companyDescription/claudeCodePageFinder.ts";
+import {
 	cleanFetchedText,
+	pageFinderPrompt,
 	pagesFromResults,
 	samePageKey,
 } from "../../scripts/poc/companyDescription/claudePageFinder.ts";
@@ -30,12 +36,17 @@ import {
 	mayReplace,
 	NO_BUSINESS_SOURCE,
 	NO_SUMMARY,
+	PlanGate,
 	recentlyUnreadable,
 	SEARCH_PAUSE_MS,
 	storeRefusal,
 	WebBudget,
 } from "../../scripts/poc/companyDescription/runPolicy.ts";
-import { groupDigits, issuerOf } from "../../scripts/poc/companyDescription/sources.ts";
+import {
+	groupDigits,
+	isIssuerSymbol,
+	issuerFinder,
+} from "../../scripts/poc/companyDescription/sources.ts";
 import { styleProblems } from "../../scripts/poc/companyDescription/style.ts";
 import {
 	type CompanyDescription,
@@ -53,6 +64,7 @@ import {
 	isJobSiteHost,
 	nameWords,
 	pageKind,
+	pageTextForModel,
 	registeredLabel,
 	withTrailingSlash,
 	withWebSources,
@@ -452,6 +464,36 @@ describe("company overview web sources (PoC, ADR-0064)", () => {
 		}
 	});
 
+	it("never picks a site the fetcher could not read (2026-11-04 runs)", () => {
+		for (const url of [
+			"https://www.cefconnect.com/fund/DSL",
+			"https://www.roic.ai/quote/EOG",
+			"https://simplywall.st/stocks/us/energy/nyse-eog/eog-resources",
+			"https://www.barchart.com/stocks/quotes/EOG/profile",
+		]) {
+			expect(pageKind(url, "DoubleLine Income Solutions Fund")).toBeNull();
+		}
+		// Still read: sites whose pages mostly could be.
+		expect(pageKind("https://stockanalysis.com/stocks/eog/company/", "EOG RESOURCES")).toBe(
+			"other",
+		);
+	});
+
+	it("tells the search to skip SEC reports and to look for a fund manager's page", () => {
+		const fund = {
+			stock: { market: "US" as const, symbol: "DSL" },
+			name: { en: "DoubleLine Income Solutions Fund", ja: "DoubleLine Income Solutions Fund" },
+			hasBusinessText: false,
+			sources: [],
+			profile: { listing: "nyse", sector: null, fiscalYearEnd: null },
+			cites: { listing: null, sector: null, figures: null },
+			figures: [],
+		};
+		const prompt = pageFinderPrompt(fund, []);
+		expect(prompt).toContain("10-K, 20-F, 40-F, N-CSR");
+		expect(prompt).toContain("the fund manager's own page");
+	});
+
 	it("chooses acceptable pages, official first, each once, up to the limit", () => {
 		const chosen = choosePages(
 			[
@@ -722,16 +764,54 @@ describe("run policy (PoC)", () => {
 
 describe("listings that are not companies (PoC, ADR-0064 §5e)", () => {
 	it("finds the issuer of a preferred share, warrant, unit or right when it is listed", () => {
-		const listed = new Set(["US:AHL", "US:AAC", "JP:7203"]);
-		expect(issuerOf({ market: "US", symbol: "AHL-PD" }, listed)).toEqual({
-			market: "US",
-			symbol: "AHL",
-		});
-		expect(issuerOf({ market: "US", symbol: "AAC-WT" }, listed)?.symbol).toBe("AAC");
+		const issuerOf = issuerFinder([
+			{ market: "US", symbol: "AHL", name: "Aspen Insurance Holdings" },
+			{ market: "US", symbol: "AAC", name: "Ares Acquisition Corp" },
+			{ market: "JP", symbol: "7203", name: "Toyota Motor Corporation" },
+		]);
+		expect(issuerOf({ market: "US", symbol: "AHL-PD" })).toEqual({ market: "US", symbol: "AHL" });
+		expect(issuerOf({ market: "US", symbol: "AAC-WT" })?.symbol).toBe("AAC");
 		// No listed issuer, a common stock, a Japanese code: written on their own.
-		expect(issuerOf({ market: "US", symbol: "BML-PH" }, listed)).toBeNull();
-		expect(issuerOf({ market: "US", symbol: "AHL" }, listed)).toBeNull();
-		expect(issuerOf({ market: "JP", symbol: "7203" }, listed)).toBeNull();
+		expect(issuerOf({ market: "US", symbol: "BML-PH" })).toBeNull();
+		expect(issuerOf({ market: "US", symbol: "AHL" })).toBeNull();
+		expect(issuerOf({ market: "JP", symbol: "7203" })).toBeNull();
+	});
+
+	it("finds an issuer listed under the same name by its symbol (the 2026-11-04 failures)", () => {
+		const listing = (symbol: string, name: string) => ({ market: "US" as const, symbol, name });
+		const issuerOf = issuerFinder([
+			listing("EFSC", "ENTERPRISE FINANCIAL SERVICES CORP"),
+			listing("EFSCP", "ENTERPRISE FINANCIAL SERVICES CORP"),
+			listing("FCNCA", "FIRST CITIZENS BANCSHARES INC /DE/"),
+			listing("FCNCN", "FIRST CITIZENS BANCSHARES INC /DE/"),
+			listing("FCNCP", "FIRST CITIZENS BANCSHARES INC /DE/"),
+			listing("FVN", "Future Vision II Acquisition Corp."),
+			listing("FVNNU", "Future Vision II Acquisition Corp."),
+			listing("FVNNR", "Future Vision II Acquisition Corp."),
+			listing("BMO", "BANK OF MONTREAL /CAN/"),
+			listing("FLYD", "BANK OF MONTREAL /CAN/"),
+			listing("DB", "DEUTSCHE BANK AKTIENGESELLSCHAFT"),
+			listing("DZZ", "DEUTSCHE BANK AKTIENGESELLSCHAFT"),
+			listing("GRAB", "Grab Holdings Ltd"),
+			listing("GRABW", "Some Other Name Ltd"),
+		]);
+		const issuer = (symbol: string) => issuerOf({ market: "US", symbol })?.symbol ?? null;
+		expect(issuer("EFSCP")).toBe("EFSC");
+		expect(issuer("FCNCN")).toBe("FCNCA");
+		expect(issuer("FCNCP")).toBe("FCNCA");
+		// The shortest of several issuer-like symbols: FVN, not the unit FVNNU.
+		expect(issuer("FVNNR")).toBe("FVN");
+		expect(issuer("FVNNU")).toBe("FVN");
+		// Exchange-traded notes share only the bank's name.
+		expect(issuer("FLYD")).toBeNull();
+		expect(issuer("DZZ")).toBeNull();
+		// The issuer itself, and a symbol listed under another name.
+		expect(issuer("EFSC")).toBeNull();
+		expect(issuer("FCNCA")).toBeNull();
+		expect(issuer("GRABW")).toBeNull();
+		expect(isIssuerSymbol("LBTYA", "LBTYK")).toBe(true);
+		expect(isIssuerSymbol("LBTYK", "LBTYA")).toBe(false);
+		expect(isIssuerSymbol("AB", "AC")).toBe(false);
 	});
 });
 
@@ -802,5 +882,70 @@ describe("web fetch fallback (PoC, ADR-0064 §2c)", () => {
 			expect(read).toEqual([]);
 			expect(result.stock.sources).toHaveLength(0);
 		}
+	});
+});
+
+describe("the claude-code backend (PoC, ADR-0064 §2d)", () => {
+	it("reads the URLs of a WebSearch result as Claude Code prints it", () => {
+		const content =
+			'Web search results for query: "スバル興業"\n\nLinks: [{"title":"会社概要","url":"https://subaru-kougyou.jp/company/"},{"title":"x","url":"https://stockanalysis.com/quote/tyo/9632/company"}]';
+		expect(urlsOfSearchResult(content)).toEqual([
+			"https://subaru-kougyou.jp/company/",
+			"https://stockanalysis.com/quote/tyo/9632/company",
+		]);
+		expect(urlsOfSearchResult([{ type: "text", text: content }])).toHaveLength(2);
+		expect(urlsOfSearchResult(null)).toEqual([]);
+	});
+
+	it("gives the CLI WebSearch alone and no variable that would bill an API key", () => {
+		const args = claudeCodeSearchArgs("claude-haiku-5-5");
+		expect(args[args.indexOf("--tools") + 1]).toBe("WebSearch");
+		expect(args).toContain("--safe-mode");
+		const env = subscriptionEnv({
+			PATH: "/usr/bin",
+			HOME: "/Users/x",
+			ANTHROPIC_API_KEY: "sk-ant-x",
+			ANTHROPIC_BASE_URL: "https://proxy.example",
+			CLAUDE_CODE_USE_BEDROCK: "1",
+			CLAUDE_CONFIG_DIR: "/Users/x/.claude",
+		});
+		expect(Object.keys(env).sort()).toEqual(["CLAUDE_CONFIG_DIR", "HOME", "PATH"]);
+	});
+
+	it("pauses for a nearly used 5-hour window and stops for a nearly used 7-day one", async () => {
+		let now = 1_000_000;
+		const plan = new PlanGate(() => now);
+		const window = (name: string, utilization: number, resetsAtMs: number) => ({
+			name,
+			utilization,
+			resetsAtMs,
+			status: "allowed",
+		});
+		plan.observe({ status: "allowed", windows: [window("five_hour", 0.3, now + 60_000)] });
+		expect(plan.pausedUntilMs).toBe(0);
+		plan.observe({ status: "allowed", windows: [window("five_hour", 0.85, now + 60_000)] });
+		expect(plan.pausedUntilMs).toBe(now + 60_000);
+		const waits: number[] = [];
+		await plan.ready(async (ms) => {
+			waits.push(ms);
+			now += ms;
+		});
+		expect(waits).toEqual([60_000]);
+		expect(plan.exhaustedBy).toBeNull();
+		plan.observe({ status: "allowed", windows: [window("seven_day", 0.82, now + 86_400_000)] });
+		expect(plan.exhaustedBy).toContain("7-day usage is at 82%");
+	});
+});
+
+describe("page text for the model (PoC, ADR-0064 §5f)", () => {
+	it("keeps a long page's sales-by-region table after its start", () => {
+		const table = "【地域ごとの情報】 日本 42,000 米国 33,000 計 100,000";
+		const page = `${"事業の内容。".repeat(2_000)}${"x".repeat(5_000)}${table}${"y".repeat(5_000)}`;
+		const text = pageTextForModel(page);
+		expect(text.length).toBeLessThanOrEqual(10_010);
+		expect(text.startsWith("事業の内容。")).toBe(true);
+		expect(text).toContain(table);
+		expect(pageTextForModel("short")).toBe("short");
+		expect(pageTextForModel("z".repeat(20_000))).toHaveLength(10_000);
 	});
 });

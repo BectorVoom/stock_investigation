@@ -535,6 +535,8 @@ pub fn sec_annual_report_description(
 		&research_html::Options {
 			base_url: &source.source_url,
 			max_chars: SEC_TEN_K_MAX_MARKDOWN_CHARS,
+			// A 10-K's only `<h1>` may head its exhibit index (ADR-0053 §3).
+			whole_document: true,
 		},
 	);
 	let business = sec_business_paragraphs(&page.markdown, form);

@@ -27,8 +27,10 @@ export const COMPANY_OVERVIEW_LIMITS = {
 	maxProfileFacts: 3,
 	maxThemes: 6,
 	maxThemeChars: 40,
-	/** 【海外】's countries or regions, largest first. */
+	/** 【海外】's countries or regions shown, largest first. */
 	maxOverseasRegions: 6,
+	/** The rows of a region table the model may copy: every row, so a table without a total adds up. */
+	maxOverseasDraftRegions: 12,
 	maxRegionNameChars: 40,
 	maxReferences: 9,
 	maxReferenceTextChars: 300,
@@ -123,7 +125,7 @@ export type OverviewOverseasSales = z.infer<typeof overviewOverseasSalesSchema>;
 export const overviewOverseasDraftSchema = z.strictObject({
 	/** The overseas share of sales, when a source states it as a percentage. */
 	percent: sharePercentSchema.nullable(),
-	/** The total sales of the table the amounts come from. */
+	/** The total sales of the table the amounts come from; null when it has no total row. */
 	totalAmount: amountSchema.nullable(),
 	/** The home country's sales in that table. */
 	homeAmount: amountSchema.nullable(),
@@ -135,7 +137,7 @@ export const overviewOverseasDraftSchema = z.strictObject({
 				amount: amountSchema.nullable(),
 			}),
 		)
-		.max(limits.maxOverseasRegions),
+		.max(limits.maxOverseasDraftRegions),
 	evidence: evidenceList,
 });
 export type OverviewOverseasDraft = z.infer<typeof overviewOverseasDraftSchema>;
@@ -146,13 +148,31 @@ function sharePercent(part: number, total: number): number {
 }
 
 /**
+ * A region table's total: its stated total row, else — when it has none —
+ * the home country's amount plus every region's (the model copies every row,
+ * その他 included; Sony's table on 2026-11-04 had no total). Null when
+ * neither gives a positive total.
+ */
+function tableTotal(draft: OverviewOverseasDraft): number | null {
+	if (draft.totalAmount !== null) return draft.totalAmount > 0 ? draft.totalAmount : null;
+	if (draft.homeAmount === null || draft.regions.length === 0) return null;
+	let sum = draft.homeAmount;
+	for (const region of draft.regions) {
+		if (region.amount === null) return null;
+		sum += region.amount;
+	}
+	return sum > 0 ? sum : null;
+}
+
+/**
  * The stored 【海外】 of a draft: each region's stated share, or its amount
- * over the table's total; the overseas share as stated, or the total less
- * the home country's sales over the total. A region with neither is
- * dropped; null when nothing is left.
+ * over the table's total (`tableTotal`); the overseas share as stated, or
+ * the total less the home country's sales over the total. A region with
+ * neither is dropped; the largest `maxOverseasRegions` are kept; null when
+ * nothing is left.
  */
 export function overseasSalesFromDraft(draft: OverviewOverseasDraft): OverviewOverseasSales | null {
-	const total = draft.totalAmount !== null && draft.totalAmount > 0 ? draft.totalAmount : null;
+	const total = tableTotal(draft);
 	const regions = draft.regions
 		.flatMap((region) => {
 			const percent =
@@ -160,7 +180,8 @@ export function overseasSalesFromDraft(draft: OverviewOverseasDraft): OverviewOv
 				(region.amount !== null && total !== null ? sharePercent(region.amount, total) : null);
 			return percent === null || percent > 100 ? [] : [{ name: region.name, percent }];
 		})
-		.sort((a, b) => b.percent - a.percent);
+		.sort((a, b) => b.percent - a.percent)
+		.slice(0, limits.maxOverseasRegions);
 	const computed =
 		total !== null && draft.homeAmount !== null && draft.homeAmount <= total
 			? sharePercent(total - draft.homeAmount, total)
