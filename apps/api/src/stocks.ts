@@ -80,7 +80,7 @@ export function registerStockRoutes(api: Hono<AppEnv>, logger: EventLogger): voi
 
 	/**
 	 * The theme search (ADR-0066): the owner's stocks whose shown themes
-	 * contain `q`. "theme-search" is never a stock id (`us:AAPL`), so it
+	 * contain `q`, one `page` of 50 at a time (ADR-0070). "theme-search" is never a stock id (`us:AAPL`), so it
 	 * cannot shadow a stock; it is registered first all the same.
 	 */
 	api.get("/stocks/theme-search", (c) =>
@@ -90,7 +90,7 @@ export function registerStockRoutes(api: Hono<AppEnv>, logger: EventLogger): voi
 			Effect.gen(function* () {
 				const query = yield* readQuery(c, themeSearchQuerySchema);
 				const result = yield* attempt("stocks.theme_search", () =>
-					c.var.services.stockPages.themeSearch(owner(c), query.q),
+					c.var.services.stockPages.themeSearch(owner(c), query.q, query.page),
 				);
 				const parsed = themeSearchResponseSchema.parse(result);
 				return conditionalJson(c, `stock.themes.${fingerprint(JSON.stringify(parsed))}`, parsed);

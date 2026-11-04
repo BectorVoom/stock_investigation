@@ -1,15 +1,15 @@
 import type { StockTab } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
-import { createEffect, createMemo, type JSX, Show } from "solid-js";
+import { type Accessor, createEffect, createMemo, type JSX, onMount, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { ErrorNotice, Loading, Notice } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
-import { REGISTERED_STOCKS_HASH, type StockRoute } from "../router.ts";
+import { REGISTERED_STOCKS_HASH, type StockRoute, type ThemeRoute } from "../router.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import { STOCK_DETAIL_HEADING_ID, StockDetail } from "./StockDetail.tsx";
 import { StockSearchArea } from "./StockSearchArea.tsx";
 import { StockWatchlistControl } from "./StockWatchlistControl.tsx";
-import { createStockRegistry } from "./stockRegistry.ts";
+import { createStockRegistry, type StockRegistry } from "./stockRegistry.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import { selectedStockFor } from "./stocksModel.ts";
 import { ThemeSearchArea } from "./ThemeSearch.tsx";
@@ -17,7 +17,8 @@ import { ThemeSearchArea } from "./ThemeSearch.tsx";
 /**
  * The Stocks page (ADR-0049 §3, ADR-0050): "Find a stock" — the stock
  * search, whose pick opens a stock — and "Find stocks by theme" (ADR-0066,
- * `#/stocks/themes/<words>` lists the stocks whose themes contain the words)
+ * `#/stocks/themes/<words>[/<page>]` lists, 50 a page, the stocks whose
+ * themes contain the words, and shows a clicked one beside them, ADR-0070)
  * above one stock's tabs (chart,
  * financial statements, company information and news) from the stored
  * data. The stock comes from the URL (`#/stocks/<stockId>[/<tab>]`): a
@@ -37,24 +38,27 @@ export function StocksView(props: {
 	readonly visibility: VisibilitySource;
 	/** The stock and tab from the URL; null for `#/stocks` alone. */
 	readonly stock: StockRoute | null;
-	/** The theme search's words from the URL (`#/stocks/themes/<words>`, ADR-0066). */
-	readonly theme: string | null;
-	/** Opens a theme search (a new history entry, so Back returns). */
-	readonly onThemeSearch: (words: string) => void;
+	/** The theme search's words and page from the URL (ADR-0066, ADR-0070). */
+	readonly theme: ThemeRoute | null;
+	/** Opens a theme search or one of its pages (a new history entry, so Back returns). */
+	readonly onThemeSearch: (theme: ThemeRoute) => void;
 	/** Changes the tab (replacing the history entry). */
 	readonly onNavigate: (stock: StockRoute | null, options?: { readonly replace?: boolean }) => void;
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const registry = createStockRegistry({ api: props.api, visibility: props.visibility });
-	const { watch } = registry;
 
 	const selectedId = createMemo(() => props.stock?.stockId ?? null);
 	const selectedTab = (): StockTab => props.stock?.tab ?? "chart";
+	// The Watchlist is read once a stock is shown: in the page or beside the theme results.
 	let started = false;
-	createEffect(() => {
-		if (selectedId() === null || started) return;
+	const startRegistry = (): void => {
+		if (started) return;
 		started = true;
 		registry.start();
+	};
+	createEffect(() => {
+		if (selectedId() !== null) startRegistry();
 	});
 
 	const selected = createMemo(() => {
@@ -81,13 +85,6 @@ export function StocksView(props: {
 			heading.focus({ preventScroll: true });
 		});
 	});
-	// A notice about one stock's add ("Added 7203 to the Watchlist…") does not follow to the next stock.
-	let noticeFor: string | null = null;
-	createEffect(() => {
-		const id = selectedId();
-		if (noticeFor !== null && id !== noticeFor) watch.clearNotice();
-		noticeFor = id;
-	});
 	const selectTab = (tab: StockTab): void => {
 		const id = selectedId();
 		if (id !== null) props.onNavigate({ stockId: id, tab }, { replace: true });
@@ -99,7 +96,24 @@ export function StocksView(props: {
 				api={props.api}
 				onOpen={(hit) => props.onNavigate({ stockId: hit.stockId, tab: "chart" })}
 			/>
-			<ThemeSearchArea api={props.api} words={props.theme} onSearch={props.onThemeSearch} />
+			<ThemeSearchArea
+				api={props.api}
+				theme={props.theme}
+				onSearch={props.onThemeSearch}
+				stockPanel={(stockId, tab, onSelectTab) => {
+					startRegistry();
+					return (
+						<WatchedStockDetail
+							api={props.api}
+							visibility={props.visibility}
+							registry={registry}
+							stockId={stockId}
+							tab={tab}
+							onSelectTab={onSelectTab}
+						/>
+					);
+				}}
+			/>
 			<Show
 				when={selectedId()}
 				fallback={
@@ -114,45 +128,82 @@ export function StocksView(props: {
 				}
 				keyed
 			>
-				{(_stockId) => (
+				{(stockId) => (
 					<>
-						<Show when={watch.failure()}>
-							{(current) => (
-								<ErrorNotice
-									failure={current().error}
-									title={current().title}
-									onRetry={current().retry}
-								/>
-							)}
-						</Show>
-						<Show when={watch.notice()}>
-							{(current) => <Notice tone="info">{current().text}</Notice>}
-						</Show>
 						<p class="text-sm">
 							<a href={REGISTERED_STOCKS_HASH} class={TASK_LINK} data-field="choose-other-stock">
 								{s().chooseOtherStock}
 							</a>
 						</p>
-						<Show
-							when={registry.settled()}
-							fallback={<Loading label={s().tabThing(selectedTab())} />}
-						>
-							<Show when={selected()}>
-								{(stock) => (
-									<StockDetail
-										api={props.api}
-										visibility={props.visibility}
-										stock={stock}
-										tab={selectedTab}
-										onSelectTab={selectTab}
-										aside={<StockWatchlistControl api={props.api} stock={stock} watch={watch} />}
-									/>
-								)}
-							</Show>
-						</Show>
+						<WatchedStockDetail
+							api={props.api}
+							visibility={props.visibility}
+							registry={registry}
+							stockId={stockId}
+							tab={selectedTab}
+							onSelectTab={selectTab}
+						/>
 					</>
 				)}
 			</Show>
 		</div>
+	);
+}
+
+/**
+ * One stock's detail with its Watchlist status and add button (ADR-0050
+ * §2), the Watchlist read's failure and the add's notice: the page's stock,
+ * or the stock shown beside the theme results (ADR-0070). Keyed by stock by
+ * its caller, so a notice about one stock's add ("Added 7203 to the
+ * Watchlist…") does not follow to the next stock.
+ */
+function WatchedStockDetail(props: {
+	readonly api: ApiClient;
+	readonly visibility: VisibilitySource;
+	readonly registry: StockRegistry;
+	readonly stockId: string;
+	readonly tab: Accessor<StockTab>;
+	readonly onSelectTab: (tab: StockTab) => void;
+}): JSX.Element {
+	const s = useMessages(stocksMessages);
+	const { registry } = props;
+	const { watch } = registry;
+	onMount(() => watch.clearNotice());
+	const selected = createMemo(() =>
+		selectedStockFor(
+			props.stockId,
+			registry.rowsById().get(props.stockId),
+			registry.listTitles().get(props.stockId) ?? [],
+		),
+	);
+	return (
+		<>
+			<Show when={watch.failure()}>
+				{(current) => (
+					<ErrorNotice
+						failure={current().error}
+						title={current().title}
+						onRetry={current().retry}
+					/>
+				)}
+			</Show>
+			<Show when={watch.notice()}>
+				{(current) => <Notice tone="info">{current().text}</Notice>}
+			</Show>
+			<Show when={registry.settled()} fallback={<Loading label={s().tabThing(props.tab())} />}>
+				<Show when={selected()}>
+					{(stock) => (
+						<StockDetail
+							api={props.api}
+							visibility={props.visibility}
+							stock={stock}
+							tab={props.tab}
+							onSelectTab={props.onSelectTab}
+							aside={<StockWatchlistControl api={props.api} stock={stock} watch={watch} />}
+						/>
+					)}
+				</Show>
+			</Show>
+		</>
 	);
 }

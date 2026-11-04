@@ -11,6 +11,9 @@ import type { VisibilitySource } from "../lib/polling.ts";
  * per stock: the server syncs every listed stock (ADR-0058).
  */
 
+/** The detail heading's DOM id: the page moves focus here when a stock is chosen. */
+export const STOCK_DETAIL_HEADING_ID = "stock-detail-heading";
+
 /** The selected stock as the page knows it. */
 export interface SelectedStock {
 	readonly stockId: string;

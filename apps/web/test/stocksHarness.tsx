@@ -7,6 +7,7 @@ import {
 	type StockCompanyProfileView,
 	type StockEarningsCalendarView,
 	type StockProfileResponse,
+	THEME_SEARCH_LIMITS,
 } from "@research/contracts";
 import {
 	formatStockId,
@@ -22,7 +23,7 @@ import { createSignal } from "solid-js";
 import { expect } from "vitest";
 import { type ApiClient, createApiClient } from "../src/api/client.ts";
 import type { VisibilitySource } from "../src/lib/polling.ts";
-import type { StockRoute } from "../src/router.ts";
+import type { StockRoute, ThemeRoute } from "../src/router.ts";
 import { RegisteredStocksView } from "../src/stocks/RegisteredStocksView.tsx";
 import { StocksView } from "../src/stocks/StocksView.tsx";
 import { createEquitiesServer, type EquitiesServer, makeCompany } from "./equitiesHarness.ts";
@@ -123,9 +124,12 @@ export function createStocksBackend(
 	// The theme search (ADR-0066) over the shown themes — the overview's,
 	// else the summary's — with the real matching rules, in market and symbol order.
 	backend.on("GET", /^\/api\/v1\/stocks\/theme-search\?/, (request) => {
-		const words = new URL(request.path, "http://fake").searchParams.get("q") ?? "";
+		const params = new URL(request.path, "http://fake").searchParams;
+		const words = params.get("q") ?? "";
+		const pageSize = THEME_SEARCH_LIMITS.pageSize;
 		const query = normalizeThemeQuery(words);
-		if (query === null) return jsonResponse({ query: null, hits: [], truncated: false });
+		if (query === null)
+			return jsonResponse({ query: null, hits: [], page: 1, pageSize, total: 0, pageCount: 1 });
 		const stockIds = [...new Set([...summaryOf.keys(), ...overviewOf.keys()])].sort();
 		const hits = stockIds.flatMap((stockId) => {
 			const parsed = parseStockId(stockId);
@@ -151,7 +155,18 @@ export function createStocksBackend(
 				},
 			];
 		});
-		return jsonResponse({ query, hits, truncated: false });
+		// One page of 50 (ADR-0070); a page past the last answers the last.
+		const pageCount = Math.max(1, Math.ceil(hits.length / pageSize));
+		const page = Math.min(Number(params.get("page") ?? "1"), pageCount);
+		const start = (page - 1) * pageSize;
+		return jsonResponse({
+			query,
+			hits: hits.slice(start, start + pageSize),
+			page,
+			pageSize,
+			total: hits.length,
+			pageCount,
+		});
 	});
 	return {
 		backend,
@@ -182,12 +197,12 @@ export interface MountedStocks {
 	readonly navigations: { readonly stock: StockRoute | null; readonly replace: boolean }[];
 	/** Changes the route as the browser would (Back, a link). */
 	readonly setRoute: (stock: StockRoute | null) => void;
-	/** The theme search's words in the URL (ADR-0066). */
-	readonly theme: () => string | null;
-	/** Every theme search the page asked for, in order. */
-	readonly themeSearches: string[];
-	/** Changes the theme search's words as the browser would (a link, Back). */
-	readonly setTheme: (words: string | null) => void;
+	/** The theme search's words and page in the URL (ADR-0066, ADR-0070). */
+	readonly theme: () => ThemeRoute | null;
+	/** Every theme search (or results page) the page asked for, in order. */
+	readonly themeSearches: ThemeRoute[];
+	/** Changes the theme search's words and page as the browser would (a link, Back). */
+	readonly setTheme: (theme: ThemeRoute | null) => void;
 }
 
 /** Renders the Stocks page over `backend` with a route the test controls (as `App` passes the URL's). */
@@ -195,7 +210,9 @@ export function mountStocks(
 	backend: FakeBackend,
 	options: {
 		readonly route?: StockRoute | null;
+		/** The theme search's words in the URL; `themePage` its page (default 1). */
 		readonly theme?: string | null;
+		readonly themePage?: number;
 		readonly locale?: Locale;
 		readonly visibility?: VisibilitySource;
 	} = {},
@@ -203,8 +220,12 @@ export function mountStocks(
 	const api = createApiClient({ fetch: backend.fetch });
 	const [route, setRoute] = createSignal<StockRoute | null>(options.route ?? null);
 	const navigations: { stock: StockRoute | null; replace: boolean }[] = [];
-	const [theme, setTheme] = createSignal<string | null>(options.theme ?? null);
-	const themeSearches: string[] = [];
+	const [theme, setTheme] = createSignal<ThemeRoute | null>(
+		options.theme === undefined || options.theme === null
+			? null
+			: { words: options.theme, page: options.themePage ?? 1 },
+	);
+	const themeSearches: ThemeRoute[] = [];
 	render(() => (
 		<LocaleProvider locale={() => options.locale ?? "en"}>
 			<StocksView
@@ -217,10 +238,10 @@ export function mountStocks(
 					setTheme(null);
 					setRoute(stock);
 				}}
-				onThemeSearch={(words) => {
-					themeSearches.push(words);
+				onThemeSearch={(next) => {
+					themeSearches.push(next);
 					setRoute(null);
-					setTheme(words);
+					setTheme(next);
 				}}
 			/>
 		</LocaleProvider>

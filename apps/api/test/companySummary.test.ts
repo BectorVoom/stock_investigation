@@ -120,7 +120,10 @@ describe("company summaries (ADR-0060)", () => {
 					themes: [{ en: "Hybrid vehicles", ja: "ハイブリッド車" }],
 				},
 			],
-			truncated: false,
+			page: 1,
+			pageSize: 50,
+			total: 1,
+			pageCount: 1,
 		});
 		const japanese = await body(
 			await harness.call("GET", `/stocks/theme-search?q=${encodeURIComponent("自動車")}`),
@@ -232,8 +235,26 @@ describe("theme search (ADR-0066)", () => {
 			await harness.call("GET", "/stocks/theme-search?q=robotics"),
 			themeSearchResponseSchema,
 		);
-		expect(empty).toEqual({ query: "robotics", hits: [], truncated: false });
+		expect(empty).toEqual({
+			query: "robotics",
+			hits: [],
+			page: 1,
+			pageSize: 50,
+			total: 0,
+			pageCount: 1,
+		});
+		// A page past the last answers the last (ADR-0070).
+		const pastLast = await body(
+			await harness.call("GET", "/stocks/theme-search?q=robotics&page=4"),
+			themeSearchResponseSchema,
+		);
+		expect(pastLast.page).toBe(1);
 		expect((await harness.call("GET", "/stocks/theme-search")).status).toBe(400);
 		expect((await harness.call("GET", "/stocks/theme-search?q=%20")).status).toBe(400);
+		for (const page of ["0", "-1", "1.5", "abc", "10001"]) {
+			const status = (await harness.call("GET", `/stocks/theme-search?q=robotics&page=${page}`))
+				.status;
+			expect(status, page).toBe(400);
+		}
 	});
 });

@@ -989,17 +989,20 @@ describe("stock directory (ADR-0034)", () => {
 						themes: [{ en: "Organic Vegetables", ja: "無農薬野菜" }],
 					},
 				],
-				truncated: false,
+				page: 2,
+				pageSize: 50,
+				total: 51,
+				pageCount: 2,
 			}),
 		);
-		const found = await api.searchThemes(" 野菜 ");
+		const found = await api.searchThemes(" 野菜 ", 2);
 		expect(found.ok).toBe(true);
 		if (!found.ok) return;
 		expect(found.value.hits.map((hit) => hit.stockId)).toEqual(["jp:1380"]);
 		const url = new URL(backend.requests[0]?.path ?? "", "http://x");
 		expect(url.pathname).toBe("/api/v1/stocks/theme-search");
-		expect(Object.fromEntries(url.searchParams)).toEqual({ q: "野菜" });
-		const blank = await api.searchThemes("  ");
+		expect(Object.fromEntries(url.searchParams)).toEqual({ q: "野菜", page: "2" });
+		const blank = await api.searchThemes("  ", 1);
 		expect(blank.ok).toBe(false);
 		expect(backend.requests).toHaveLength(1);
 	});

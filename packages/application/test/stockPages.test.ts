@@ -684,7 +684,7 @@ describe("theme search (ADR-0066)", () => {
 				themes: [{ en: "Organic Vegetables", ja: "無農薬野菜" }],
 			},
 		]);
-		expect(answer.truncated).toBe(false);
+		expect(answer).toMatchObject({ page: 1, pageSize: 50, total: 1, pageCount: 1 });
 	});
 
 	it("drops a stock whose database match spans two names", async () => {
@@ -702,26 +702,42 @@ describe("theme search (ADR-0066)", () => {
 		expect(await service.themeSearch(OWNER, " \t ")).toEqual({
 			query: null,
 			hits: [],
-			truncated: false,
+			page: 1,
+			pageSize: 50,
+			total: 0,
+			pageCount: 1,
 		});
 		expect(await service.themeSearch(OWNER, "x".repeat(41))).toEqual({
 			query: null,
 			hits: [],
-			truncated: false,
+			page: 1,
+			pageSize: 50,
+			total: 0,
+			pageCount: 1,
 		});
 		expect(calls.themeNeedles).toEqual([]);
 	});
 
-	it("keeps the first 50 stocks and says more matched", async () => {
-		const rows = Array.from({ length: 51 }, (_, index) =>
-			row("US", `S${String(index).padStart(2, "0")}`, [
+	it("answers 50 stocks a page, with the total and the page count (ADR-0070)", async () => {
+		const rows = Array.from({ length: 101 }, (_, index) =>
+			row("US", `S${String(index).padStart(3, "0")}`, [
 				{ en: "Cloud Software", ja: "クラウドソフト" },
 			]),
 		);
 		const { deps } = depsWith({ themeRows: rows });
-		const answer = await createStockPageService(deps).themeSearch(OWNER, "クラウド");
-		expect(answer.hits).toHaveLength(50);
-		expect(answer.hits[49]?.symbol).toBe("S49");
-		expect(answer.truncated).toBe(true);
+		const service = createStockPageService(deps);
+		const first = await service.themeSearch(OWNER, "クラウド");
+		expect(first).toMatchObject({ page: 1, pageSize: 50, total: 101, pageCount: 3 });
+		expect(first.hits.map((hit) => hit.symbol).slice(0, 1)).toEqual(["S000"]);
+		expect(first.hits).toHaveLength(50);
+		const second = await service.themeSearch(OWNER, "クラウド", 2);
+		expect(second.page).toBe(2);
+		expect(second.hits.map((hit) => hit.symbol)).toEqual(
+			rows.slice(50, 100).map((stock) => stock.symbol),
+		);
+		const last = await service.themeSearch(OWNER, "クラウド", 3);
+		expect(last.hits.map((hit) => hit.symbol)).toEqual(["S100"]);
+		// A page past the last answers the last.
+		expect(await service.themeSearch(OWNER, "クラウド", 9)).toEqual(last);
 	});
 });

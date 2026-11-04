@@ -1,6 +1,9 @@
 # ADR-0066: Theme column and theme search
 
-Status: accepted, 2026-11-03. Builds on ADR-0060 (the AI-written summary's
+Status: accepted, 2026-11-03. **Changed 2026-11-04** by
+[ADR-0070](0070-theme-search-pages-and-stock-panel.md): the results come in
+pages of 50 (no `truncated`), and a stock's name shows it in a panel beside
+the results instead of opening its Company tab. Builds on ADR-0060 (the AI-written summary's
 themes), ADR-0064 (the company overview's 【テーマ】) and ADR-0050 (the
 Stocks page's Find a stock).
 

@@ -8,7 +8,7 @@ says "chat" for a conversation everywhere.
 
 Routes: `#/home` (default), `#/chat` and `#/chat/<workspaceId>`, `#/sources`,
 `#/settings`, `#/registered`, `#/stocks` (with `#/stocks/<stockId>[/<tab>]`
-and the theme search `#/stocks/themes/<words>`)
+and the theme search `#/stocks/themes/<words>[/<page>]`)
 and `#/tasks`. The old `#/watchlist` and `#/equities` hashes open the
 Registered stocks page, where their lists and actions live (ADR-0049,
 amended 2026-11-01). The old `#/canvas`, `#/canvas/<workspaceId>`,
@@ -310,10 +310,17 @@ Watchlist to get its data.
   new history entry) lists the owner's stocks whose shown themes — the
   business overview's 【テーマ】, else the AI-written summary's themes —
   contain the words (English or Japanese, ASCII case ignored, full-width
-  letters read as ASCII): a table of Stock (its Company tab is the link),
-  Symbol and the matching themes, at most 50 (a line says when more
-  matched), "No stock has a theme containing …" when none does, and "Close
-  the results" back to `#/stocks`. Only stocks with an overview or a
+  letters read as ASCII): a table of Stock, Symbol and the matching themes,
+  50 a page (ADR-0070), "No stock has a theme containing …" when none does,
+  and "Close the results" back to `#/stocks`. With more than one page,
+  First / Previous / "Page n of m" / Next / Last sit under the table (each a
+  link to `#/stocks/themes/<words>/<page>`, a new history entry; the caption
+  says "51–100 of 120 stocks") and focus moves to the caption. A click on a
+  stock's name shows that stock in a panel to the right of the results
+  (under them on a narrow screen) without leaving the search: its heading,
+  Watchlist button and the Chart / Financial statements / Company / News
+  tabs, opening on Company, with "Open on its own page" and a close button;
+  the panel stays across pages and closes on a new search. Only stocks with an overview or a
   summary have themes. A theme on a stock's Company tab is a link to the
   same search for that theme. A blank or over-long search in the URL opens
   the page with nothing chosen.

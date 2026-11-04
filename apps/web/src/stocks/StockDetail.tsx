@@ -21,7 +21,7 @@ import type { VisibilitySource } from "../lib/polling.ts";
 import { stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import { detailName } from "./stocksModel.ts";
-import type { SelectedStock, StockTabProps } from "./stockTabs.ts";
+import { type SelectedStock, STOCK_DETAIL_HEADING_ID, type StockTabProps } from "./stockTabs.ts";
 
 /**
  * Each tab is its own chunk (ADR-0049 §3 rule 1), downloaded on its first
@@ -64,8 +64,7 @@ export function stockPanelId(tab: StockTab): string {
 	return `stock-panel-${tab}`;
 }
 
-/** The detail heading's DOM id: the page moves focus here when a stock is chosen. */
-export const STOCK_DETAIL_HEADING_ID = "stock-detail-heading";
+export { STOCK_DETAIL_HEADING_ID };
 
 /**
  * The selected stock (ADR-0049 §3): a section headed with its name and

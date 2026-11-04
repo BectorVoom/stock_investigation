@@ -22,10 +22,27 @@ export interface Route {
 	 */
 	readonly stock: StockRoute | null;
 	/**
-	 * The Stocks page's theme search (ADR-0066): `#/stocks/themes/<words>`.
+	 * The Stocks page's theme search (ADR-0066): `#/stocks/themes/<words>`,
+	 * and from page 2 on `#/stocks/themes/<words>/<page>` (ADR-0070).
 	 * Null elsewhere; never set together with `stock`.
 	 */
-	readonly theme: string | null;
+	readonly theme: ThemeRoute | null;
+}
+
+/** A theme search's words and 1-based results page (ADR-0066, ADR-0070). */
+export interface ThemeRoute {
+	readonly words: string;
+	readonly page: number;
+}
+
+/** The highest results page the URL carries (`THEME_SEARCH_LIMITS.maxPage`). */
+const MAX_THEME_PAGE = 10_000;
+
+/** `<page>` as a page number: digits only, 1 to the maximum; anything else is page 1. */
+function parseThemePage(text: string | undefined): number {
+	if (text === undefined || !/^[1-9][0-9]{0,4}$/.test(text)) return 1;
+	const page = Number(text);
+	return page > MAX_THEME_PAGE ? 1 : page;
 }
 
 /** The longest theme search the URL carries (the API's `maxQueryChars`). */
@@ -52,7 +69,7 @@ function isSettingsSection(value: string): value is SettingsSection {
 
 /**
  * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/registered`,
- * `#/stocks`, `#/stocks/<stockId>[/<tab>]`, `#/stocks/themes/<words>`, `#/tasks`, `#/settings` and
+ * `#/stocks`, `#/stocks/<stockId>[/<tab>]`, `#/stocks/themes/<words>[/<page>]`, `#/tasks`, `#/settings` and
  * `#/settings/<category>` (an unknown category opens `#/settings`); the legacy `#/canvas`,
  * `#/canvas/<id>`, `#/workspace/<id>` and `#/workspace` aliases parse as the
  * chat view (bookmarks from before the Canvas panel moved into the thread),
@@ -65,7 +82,7 @@ function isSettingsSection(value: string): value is SettingsSection {
  */
 export function parseHash(hash: string): Route {
 	const normalized = hash.replace(/^#\/?/, "");
-	const [viewText, idText, tabText] = normalized.split("/");
+	const [viewText, idText, tabText, pageText] = normalized.split("/");
 	if (viewText === "workspace" || viewText === "canvas") {
 		const workspaceId = idText !== undefined && WORKSPACE_ID.test(idText) ? idText : null;
 		return { view: "chat", workspaceId, section: null, stock: null, theme: null };
@@ -108,7 +125,10 @@ export function parseHash(hash: string): Route {
 			workspaceId: null,
 			section: null,
 			stock: null,
-			theme: theme === "" || theme.length > MAX_THEME_CHARS ? null : theme,
+			theme:
+				theme === "" || theme.length > MAX_THEME_CHARS
+					? null
+					: { words: theme, page: parseThemePage(pageText) },
 		};
 	}
 	if (known.view === "stocks" && idText !== undefined) {
@@ -145,7 +165,8 @@ export function formatHash(route: Route): string {
 		return `#/${route.view}/${route.section}`;
 	}
 	if (route.view === "stocks" && route.stock === null && route.theme !== null) {
-		return `#/stocks/themes/${encodeURIComponent(route.theme)}`;
+		const words = `#/stocks/themes/${encodeURIComponent(route.theme.words)}`;
+		return route.theme.page > 1 ? `${words}/${route.theme.page}` : words;
 	}
 	if (route.view === "stocks" && route.stock !== null) {
 		// `:` is legal in a fragment, so `#/stocks/us:AAPL/news` stays readable.
@@ -243,13 +264,13 @@ export function createHashRouter(win: Window): Router {
 	};
 }
 
-/** The Stocks page's theme search for `words` (ADR-0066). */
-export function themeSearchHash(words: string): string {
+/** The Stocks page's theme search for `words` (ADR-0066), at a results page (ADR-0070). */
+export function themeSearchHash(words: string, page = 1): string {
 	return formatHash({
 		view: "stocks",
 		workspaceId: null,
 		section: null,
 		stock: null,
-		theme: words,
+		theme: { words, page },
 	});
 }

@@ -132,16 +132,16 @@ describe("router", () => {
 
 	it("parses and builds a theme search, opening plain Stocks for a blank or broken one (ADR-0066)", () => {
 		expect(parseHash("#/stocks/themes/Hybrid%20vehicles")).toEqual(
-			route({ view: "stocks", theme: "Hybrid vehicles" }),
+			route({ view: "stocks", theme: { words: "Hybrid vehicles", page: 1 } }),
 		);
 		expect(parseHash(`#/stocks/themes/${encodeURIComponent("無農薬野菜")}`)).toEqual(
-			route({ view: "stocks", theme: "無農薬野菜" }),
+			route({ view: "stocks", theme: { words: "無農薬野菜", page: 1 } }),
 		);
 		expect(themeSearchHash("無農薬 野菜")).toBe(
 			`#/stocks/themes/${encodeURIComponent("無農薬 野菜")}`,
 		);
 		expect(parseHash(themeSearchHash("a/b?c#d"))).toEqual(
-			route({ view: "stocks", theme: "a/b?c#d" }),
+			route({ view: "stocks", theme: { words: "a/b?c#d", page: 1 } }),
 		);
 		for (const hash of [
 			"#/stocks/themes",
@@ -151,6 +151,19 @@ describe("router", () => {
 			`#/stocks/themes/${"x".repeat(101)}`,
 		]) {
 			expect(parseHash(hash), hash).toEqual(route({ view: "stocks" }));
+		}
+	});
+
+	it("carries a theme search's results page from page 2 on (ADR-0070)", () => {
+		expect(themeSearchHash("cloud", 1)).toBe("#/stocks/themes/cloud");
+		expect(themeSearchHash("cloud", 3)).toBe("#/stocks/themes/cloud/3");
+		expect(parseHash("#/stocks/themes/cloud/3")).toEqual(
+			route({ view: "stocks", theme: { words: "cloud", page: 3 } }),
+		);
+		for (const page of ["0", "-1", "abc", "01", "1.5", "10001", ""]) {
+			expect(parseHash(`#/stocks/themes/cloud/${page}`), page).toEqual(
+				route({ view: "stocks", theme: { words: "cloud", page: 1 } }),
+			);
 		}
 	});
 
@@ -165,6 +178,8 @@ describe("router", () => {
 			route({ view: "stocks", stock: { stockId: "us:AAPL", tab: "chart" } }),
 			route({ view: "stocks", stock: { stockId: "jp:130A", tab: "financials" } }),
 			route({ view: "stocks", stock: { stockId: "us:BRK-B", tab: "news" } }),
+			route({ view: "stocks", theme: { words: "cloud software", page: 1 } }),
+			route({ view: "stocks", theme: { words: "クラウド", page: 12 } }),
 			route({ view: "settings" }),
 			route({ view: "settings", section: "agent" }),
 			route({ view: "settings", section: "calendar" }),

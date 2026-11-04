@@ -6,10 +6,10 @@ import { errorResponse } from "./fakeBackend.ts";
 import { createStocksBackend, mountStocks, type StocksServer } from "./stocksHarness.tsx";
 
 /**
- * The Stocks page's theme search (ADR-0066): the box opens
- * `#/stocks/themes/<words>`, the results list the stocks whose shown themes
- * contain the words and open their Company tab, and the Company tab's
- * themes link to the search.
+ * The Stocks page's theme search (ADR-0066, ADR-0070): the box opens
+ * `#/stocks/themes/<words>`, the results list 50 a page the stocks whose
+ * shown themes contain the words, a stock's name shows it in a panel beside
+ * them, and the Company tab's themes link to the search.
  */
 
 const summary = (themes: CompanySummaryView["themes"]): CompanySummaryView => ({
@@ -56,7 +56,7 @@ describe("Stocks page: find stocks by theme (ADR-0066)", () => {
 		expect(submit.hasAttribute("disabled")).toBe(true);
 		fireEvent.input(box, { target: { value: "  hybrid " } });
 		fireEvent.click(submit);
-		expect(page.themeSearches).toEqual(["hybrid"]);
+		expect(page.themeSearches).toEqual([{ words: "hybrid", page: 1 }]);
 		await resultsTable();
 		expect(api.backend.requestsTo("GET", /theme-search/)).toHaveLength(1);
 	});
@@ -136,5 +136,169 @@ describe("Stocks page: find stocks by theme (ADR-0066)", () => {
 			["Hybrid vehicles", "#/stocks/themes/Hybrid%20vehicles"],
 		]);
 		expect(links[1]?.getAttribute("aria-label")).toBe("Find stocks with the theme Hybrid vehicles");
+	});
+});
+
+/** `count` stocks `us:C000`, `us:C001`… whose one theme is Cloud software. */
+function cloudStocks(count: number): string[] {
+	const ids = Array.from({ length: count }, (_, index) => `us:C${String(index).padStart(3, "0")}`);
+	for (const id of ids) api.summaryOf.set(id, summary([{ en: "Cloud software", ja: "クラウド" }]));
+	return ids;
+}
+
+function rowSymbols(table: HTMLElement): string[] {
+	return within(table)
+		.getAllByRole("row")
+		.slice(1)
+		.map((row) => row.getAttribute("data-stock-id") ?? "");
+}
+
+describe("Stocks page: theme results pages (ADR-0070)", () => {
+	it("shows 50 stocks a page with First / Previous / Next / Last", async () => {
+		const ids = cloudStocks(120);
+		const page = mountStocks(api.backend, { theme: "cloud" });
+		const table = await resultsTable();
+		expect(rowSymbols(table)).toEqual(ids.slice(0, 50));
+		expect(table.querySelector("caption")?.textContent).toBe(
+			"Stocks with a theme containing “cloud” · 1–50 of 120 stocks",
+		);
+		const pages = screen.getByRole("navigation", { name: "Result pages" });
+		expect(within(pages).getByText("Page 1 of 3")).toBeTruthy();
+		// On page 1, First and Previous are not links.
+		expect(within(pages).queryByRole("link", { name: "First" })).toBeNull();
+		expect(within(pages).queryByRole("link", { name: "Previous" })).toBeNull();
+		const next = within(pages).getByRole("link", { name: "Next" });
+		expect(next.getAttribute("href")).toBe("#/stocks/themes/cloud/2");
+		expect(within(pages).getByRole("link", { name: "Last" }).getAttribute("href")).toBe(
+			"#/stocks/themes/cloud/3",
+		);
+
+		fireEvent.click(next);
+		expect(page.themeSearches).toEqual([{ words: "cloud", page: 2 }]);
+		await waitFor(() =>
+			expect(rowSymbols(document.querySelector("table") as HTMLElement)).toEqual(
+				ids.slice(50, 100),
+			),
+		);
+		const url = new URL(
+			api.backend.requestsTo("GET", /theme-search/).at(-1)?.path ?? "",
+			"http://x",
+		);
+		expect(Object.fromEntries(url.searchParams)).toEqual({ q: "cloud", page: "2" });
+		await waitFor(() => expect(document.activeElement?.tagName).toBe("CAPTION"));
+	});
+
+	it("opens at the URL's page and shows the last page's rest", async () => {
+		const ids = cloudStocks(120);
+		mountStocks(api.backend, { theme: "cloud", themePage: 3 });
+		const table = await resultsTable();
+		expect(rowSymbols(table)).toEqual(ids.slice(100));
+		expect(table.querySelector("caption")?.textContent).toBe(
+			"Stocks with a theme containing “cloud” · 101–120 of 120 stocks",
+		);
+		const pages = screen.getByRole("navigation", { name: "Result pages" });
+		expect(within(pages).getByText("Page 3 of 3")).toBeTruthy();
+		expect(within(pages).queryByRole("link", { name: "Next" })).toBeNull();
+		expect(within(pages).getByRole("link", { name: "Previous" }).getAttribute("href")).toBe(
+			"#/stocks/themes/cloud/2",
+		);
+		expect(within(pages).getByRole("link", { name: "First" }).getAttribute("href")).toBe(
+			"#/stocks/themes/cloud",
+		);
+	});
+
+	it("shows no page controls when every stock fits on one page", async () => {
+		cloudStocks(50);
+		mountStocks(api.backend, { theme: "cloud" });
+		const table = await resultsTable();
+		expect(within(table).getAllByRole("row")).toHaveLength(51);
+		expect(screen.queryByRole("navigation", { name: "Result pages" })).toBeNull();
+	});
+
+	it("says the pages in Japanese", async () => {
+		cloudStocks(60);
+		mountStocks(api.backend, { theme: "クラウド", locale: "ja" });
+		const table = await resultsTable();
+		expect(table.querySelector("caption")?.textContent).toBe(
+			"「クラウド」を含むテーマの銘柄 · 60 銘柄中 1–50",
+		);
+		const pages = screen.getByRole("navigation", { name: "検索結果のページ" });
+		expect(within(pages).getByText("1 / 2 ページ")).toBeTruthy();
+		expect(within(pages).getByRole("link", { name: "次へ" })).toBeTruthy();
+	});
+});
+
+describe("Stocks page: a theme result's stock beside the results (ADR-0070)", () => {
+	it("shows a clicked stock in a panel, on its Company tab, without leaving the search", async () => {
+		const page = mountStocks(api.backend, { theme: "VEHICLES" });
+		const table = await resultsTable();
+		const link = within(table).getByRole("link", { name: "TOYOTA MOTOR CORPORATION" });
+		fireEvent.click(link);
+		// No navigation: the search stays in the URL.
+		expect(page.navigations).toEqual([]);
+		expect(page.theme()).toEqual({ words: "VEHICLES", page: 1 });
+		const panel = await screen.findByRole("complementary", { name: "Chosen stock" });
+		expect(panel.getAttribute("data-stock-id")).toBe("jp:7203");
+		const heading = await within(panel).findByRole("heading", {
+			name: "TOYOTA MOTOR CORPORATION · 7203",
+		});
+		await waitFor(() => expect(document.activeElement).toBe(heading));
+		expect(within(panel).getByRole("tab", { name: "Company" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		expect(
+			within(panel).getByRole("link", { name: "Open on its own page" }).getAttribute("href"),
+		).toBe("#/stocks/jp:7203/company");
+		// The shown stock's row is marked; the results stay.
+		expect(link.closest("tr")?.getAttribute("aria-current")).toBe("true");
+		expect(document.querySelector("table")).not.toBeNull();
+		// A tab switch stays in the panel and the link follows it.
+		fireEvent.click(within(panel).getByRole("tab", { name: "Chart" }));
+		expect(within(panel).getByRole("tab", { name: "Chart" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		expect(
+			within(panel).getByRole("link", { name: "Open on its own page" }).getAttribute("href"),
+		).toBe("#/stocks/jp:7203");
+		expect(page.navigations).toEqual([]);
+	});
+
+	it("swaps the panel for another stock, and closes it", async () => {
+		api.summaryOf.set("jp:7205", summary([{ en: "Trucks and vehicles", ja: "トラック" }]));
+		mountStocks(api.backend, { theme: "vehicles" });
+		const table = await resultsTable();
+		const links = within(table).getAllByRole("link");
+		expect(links).toHaveLength(2);
+		fireEvent.click(links[0] as HTMLElement);
+		const panel = await screen.findByRole("complementary", { name: "Chosen stock" });
+		expect(panel.getAttribute("data-stock-id")).toBe("jp:7203");
+		fireEvent.click(links[1] as HTMLElement);
+		await waitFor(() =>
+			expect(
+				screen.getByRole("complementary", { name: "Chosen stock" }).getAttribute("data-stock-id"),
+			).toBe("jp:7205"),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Close the stock" }));
+		expect(screen.queryByRole("complementary", { name: "Chosen stock" })).toBeNull();
+		expect(document.querySelector("table")).not.toBeNull();
+	});
+
+	it("keeps the panel across result pages and forgets it on a new search", async () => {
+		const ids = cloudStocks(60);
+		const page = mountStocks(api.backend, { theme: "cloud" });
+		const table = await resultsTable();
+		fireEvent.click(within(table).getAllByRole("link")[0] as HTMLElement);
+		await screen.findByRole("complementary", { name: "Chosen stock" });
+		fireEvent.click(screen.getByRole("link", { name: "Next" }));
+		await waitFor(() =>
+			expect(rowSymbols(document.querySelector("table") as HTMLElement)).toEqual(ids.slice(50)),
+		);
+		expect(
+			screen.getByRole("complementary", { name: "Chosen stock" }).getAttribute("data-stock-id"),
+		).toBe(ids[0]);
+		page.setTheme({ words: "trucks", page: 1 });
+		await waitFor(() =>
+			expect(screen.queryByRole("complementary", { name: "Chosen stock" })).toBeNull(),
+		);
 	});
 });
