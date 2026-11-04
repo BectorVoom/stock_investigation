@@ -129,8 +129,14 @@ export function CompanyOverview(props: { readonly overview: CompanyOverviewView 
 				<Show when={entry().overseasSales}>
 					{(overseas) => (
 						<Row label={m().overseas}>
-							<span>
-								{`${overseas().percent}%`}
+							<span lang={locale()} data-field="company-overview-overseas">
+								{m().overseasSales(
+									overseas().percent,
+									overseas().regions.map((region) => ({
+										name: region.name[locale()],
+										percent: region.percent,
+									})),
+								)}
 								<Marks evidence={overseas().evidence} />
 							</span>
 						</Row>

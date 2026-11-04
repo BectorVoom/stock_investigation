@@ -28,6 +28,7 @@ const WORDS = {
 		businesses: "事業内容",
 		segments: "連結事業",
 		overseas: "海外",
+		overseasShare: "海外売上高比率",
 		themes: "テーマ",
 		profile: "会社概要",
 		results: "業績",
@@ -63,6 +64,7 @@ const WORDS = {
 		businesses: "Businesses",
 		segments: "Segments",
 		overseas: "Overseas",
+		overseasShare: "Overseas sales",
 		themes: "Themes",
 		profile: "Profile",
 		results: "Results",
@@ -158,6 +160,20 @@ function segmentText(segment: VerifiedDescription["segments"][number], language:
 	return `${escapeHtml(segment.name[language])}${share}${margin}${activity}${evidenceMarks(segment.evidence)}`;
 }
 
+/** 【海外】: 「海外売上高比率 58%（米国 33%、欧州 15%）」, or the countries alone when the overall share is unknown. */
+function overseasText(
+	overseas: NonNullable<VerifiedDescription["overseasSales"]>,
+	language: Language,
+): string {
+	const regions = overseas.regions
+		.map((region) => `${escapeHtml(region.name[language])} ${region.percent}%`)
+		.join(language === "ja" ? "、" : ", ");
+	if (overseas.percent === null) return regions;
+	const total = `${WORDS[language].overseasShare} ${overseas.percent}%`;
+	if (regions === "") return total;
+	return language === "ja" ? `${total}（${regions}）` : `${total} (${regions})`;
+}
+
 function profileValue(
 	facts: readonly ProfileFact[],
 	field: ProfileFact["field"],
@@ -248,7 +264,7 @@ export function renderSection(input: {
 			w.overseas,
 			description.overseasSales === null
 				? notStated(language)
-				: `${description.overseasSales.percent}%${note(description.overseasSales.evidence)}`,
+				: `${overseasText(description.overseasSales, language)}${note(description.overseasSales.evidence)}`,
 		),
 		row(
 			w.themes,

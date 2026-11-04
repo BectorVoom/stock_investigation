@@ -13,6 +13,7 @@ import {
 	keepVerified,
 	normalizeForQuote,
 	numbersIn,
+	quotedNumbersIn,
 	westernYearsIn,
 } from "../../scripts/poc/companyDescription/evidence.ts";
 import { companyDescriptionPrompt } from "../../scripts/poc/companyDescription/prompt.ts";
@@ -23,6 +24,7 @@ import {
 } from "../../scripts/poc/companyDescription/render.ts";
 import { salvageReply } from "../../scripts/poc/companyDescription/reply.ts";
 import {
+	isOutOfCredit,
 	KEPT_STORED,
 	MAX_SEARCH_FAILURES_IN_A_ROW,
 	mayReplace,
@@ -148,6 +150,9 @@ describe("company description evidence check (PoC)", () => {
 			description({
 				overseasSales: {
 					percent: 60,
+					totalAmount: null,
+					homeAmount: null,
+					regions: [],
 					evidence: [{ source: "S1", quote: "accounted for 26% of total" }],
 				},
 				profile: [
@@ -165,6 +170,64 @@ describe("company description evidence check (PoC)", () => {
 		expect(describeProblems(checked)).toEqual([
 			"overseasSales: the number 60 is not in any of its quotes; use null when no source states it.",
 		]);
+	});
+
+	it("computes each country's share from the quoted table of sales by region", () => {
+		// The table form J-Quants-less Japanese sources mostly give (所在地別 売上高, 百万円).
+		const table: CompanySource = {
+			id: "S4",
+			title: { en: "Annual report", ja: "有価証券報告書" },
+			publisher: "example.co.jp",
+			asOf: null,
+			url: "https://www.example.co.jp/ir",
+			note: null,
+			text: "所在地別売上高 | 日本 | 42,000 | 米国 | 33,000 | 中国 | 15,000 | 欧州 | 10,000 | 計 | 100,000 |",
+		};
+		const quote = "日本 | 42,000 | 米国 | 33,000 | 中国 | 15,000 | 欧州 | 10,000 | 計 | 100,000";
+		const region = (en: string, ja: string, amount: number) => ({
+			name: { en, ja },
+			percent: null,
+			amount,
+		});
+		const draft = description({
+			overseasSales: {
+				percent: null,
+				totalAmount: 100_000,
+				homeAmount: 42_000,
+				regions: [
+					region("Europe", "欧州", 10_000),
+					region("United States", "米国", 33_000),
+					region("China", "中国", 15_000),
+				],
+				evidence: [{ source: "S4", quote }],
+			},
+		});
+		const checked = checkDescription(draft, [...sources, table]);
+		expect(describeProblems(checked)).toEqual([]);
+		expect(keepVerified(draft, checked).overseasSales).toEqual({
+			percent: 58,
+			regions: [
+				{ name: { en: "United States", ja: "米国" }, percent: 33 },
+				{ name: { en: "China", ja: "中国" }, percent: 15 },
+				{ name: { en: "Europe", ja: "欧州" }, percent: 10 },
+			],
+			evidence: [{ source: "S4", quote }],
+		});
+		// An amount the table does not state fails the field.
+		const invented = description({
+			overseasSales: {
+				...(draft.overseasSales ?? {
+					percent: null,
+					totalAmount: null,
+					homeAmount: null,
+					evidence: [],
+				}),
+				regions: [region("India", "インド", 7_000)],
+			},
+		});
+		expect(describeProblems(checkDescription(invented, [...sources, table]))).toContain(
+			"overseasSales: the number 7000 is not in any of its quotes; use null when no source states it.",
+		);
 	});
 
 	it("keeps only the verified fields", () => {
@@ -262,7 +325,13 @@ describe("company description reply salvage (PoC)", () => {
 			feature: statement,
 			businesses: [statement, { en: "", ja: "", evidence: [] }],
 			segments: [],
-			overseasSales: { percent: 140, evidence: statement.evidence },
+			overseasSales: {
+				percent: 140,
+				totalAmount: null,
+				homeAmount: null,
+				regions: [],
+				evidence: statement.evidence,
+			},
 			profile: [],
 			themes: [
 				{ label: { en: "Sparkling Soft Drinks", ja: "炭酸飲料" }, reason: statement },
@@ -277,8 +346,24 @@ describe("company description reply salvage (PoC)", () => {
 		expect(salvaged?.themes.map((theme) => theme.label.en)).toEqual(["Sparkling Soft Drinks"]);
 	});
 
-	it("gives up when the 特色 itself is invalid or the reply is not an object", () => {
-		expect(salvageReply({ feature: { en: "x", ja: "x", evidence: [] }, themes: [] })).toBeNull();
+	it("drops an invalid or missing 特色 and keeps the rest of the reply", () => {
+		// Haiku leaves 特色 null when no quote supports one (US:AETR, US:ANRO, 2026-11-04).
+		for (const feature of [
+			null,
+			{ en: "", ja: "", evidence: [] },
+			{ en: "x", ja: "x", evidence: [] },
+		]) {
+			const salvaged = salvageReply({ feature, businesses: [statement], themes: [] });
+			expect(salvaged?.feature).toBeNull();
+			expect(salvaged?.businesses).toEqual([statement]);
+			if (salvaged === null) continue;
+			const paths = checkDescription(salvaged, []).map((field) => field.path);
+			expect(paths).toEqual(["businesses[0]"]);
+			expect(keepVerified(salvaged, []).feature).toBeNull();
+		}
+	});
+
+	it("gives up when the reply is not an object", () => {
 		expect(salvageReply(null)).toBeNull();
 		expect(salvageReply([statement])).toBeNull();
 	});
@@ -303,6 +388,18 @@ describe("company overview web sources (PoC, ADR-0064)", () => {
 		expect(pageKind("https://www.reuters.com/company/ko", "COCA COLA CO")).toBe("other");
 		expect(pageKind("https://ir.toyota.co.jp/", "TOYOTA MOTOR CORPORATION")).toBe("official");
 		expect(pageKind("https://www.toyota-global.com/", "TOYOTA MOTOR CORPORATION")).toBe("official");
+	});
+
+	it("reads a site named after the Japanese name as the company's own", () => {
+		// スバル興業 (Subaru Enterprise) is subaru-kougyou.jp; every page was refused (2026-11-04).
+		const url = "https://subaru-kougyou.jp/company/";
+		expect(pageKind(url, "Subaru Enterprise Co.,Ltd.", "スバル興業")).toBe("official");
+		expect(pageKind(url, "Subaru Enterprise Co.,Ltd.")).toBeNull();
+		// Not SUBARU's: its Japanese name has no 興業.
+		expect(pageKind(url, "SUBARU CORPORATION", "SUBARU")).toBeNull();
+		expect(
+			pageKind("https://www.toyota-shoji.co.jp/", "TOYOTA MOTOR CORPORATION", "トヨタ自動車"),
+		).toBeNull();
 	});
 
 	it("never reads a family company's site as the company's own", () => {
@@ -414,6 +511,47 @@ describe("claim check (PoC, ADR-0064 §5d)", () => {
 		expect(
 			claimTerms("Sells concentrate to Coca-Cola bottlers. The company is in Japan.", false),
 		).toEqual(["Coca-Cola"]);
+	});
+
+	it("checks the name in a hyphenated word, not the whole word", () => {
+		expect(claimTerms("A Bermuda-based life insurer.", false)).toEqual(["Bermuda"]);
+		expect(claimTerms("Bermuda-based の生命保険会社。e-commerce", true)).toEqual([
+			"Bermuda",
+			"e-commerce",
+		]);
+	});
+
+	it("matches a quote of a markdown link's text and reads spelled-out numbers", () => {
+		// Pages read by Claude's web fetch are markdown (US:AEG, 2026-11-04).
+		expect(normalizeForQuote("is [World Financial Group](https://wfg.example/), an")).toBe(
+			"is world financial group, an",
+		);
+		expect(quotedNumbersIn("consists of four global platforms, 2 of them new")).toEqual([2, 4]);
+		const source: CompanySource = {
+			id: "S2",
+			title: { en: "About", ja: "会社概要" },
+			publisher: "aegon.com",
+			asOf: null,
+			url: "https://www.aegon.com/about",
+			note: null,
+			text: "Aegon AM consists of four global investment platforms. Sold through [World Financial Group](https://www.worldfinancialgroup.com/).",
+		};
+		const checked = checkDescription(
+			description({
+				businesses: [
+					{
+						en: "Runs four investment platforms, sold through World Financial Group.",
+						ja: "4つの運用プラットフォームを展開。World Financial Groupで販売。",
+						evidence: [
+							{ source: "S2", quote: "consists of four global investment platforms" },
+							{ source: "S2", quote: "Sold through World Financial Group" },
+						],
+					},
+				],
+			}),
+			[...sources, source],
+		);
+		expect(describeProblems(checked)).toEqual([]);
 	});
 
 	it("reads Japanese-era years as Western ones", () => {
@@ -572,6 +710,13 @@ describe("run policy (PoC)", () => {
 		expect(slept.reduce((sum, ms) => sum + ms, 0)).toBe(SEARCH_PAUSE_MS);
 		budget.record({ code: "HTTP 400", detail: "Your credit balance is too low" });
 		expect(budget.enabled).toBe(false);
+		expect(budget.exhaustedBy).toBe("HTTP 400 Your credit balance is too low");
+	});
+
+	it("stops the run on a model turn the account cannot pay for", () => {
+		expect(isOutOfCredit("PROVIDER_PAYMENT_REQUIRED (HTTP 400)")).toBe(true);
+		expect(isOutOfCredit("PROVIDER_REQUEST_REJECTED (HTTP 400)")).toBe(false);
+		expect(isOutOfCredit("PROVIDER_RATE_LIMITED (HTTP 429)")).toBe(false);
 	});
 });
 

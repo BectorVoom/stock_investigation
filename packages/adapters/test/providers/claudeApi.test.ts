@@ -403,6 +403,7 @@ describe("claude-api failures and retries", () => {
 			400,
 			'{"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified workspace API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."}}',
 		],
+		["a used-up credit balance", 400, fixtureText("claude-api/error-400-credit-balance.json")],
 	])("fails %s at once as PROVIDER_PAYMENT_REQUIRED, keeping the status", async (_label, status, body) => {
 		const fake = recordingFetch(() => new Response(body, { status }));
 

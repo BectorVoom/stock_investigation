@@ -768,6 +768,35 @@ describe("Company tab: the company overview with evidence and references (ADR-00
 		expect(mark?.getAttribute("title")).toBe("出典 S2");
 	});
 
+	it("writes 【海外】 as the overseas share with each country's share, not a bare figure", async () => {
+		const overseasSales = {
+			percent: 58,
+			regions: [
+				{ name: { en: "United States", ja: "米国" }, percent: 33 },
+				{ name: { en: "Europe", ja: "欧州" }, percent: 15 },
+			],
+			evidence: [{ source: "S2", quote: "net operating revenues by geographic area" }],
+		};
+		api.overviewOf.set("us:KO", {
+			...KO_OVERVIEW,
+			entry: { ...KO_OVERVIEW.entry, overseasSales },
+		});
+		mountStocks(api.backend, { route: { stockId: "us:KO", tab: "company" }, locale: "ja" });
+		const overview = await overviewOf();
+		const row = overview.querySelector('[data-field="company-overview-overseas"]');
+		expect(row?.textContent).toBe("海外売上高比率 58%（米国 33%、欧州 15%）S2");
+		cleanup();
+		api.overviewOf.set("us:KO", {
+			...KO_OVERVIEW,
+			entry: { ...KO_OVERVIEW.entry, overseasSales: { ...overseasSales, percent: null } },
+		});
+		mountStocks(api.backend, { route: { stockId: "us:KO", tab: "company" }, locale: "en" });
+		const english = await overviewOf();
+		expect(english.querySelector('[data-field="company-overview-overseas"]')?.textContent).toBe(
+			"United States 33%, Europe 15%S2",
+		);
+	});
+
 	it("shows the key facts table, the 出所 lines and the cited references in small text; no evidence list, no results", async () => {
 		api.overviewOf.set("us:KO", KO_OVERVIEW);
 		mountStocks(api.backend, { route: { stockId: "us:KO", tab: "company" }, locale: "ja" });

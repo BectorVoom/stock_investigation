@@ -200,11 +200,17 @@ const claudeErrorBodySchema = z.looseObject({
 const SPEND_CAP_ERROR_CODE = "enforced_spend_limit_reached";
 /** How the 400 for an organization or workspace spend limit the owner set begins. */
 const OWN_SPEND_LIMIT_MESSAGE_PREFIX = "You have reached your specified";
+/**
+ * How the 400 for a prepaid account without credit begins (observed live
+ * 2026-11-04: it is an `invalid_request_error`, not a `billing_error`).
+ */
+const NO_CREDIT_MESSAGE_PREFIX = "Your credit balance is too low";
 
 /**
- * Whether the body says a spend limit was reached: the tier's monthly cap (a
- * 429 without Retry-After that keeps failing until the next month) or a limit
- * the owner set (a 400). Retrying either is useless until the owner acts.
+ * Whether the body says the account cannot pay: the tier's monthly cap (a
+ * 429 without Retry-After that keeps failing until the next month), a limit
+ * the owner set or a used-up credit balance (both a 400). Retrying any of
+ * them is useless until the owner acts.
  */
 export function isClaudeSpendLimit(body: string | null): boolean {
 	if (body === null) return false;
@@ -217,13 +223,15 @@ export function isClaudeSpendLimit(body: string | null): boolean {
 	return (
 		type === "invalid_request_error" &&
 		message !== undefined &&
-		message.startsWith(OWN_SPEND_LIMIT_MESSAGE_PREFIX)
+		(message.startsWith(OWN_SPEND_LIMIT_MESSAGE_PREFIX) ||
+			message.startsWith(NO_CREDIT_MESSAGE_PREFIX))
 	);
 }
 
 /**
  * Our code for a rejected request, carrying its status unchanged (§4a). A
- * spend limit fails at once as PROVIDER_PAYMENT_REQUIRED (not retried); a 404
+ * spend limit or a used-up credit balance fails at once as
+ * PROVIDER_PAYMENT_REQUIRED (not retried); a 404
  * names a model this key cannot use; a 504 is the API's `timeout_error`, the
  * same code its stream `error` event maps to; other statuses read as for any
  * HTTP backend.

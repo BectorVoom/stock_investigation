@@ -32,7 +32,7 @@ import {
  *   【特色】 Feature        — model: one short statement, what the company is known for
  *   【事業内容】 Businesses  — model: the summary of the business, 2–4 sentences of one paragraph
  *   【連結事業】 Segments    — model: the reportable segments; a sales share or margin only where a source states it
- *   【海外】 Overseas        — model: the overseas share of sales, only where a source states it
+ *   【海外】 Overseas        — model: the overseas share and each country's or region's share, as stated or from a table's amounts
  *   【会社概要】 Profile     — code: market, sector, fiscal year end; model: founded, employees, headquarters (each with evidence)
  *   【業績】 Results         — code: the latest fiscal year's stored figures and the operating margin computed from them
  *   【テーマ】 Themes        — model: 1–6 labels, each with a one-statement reason
@@ -75,6 +75,13 @@ export const TEMPLATE_LIMITS = COMPANY_OVERVIEW_LIMITS;
 export const companyDescriptionSchema = companyOverviewDraftSchema;
 export type CompanyDescription = CompanyOverviewDraft;
 export type VerifiedDescription = CompanyOverviewEntry;
+/**
+ * A reply as the checks read it: the draft, whose 【特色】 may be null when
+ * the salvage dropped an invalid one (an entry may lack it; ADR-0064 §5c).
+ */
+export type DescriptionToCheck = Omit<CompanyDescription, "feature"> & {
+	readonly feature: CompanyDescription["feature"] | null;
+};
 export type SourceId = OverviewSourceId;
 export type Evidence = OverviewEvidence;
 export type Statement = OverviewStatement;

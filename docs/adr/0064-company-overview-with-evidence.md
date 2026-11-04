@@ -29,7 +29,8 @@ follows 会社四季報's entry as SBI証券 shows it on its 企業概要 tab:
 
 - labelled rows 【特色】 (one line), 【事業内容】, 【連結事業】 (a segment's
   share of sales and margin, 四季報's `79(4)`, only where a source states
-  them), 【海外】 and 【テーマ】;
+  them), 【海外】 (the overseas share of sales and each country's share,
+  §5f) and 【テーマ】;
 - a 基本情報 (Key facts) table: market, sector (Japan) and fiscal year end
   from stored records, and founded, employees and headquarters where a
   source states them;
@@ -86,6 +87,10 @@ word the name lacks, such as "toyota-body.co.jp" or "toyota-ej.co.jp" for
 TOYOTA MOTOR — is never read (2026-11-04). The first rule, "the host
 contains a distinctive word", took both for Toyota's own site; their
 profile pages pass the quote check while describing another company.
+A site named after the Japanese name is the company's own when the
+Japanese name has the kanji of its romanized words: "subaru-kougyou.jp" is
+スバル興業's (Subaru Enterprise; 興業 = kougyou), never SUBARU's
+(webSources.ts `ROMANIZED_NAME_WORDS`, 2026-11-04).
 
 The writer searches only for a stock without a stored business text
 (every Japanese stock, a US company without a 10-K Item 1), Japanese stocks
@@ -283,6 +288,17 @@ entries worse. The writer now:
   instead of turning them off, and treats a search-tool error as a failed
   search rather than "nothing found".
 
+Retrying the run's 52 failed stocks (2026-11-04) changed four details:
+
+- A reply whose 【特色】 is empty or invalid keeps its other fields: Haiku
+  leaves 【特色】 null when no quote supports one, and the whole reply was
+  then discarded (10 stocks). An entry may lack 【特色】 (§5b).
+- A quote of a markdown link's text matches: pages read by Claude's web
+  fetch are markdown, "[World Financial Group](https://…)".
+- A number spelled out in English in a quote ("four platforms") backs the
+  digit (「4つ」).
+- A hyphenated word is checked by its name: "Bermuda-based" by Bermuda.
+
 ### 5e. Listings that are not operating companies (2026-11-04)
 
 The stock list also holds preferred shares, warrants, units and rights
@@ -296,6 +312,31 @@ The stock list also holds preferred shares, warrants, units and rights
   stock, and the prompt tells the model to describe it as one: its
   investment objective or purpose, what it holds or seeks, who manages or
   sponsors it, and themes naming what it invests in.
+
+### 5f. 【海外】 names the countries (2026-11-04)
+
+The owner: a bare "42%" tells the reader nothing — write the countries and
+their shares. 【海外】 now reads 「海外売上高比率 58%（米国 33%、欧州 15%、
+アジア 10%）」 ("Overseas sales 58% (United States 33%, …)"), or the
+countries alone when the overall share is unknown.
+
+Sources rarely state a country's share; they give a table of sales by
+region (所在地別 / 地域ごとの情報 / revenue by geographic area) in the
+table's own unit. So the model copies the numbers and code computes the
+shares (`overseasSalesFromDraft` in `@research/contracts`):
+
+- the draft's `overseasSales` holds the stated overseas share, the table's
+  total and home-country amounts, and up to six countries or regions
+  outside the home country, each with a stated share or its amount;
+- every one of those numbers must be in the field's quotes (the usual
+  number check), and the names like any name;
+- a region's share is its stated share, else its amount over the total; the
+  overseas share is the stated one, else the total less the home amount
+  over the total; one decimal place, largest region first;
+- the stored entry keeps `percent` (nullable) and `regions` (`name`,
+  `percent`), not the amounts. An entry stored before this has no
+  `regions` and still reads (`regions` defaults to empty); it gains them
+  when it is rewritten.
 
 ### 6. Who writes it, for now
 

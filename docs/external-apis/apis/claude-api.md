@@ -117,6 +117,7 @@ A non-2xx answer arrives before generation, so nothing was billed. Its body is r
 |---|---|---|---|
 | 400 | `invalid_request_error`: bad request | Fails the turn, not retried | `PROVIDER_REQUEST_REJECTED` (400) |
 | 400 | `invalid_request_error` whose message starts `You have reached your specified`: an organization or workspace spend limit the owner set was reached | Fails the turn at once, not retried | `PROVIDER_PAYMENT_REQUIRED` (400) |
+| 400 | `invalid_request_error` whose message starts `Your credit balance is too low`: the prepaid account has no credit left | Fails the turn at once, not retried | `PROVIDER_PAYMENT_REQUIRED` (400) |
 | 401 | `authentication_error`: missing, malformed, revoked or expired key | Fails the turn, not retried | `PROVIDER_AUTH` (401) |
 | 402 | `billing_error` | Fails the turn, not retried | `PROVIDER_PAYMENT_REQUIRED` (402) |
 | 403 | `permission_error` | Fails the turn, not retried | `PROVIDER_AUTH` (403) |
@@ -131,12 +132,13 @@ A non-2xx answer arrives before generation, so nothing was billed. Its body is r
 
 ### Provider error codes and body
 
-A rejected request answers `content-type: application/json` with `{"type":"error","error":{"type":…,"message":…},"request_id":…}` ([errors](https://platform.claude.com/docs/en/api/errors)); the spend-cap 429 adds `error.details.error_code` ([rate limits](https://platform.claude.com/docs/en/api/rate-limits#reaching-your-spend-cap)). The `request-id` header carries the same id and `x-should-retry` says whether a retry may help; the code reads neither header. From the body `failureForClaudeRejection` / `failure_for_claude_rejection` reads `error.type`, `error.details.error_code` and whether `error.message` starts with `You have reached your specified` (the documented start of an owner-set spend limit, [rate limits](https://platform.claude.com/docs/en/api/rate-limits#setting-your-own-spend-limit)); the message is never stored, logged or placed in an event. A body that does not match the shape (`error` an object, `type` and `message` strings or absent, `details` an object or `null`) is treated as absent.
+A rejected request answers `content-type: application/json` with `{"type":"error","error":{"type":…,"message":…},"request_id":…}` ([errors](https://platform.claude.com/docs/en/api/errors)); the spend-cap 429 adds `error.details.error_code` ([rate limits](https://platform.claude.com/docs/en/api/rate-limits#reaching-your-spend-cap)). The `request-id` header carries the same id and `x-should-retry` says whether a retry may help; the code reads neither header. From the body `failureForClaudeRejection` / `failure_for_claude_rejection` reads `error.type`, `error.details.error_code` and whether `error.message` starts with `You have reached your specified` (the documented start of an owner-set spend limit, [rate limits](https://platform.claude.com/docs/en/api/rate-limits#setting-your-own-spend-limit)) or `Your credit balance is too low` (a used-up prepaid balance, observed live 2026-11-04); the message is never stored, logged or placed in an event. A body that does not match the shape (`error` an object, `type` and `message` strings or absent, `details` an object or `null`) is treated as absent.
 
 | Rejected answer's body | Our error code |
 |---|---|
 | `error.type` `rate_limit_error` and `error.details.error_code` `enforced_spend_limit_reached` | `PROVIDER_PAYMENT_REQUIRED` (status kept), not retried |
 | `error.type` `invalid_request_error` and `error.message` starting `You have reached your specified` | `PROVIDER_PAYMENT_REQUIRED` (status kept), not retried |
+| `error.type` `invalid_request_error` and `error.message` starting `Your credit balance is too low` | `PROVIDER_PAYMENT_REQUIRED` (status kept), not retried |
 | anything else, or no readable body | By status (table above) |
 
 After a `200` the stream can instead end with an `error` event of the same `error` shape (no HTTP status). Its `error.type` is mapped by `failureForClaudeErrorType` / `failure_for_claude_error_type`; the resulting failure has no `upstreamStatus`, because no status was answered.
@@ -285,6 +287,15 @@ content-type: application/json
 
 Verified: spec, 2026-10-31, https://platform.claude.com/docs/en/api/rate-limits#reaching-your-spend-cap (body as published, compacted to one line; status line and headers from the same page's description). Not observed live (cannot be provoked without spending the cap).
 
+A used-up credit balance (HTTP 400; the turn fails at once with `PROVIDER_PAYMENT_REQUIRED` (400), not retried):
+
+<!-- example: claude-api-error-400-credit-balance -->
+```json
+{"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CghAn6p3kQ9GrxnJgWNXb"}
+```
+
+Verified: live, 2026-11-04, the body the Messages API answered `node scripts/poc/companyDescription/run.ts` when the account's prepaid credit ran out. Body unedited; status line and headers not recorded.
+
 Error event inside a `200` stream (here before `message_start`, so the request is retried; when every retry meets it the turn fails with `PROVIDER_UNAVAILABLE`):
 
 <!-- example: claude-api-stream-error-overloaded -->
@@ -295,7 +306,7 @@ data: {"type": "error", "error": {"type": "overloaded_error", "message": "Overlo
 
 Verified: spec, 2026-10-31, https://platform.claude.com/docs/en/build-with-claude/streaming#error-events. Not observed live (cannot be provoked).
 
-**Test fixtures** (`packages/adapters/test/providers/fixtures/claude-api/`). Recorded from the live checks above: `ok.sse` (the complete stream, byte for byte), `error-401.json`, `error-404.json` (the bodies, re-indented by the formatter). Documentation-derived, because the case cannot be provoked live: `error-429-spend-cap.json` (the example above), `thinking-then-text.sse`, `max-tokens.sse`, `midstream-error.sse`, `overloaded-before-start.sse`, `refusal.sse`, `tool-use.sse`.
+**Test fixtures** (`packages/adapters/test/providers/fixtures/claude-api/`). Recorded from the live checks above: `ok.sse` (the complete stream, byte for byte), `error-401.json`, `error-404.json` (the bodies, re-indented by the formatter), `error-400-credit-balance.json` (the body the 2026-11-04 run met). Documentation-derived, because the case cannot be provoked live: `error-429-spend-cap.json` (the example above), `thinking-then-text.sse`, `max-tokens.sse`, `midstream-error.sse`, `overloaded-before-start.sse`, `refusal.sse`, `tool-use.sse`.
 
 ## 6. Data Mapping
 

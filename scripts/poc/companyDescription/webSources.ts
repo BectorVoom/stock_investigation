@@ -214,6 +214,55 @@ export function registeredLabel(host: string): string | null {
 	return labels.at(-1) ?? null;
 }
 
+/**
+ * Romanized words of Japanese company names and the kanji they stand for.
+ * Many Japanese companies name their site after the Japanese name
+ * (スバル興業 is subaru-kougyou.jp, not "Subaru Enterprise"), so a word
+ * counts as part of the name when the Japanese name has its kanji. Only
+ * then: subaru-kougyou.jp must not pass as SUBARU's own site.
+ */
+const ROMANIZED_NAME_WORDS: readonly (readonly [readonly string[], readonly string[]])[] = [
+	[
+		["kogyo", "kougyou", "kogyou", "kougyo"],
+		["興業", "工業", "鉱業"],
+	],
+	[["sangyo", "sangyou"], ["産業"]],
+	[["shoji", "shouji", "syoji"], ["商事"]],
+	[["shokai", "syokai", "shoukai"], ["商会"]],
+	[["shoten", "syoten", "shouten"], ["商店"]],
+	[["kensetsu"], ["建設"]],
+	[["denki"], ["電気", "電機"]],
+	[["denko", "denkou"], ["電工"]],
+	[["seiyaku"], ["製薬"]],
+	[["shokuhin", "syokuhin"], ["食品"]],
+	[["unyu"], ["運輸"]],
+	[["soko", "souko"], ["倉庫"]],
+	[["seisakusho", "seisakujo"], ["製作所"]],
+	[
+		["tekko", "tekkou"],
+		["鉄工", "鉄鋼"],
+	],
+	[["kosan", "kousan"], ["興産"]],
+	[["kaihatsu"], ["開発"]],
+	[["fudosan", "fudousan"], ["不動産"]],
+	[["shoken", "shouken"], ["証券"]],
+	[["kagaku"], ["化学"]],
+	[["kikai"], ["機械"]],
+	[["seiko", "seikou"], ["精工"]],
+	[["jidosha", "jidousha"], ["自動車"]],
+	[["zosen", "zousen"], ["造船"]],
+	[["seishi"], ["製紙"]],
+	[["seifun"], ["製粉"]],
+	[["seito", "seitou"], ["製糖"]],
+];
+
+/** The romanized words whose kanji the Japanese name has. */
+function romanizedWordsOf(localName: string): string[] {
+	return ROMANIZED_NAME_WORDS.flatMap(([words, kanji]) =>
+		kanji.some((text) => localName.includes(text)) ? [...words] : [],
+	);
+}
+
 /** Whether `text` is made only of `tokens` run together ("colacompany" = cola + company). */
 function isMadeOf(text: string, tokens: ReadonlySet<string>): boolean {
 	const reachable = new Array<boolean>(text.length + 1).fill(false);
@@ -237,9 +286,10 @@ function isMadeOf(text: string, tokens: ReadonlySet<string>): boolean {
  * distinctive word plus a hyphenated word the name lacks ("toyota-body",
  * "toyota-ej") belongs to a different company of the same family and is
  * never read: its profile page would pass the quote check while
- * describing someone else.
+ * describing someone else. `localName` (the Japanese name) adds the
+ * romanized words of its kanji ("kougyou" for スバル興業).
  */
-export function pageKind(url: string, companyName: string): PageKind | null {
+export function pageKind(url: string, companyName: string, localName = ""): PageKind | null {
 	const host = hostOf(url);
 	if (host === null || !url.startsWith("https://")) return null;
 	if (hasSuffix(host, EXCLUDED_HOST_SUFFIXES) || isJobSiteHost(host)) return null;
@@ -254,6 +304,7 @@ export function pageKind(url: string, companyName: string): PageKind | null {
 			.split(/[^a-z0-9]+/)
 			.filter((word) => word.length >= 2),
 		...SITE_WORDS,
+		...romanizedWordsOf(localName),
 	]);
 	const parts = label.split("-").filter((part) => part !== "");
 	if (parts.every((part) => isMadeOf(part, tokens))) return "official";
@@ -268,11 +319,12 @@ export function choosePages(
 	companyName: string,
 	limit: number,
 	order: "by-kind" | "as-given" = "by-kind",
+	localName = "",
 ): { url: string; kind: PageKind }[] {
 	const seen = new Set<string>();
 	const ranked: { url: string; kind: PageKind; rank: number }[] = [];
 	results.forEach((result, rank) => {
-		const kind = pageKind(result.url, companyName);
+		const kind = pageKind(result.url, companyName, localName);
 		if (kind === null || seen.has(result.url)) return;
 		seen.add(result.url);
 		ranked.push({ url: result.url, kind, rank });
@@ -539,6 +591,7 @@ export async function withWebSources(
 		stock.name.en,
 		MAX_WEB_PAGE_ATTEMPTS,
 		found.order,
+		stock.name.ja,
 	);
 	log.push(`${found.urls.length} pages found, ${candidates.length} acceptable`);
 	const sources = [...stock.sources];

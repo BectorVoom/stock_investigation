@@ -21,6 +21,12 @@ const JA_FIELDS: { readonly [F in ProfileField]: string } = {
  * lines. The entry's own text is stored in both languages and shown in the
  * UI's language.
  */
+/** A country or region of 【海外】 with its share of sales, its name in the UI's language. */
+export interface RegionShare {
+	readonly name: string;
+	readonly percent: number;
+}
+
 export const companyOverviewMessages = defineMessages({
 	en: {
 		feature: "Feature",
@@ -42,6 +48,17 @@ export const companyOverviewMessages = defineMessages({
 		sourceLine: "Source",
 		/** Between a segment's name and what it does. */
 		segmentActivitySeparator: ": ",
+		/**
+		 * 【海外】: the overseas share of sales and each country's or region's
+		 * share, already in the UI's language ("Overseas sales 58% (United
+		 * States 33%, Europe 15%)"); the countries alone when the overall share
+		 * is unknown.
+		 */
+		overseasSales: (percent: number | null, regions: readonly RegionShare[]): string => {
+			const list = regions.map((region) => `${region.name} ${region.percent}%`).join(", ");
+			if (percent === null) return list;
+			return list === "" ? `Overseas sales ${percent}%` : `Overseas sales ${percent}% (${list})`;
+		},
 		/** Who wrote the overview and when; the date comes formatted. */
 		writtenBy: (agent: string, model: string | null, date: string): string =>
 			`Written by AI (${model === null ? agent : `${agent}, ${model}`}) on ${date} from the sources above only. It may contain mistakes.`,
@@ -63,6 +80,11 @@ export const companyOverviewMessages = defineMessages({
 		sourceMark: (id) => `出典 ${id}`,
 		sourceLine: "出所",
 		segmentActivitySeparator: "：",
+		overseasSales: (percent, regions) => {
+			const list = regions.map((region) => `${region.name} ${region.percent}%`).join("、");
+			if (percent === null) return list;
+			return list === "" ? `海外売上高比率 ${percent}%` : `海外売上高比率 ${percent}%（${list}）`;
+		},
 		writtenBy: (agent, model, date) =>
 			`AI（${model === null ? agent : `${agent}、${model}`}）が ${date} に上記の出典だけから作成。誤りを含む場合があります。`,
 	},

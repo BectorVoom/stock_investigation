@@ -146,6 +146,16 @@ export function recentlyUnreadableIn(
 		: new Set();
 }
 
+/**
+ * Whether a model turn failed because the account cannot pay (a used-up
+ * credit balance or a spend limit). The run then stops: on 2026-11-04 the
+ * credit ran out at stock 690 of 8,467 and the run went on to fail the
+ * other 7,777 in 35 minutes, 4,132 of them logged as having no source.
+ */
+export function isOutOfCredit(failure: string): boolean {
+	return failure.startsWith("PROVIDER_PAYMENT_REQUIRED");
+}
+
 /** Search failures in a row (after each search's own retries) that pause all searches. */
 export const MAX_SEARCH_FAILURES_IN_A_ROW = 5;
 /** How long searches pause after that. */
@@ -161,6 +171,8 @@ export const SEARCH_PAUSE_MS = 5 * 60_000;
 export class WebBudget {
 	enabled: boolean;
 	searches = 0;
+	/** The answer that turned searches off because the plan or the account cannot pay; null until then. */
+	exhaustedBy: string | null = null;
 	private failuresInARow = 0;
 	private pausedUntilMs = 0;
 	// A plain field, not a parameter property: Node's type stripping rejects those.
@@ -191,6 +203,7 @@ export class WebBudget {
 		);
 		if (this.enabled && exhausted) {
 			this.enabled = false;
+			this.exhaustedBy = `${failure.code} ${failure.detail}`;
 			console.log(
 				`web pages turned off after ${this.searches} searches: ${failure.code} ${failure.detail}`,
 			);

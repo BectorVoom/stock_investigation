@@ -62,6 +62,7 @@ import { renderCheck, renderPage, renderSection } from "./render.ts";
 import { parseReply, salvageReply } from "./reply.ts";
 import {
 	ISSUER_NOT_WRITTEN,
+	isOutOfCredit,
 	KEPT_STORED,
 	mayReplace,
 	NO_BUSINESS_SOURCE,
@@ -85,7 +86,7 @@ import {
 } from "./sources.ts";
 import { type StoredOverview, storeOverviews } from "./storeOverview.ts";
 import { styleProblems } from "./style.ts";
-import type { CompanyDescription, VerifiedDescription } from "./template.ts";
+import type { DescriptionToCheck, VerifiedDescription } from "./template.ts";
 import {
 	createWebTools,
 	EXCLUDED_HOST_SUFFIXES,
@@ -313,7 +314,7 @@ async function describeStock(
 	let costUsd = 0;
 	let turns = 0;
 	let repairNote: string | null = null;
-	let lastDescription: CompanyDescription | null = null;
+	let lastDescription: DescriptionToCheck | null = null;
 	let lastJson: unknown = null;
 	const replies: string[] = [];
 	// One turn plus at most one repair turn, like the production job.
@@ -492,6 +493,9 @@ async function main(): Promise<void> {
 		`${stocks.length} stocks to write (${done.size} stored and kept, ${storedAt.size - done.size} stored and due for a rewrite, ${unreadable.size} searched in the last ${UNREADABLE_DAYS} days without a usable page, concurrency ${args.concurrency})`,
 	);
 	const ownerId = ownerOf(args.db);
+	// Why the run stopped taking stocks (the account cannot pay), or null.
+	let stopReason: string | null = null;
+	const searchPaysWithClaude = args.search === "claude";
 	let finished = 0;
 	let totalCost = 0;
 	const outcomes: StockOutcome[] = [];
@@ -516,6 +520,22 @@ async function main(): Promise<void> {
 			sources = withWeb.stock;
 			webPages = sources.sources.length - before;
 			for (const line of withWeb.log) console.log(`  ${label} ${line}`);
+			// The Haiku search is paid by the same account as the turns: nothing more can be written.
+			if (searchPaysWithClaude && web.exhaustedBy !== null) stopReason ??= web.exhaustedBy;
+		}
+		if (stopReason !== null && !searched) {
+			return {
+				stock: label,
+				turns: 0,
+				costUsd: searchCostUsd,
+				verified: 0,
+				total: 0,
+				webPages,
+				searched,
+				searchedWith: null,
+				stored: false,
+				error: `run stopped: ${stopReason}`,
+			};
 		}
 		if (!sources.hasBusinessText && webPages === 0) {
 			return {
@@ -540,6 +560,7 @@ async function main(): Promise<void> {
 				described = await describeStock(sources, ownerId, args.out, stored);
 			} catch (error) {
 				failure = error instanceof Error ? error.message : String(error);
+				if (isOutOfCredit(failure)) stopReason ??= failure;
 				if (attempt >= TRANSIENT_RETRIES || !isTransient(failure)) break;
 				await sleep(TRANSIENT_PAUSE_MS * (attempt + 1));
 			}
@@ -608,6 +629,8 @@ async function main(): Promise<void> {
 
 	async function worker(queue: readonly StockKey[], counter: { next: number }): Promise<void> {
 		for (let key = queue[counter.next++]; key !== undefined; key = queue[counter.next++]) {
+			// Stocks not started are left for the next run, not logged as failed.
+			if (stopReason !== null) return;
 			let outcome: StockOutcome;
 			try {
 				const issuer = issuerOf(key, listed);
@@ -643,6 +666,12 @@ async function main(): Promise<void> {
 	for (const queue of [primary, derived]) {
 		const counter = { next: 0 };
 		await Promise.all(Array.from({ length: args.concurrency }, () => worker(queue, counter)));
+	}
+	if (stopReason !== null) {
+		console.log(
+			`stopped after ${finished} of ${stocks.length} stocks: the account cannot pay (${stopReason}). Add credit, then run the same command again.`,
+		);
+		process.exit(2);
 	}
 	const written = outcomes.filter((outcome) => outcome.error === null).length;
 	console.log(

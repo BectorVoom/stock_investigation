@@ -27,6 +27,9 @@ export const COMPANY_OVERVIEW_LIMITS = {
 	maxProfileFacts: 3,
 	maxThemes: 6,
 	maxThemeChars: 40,
+	/** 【海外】's countries or regions, largest first. */
+	maxOverseasRegions: 6,
+	maxRegionNameChars: 40,
 	maxReferences: 9,
 	maxReferenceTextChars: 300,
 	maxFigures: 4,
@@ -80,11 +83,92 @@ export const overviewSegmentSchema = z.strictObject({
 });
 export type OverviewSegment = z.infer<typeof overviewSegmentSchema>;
 
-/** The overseas share of sales a source states. */
-export const overviewStatedPercentSchema = z.strictObject({
-	percent: z.number().min(0).max(100),
+const sharePercentSchema = z.number().min(0).max(100);
+/** A sales amount as the source's table states it, in the table's own unit. */
+const amountSchema = z.number().min(0).max(Number.MAX_SAFE_INTEGER);
+
+/** One country or region of 【海外】 and its share of sales in percent. */
+export const overviewRegionShareSchema = z.strictObject({
+	name: localized(limits.maxRegionNameChars),
+	percent: sharePercentSchema,
+});
+export type OverviewRegionShare = z.infer<typeof overviewRegionShareSchema>;
+
+/**
+ * 【海外】 as stored and shown: the overseas share of sales and the countries
+ * or regions outside the home country with theirs, largest first. A bare
+ * "42%" told the reader nothing (owner, 2026-11-04). `percent` is null when
+ * only the regions are known; `regions` defaults to empty so an entry
+ * stored before it existed still reads.
+ */
+export const overviewOverseasSalesSchema = z
+	.strictObject({
+		percent: sharePercentSchema.nullable(),
+		regions: z.array(overviewRegionShareSchema).max(limits.maxOverseasRegions).default([]),
+		evidence: evidenceList,
+	})
+	.refine(
+		(overseas) => overseas.percent !== null || overseas.regions.length > 0,
+		"overseasSales needs a percent or a region",
+	);
+export type OverviewOverseasSales = z.infer<typeof overviewOverseasSalesSchema>;
+
+/**
+ * 【海外】 as the model writes it: the numbers exactly as a source states
+ * them. Sources mostly give a table of sales amounts by region (日本 / 北米 /
+ * アジア / 計), not shares, so a region carries its stated share or its
+ * amount, and code computes the shares from the amounts and the table's
+ * total (`overseasSalesFromDraft`); every number is then quoted.
+ */
+export const overviewOverseasDraftSchema = z.strictObject({
+	/** The overseas share of sales, when a source states it as a percentage. */
+	percent: sharePercentSchema.nullable(),
+	/** The total sales of the table the amounts come from. */
+	totalAmount: amountSchema.nullable(),
+	/** The home country's sales in that table. */
+	homeAmount: amountSchema.nullable(),
+	regions: z
+		.array(
+			z.strictObject({
+				name: localized(limits.maxRegionNameChars),
+				percent: sharePercentSchema.nullable(),
+				amount: amountSchema.nullable(),
+			}),
+		)
+		.max(limits.maxOverseasRegions),
 	evidence: evidenceList,
 });
+export type OverviewOverseasDraft = z.infer<typeof overviewOverseasDraftSchema>;
+
+/** A share in percent to one decimal place. */
+function sharePercent(part: number, total: number): number {
+	return Math.round((part / total) * 1000) / 10;
+}
+
+/**
+ * The stored 【海外】 of a draft: each region's stated share, or its amount
+ * over the table's total; the overseas share as stated, or the total less
+ * the home country's sales over the total. A region with neither is
+ * dropped; null when nothing is left.
+ */
+export function overseasSalesFromDraft(draft: OverviewOverseasDraft): OverviewOverseasSales | null {
+	const total = draft.totalAmount !== null && draft.totalAmount > 0 ? draft.totalAmount : null;
+	const regions = draft.regions
+		.flatMap((region) => {
+			const percent =
+				region.percent ??
+				(region.amount !== null && total !== null ? sharePercent(region.amount, total) : null);
+			return percent === null || percent > 100 ? [] : [{ name: region.name, percent }];
+		})
+		.sort((a, b) => b.percent - a.percent);
+	const computed =
+		total !== null && draft.homeAmount !== null && draft.homeAmount <= total
+			? sharePercent(total - draft.homeAmount, total)
+			: null;
+	const percent = draft.percent ?? computed;
+	if (percent === null && regions.length === 0) return null;
+	return { percent, regions, evidence: draft.evidence };
+}
 
 /** A 会社概要 row a source states: founded, employees, headquarters. */
 export const overviewProfileFactSchema = z.strictObject({
@@ -114,7 +198,7 @@ export const companyOverviewDraftSchema = z.strictObject({
 	feature: featureSchema,
 	businesses: z.array(overviewStatementSchema).max(limits.maxBusinesses),
 	segments: z.array(overviewSegmentSchema).max(limits.maxSegments),
-	overseasSales: overviewStatedPercentSchema.nullable(),
+	overseasSales: overviewOverseasDraftSchema.nullable(),
 	profile: z.array(overviewProfileFactSchema).max(limits.maxProfileFacts),
 	themes: z.array(overviewThemeSchema).max(limits.maxThemes),
 });
@@ -128,7 +212,7 @@ export const companyOverviewEntrySchema = z.strictObject({
 	feature: featureSchema.nullable(),
 	businesses: z.array(overviewStatementSchema).max(limits.maxBusinesses),
 	segments: z.array(overviewSegmentSchema).max(limits.maxSegments),
-	overseasSales: overviewStatedPercentSchema.nullable(),
+	overseasSales: overviewOverseasSalesSchema.nullable(),
 	profile: z.array(overviewProfileFactSchema).max(limits.maxProfileFacts),
 	themes: z.array(overviewThemeSchema).max(limits.maxThemes),
 });

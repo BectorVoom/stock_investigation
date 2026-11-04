@@ -1,5 +1,5 @@
 import { normalizeForQuote } from "./evidence.ts";
-import type { CompanyDescription, CompanySource, Evidence } from "./template.ts";
+import type { CompanySource, DescriptionToCheck, Evidence } from "./template.ts";
 
 /**
  * The style rules (template.ts STYLE_RULES) as a check: the prompt alone
@@ -55,9 +55,9 @@ interface StyledText {
 	readonly evidence: readonly Evidence[];
 }
 
-function styledTexts(description: CompanyDescription): StyledText[] {
+function styledTexts(description: DescriptionToCheck): StyledText[] {
 	return [
-		{ path: "feature", ...description.feature },
+		...(description.feature === null ? [] : [{ path: "feature", ...description.feature }]),
 		...description.businesses.map((item, index) => ({ path: `businesses[${index}]`, ...item })),
 		...description.segments.flatMap((segment, index) =>
 			segment.activity === null
@@ -73,7 +73,7 @@ function styledTexts(description: CompanyDescription): StyledText[] {
 
 /** One line per style problem, for the repair turn; empty when the text reads as the rules ask. */
 export function styleProblems(
-	description: CompanyDescription,
+	description: DescriptionToCheck,
 	sources: readonly CompanySource[],
 ): string[] {
 	const sourceText = new Map(sources.map((source) => [source.id, normalizeForQuote(source.text)]));

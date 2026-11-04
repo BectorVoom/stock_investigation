@@ -127,6 +127,17 @@ describe("claude-api.md examples", () => {
 		}
 	});
 
+	it("fails the live used-up credit balance 400 at once as PROVIDER_PAYMENT_REQUIRED", () => {
+		const body = JSON.stringify(
+			docExampleJson("claude-api", "claude-api-error-400-credit-balance"),
+		);
+		expect(failureForClaudeRejection(400, body)).toEqual({
+			code: "PROVIDER_PAYMENT_REQUIRED",
+			retryable: false,
+			upstreamStatus: 400,
+		});
+	});
+
 	it("fails the documented spend-cap 429 at once as PROVIDER_PAYMENT_REQUIRED", async () => {
 		const body = JSON.stringify(docExampleJson("claude-api", "claude-api-error-429-spend-cap"));
 		expect(failureForClaudeRejection(429, body)).toEqual({

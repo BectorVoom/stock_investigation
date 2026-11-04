@@ -31,7 +31,7 @@ The Stocks page's Company tab shows the summary (`GET /api/v1/stocks/:stockId` r
 | `agent_id` | TEXT | Yes | - | The agent backend that wrote the summary (`claude-code`, `opencode`, …); NULL before the first summary. |
 | `model` | TEXT | Yes | - | The model chosen in Settings when the job was queued; NULL when the backend's default was used or before the first summary. |
 | `generated_at` | TEXT | Yes | - | ISO-8601 UTC time the completion that wrote the summary was stored; NULL before the first summary. |
-| `overview_json` | TEXT | Yes | - | The overview entry (`companyOverviewEntrySchema`): 【特色】, 【事業内容】, 【連結事業】, 【海外】, 【テーマ】 and the stated 会社概要 facts, each with its evidence, in English and Japanese; at most 60,000 characters; NULL while no overview is stored. |
+| `overview_json` | TEXT | Yes | - | The overview entry (`companyOverviewEntrySchema`): 【特色】, 【事業内容】, 【連結事業】, 【海外】 (overseas share and each country's or region's share; `regions` absent in entries written before 2026-11-04, read as empty), 【テーマ】 and the stated 会社概要 facts, each with its evidence, in English and Japanese; at most 60,000 characters; NULL while no overview is stored. |
 | `overview_facts_json` | TEXT | Yes | - | What the server filled in when the overview was written (`companyOverviewFactsSchema`): listing, Japanese sector, fiscal year end, up to four annual figures, and the source each cites; at most 4,000 characters. |
 | `overview_references_json` | TEXT | Yes | - | The numbered sources (`overviewReferenceSchema`, S1–S9): title in both languages, publisher, date, https link and note; at most 16,000 characters. |
 | `overview_agent_id` | TEXT | Yes | - | The agent backend that wrote the overview (`claude-api`, …). |

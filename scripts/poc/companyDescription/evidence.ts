@@ -1,7 +1,7 @@
-import { isBareSegment } from "@research/contracts";
+import { isBareSegment, overseasSalesFromDraft } from "@research/contracts";
 import type {
-	CompanyDescription,
 	CompanySource,
+	DescriptionToCheck,
 	Evidence,
 	VerifiedDescription,
 } from "./template.ts";
@@ -16,20 +16,64 @@ import type {
  * a digit must quote something with a digit — a figure is never the model's.
  */
 export function normalizeForQuote(text: string): string {
-	return text
-		.normalize("NFKC")
-		.replace(/[‘’‚‛]/g, "'")
-		.replace(/[“”„‟]/g, '"')
-		.replace(/[‐‑‒–—―]/g, "-")
-		.replace(/\s+/g, " ")
-		.trim()
-		.toLowerCase();
+	return (
+		text
+			// A page read by Claude's web fetch is markdown: "[World Financial Group](https://…)"
+			// reads as its link text, which is what a quote copies (US:AEG, 2026-11-04).
+			.replace(/!?\[([^\]]*)\]\([^)\s]*(?:\s+"[^"]*")?\)/g, "$1")
+			.normalize("NFKC")
+			.replace(/[‘’‚‛]/g, "'")
+			.replace(/[“”„‟]/g, '"')
+			.replace(/[‐‑‒–—―]/g, "-")
+			.replace(/\s+/g, " ")
+			.trim()
+			.toLowerCase()
+	);
 }
 
 /** The numbers written in `text` ("1,234.5" → 1234.5). */
 export function numbersIn(text: string): number[] {
 	const matches = text.normalize("NFKC").match(/\d[\d,]*(?:\.\d+)?/g) ?? [];
 	return matches.map((match) => Number(match.replaceAll(",", "")));
+}
+
+const SPELLED_NUMBERS: Readonly<Record<string, number>> = {
+	one: 1,
+	two: 2,
+	three: 3,
+	four: 4,
+	five: 5,
+	six: 6,
+	seven: 7,
+	eight: 8,
+	nine: 9,
+	ten: 10,
+	eleven: 11,
+	twelve: 12,
+};
+
+/**
+ * The numbers a quote states, in digits or spelled out in English: the
+ * source's "four global investment platforms" backs 「4つのプラットフォーム」
+ * (US:AEG, 2026-11-04).
+ */
+export function quotedNumbersIn(text: string): number[] {
+	const spelled = (text.toLowerCase().match(/\b[a-z]+\b/g) ?? []).flatMap((word) => {
+		const value = SPELLED_NUMBERS[word];
+		return value === undefined ? [] : [value];
+	});
+	return [...numbersIn(text), ...spelled];
+}
+
+/**
+ * The names a hyphenated word claims: "Bermuda-based" claims Bermuda
+ * (US:AEG, 2026-11-04). A word whose parts are all names ("Coca-Cola") or
+ * none ("e-commerce") is checked whole.
+ */
+function namedParts(word: string): string[] {
+	const parts = word.split("-");
+	const named = parts.filter((part) => /^[A-Z0-9]/.test(part) && part.length >= 2);
+	return named.length === 0 || named.length === parts.length ? [word] : named;
 }
 
 export type EvidenceProblem =
@@ -158,15 +202,22 @@ export function claimTerms(text: string, japanese: boolean): string[] {
 			terms.add(suffix === undefined ? match : match.slice(0, -suffix.length));
 		}
 		for (const match of text.normalize("NFKC").match(/[A-Za-z][A-Za-z0-9&+-]+/g) ?? []) {
-			if (!GENERIC_LATIN.has(match.toLowerCase())) terms.add(match);
+			for (const part of namedParts(match)) {
+				if (!GENERIC_LATIN.has(part.toLowerCase())) terms.add(part);
+			}
 		}
 	} else {
 		for (const sentence of text.split(/(?<=[.;:!?])\s+/)) {
 			const words = sentence.match(/[A-Za-z][A-Za-z0-9&+.-]*/g) ?? [];
 			for (const word of words.slice(1)) {
-				const clean = word.replace(/[.-]+$/, "");
-				if (/^[A-Z]/.test(clean) && clean.length >= 2 && !GENERIC_LATIN.has(clean.toLowerCase())) {
-					terms.add(clean);
+				for (const clean of namedParts(word.replace(/[.-]+$/, ""))) {
+					if (
+						/^[A-Z]/.test(clean) &&
+						clean.length >= 2 &&
+						!GENERIC_LATIN.has(clean.toLowerCase())
+					) {
+						terms.add(clean);
+					}
 				}
 			}
 		}
@@ -212,7 +263,7 @@ function claimProblems(
 		.join("\n");
 	const normalizedQuotes = `${normalizeForQuote(quotes)}\n${cited}`;
 	const quotedNumbers = new Set([
-		...numbersIn(quotes),
+		...quotedNumbersIn(quotes),
 		...numbersIn(cited),
 		...westernYearsIn(quotes),
 		...westernYearsIn(cited),
@@ -224,8 +275,8 @@ function claimProblems(
 				problems.push({ kind: "unquoted-term", term });
 			}
 		}
-		// With no digit in any quote, "digit-without-quote" has already said so.
-		if (DIGIT.test(quotes)) {
+		// With no number in any quote, "digit-without-quote" has already said so.
+		if (quotedNumbersIn(quotes).length > 0) {
 			for (const value of numbersIn(text)) {
 				if (!quotedNumbers.has(value))
 					problems.push({ kind: "unquoted-term", term: String(value) });
@@ -254,7 +305,7 @@ function fieldProblems(
 	}
 	if (
 		field.texts.some((text) => DIGIT.test(text)) &&
-		!field.evidence.some((evidence) => DIGIT.test(evidence.quote))
+		!field.evidence.some((evidence) => quotedNumbersIn(evidence.quote).length > 0)
 	) {
 		problems.push({ kind: "digit-without-quote" });
 	}
@@ -262,7 +313,7 @@ function fieldProblems(
 	return problems;
 }
 
-function fieldsOf(description: CompanyDescription): FieldToCheck[] {
+function fieldsOf(description: DescriptionToCheck): FieldToCheck[] {
 	const statement = (
 		path: string,
 		item: { en: string; ja: string; evidence: readonly Evidence[] },
@@ -275,7 +326,7 @@ function fieldsOf(description: CompanyDescription): FieldToCheck[] {
 		evidence: item.evidence,
 	});
 	return [
-		statement("feature", description.feature),
+		...(description.feature === null ? [] : [statement("feature", description.feature)]),
 		...description.businesses.map((item, index) => statement(`businesses[${index}]`, item)),
 		...description.segments.map((segment, index) => ({
 			path: `segments[${index}]`,
@@ -295,11 +346,23 @@ function fieldsOf(description: CompanyDescription): FieldToCheck[] {
 			? []
 			: [
 					{
+						// Every share and amount must be in the quotes; the names, like any name, in them or the cited sources.
 						path: "overseasSales",
-						texts: [],
-						textsEn: [],
-						textsJa: [],
-						numbers: [description.overseasSales.percent],
+						texts: description.overseasSales.regions.flatMap((region) => [
+							region.name.en,
+							region.name.ja,
+						]),
+						textsEn: description.overseasSales.regions.map((region) => `In ${region.name.en}`),
+						textsJa: description.overseasSales.regions.map((region) => region.name.ja),
+						numbers: [
+							description.overseasSales.percent,
+							description.overseasSales.totalAmount,
+							description.overseasSales.homeAmount,
+							...description.overseasSales.regions.flatMap((region) => [
+								region.percent,
+								region.amount,
+							]),
+						].flatMap((value) => (value === null ? [] : [value])),
 						evidence: description.overseasSales.evidence,
 					},
 				]),
@@ -317,7 +380,7 @@ function fieldsOf(description: CompanyDescription): FieldToCheck[] {
 
 /** Every model-written field of a description with its problems (none = verified). */
 export function checkDescription(
-	description: CompanyDescription,
+	description: DescriptionToCheck,
 	sources: readonly CompanySource[],
 ): CheckedField[] {
 	const normalized = new Map(sources.map((source) => [source.id, normalizeForQuote(source.text)]));
@@ -353,7 +416,7 @@ export function describeProblems(checked: readonly CheckedField[]): string[] {
  * what the Company tab shows. A failing feature leaves it null.
  */
 export function keepVerified(
-	description: CompanyDescription,
+	description: DescriptionToCheck,
 	checked: readonly CheckedField[],
 ): VerifiedDescription {
 	const failed = new Set(
@@ -361,13 +424,16 @@ export function keepVerified(
 	);
 	const ok = (path: string) => !failed.has(path);
 	return {
-		feature: ok("feature") ? description.feature : null,
+		feature: description.feature !== null && ok("feature") ? description.feature : null,
 		businesses: description.businesses.filter((_, index) => ok(`businesses[${index}]`)),
 		// A segment that is only its name (a region heading) says nothing; it is not stored.
 		segments: description.segments.filter(
 			(segment, index) => ok(`segments[${index}]`) && !isBareSegment(segment),
 		),
-		overseasSales: ok("overseasSales") ? description.overseasSales : null,
+		overseasSales:
+			description.overseasSales !== null && ok("overseasSales")
+				? overseasSalesFromDraft(description.overseasSales)
+				: null,
 		profile: description.profile.filter((_, index) => ok(`profile[${index}]`)),
 		themes: description.themes.filter((_, index) => ok(`themes[${index}].reason`)),
 	};

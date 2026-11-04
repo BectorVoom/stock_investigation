@@ -24,7 +24,7 @@ from up to three public web pages (ADR-0064 §2a).
 | 【特色】 Feature | model | one statement; Japanese at most 70 characters (one handbook line) |
 | 【事業内容】 Businesses | model | the summary of the business: 2–4 sentences of one paragraph (Japanese about 100–250 characters) on what it makes or provides, main products or brands, customers, how it earns the money and where; always written when a source describes the business |
 | 【連結事業】 Segments | model | the segments a source names; share of sales and margin (四季報's `79(4)`) only where a source states the number, never computed |
-| 【海外】 Overseas | model | overseas share of sales, only where a source states it |
+| 【海外】 Overseas | model + code | the overseas share and up to 6 countries or regions with their shares: the model copies stated shares or a region table's amounts (and its total and home amounts), code computes the shares (ADR-0064 §5f) |
 | 【テーマ】 Themes | model | 1–6 chips, each with a one-statement reason (shown on hover) |
 | 会社概要 Profile | code + model | market, sector (JP) and fiscal year end from stored records; founded, employees and headquarters by the model, only when a source states them |
 | 業績 Results | code | the latest fiscal year's stored revenue, operating, ordinary (JP) and net income in millions, and the operating margin computed from them |

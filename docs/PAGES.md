@@ -442,6 +442,8 @@ Watchlist to get its data.
   summary of the business, one short paragraph built from its business
   segments (what it makes or provides, main products or brands, customers,
   how it earns the money, where);
+  海外 reads 「海外売上高比率 58%（米国 33%、欧州 15%）」 (the countries
+  alone when the overall share is unknown, ADR-0064 §5f);
   連結事業 lists one segment a line with what it does (「北米：…を販売」)
   and, when stated, 四季報's share and margin (a note on the numbers only
   then); テーマ are sub-industry tags (「自然食品」, not 「食品」) — each field followed

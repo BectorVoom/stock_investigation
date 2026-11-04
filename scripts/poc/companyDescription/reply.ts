@@ -1,13 +1,18 @@
 import { extractJsonObject } from "@research/agent-core";
 import {
+	overviewOverseasDraftSchema,
 	overviewProfileFactSchema,
 	overviewSegmentSchema,
-	overviewStatedPercentSchema,
 	overviewStatementSchema,
 	overviewThemeSchema,
 } from "@research/contracts";
 import { z } from "zod";
-import { type CompanyDescription, companyDescriptionSchema, TEMPLATE_LIMITS } from "./template.ts";
+import {
+	type CompanyDescription,
+	companyDescriptionSchema,
+	type DescriptionToCheck,
+	TEMPLATE_LIMITS,
+} from "./template.ts";
 
 /** Reading a model reply as a company description (run.ts). */
 export type ReplyCheck =
@@ -44,22 +49,24 @@ function validItems<T>(schema: z.ZodType<T>, value: unknown, max: number): T[] {
 }
 
 /**
- * The repair turn's reply with each invalid list item dropped (a theme
- * label one character too long once cost Microsoft its whole entry). Null
- * when the reply has no object or its 【特色】 is itself invalid.
+ * The repair turn's reply with each invalid field dropped (a theme label one
+ * character too long once cost Microsoft its whole entry). An invalid or
+ * null 【特色】 is dropped too: Haiku leaves it empty when no quote supports
+ * one, and the reply's valid 【事業内容】 was then lost with it (10 stocks in
+ * the run of 2026-11-04). Null when the reply is not an object.
  */
-export function salvageReply(json: unknown): CompanyDescription | null {
+export function salvageReply(json: unknown): DescriptionToCheck | null {
 	const reply = replyObjectSchema.safeParse(json);
 	if (!reply.success) return null;
 	const limits = TEMPLATE_LIMITS;
-	const overseas = overviewStatedPercentSchema.safeParse(reply.data.overseasSales);
-	const salvaged = companyDescriptionSchema.safeParse({
-		feature: reply.data.feature,
+	const feature = companyDescriptionSchema.shape.feature.safeParse(reply.data.feature);
+	const overseas = overviewOverseasDraftSchema.safeParse(reply.data.overseasSales);
+	return {
+		feature: feature.success ? feature.data : null,
 		businesses: validItems(overviewStatementSchema, reply.data.businesses, limits.maxBusinesses),
 		segments: validItems(overviewSegmentSchema, reply.data.segments, limits.maxSegments),
 		overseasSales: overseas.success ? overseas.data : null,
 		profile: validItems(overviewProfileFactSchema, reply.data.profile, limits.maxProfileFacts),
 		themes: validItems(overviewThemeSchema, reply.data.themes, limits.maxThemes),
-	});
-	return salvaged.success ? salvaged.data : null;
+	};
 }

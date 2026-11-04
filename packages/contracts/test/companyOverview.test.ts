@@ -5,6 +5,7 @@ import {
 	companyOverviewEntrySchema,
 	companyOverviewViewSchema,
 	isBareSegment,
+	overseasSalesFromDraft,
 } from "../src/index.ts";
 
 /** The company overview's contract (事業概要, ADR-0064). */
@@ -131,5 +132,66 @@ describe("bare segments (ADR-0064)", () => {
 		);
 		expect(isBareSegment({ ...segment, salesSharePercent: 32 })).toBe(false);
 		expect(isBareSegment({ ...segment, marginPercent: 4 })).toBe(false);
+	});
+});
+
+describe("【海外】 countries and shares (ADR-0064 §5f)", () => {
+	const evidence = [{ source: "S4", quote: "所在地別売上高 日本 42,000" }];
+	const region = (ja: string, percent: number | null, amount: number | null) => ({
+		name: { en: ja, ja },
+		percent,
+		amount,
+	});
+
+	it("computes each region's share from its amount and the table's total, largest first", () => {
+		expect(
+			overseasSalesFromDraft({
+				percent: null,
+				totalAmount: 300,
+				homeAmount: 100,
+				regions: [region("欧州", null, 50), region("米国", null, 150), region("中国", 12.5, null)],
+				evidence,
+			}),
+		).toEqual({
+			percent: 66.7,
+			regions: [
+				{ name: { en: "米国", ja: "米国" }, percent: 50 },
+				{ name: { en: "欧州", ja: "欧州" }, percent: 16.7 },
+				{ name: { en: "中国", ja: "中国" }, percent: 12.5 },
+			],
+			evidence,
+		});
+	});
+
+	it("keeps a stated overseas share and drops a region with no share and no total", () => {
+		expect(
+			overseasSalesFromDraft({
+				percent: 42,
+				totalAmount: null,
+				homeAmount: null,
+				regions: [region("米国", null, 150)],
+				evidence,
+			}),
+		).toEqual({ percent: 42, regions: [], evidence });
+		expect(
+			overseasSalesFromDraft({
+				percent: null,
+				totalAmount: 0,
+				homeAmount: null,
+				regions: [region("米国", null, 150)],
+				evidence,
+			}),
+		).toBeNull();
+	});
+
+	it("reads an entry stored before regions existed, and refuses one with neither part", () => {
+		const stored = { ...draft, overseasSales: { percent: 29, evidence } };
+		expect(companyOverviewEntrySchema.parse(stored).overseasSales).toEqual({
+			percent: 29,
+			regions: [],
+			evidence,
+		});
+		const empty = { ...draft, overseasSales: { percent: null, regions: [], evidence } };
+		expect(companyOverviewEntrySchema.safeParse(empty).success).toBe(false);
 	});
 });
