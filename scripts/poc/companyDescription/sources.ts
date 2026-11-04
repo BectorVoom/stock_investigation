@@ -1,4 +1,10 @@
 import { spawnSync } from "node:child_process";
+import {
+	type CompanyOverviewEntry,
+	type CompanyOverviewView,
+	companyOverviewEntrySchema,
+	companyOverviewViewSchema,
+} from "@research/contracts";
 import { z } from "zod";
 import type { CompanySource, Figure, FigureMetric, SourceId, StoredProfile } from "./template.ts";
 
@@ -35,6 +41,8 @@ function query<T>(databasePath: string, sql: string, schema: z.ZodType<T>): T[] 
 
 const SYMBOL = /^[A-Z0-9.-]{1,16}$/;
 
+const stockKeyRow = z.object({ market: z.enum(["US", "JP"]), symbol: z.string().regex(SYMBOL) });
+
 function keyClause(alias: string, key: StockKey): string {
 	if (!SYMBOL.test(key.symbol)) throw new Error(`unexpected symbol ${key.symbol}`);
 	return `${alias}.market = '${key.market}' AND ${alias}.symbol = '${key.symbol}'`;
@@ -58,8 +66,109 @@ export function watchlistStocks(databasePath: string): StockKey[] {
 	return query(
 		databasePath,
 		"SELECT market, symbol FROM watchlist_stocks ORDER BY market, symbol",
-		z.object({ market: z.enum(["US", "JP"]), symbol: z.string().regex(SYMBOL) }),
+		stockKeyRow,
 	);
+}
+
+/**
+ * Every stock-list stock, the order web-search credits are spent in
+ * (the free Tavily plan runs out long before the list does): the
+ * Watchlist first, then Japanese stocks by TOPIX size (Core30 first) — a
+ * Japanese company has no stored business text, so its entry depends on
+ * the web — then the rest. A US company with a stored 10-K business
+ * section needs no web search and may come anywhere.
+ */
+export function directoryStocks(databasePath: string): StockKey[] {
+	return query(
+		databasePath,
+		`SELECT d.market, d.symbol
+		 FROM stock_directory AS d
+		 LEFT JOIN stock_company_profile AS p ON p.market = d.market AND p.symbol = d.symbol
+		 ORDER BY
+		     EXISTS (SELECT 1 FROM watchlist_stocks AS w WHERE w.market = d.market AND w.symbol = d.symbol) DESC,
+		     CASE p.scale_category
+		         WHEN 'TOPIX Core30' THEN 1
+		         WHEN 'TOPIX Large70' THEN 2
+		         WHEN 'TOPIX Mid400' THEN 3
+		         WHEN 'TOPIX Small 1' THEN 4
+		         WHEN 'TOPIX Small 2' THEN 5
+		         ELSE 6
+		     END,
+		     d.market DESC, d.symbol`,
+		stockKeyRow,
+	);
+}
+
+/** The stocks whose overview is already stored: "MARKET:SYMBOL" → when it was written. */
+export function storedOverviewKeys(databasePath: string): Map<string, string> {
+	const rows = query(
+		databasePath,
+		`SELECT scs.market, scs.symbol, scs.overview_generated_at
+		 FROM stock_company_summary AS scs WHERE scs.overview_generated_at IS NOT NULL`,
+		stockKeyRow.extend({ overview_generated_at: z.string() }),
+	);
+	return new Map(rows.map((row) => [`${row.market}:${row.symbol}`, row.overview_generated_at]));
+}
+
+/**
+ * The issuer of a US preferred share, warrant, unit or right ("AHL-PD" →
+ * "AHL", "AAC-WT" → "AAC") when the issuer is itself in `listed`, else
+ * null. 472 of the 532 such listings have one (2026-11-04).
+ */
+export function issuerOf(stock: StockKey, listed: ReadonlySet<string>): StockKey | null {
+	if (stock.market !== "US") return null;
+	const match = /^([A-Z0-9.]+)-[A-Z]{1,3}$/.exec(stock.symbol);
+	const base = match?.[1];
+	if (base === undefined || !listed.has(`US:${base}`)) return null;
+	return { market: "US", symbol: base };
+}
+
+/** A stock's whole stored overview (entry, facts, references, who wrote it), or null. */
+export function storedOverviewView(
+	databasePath: string,
+	stock: StockKey,
+): CompanyOverviewView | null {
+	const [row] = query(
+		databasePath,
+		`SELECT scs.overview_json, scs.overview_facts_json, scs.overview_references_json,
+		        scs.overview_agent_id, scs.overview_model, scs.overview_generated_at
+		 FROM stock_company_summary AS scs
+		 WHERE ${keyClause("scs", stock)} AND scs.overview_json IS NOT NULL`,
+		z.object({
+			overview_json: z.string(),
+			overview_facts_json: z.string(),
+			overview_references_json: z.string(),
+			overview_agent_id: z.string(),
+			overview_model: z.string().nullable(),
+			overview_generated_at: z.string(),
+		}),
+	);
+	if (row === undefined) return null;
+	const parsed = companyOverviewViewSchema.safeParse({
+		entry: JSON.parse(row.overview_json),
+		facts: JSON.parse(row.overview_facts_json),
+		references: JSON.parse(row.overview_references_json),
+		agentId: row.overview_agent_id,
+		model: row.overview_model,
+		generatedAt: row.overview_generated_at,
+	});
+	return parsed.success ? parsed.data : null;
+}
+
+/** A stock's stored overview entry, or null when none is stored (or it no longer reads). */
+export function storedOverviewEntry(
+	databasePath: string,
+	stock: StockKey,
+): CompanyOverviewEntry | null {
+	const [row] = query(
+		databasePath,
+		`SELECT scs.overview_json FROM stock_company_summary AS scs
+		 WHERE ${keyClause("scs", stock)} AND scs.overview_json IS NOT NULL`,
+		z.object({ overview_json: z.string() }),
+	);
+	if (row === undefined) return null;
+	const parsed = companyOverviewEntrySchema.safeParse(JSON.parse(row.overview_json));
+	return parsed.success ? parsed.data : null;
 }
 
 const directoryRow = z.object({
@@ -132,6 +241,8 @@ export function groupDigits(value: string): string {
 export interface StockSources {
 	readonly stock: StockKey;
 	readonly name: { readonly en: string; readonly ja: string };
+	/** Whether a stored annual-report business section is among the sources (US 10-K / 20-F Item 1). */
+	readonly hasBusinessText: boolean;
 	readonly sources: readonly CompanySource[];
 	readonly profile: StoredProfile;
 	/** The source each code-filled part cites, or null when it has none. */
@@ -152,6 +263,7 @@ export function readStockSources(databasePath: string, stock: StockKey): StockSo
 		figures: null,
 	};
 	let sector: string | null = null;
+	let hasBusinessText = false;
 
 	const [directory] = query(
 		databasePath,
@@ -195,6 +307,7 @@ export function readStockSources(databasePath: string, stock: StockKey): StockSo
 		);
 		if (business !== undefined && business.status === "extracted") {
 			const paragraphs = paragraphsSchema.parse(JSON.parse(business.paragraphs_json));
+			hasBusinessText = true;
 			sources.push({
 				id: nextId(),
 				title: {
@@ -303,6 +416,7 @@ export function readStockSources(databasePath: string, stock: StockKey): StockSo
 			en: directory?.name ?? stock.symbol,
 			ja: directory?.local_name ?? directory?.name ?? stock.symbol,
 		},
+		hasBusinessText,
 		sources,
 		profile: {
 			listing: directory?.listing ?? null,

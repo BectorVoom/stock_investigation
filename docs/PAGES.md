@@ -438,13 +438,16 @@ Watchlist to get its data.
 - Company tab: first, Business overview (事業概要). When a company
   overview is stored (ADR-0064) it is laid out like a 会社四季報 entry:
   labelled rows 【特色】【事業内容】【連結事業】【海外】【テーマ】 (Feature,
-  Businesses, Segments, Overseas, Themes in English) — 事業内容 explains
-  what the company actually does, built from its business segments;
+  Businesses, Segments, Overseas, Themes in English) — 事業内容 is the
+  summary of the business, one short paragraph built from its business
+  segments (what it makes or provides, main products or brands, customers,
+  how it earns the money, where);
   連結事業 lists one segment a line with what it does (「北米：…を販売」)
   and, when stated, 四季報's share and margin (a note on the numbers only
   then); テーマ are sub-industry tags (「自然食品」, not 「食品」) — each field followed
-  by a small superscript mark naming its numbered source (S1, S2…), "Not
-  stated in the sources" (出典に記載なし) for an empty row; a small 出所
+  by a small superscript mark naming its numbered source (S1, S2…); like
+  四季報, a row or key fact with nothing to show is left out, and a segment
+  with no activity and no stated share or margin is not listed; a small 出所
   (Source) line; a Key facts (基本情報) table — market, sector (Japan),
   fiscal year end, founded, employees, headquarters — with its small 出所
   line; the numbered References (出典) list of the sources the page cites —

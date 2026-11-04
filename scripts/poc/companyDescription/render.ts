@@ -228,9 +228,10 @@ export function renderSection(input: {
 			w.businesses,
 			description.businesses.length === 0
 				? notStated(language)
-				: `<ul class="list">${description.businesses
-						.map((item) => `<li>${escapeHtml(item[language])}${note(item.evidence)}</li>`)
-						.join("")}</ul>`,
+				: // The summary of the business: one paragraph, a mark after each sentence.
+					`<p>${description.businesses
+						.map((item) => `${escapeHtml(item[language])}${note(item.evidence)}`)
+						.join(language === "en" ? " " : "")}</p>`,
 		),
 		row(
 			w.segments,

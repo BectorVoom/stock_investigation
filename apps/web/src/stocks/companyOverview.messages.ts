@@ -32,7 +32,6 @@ export const companyOverviewMessages = defineMessages({
 		references: "References",
 		/** A row label in 四季報's brackets in Japanese; plain in English. */
 		rowLabel: (label: string): string => label,
-		notStated: "Not stated in the sources",
 		market: "Market",
 		sector: "Sector",
 		fiscalYearEnd: "Fiscal year end",
@@ -56,7 +55,6 @@ export const companyOverviewMessages = defineMessages({
 		keyFacts: "基本情報",
 		references: "出典",
 		rowLabel: (label) => `【${label}】`,
-		notStated: "出典に記載なし",
 		market: "市場",
 		sector: "業種",
 		fiscalYearEnd: "決算期",

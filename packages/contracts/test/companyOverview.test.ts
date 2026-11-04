@@ -4,6 +4,7 @@ import {
 	companyOverviewDraftSchema,
 	companyOverviewEntrySchema,
 	companyOverviewViewSchema,
+	isBareSegment,
 } from "../src/index.ts";
 
 /** The company overview's contract (事業概要, ADR-0064). */
@@ -105,5 +106,30 @@ describe("company overview contract (ADR-0064)", () => {
 			references: [reference("S1"), { ...reference("S2"), url: "http://x.example/" }],
 		};
 		expect(companyOverviewViewSchema.safeParse(insecure).success).toBe(false);
+	});
+});
+
+describe("bare segments (ADR-0064)", () => {
+	const segment = {
+		name: { en: "Americas", ja: "米州" },
+		activity: null,
+		salesSharePercent: null,
+		marginPercent: null,
+		evidence: [{ source: "S5", quote: "Our operating structure includes the following segments:" }],
+	};
+
+	it("finds a segment that is only its name, whatever its quote", () => {
+		expect(isBareSegment(segment)).toBe(true);
+		expect(isBareSegment({ ...segment, evidence: [{ source: "S5", quote: "### 米州" }] })).toBe(
+			true,
+		);
+	});
+
+	it("keeps a segment with an activity, a stated share or a stated margin", () => {
+		expect(isBareSegment({ ...segment, activity: { en: "Seats.", ja: "シートを製造。" } })).toBe(
+			false,
+		);
+		expect(isBareSegment({ ...segment, salesSharePercent: 32 })).toBe(false);
+		expect(isBareSegment({ ...segment, marginPercent: 4 })).toBe(false);
 	});
 });

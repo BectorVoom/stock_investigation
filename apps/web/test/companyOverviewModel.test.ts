@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { fiscalMonthText, localDayOf, sourceIdsOf } from "../src/stocks/companyOverviewModel.ts";
+import {
+	asSentence,
+	fiscalMonthText,
+	localDayOf,
+	sourceIdsOf,
+} from "../src/stocks/companyOverviewModel.ts";
 
 describe("company overview helpers (ADR-0064)", () => {
 	it("names the fiscal year end's month in the UI language", () => {
@@ -22,5 +27,14 @@ describe("company overview helpers (ADR-0064)", () => {
 				{ source: "S2", quote: "more words" },
 			]),
 		).toEqual(["S1", "S2"]);
+	});
+
+	it("closes a 事業内容 statement as a sentence of the summary paragraph", () => {
+		expect(asSentence("炭酸飲料。Coca-Cola、Sprite、Fanta", "ja")).toBe(
+			"炭酸飲料。Coca-Cola、Sprite、Fanta。",
+		);
+		expect(asSentence("繊維関連製品を製造・販売。", "ja")).toBe("繊維関連製品を製造・販売。");
+		expect(asSentence("Sparkling soft drinks", "en")).toBe("Sparkling soft drinks.");
+		expect(asSentence(" Sells concentrate. ", "en")).toBe("Sells concentrate.");
 	});
 });

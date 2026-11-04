@@ -197,6 +197,22 @@ export const overviewReferenceSchema = z.strictObject({
 });
 export type OverviewReference = z.infer<typeof overviewReferenceSchema>;
 
+/**
+ * Whether a segment says nothing but its name: no activity, no stated share
+ * and no margin. トヨタ紡織's regions 米州 / アジア / 中国 / 欧州・アフリカ
+ * came back quoting only their page headings, and Coca-Cola's "Latin
+ * America" and "Asia Pacific" quoting only "Our operating structure
+ * includes the following operating segments:" (2026-11-04); a list of names
+ * tells the reader nothing, so such segments are neither stored nor shown.
+ */
+export function isBareSegment(segment: OverviewSegment): boolean {
+	return (
+		segment.activity === null &&
+		segment.salesSharePercent === null &&
+		segment.marginPercent === null
+	);
+}
+
 /** Every source id an entry and its facts cite. */
 export function citedSourceIds(
 	entry: CompanyOverviewEntry,

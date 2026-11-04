@@ -30,7 +30,7 @@ import {
  *
  * The template, in display order (四季報's label → who fills it):
  *   【特色】 Feature        — model: one short statement, what the company is known for
- *   【事業内容】 Businesses  — model: 1–4 statements, main products or services
+ *   【事業内容】 Businesses  — model: the summary of the business, 2–4 sentences of one paragraph
  *   【連結事業】 Segments    — model: the reportable segments; a sales share or margin only where a source states it
  *   【海外】 Overseas        — model: the overseas share of sales, only where a source states it
  *   【会社概要】 Profile     — code: market, sector, fiscal year end; model: founded, employees, headquarters (each with evidence)

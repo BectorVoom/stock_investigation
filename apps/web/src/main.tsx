@@ -4,6 +4,8 @@ import { createBaselineUiRegistry } from "@research/ui-registry";
 import { render } from "solid-js/web";
 import { App } from "./App.tsx";
 import { createApiClient } from "./api/client.ts";
+import { applyInitialLocale } from "./i18n/localeState.ts";
+import { browserLocalStorage } from "./lib/browserStorage.ts";
 import { documentVisibility } from "./lib/polling.ts";
 
 /**
@@ -19,6 +21,10 @@ if (
 ) {
 	window.location.replace(window.location.href.replace(/^http:/, "https:"));
 }
+
+// Announce the UI language before anything renders, so the browser does not
+// take the Japanese page for English and offer to translate it.
+applyInitialLocale(window, browserLocalStorage());
 
 const root = document.getElementById("root");
 if (root === null) {

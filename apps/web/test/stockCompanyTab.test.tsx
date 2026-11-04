@@ -611,6 +611,11 @@ const KO_OVERVIEW: CompanyOverviewView = companyOverviewViewSchema.parse({
 					{ source: "S2", quote: "including Coca-Cola, Sprite, Coca-Cola Zero Sugar, Fanta" },
 				],
 			},
+			{
+				en: "Concentrate is sold to bottling partners",
+				ja: "原液をボトラーに販売。",
+				evidence: [{ source: "S2", quote: "sell concentrates to our bottling partners" }],
+			},
 		],
 		segments: [
 			{
@@ -629,6 +634,14 @@ const KO_OVERVIEW: CompanyOverviewView = companyOverviewViewSchema.parse({
 				salesSharePercent: 21,
 				marginPercent: 4,
 				evidence: [{ source: "S2", quote: "Bottling Investments 21% (4%)" }],
+			},
+			{
+				// Only its own heading as evidence: not shown (トヨタ紡織's regions, 2026-11-04).
+				name: { en: "Asia Pacific", ja: "アジア太平洋" },
+				activity: null,
+				salesSharePercent: null,
+				marginPercent: null,
+				evidence: [{ source: "S2", quote: "### Asia Pacific" }],
 			},
 		],
 		overseasSales: null,
@@ -728,11 +741,19 @@ describe("Company tab: the company overview with evidence and references (ADR-00
 		// The overview replaces the ADR-0060 summary.
 		expect(group.querySelector('[data-field="company-summary-description"]')).toBeNull();
 		const labels = [...overview.querySelectorAll("dt")].map((term) => term.textContent);
-		expect(labels).toEqual(["【特色】", "【事業内容】", "【連結事業】", "【海外】", "【テーマ】"]);
+		// Like 四季報, a row with nothing to show (here 【海外】) is left out.
+		expect(labels).toEqual(["【特色】", "【事業内容】", "【連結事業】", "【テーマ】"]);
+		expect(overview.textContent).not.toContain("記載なし");
 		const rows = [...overview.querySelectorAll("dd")].map((field) => field.textContent);
 		expect(rows[0]).toBe(`${KO_OVERVIEW.entry.feature?.ja}S2`);
+		// 【事業内容】 is the summary of the business: one paragraph, a mark after each sentence.
+		const businesses = overview.querySelector('[data-field="company-overview-businesses"]');
+		expect(businesses?.tagName).toBe("P");
+		expect(businesses?.textContent).toBe(
+			"炭酸飲料。Coca-Cola、Sprite、Fanta。S2原液をボトラーに販売。S2",
+		);
 		// One segment a line: what it does when the sources say; a stated share and
-		// margin read like 四季報's "79(4)"; a segment without them shows its name.
+		// margin read like 四季報's "79(4)"; a segment that is only its name is not listed.
 		const segments = overview.querySelector<HTMLElement>(
 			'[data-field="company-overview-segments"]',
 		);
@@ -742,7 +763,6 @@ describe("Company tab: the company overview with evidence and references (ADR-00
 				.getAllByRole("listitem")
 				.map((item) => item.textContent),
 		).toEqual(["北米：ファウンテン用シロップを飲食店に販売S2", "ボトリング投資21(4)S2"]);
-		expect(rows[3]).toBe("出典に記載なし");
 		const mark = overview.querySelector("sup");
 		expect(mark?.textContent).toBe("S2");
 		expect(mark?.getAttribute("title")).toBe("出典 S2");
@@ -757,13 +777,7 @@ describe("Company tab: the company overview with evidence and references (ADR-00
 		const factRows = within(facts)
 			.getAllByRole("row")
 			.map((row) => row.textContent);
-		expect(factRows).toEqual([
-			"市場NYSES1",
-			"決算期12月",
-			"設立1919年(デラウェア州)S2",
-			"従業員出典に記載なし",
-			"本社出典に記載なし",
-		]);
+		expect(factRows).toEqual(["市場NYSES1", "決算期12月", "設立1919年(デラウェア州)S2"]);
 		// The owner removed 業績 and 根拠 (2026-11-03): no figures, no quotes on the page.
 		expect(within(overview).queryByText("業績")).toBeNull();
 		expect(within(overview).queryByText("根拠(出典からの引用)")).toBeNull();
@@ -799,7 +813,6 @@ describe("Company tab: the company overview with evidence and references (ADR-00
 			"Feature",
 			"Businesses",
 			"Segments",
-			"Overseas",
 			"Themes",
 		]);
 		const writtenBy = overview.querySelector('[data-field="company-overview-written-by"]');

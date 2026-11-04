@@ -6,7 +6,15 @@ import type { ProviderEnvironment } from "./environment.ts";
 import { createOpenCodeRuntime } from "./openCode.ts";
 import { createOpenRouterFreeRuntime, createOpenRouterRuntime } from "./openRouter.ts";
 
-export { CLAUDE_API_MODELS, createClaudeApiRuntime } from "./claudeApi.ts";
+export {
+	CLAUDE_API_MESSAGES_URL,
+	CLAUDE_API_MODELS,
+	CLAUDE_API_VERSION,
+	type ClaudeUsage,
+	claudeCostUsd,
+	claudeModel,
+	createClaudeApiRuntime,
+} from "./claudeApi.ts";
 export { createClaudeCodeRuntime } from "./claudeCode.ts";
 export { createCodexRuntime } from "./codex.ts";
 export type { ProviderEnvironment } from "./environment.ts";

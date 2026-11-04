@@ -73,14 +73,31 @@ word for word like any other source.
 
 Acceptable pages, in this order:
 
-1. the company's own site (its host contains a distinctive word of its
-   English name);
+1. the company's own site: its registered domain name is built from its
+   English name ("toyota.co.jp", "coca-colacompany.com", "toyota-global.com").
+   One that only starts with a distinctive word of it is an ordinary page:
+   "akikawabokuen.com" is 秋川牧園's, but "shochikugeino.co.jp" is 松竹芸能's,
+   not 松竹's;
 2. regulators and exchanges (SEC, EDINET, JPX, TDnet, `*.go.jp`);
 3. other pages.
 
+A family company's site — a distinctive word of the name plus a hyphenated
+word the name lacks, such as "toyota-body.co.jp" or "toyota-ej.co.jp" for
+TOYOTA MOTOR — is never read (2026-11-04). The first rule, "the host
+contains a distinctive word", took both for Toyota's own site; their
+profile pages pass the quote check while describing another company.
+
+The writer searches only for a stock without a stored business text
+(every Japanese stock, a US company without a 10-K Item 1), Japanese stocks
+by TOPIX size first. (At first each search was one Tavily credit, and the
+owner's free 1,000 a month ran out; §2b replaced Tavily with a Haiku agent.)
+
 Never used: Wikipedia and other open-edit encyclopedias (removed from
 research by the owner, ADR-0025), social media, forums, Q&A and video
-sites, 会社四季報's own site (licensed text), and plain http.
+sites, 会社四季報's own site (licensed text), Tavily's machine-written
+company profiles and job boards (added 2026-11-04, when マイナビ and
+`tavily.com/knowledge` pages filled source slots for 三菱重工業 and JR東海),
+and plain http.
 
 A page's reference shows its title, its host as the publisher, its kind
 (企業の公式サイト / 規制当局・取引所 / ウェブページ) and the day it was retrieved.
@@ -166,6 +183,119 @@ rather than "Semiconductors").
   word. When nothing specific is supported, there are none.
 
 The draft therefore allows empty 事業内容 and テーマ lists.
+
+### 2b. The Haiku agent finds the pages (2026-11-04)
+
+Tavily's free 1,000 searches a month ran out after about 985 stocks
+(HTTP 432), and the owner asked for the pages to be found by web search
+with a Claude Haiku 5.5 agent. The writer's default page search is now one
+Messages request per stock with Haiku 5.5 and the Claude API's web search
+tool (`web_search_20250305`, at most 2 searches, the excluded hosts as
+`blocked_domains`). The agent picks up to six pages from its results, the
+company's own site first. Only its picks are read, and only those that were
+among the results: nothing written from memory is read, and results it
+passed over (job sites, subsidiaries) are not read either. The pages are then read by the
+runner's own fetcher and quoted and checked like any other source, so the
+evidence rule does not depend on the agent. A search costs USD 10 per 1,000
+plus about 19,000 input tokens; a stock that needs one costs about USD 0.02
+in all. `--search tavily` keeps the earlier path. When a company's own site
+refuses robots or renders only with JavaScript, the readable pages are
+third-party company profiles (kitaishihon.com, irbank.net…), shown as
+ウェブページ.
+
+### 2c. Pages the runner cannot read (2026-11-04)
+
+About 1.4% of searched stocks ended with no readable page and so no entry:
+the runner's fetcher got an HTTP error (sites refusing bots), an empty
+page (rendered only by script), a page over 2 MiB, or a timeout. For those
+four failures, and only those, the page is read once more with the Claude
+API's web fetch tool (`web_fetch_20250910`, Haiku 5.5, at most 8,000
+tokens of text, the excluded hosts blocked; about USD 0.001 a page). Its
+text, without the tool's metadata header, is quoted and checked like any
+page. A page robots.txt refuses, an address or redirect the safety policy
+rejects, and a PDF (the tool returns PDFs as binary) are never read this
+way.
+
+### 5b. Empty rows and bare segments (2026-11-04)
+
+トヨタ紡織's entry showed 【連結事業】 as four region names (米州, アジア,
+中国, 欧州・アフリカ) whose only evidence was the page heading "### 米州",
+and 【海外】 as 「出典に記載なし」. The owner asked for the template to be
+fixed:
+
+- A segment with no activity and no stated share or margin
+  (`isBareSegment`, contracts) is neither stored nor shown, whatever its
+  quote; the prompt lists a segment only with one of them. (First only a
+  segment quoting its own heading counted; Coca-Cola's "Latin America"
+  quoting "Our operating structure includes the following operating
+  segments:" showed that was too narrow.)
+- Like 四季報, a row (【特色】…【テーマ】) or key fact (founded, employees,
+  headquarters, market, fiscal year end) with nothing to show is left out
+  instead of marked 「出典に記載なし」.
+- 【特色】 says what sets the company apart (position, origin, group, main
+  brand or market) instead of repeating the 事業内容 lines, and every claim
+  in a field must be stated in that field's own quotes: 「トヨタグループの」
+  rested on a quote that never said it. The quote check proves a quote is
+  in its source, not that it supports every word of the field, so this
+  rule lives in the prompt.
+
+### 5c. 【事業内容】 is the summary of the business (2026-11-04)
+
+The owner asked for 【事業内容】 to be the summary of the company's
+business. It was a bulleted list of up to four fragments, one product line
+each (「電気通信機器・電気機器…を製造・販売。」), and empty in 100 of 1,708
+stored entries. It is now one short paragraph of 2–4 sentences (Japanese
+about 100–250 characters): what the company makes or provides, its main
+products, services or brands, its customers, how it earns the money and
+where it sells. Each sentence is still one statement with its own
+evidence, so the stored shape (`businesses`, up to 4 statements) is
+unchanged and older entries show as a paragraph too. A reply that leaves it
+empty although a business text or web page is among the sources gets the
+repair turn. The page shows the sentences as one paragraph, each followed
+by its source mark.
+
+### 5d. What the review of 2026-11-04 changed
+
+An independent review of the first ~2,300 entries found entries stored
+without a 【事業内容】, claims no quote supported, and a rewrite that made
+entries worse. The writer now:
+
+- **Checks names and numbers, not only quotes** (evidence.ts
+  `claimTerms`): every katakana or Latin-script name in Japanese text,
+  every capitalised word after the first of an English sentence, and every
+  number must appear in the field's quotes or in the sources the field
+  cites (Japanese-era years count as their Western years). 「トヨタグループ」
+  in no source fails. Requiring the quote itself would have rejected 34–45%
+  of fields, mostly names stated a line away; this rule rejects 1–4%, and a
+  failing field first gets the repair turn. Kanji names are not checked.
+- **Checks the style rules** (style.ts): banned phrases the source does not
+  use and English starting "The company" ask for the repair turn but never
+  remove a field.
+- **Does not store an entry without 【事業内容】** when a source describes the
+  business (76 were stored before), and **never replaces a stored entry
+  with a less full one** on a rewrite (the first rewrite left 32 without
+  the 【事業内容】 they had).
+- **Excludes more sites**: licensed editorial blurbs and quote pages
+  (Nikkei, 株予報, みんかぶ, 株探, Yahoo Finance) on the same grounds as
+  会社四季報, machine-written analysis (MarkLines), contact-list aggregators,
+  and job and recruiting sites by host name.
+- **Pauses** web searches for five minutes after five failures in a row
+  instead of turning them off, and treats a search-tool error as a failed
+  search rather than "nothing found".
+
+### 5e. Listings that are not operating companies (2026-11-04)
+
+The stock list also holds preferred shares, warrants, units and rights
+(532 US listings such as AHL-PD, AAC-WT) and funds, trusts and ETFs.
+
+- A preferred share, warrant, unit or right whose issuer is itself listed
+  (472 of the 532: "AHL-PD" → AHL) takes a copy of its issuer's entry: its
+  business is the issuer's. No model turn; the copies are made after every
+  other stock, so the issuer's entry exists first.
+- A fund, trust, ETF or blank-check company (SPAC) is written like any
+  stock, and the prompt tells the model to describe it as one: its
+  investment objective or purpose, what it holds or seeks, who manages or
+  sponsors it, and themes naming what it invests in.
 
 ### 6. Who writes it, for now
 

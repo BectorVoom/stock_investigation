@@ -1,9 +1,15 @@
+import { readFileSync } from "node:fs";
 import { LocaleProvider, useMessages } from "@research/i18n/solid";
 import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import { createRoot } from "solid-js";
 import { afterEach, describe, expect, it } from "vitest";
 import { commonMessages } from "../src/i18n/common.messages.ts";
-import { createLocaleState, LOCALE_STORAGE_KEY, resolveLocale } from "../src/i18n/localeState.ts";
+import {
+	applyInitialLocale,
+	createLocaleState,
+	LOCALE_STORAGE_KEY,
+	resolveLocale,
+} from "../src/i18n/localeState.ts";
 import type { KeyValueStorage } from "../src/lib/browserStorage.ts";
 import { LanguageSettingsSection } from "../src/settings/LanguageSettingsSection.tsx";
 
@@ -42,6 +48,34 @@ describe("resolveLocale", () => {
 		expect(resolveLocale("ja", ["en-US"])).toBe("ja");
 		expect(resolveLocale("system", ["ja-JP", "en"])).toBe("ja");
 		expect(resolveLocale("system", ["fr-FR"])).toBe("en");
+	});
+});
+
+describe("index.html", () => {
+	// A browser translator run over the Japanese UI rewrote it (ADR-0032 §6a).
+	it("turns browser page translation off", () => {
+		const html = readFileSync("apps/web/index.html", "utf8");
+		expect(html).toMatch(/<html[^>]*\stranslate="no"/);
+		expect(html).toContain('<meta name="google" content="notranslate" />');
+	});
+});
+
+describe("applyInitialLocale", () => {
+	// index.html is served with lang="en"; a Japanese page announced as English
+	// was machine-translated by the browser (【事業内容】 → 【コンテンツ事業】).
+	it("announces the stored language before the app renders", () => {
+		const storage = memoryStorage({ [LOCALE_STORAGE_KEY]: "ja" });
+		expect(applyInitialLocale(windowWithLanguages(["en-US"]), storage)).toBe("ja");
+		expect(document.documentElement.lang).toBe("ja");
+	});
+
+	it("follows the browser when nothing usable is stored", () => {
+		expect(applyInitialLocale(windowWithLanguages(["ja-JP"]), memoryStorage())).toBe("ja");
+		expect(document.documentElement.lang).toBe("ja");
+		const unknown = memoryStorage({ [LOCALE_STORAGE_KEY]: "fr" });
+		expect(applyInitialLocale(windowWithLanguages(["en-US"]), unknown)).toBe("en");
+		expect(applyInitialLocale(windowWithLanguages(["en-US"]), null)).toBe("en");
+		expect(document.documentElement.lang).toBe("en");
 	});
 });
 

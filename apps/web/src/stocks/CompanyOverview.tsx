@@ -1,6 +1,7 @@
 import {
 	type CompanyOverviewView,
 	citedSourceIds,
+	isBareSegment,
 	type OverviewEvidence,
 	type OverviewReference,
 	type OverviewSourceId,
@@ -12,7 +13,7 @@ import { createMemo, For, type JSX, Show } from "solid-js";
 import { formatPeriodEnd } from "../equities/financialFormat.ts";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import { companyOverviewMessages } from "./companyOverview.messages.ts";
-import { fiscalMonthText, localDayOf, sourceIdsOf } from "./companyOverviewModel.ts";
+import { asSentence, fiscalMonthText, localDayOf, sourceIdsOf } from "./companyOverviewModel.ts";
 import { ThemeLink } from "./ThemeSearch.tsx";
 
 /** Body text: the app's size and a comfortable reading measure. */
@@ -28,12 +29,18 @@ const SUBHEADING = "text-xs font-semibold text-slate-700";
  * source it rests on, a small 出所 line under each part and the numbered
  * 出典 list of the sources the page cites, all in small text. The entry's
  * text is shown in the UI's language. The stored quotes and figures are
- * not shown (the owner's choice, 2026-11-03).
+ * not shown (the owner's choice, 2026-11-03). Like 四季報, a row or key fact
+ * with nothing to show is left out rather than marked "not stated", and a
+ * segment that is only its name (a region heading) is not listed
+ * (2026-11-04).
  */
 export function CompanyOverview(props: { readonly overview: CompanyOverviewView }): JSX.Element {
 	const m = useMessages(companyOverviewMessages);
 	const locale = useLocale();
-	const entry = () => props.overview.entry;
+	const entry = createMemo(() => ({
+		...props.overview.entry,
+		segments: props.overview.entry.segments.filter((segment) => !isBareSegment(segment)),
+	}));
 	const references = createMemo(
 		() => new Map(props.overview.references.map((reference) => [reference.id, reference])),
 	);
@@ -64,32 +71,34 @@ export function CompanyOverview(props: { readonly overview: CompanyOverviewView 
 	return (
 		<div class="mt-1 space-y-3" data-field="company-overview">
 			<dl>
-				<Row label={m().feature}>
-					<Show when={entry().feature} fallback={<NotStated />}>
-						{(feature) => (
+				<Show when={entry().feature}>
+					{(feature) => (
+						<Row label={m().feature}>
 							<span lang={locale()}>
 								{feature()[locale()]}
 								<Marks evidence={feature().evidence} />
 							</span>
-						)}
-					</Show>
-				</Row>
-				<Row label={m().businesses}>
-					<Show when={entry().businesses.length > 0} fallback={<NotStated />}>
-						<ul class="list-disc space-y-0.5 pl-4" lang={locale()}>
+						</Row>
+					)}
+				</Show>
+				<Show when={entry().businesses.length > 0}>
+					<Row label={m().businesses}>
+						{/* The summary of the business: its statements as one paragraph, each with its mark. */}
+						<p lang={locale()} data-field="company-overview-businesses">
 							<For each={entry().businesses}>
-								{(item) => (
-									<li>
-										{item[locale()]}
+								{(item, index) => (
+									<>
+										{index() > 0 && locale() === "en" ? " " : ""}
+										{asSentence(item[locale()], locale())}
 										<Marks evidence={item.evidence} />
-									</li>
+									</>
 								)}
 							</For>
-						</ul>
-					</Show>
-				</Row>
-				<Row label={m().segments}>
-					<Show when={entry().segments.length > 0} fallback={<NotStated />}>
+						</p>
+					</Row>
+				</Show>
+				<Show when={entry().segments.length > 0}>
+					<Row label={m().segments}>
 						{/* One segment a line: 四季報's "name79(4)", then what the segment does. */}
 						<ul class="space-y-0.5" lang={locale()} data-field="company-overview-segments">
 							<For each={entry().segments}>
@@ -115,20 +124,20 @@ export function CompanyOverview(props: { readonly overview: CompanyOverviewView 
 						>
 							<p class={SMALL}>{m().segmentNote}</p>
 						</Show>
-					</Show>
-				</Row>
-				<Row label={m().overseas}>
-					<Show when={entry().overseasSales} fallback={<NotStated />}>
-						{(overseas) => (
+					</Row>
+				</Show>
+				<Show when={entry().overseasSales}>
+					{(overseas) => (
+						<Row label={m().overseas}>
 							<span>
 								{`${overseas().percent}%`}
 								<Marks evidence={overseas().evidence} />
 							</span>
-						)}
-					</Show>
-				</Row>
-				<Row label={m().themes}>
-					<Show when={entry().themes.length > 0} fallback={<NotStated />}>
+						</Row>
+					)}
+				</Show>
+				<Show when={entry().themes.length > 0}>
+					<Row label={m().themes}>
 						<ul class="flex flex-wrap gap-1.5" data-field="company-overview-themes">
 							<For each={entry().themes}>
 								{(theme) => (
@@ -143,8 +152,8 @@ export function CompanyOverview(props: { readonly overview: CompanyOverviewView 
 								)}
 							</For>
 						</ul>
-					</Show>
-				</Row>
+					</Row>
+				</Show>
 			</dl>
 			<SourceLine ids={rowSources()} references={references()} />
 			<div class="max-w-xl">
@@ -170,15 +179,6 @@ function Row(props: { readonly label: string; readonly children: JSX.Element }):
 			<dt class="text-xs font-semibold text-slate-700">{m().rowLabel(props.label)}</dt>
 			<dd class={`min-w-0 break-words ${BODY}`}>{props.children}</dd>
 		</div>
-	);
-}
-
-function NotStated(): JSX.Element {
-	const m = useMessages(companyOverviewMessages);
-	return (
-		<span class="text-xs italic text-slate-600" data-unavailable="true">
-			{m().notStated}
-		</span>
 	);
 }
 
@@ -259,16 +259,14 @@ function KeyFacts(props: {
 			<h5 class={SUBHEADING}>{m().keyFacts}</h5>
 			<table class="mt-1 w-full text-sm">
 				<tbody>
-					<FactRow term={m().market}>
-						<Show when={listingText()} fallback={<NotStated />}>
-							{(text) => (
-								<>
-									{text()}
-									{cite(facts().cites.listing)}
-								</>
-							)}
-						</Show>
-					</FactRow>
+					<Show when={listingText()}>
+						{(text) => (
+							<FactRow term={m().market}>
+								{text()}
+								{cite(facts().cites.listing)}
+							</FactRow>
+						)}
+					</Show>
 					<Show when={facts().sector}>
 						{(sector) => (
 							<FactRow term={m().sector}>
@@ -277,25 +275,23 @@ function KeyFacts(props: {
 							</FactRow>
 						)}
 					</Show>
-					<FactRow term={m().fiscalYearEnd}>
-						<Show when={month()} fallback={<NotStated />}>
-							{(text) => text()}
-						</Show>
-					</FactRow>
+					<Show when={month()}>
+						{(text) => <FactRow term={m().fiscalYearEnd}>{text()}</FactRow>}
+					</Show>
 					<For each={["founded", "employees", "headquarters"] as const}>
 						{(field) => {
 							const fact = () => props.overview.entry.profile.find((item) => item.field === field);
 							return (
-								<FactRow term={m().profileField(field)}>
-									<Show when={fact()} fallback={<NotStated />}>
-										{(found) => (
+								<Show when={fact()}>
+									{(found) => (
+										<FactRow term={m().profileField(field)}>
 											<span lang={locale()}>
 												{found().value[locale()]}
 												<Marks evidence={found().evidence} />
 											</span>
-										)}
-									</Show>
-								</FactRow>
+										</FactRow>
+									)}
+								</Show>
 							);
 						}}
 					</For>

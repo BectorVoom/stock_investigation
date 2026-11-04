@@ -55,6 +55,13 @@ owner researches Japanese and US companies and reads Japanese.
    labels, buttons, menus, hints, notices, empty states, accessible names and
    live-region announcements, the tab title, the client's own error sentences
    and the descriptions of the API's stable error codes.
+6a. **No browser page translation (2026-11-04):** `index.html` declares
+   `translate="no"` and `<meta name="google" content="notranslate">`, and
+   `applyInitialLocale` sets `<html lang>` from the stored choice before
+   the app renders. The UI has its own languages; a browser translator run
+   over the Japanese page rewrote it (【事業内容】 became 【コンテンツ事業】,
+   「手がける」 became 「評価」 in the owner's browser), so Chrome's and
+   Firefox's page translation are turned off for the app.
 7. **What is not translated, on purpose:**
    - research content: the agent's answers, article and source titles,
      quoted evidence, widget titles the owner or the agent wrote, data

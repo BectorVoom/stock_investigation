@@ -30,3 +30,14 @@ export function localDayOf(isoDateTime: string): string {
 export function sourceIdsOf(evidence: readonly OverviewEvidence[]): OverviewSourceId[] {
 	return [...new Set(evidence.map((item) => item.source))].sort();
 }
+
+/**
+ * A 事業内容 statement as a sentence of the summary paragraph: it ends with
+ * 「。」 (Japanese) or a full stop (English) when it has no closing mark
+ * already, so consecutive statements read as one paragraph.
+ */
+export function asSentence(text: string, locale: Locale): string {
+	const trimmed = text.trim();
+	if (/[。．.!?！？」）)]$/.test(trimmed)) return trimmed;
+	return locale === "ja" ? `${trimmed}。` : `${trimmed}.`;
+}

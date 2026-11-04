@@ -1,10 +1,16 @@
 <!doctype html>
-<html lang="en" class="scheme-light">
+<!--
+	translate="no": the UI has its own languages (Settings → Language, ADR-0032). A browser's
+	page translation run over the Japanese UI rewrote it (【事業内容】 → 【コンテンツ事業】,
+	「手がける」 → 「評価」, 2026-11-04), so Chrome's and Firefox's translators are turned off.
+-->
+<html lang="en" class="scheme-light" translate="no">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="referrer" content="no-referrer" />
 		<meta name="robots" content="noindex, nofollow" />
+		<meta name="google" content="notranslate" />
 		<title>Research workspace</title>
 		<!-- Declared so the browser does not request a missing /favicon.ico (a console 404). -->
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />

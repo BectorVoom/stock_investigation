@@ -20,6 +20,27 @@ export function resolveLocale(
 	return preference === "system" ? negotiateLocale(browserLanguages) : preference;
 }
 
+/** The choice stored in this browser, "system" when none (or an unknown value) is stored. */
+export function storedLocalePreference(storage: KeyValueStorage | null): LocalePreference {
+	const stored = readStoredText(storage, LOCALE_STORAGE_KEY);
+	return isLocalePreference(stored) ? stored : "system";
+}
+
+/**
+ * Sets `<html lang>` to the UI language before the app renders. The served
+ * index.html says `lang="en"`, so a Japanese page was announced as English
+ * until the app started, and Chrome's page translation offered to
+ * translate it: run over Japanese text it turned 【事業内容】 into
+ * 【コンテンツ事業】 and 「手がける」 into 「評価」 (2026-11-04). The
+ * Content-Security-Policy rules out an inline script in index.html, so
+ * main.tsx calls this first; `createLocaleState` keeps it in step later.
+ */
+export function applyInitialLocale(window: Window, storage: KeyValueStorage | null): Locale {
+	const locale = resolveLocale(storedLocalePreference(storage), languagesOf(window));
+	window.document.documentElement.lang = locale;
+	return locale;
+}
+
 export interface LocaleState {
 	/** The language the UI is shown in now. */
 	readonly locale: Accessor<Locale>;
@@ -41,9 +62,8 @@ export function createLocaleState(env: {
 	readonly window: Window;
 	readonly storage: KeyValueStorage | null;
 }): LocaleState {
-	const stored = readStoredText(env.storage, LOCALE_STORAGE_KEY);
 	const [preference, setPreferenceSignal] = createSignal<LocalePreference>(
-		isLocalePreference(stored) ? stored : "system",
+		storedLocalePreference(env.storage),
 	);
 	const [browserLanguages, setBrowserLanguages] = createSignal(languagesOf(env.window));
 	const onLanguageChange = () => setBrowserLanguages(languagesOf(env.window));
