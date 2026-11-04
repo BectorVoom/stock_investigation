@@ -7,14 +7,15 @@
  *   node --env-file=.env scripts/poc/companyDescription/run.ts [--db <sqlite file>] [--out <dir>]
  *     [--store] [--all] [--limit <n>] [--concurrency <n>] [--force] [--rewrite-before <ISO>]
  *     [--no-web | --web-all] [--search claude|tavily] [--backend claude-code|claude-api]
- *     [MARKET:SYMBOL ...]
+ *     [--ignore-plan-usage] [MARKET:SYMBOL ...]
  *
  * Backend (ADR-0064 §2d): `claude-code` (the default) runs Haiku 5.5 through
  * the Claude Code CLI on the owner's subscription login — writing turns with
  * no tools (the claude-code adapter), page searches with WebSearch only
  * (claudeCodePageFinder.ts) — pausing when the plan's 5-hour window is
  * nearly used and stopping when its 7-day window is (runPolicy.ts
- * `PlanGate`); there is no web-fetch fallback. `claude-api` uses the metered
+ * `PlanGate`; `--ignore-plan-usage` waits only when the plan refuses a
+ * turn); there is no web-fetch fallback. `claude-api` uses the metered
  * Claude API (ANTHROPIC_API_KEY) as before.
  *
  * Which stocks: the ones named, else every stock-list stock with `--all`
@@ -83,6 +84,7 @@ import {
 	PlanGate,
 	recentlyUnreadableIn,
 	type SearchProvider,
+	saysNothingOfTheBusiness,
 	storeRefusal,
 	UNREADABLE_DAYS,
 	WebBudget,
@@ -145,6 +147,8 @@ interface Args {
 	readonly force: boolean;
 	/** Rewrite stored entries written before this instant (ISO), keeping a fuller stored one. */
 	readonly rewriteBefore: string | null;
+	/** Pause or stop only when the plan refuses, not at 80% of a window. */
+	readonly ignorePlanUsage: boolean;
 	readonly stocks: StockKey[] | null;
 }
 
@@ -166,6 +170,7 @@ function parseArgs(argv: readonly string[]): Args {
 	let limit: number | null = null;
 	let concurrency = 1;
 	let force = false;
+	let ignorePlanUsage = false;
 	let rewriteBefore: string | null = null;
 	let out = "scripts/poc/companyDescription/output";
 	const stocks: StockKey[] = [];
@@ -190,6 +195,7 @@ function parseArgs(argv: readonly string[]): Args {
 			backend = value;
 		} else if (arg === "--all") all = true;
 		else if (arg === "--force") force = true;
+		else if (arg === "--ignore-plan-usage") ignorePlanUsage = true;
 		else if (arg === "--rewrite-before") {
 			const value = argv[++index] ?? "";
 			if (Number.isNaN(Date.parse(value))) {
@@ -220,6 +226,7 @@ function parseArgs(argv: readonly string[]): Args {
 		concurrency,
 		force,
 		rewriteBefore,
+		ignorePlanUsage,
 		stocks: stocks.length === 0 ? null : stocks,
 	};
 }
@@ -375,6 +382,10 @@ async function describeStock(
 			problems.push(
 				"businesses: 【事業内容】 is empty, but the sources describe the business; write its summary.",
 			);
+		} else if (parsed.description.businesses.every(saysNothingOfTheBusiness)) {
+			problems.push(
+				"businesses: 【事業内容】 only names segments, says how many there are, gives the sector, the listing or a web address. Write what the company makes or provides, its main products or services, its customers and how it earns, from the sources; segment names belong in segments. Do not add sentences that say nothing of the business.",
+			);
 		}
 		if (problems.length === 0) break;
 		repairNote = problems.join("\n");
@@ -529,7 +540,7 @@ async function main(): Promise<void> {
 	mkdirSync(args.out, { recursive: true });
 	scratchDirectory = join(args.out, "claude-code-cwd");
 	mkdirSync(scratchDirectory, { recursive: true });
-	const plan = new PlanGate();
+	const plan = new PlanGate(Date.now, { ignoreUsage: args.ignorePlanUsage });
 	const webTools = args.web === "none" ? null : createWebTools(join(args.out, "pages"));
 	const search =
 		webTools === null
@@ -748,7 +759,7 @@ async function main(): Promise<void> {
 	}
 	if (stopReason !== null) {
 		console.log(
-			`stopped after ${finished} of ${stocks.length} stocks: the account cannot pay (${stopReason}). Add credit, then run the same command again.`,
+			`stopped after ${finished} of ${stocks.length} stocks: ${stopReason}. Run the same command again once the plan or the account allows it.`,
 		);
 		process.exit(2);
 	}

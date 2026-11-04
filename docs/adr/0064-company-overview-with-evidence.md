@@ -242,6 +242,12 @@ login:
   run pauses when the 5-hour window is 80% used (until it resets) and
   stops when the 7-day window is (`PlanGate`, from each search turn's
   `rate_limit_event`); a rate-limited writing turn waits 30 minutes;
+  `--ignore-plan-usage` (2026-11-04, the owner's choice for the full run)
+  drops the 80% limits: the run then waits only when the plan refuses
+  (`rejected`), not for a warning (`allowed_warning`, sent at 90%); each
+  window is judged by its own status, since the event as a whole says
+  `rejected` when any one window is full (a full 5-hour window once stopped
+  the run as if the 7-day one, at 45%, were used up);
 - ニコニコ大百科 and other user-written wikis are excluded like Wikipedia;
   the search prompt asks for HTML pages, not PDFs;
 - (2026-11-04, review of the first 2,383 stocks) sites whose pages the
@@ -388,6 +394,59 @@ shares (`overseasSalesFromDraft` in `@research/contracts`):
   `percent`), not the amounts. An entry stored before this has no
   `regions` and still reads (`regions` defaults to empty); it gains them
   when it is rewritten.
+
+### 5g. What the review of the full run changed (2026-11-05)
+
+A reviewer read all 11,197 stored entries (and 62 closely, against their
+sources) after the full run of 2026-11-04. No quote was made up, but:
+
+- **【事業内容】 that says nothing.** 172 Japanese entries wrote only
+  their segment structure (「報告セグメントはプラットフォーム事業の単一
+  セグメント。」), a bare segment name (「インキュベーション事業を展開。」),
+  a web address (「公式サイトはgamewith.co.jp。」), or, naming no activity
+  (製造, 販売, 提供…), a short filler or the sector or listing
+  (「業種区分は建設業。」; the first rewrites added such sentences to get
+  past a check without that last rule). Such an entry is not stored
+  (`hasEmptySummary`, runPolicy.ts): the reply goes to the repair turn
+  with a note asking for what the company makes or provides, and a
+  rewrite may replace a stored entry like that even when it fills fewer
+  rows.
+- **A namesake's register page.** A Japanese name is shared by many
+  companies, and 法人番号 register sites (Compalyze, @SOHO, SalesNow,
+  houjin.jp, 比較ビズ, TSR) have a page for each: JP:6555 quoted an
+  unlisted 有限会社エムエス・コンサルティング, JP:4055 a cosmetics maker in
+  Saitama. A register page now counts for a Japanese stock only when it
+  shows the stock code, as their listed companies' pages do
+  (`isRegisterPageOfAnother`, webSources.ts).
+- **The wrong issuer.** EP-PC is a Kinder Morgan preferred, not Empire
+  Petroleum's (EP), and copied EP's entry. The symbol before the hyphen is
+  the issuer only when the stock list names both alike (2 of the 472
+  differ); EP-PC takes KMI's entry (a same-name listing without a hyphen),
+  CMS-PB (Consumers Energy) is written as itself.
+- **Exchange-traded notes.** 47 ETNs read as their bank (VXX: 「1690年
+  創業、ロンドン本社の英国銀行」): the stock list and SEC's ticker map name
+  an ETN by its bank (DULL and 44 more are "BANK OF MONTREAL /CAN/"). A US
+  listing whose name at least two other unhyphenated listings share now
+  carries a note to the page search (search for "<code> ETN", pick the
+  issuer's product page) and to the writer (it may be a note or another
+  security of the issuer; `sharedNameNote`), and the prompt (v13)
+  describes an ETN as the note — what it tracks, how, who issues it — not
+  its bank.
+- **More excluded hosts:** recruiting sites the job-site words missed
+  (mynavi-agent.jp, r-agent.com, hrmos.co, wantedly.com, herp.careers,
+  corp-research.jp, agrijob.jp; 292 stocks cited one), blogs and a
+  Wikipedia mirror (hatenablog, wikid.org, gem.wiki) and investor forums
+  (tradingview, seekingalpha, stocktwits).
+- **English left in Japanese.** 1,739 US segment names were the English
+  word (Construction, Wealth Management). The style rule keeps only
+  company, brand and product names in the original spelling and
+  translates segment, region and industry words.
+- **A 20-F's section** is cited as "Item 4. Information on the Company"
+  (第4項「企業情報」), not "Item 1. Business".
+
+The stocks these touch were written again with `--force`, as were the
+US entries written before their annual report's business section was
+read again (migration 0033).
 
 ### 6. Who writes it, for now
 

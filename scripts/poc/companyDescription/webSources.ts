@@ -107,6 +107,24 @@ export const EXCLUDED_HOST_SUFFIXES = [
 	"baseme.app",
 	"sincereed-agent.com",
 	"jobhakase.com",
+	// Recruiting pages the review of 2026-11-05 found cited by 292 stocks.
+	"mynavi-agent.jp",
+	"r-agent.com",
+	"hrmos.co",
+	"wantedly.com",
+	"herp.careers",
+	"corp-research.jp",
+	"agrijob.jp",
+	// Blogs, a Wikipedia mirror and investor forums (same review).
+	"wikid.org",
+	"gem.wiki",
+	"hatenablog.com",
+	"hatenablog.jp",
+	"hateblo.jp",
+	"hatena.ne.jp",
+	"tradingview.com",
+	"seekingalpha.com",
+	"stocktwits.com",
 	// Licensed editorial company blurbs and quote pages, copied near word for word
 	// like 会社四季報's would be (review of 2026-11-04).
 	"nikkei.com",
@@ -157,6 +175,38 @@ export function isJobSiteHost(host: string): boolean {
 	// Only the labels before the registered name: recruit-holdings.com is Recruit's own site.
 	const subdomains = host.replace(/^www\./, "").split(`${label}.`)[0] ?? "";
 	return JOB_SITE_WORDS.test(label) || RECRUITING_SUBDOMAIN.test(subdomains);
+}
+
+/**
+ * Company registers: one page per registered company, listed or not
+ * (法人番号 databases). A Japanese name is shared by many companies, so a
+ * register page counts for a Japanese stock only when it shows the stock
+ * code, as its listed companies' pages do (「1333 東証プライム」,
+ * 「証券コード | 1992」). The review of 2026-11-05 found entries quoting an
+ * unlisted namesake (JP:6555 a 有限会社エムエス・コンサルティング, JP:4055).
+ */
+const COMPANY_REGISTER_HOST_SUFFIXES = [
+	"compalyze.co.jp",
+	"atsoho.com",
+	"salesnow.jp",
+	"houjin.jp",
+	"biz.ne.jp",
+	"tsr-net.co.jp",
+	"baseconnect.in",
+	"alarmbox.jp",
+];
+
+/** Whether a page is a company register's page that does not show this Japanese stock's code. */
+export function isRegisterPageOfAnother(
+	url: string,
+	pageText: string,
+	stock: { readonly market: string; readonly symbol: string },
+): boolean {
+	const host = hostOf(url);
+	if (stock.market !== "JP" || host === null) return false;
+	if (!hasSuffix(host, COMPANY_REGISTER_HOST_SUFFIXES)) return false;
+	const code = new RegExp(`(?<![0-9A-Z])${stock.symbol}(?![0-9A-Z])`);
+	return !code.test(pageText.normalize("NFKC"));
 }
 
 const REGULATOR_HOST_SUFFIXES = [
@@ -681,6 +731,10 @@ export async function withWebSources(
 				text: fallback.text,
 			};
 			via = ` (web fetch after ${reason})`;
+		}
+		if (isRegisterPageOfAnother(readPage.url, `${readPage.title}\n${readPage.text}`, stock.stock)) {
+			log.push(`skipped ${page.url}: a company register page without the stock code`);
+			continue;
 		}
 		const id: SourceId = `S${sources.length + 1}`;
 		sources.push(pageSource(id, readPage, page.kind));

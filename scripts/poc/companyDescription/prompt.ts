@@ -1,8 +1,8 @@
 import { fenceUntrustedText } from "@research/agent-core";
-import type { StockSources } from "./sources.ts";
+import { type StockSources, sharedNameNote } from "./sources.ts";
 import { STYLE_RULES, TEMPLATE_LIMITS } from "./template.ts";
 
-export const COMPANY_DESCRIPTION_TURN_MARKER = "COMPANY DESCRIPTION TURN v12-poc";
+export const COMPANY_DESCRIPTION_TURN_MARKER = "COMPANY DESCRIPTION TURN v13-poc";
 
 /**
  * The prompt of one turn: the template (laid out like a 会社四季報 company
@@ -19,6 +19,7 @@ export function companyDescriptionPrompt(input: {
 }): string {
 	const limits = TEMPLATE_LIMITS;
 	const { stock } = input;
+	const sharedNote = sharedNameNote(stock);
 	// A headcount from an old history page (Toyota's 2012 figure) reads as current; three years is the cut-off.
 	const oldestHeadcountYear = Number(input.today.slice(0, 4)) - 3;
 	return [
@@ -37,6 +38,10 @@ export function companyDescriptionPrompt(input: {
 		`- profile (【会社概要】): up to 3 facts a source states — field "founded" (year founded or incorporated), "employees" (headcount and its date; only a count dated ${oldestHeadcountYear} or later), "headquarters" (city). Leave out what no source states.`,
 		`- themes (【テーマ】): up to ${limits.maxThemes} investment themes, each with a one-statement reason. Specific, sub-industry level: name the product category, technology or niche the company is actually in — "Natural Foods" not "Food", "Analog Semiconductors" not "Semiconductors", "Sparkling Soft Drinks" not "Beverages", "Mobile Payments" not "Finance". Never a sector name or a broad word (Food, Beverages, Technology, Consumer, Services, Retail, Manufacturing, 食品, 飲料, 水産・農林業). The reason quotes the source passage that shows the company is in it. When the sources support no specific theme, return an empty list.`,
 		"If the sources show this is a fund (ETF, closed-end fund, investment trust, REIT fund) or a blank-check company (SPAC), describe it as one: 【事業内容】 says its investment objective or purpose, what it holds or seeks, and who manages or sponsors it; themes name what it invests in.",
+		...(sharedNote === null
+			? []
+			: [`${sharedNote} Describe the security with this code as the sources show it.`]),
+		"If the sources show this is an exchange-traded note (ETN) or another note whose return follows an index, describe the note, not its issuing bank: 【事業内容】 says what index or asset it tracks, how (leveraged, inverse) and who issues it; 【特色】 is about the note; leave out the bank's own history, headquarters and businesses.",
 		"Do not state financial figures (sales, profits, margins) in any text; overseasSales's amounts are numbers for the share computation only.",
 		`Lengths (characters, each of en and ja): a statement at most ${limits.maxStatementChars}; a segment name at most ${limits.maxSegmentNameChars}; a segment activity at most ${limits.maxSegmentActivityChars}; a profile value at most ${limits.maxProfileValueChars}; a region name at most ${limits.maxRegionNameChars}; a theme label at most ${limits.maxThemeChars} (a short noun phrase such as "Sparkling Soft Drinks" / 「炭酸飲料」).`,
 		"",

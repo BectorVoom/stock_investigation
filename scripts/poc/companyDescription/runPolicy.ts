@@ -16,6 +16,8 @@ export type SearchProvider = "claude" | "tavily";
 export const NO_BUSINESS_SOURCE = "no business source (no stored business text, no web page)";
 export const NOTHING_VERIFIED = "no verified field describes the business";
 export const NO_SUMMARY = "no verified 事業内容 although a source describes the business";
+export const EMPTY_SUMMARY =
+	"【事業内容】 names only segments, the sector, the listing or a web address, not what the company does";
 export const KEPT_STORED = "kept the stored entry: the new one has fewer rows";
 export const ISSUER_NOT_WRITTEN = "issuer has no stored entry yet:";
 
@@ -46,6 +48,58 @@ export function describesBusiness(entry: VerifiedDescription, stock: StockSource
 	return fields.some((field) => field.evidence.some((item) => !recordIds.has(item.source)));
 }
 
+/** A web address or a pointer to the company's site. */
+const WEB_ADDRESS =
+	/https?:\/\/|www\.|[a-z0-9-]+\.(?:co\.jp|com|jp|net|org)\b|公式サイト|official (?:web)?site/i;
+/** A sentence about how the business is divided into reportable segments. */
+const SEGMENT_STRUCTURE =
+	/報告セグメント|単一(?:の)?セグメント|[0-9０-９一二三四五六七八九]+(?:つの)?セグメント|\b(?:one|single|two|three|four|five|\d+) (?:reportable |operating )?segments?\b/i;
+/** 「マンションマネジメント事業を展開。」: a segment name and a verb, nothing more (no product named with 「の」). */
+const BARE_BUSINESS_JA =
+	/^[^、。,の]{1,24}(?:事業|業務)(?:を|の)(?:展開|営む|運営|行う|手がける)。?$/;
+const BARE_BUSINESS_EN =
+	/^(?:the company )?(?:operates|runs|engages in|is engaged in) (?:the |a |an )?[\w\s&-]{1,40} (?:business|segment|operations)\.?$/i;
+/** Words that say what a company does: makes, sells, provides, runs, holds… */
+const ACTIVITY =
+	/製造|販売|提供|開発|運営|施工|工事|請負|請け負|設計|生産|輸入|輸出|卸|仲介|管理|運用|賃貸|受託|支援|保守|加工|配信|輸送|運送|融資|貸|預金|保険|投資|仕入|調達|研究|創薬|供給|発電|採掘|探鉱|鉱|栽培|出版|放送|教育|診療|介護|派遣|決済|取引|広告|制作|企画|運行|整備|修理|点検|清掃|警備|リース|レンタル|物流|配送|小売|店舗|通販|製品|商品|サービス|顧客|向け|主力|ブランド|保有|買収|結合|連動|追跡|運航|用船/;
+/** A sector code or the listing: 「業種区分は建設業。」「東証スタンダードに上場。」 */
+const SECTOR_OR_LISTING = /業種(?:区分)?は|33業種|17業種|上場(?:企業|会社)?(?:の|。)|に上場/;
+/** Up to this many characters, a Japanese sentence that names no activity is filler (「もう一つは産業システム関連事業。」). */
+const FILLER_MAX_CHARS = 30;
+
+/**
+ * Whether a 【事業内容】 sentence says nothing about what the company does:
+ * a web address (「公式サイトはgamewith.co.jp。」), its segment structure
+ * (「報告セグメントはプラットフォーム事業の単一セグメント。」), a bare
+ * segment name (「インキュベーション事業を展開。」), or, naming no
+ * activity, a short filler or the sector or listing (「業種区分は建設業。」,
+ * written to get past the first version of this check).
+ */
+export function saysNothingOfTheBusiness(statement: {
+	readonly en: string;
+	readonly ja: string;
+}): boolean {
+	const ja = statement.ja.trim();
+	if (
+		WEB_ADDRESS.test(ja) ||
+		SEGMENT_STRUCTURE.test(ja) ||
+		BARE_BUSINESS_JA.test(ja) ||
+		BARE_BUSINESS_EN.test(statement.en.trim())
+	) {
+		return true;
+	}
+	return !ACTIVITY.test(ja) && ([...ja].length <= FILLER_MAX_CHARS || SECTOR_OR_LISTING.test(ja));
+}
+
+/**
+ * Whether 【事業内容】 is written but none of its sentences says what the
+ * company does: 172 Japanese entries were stored like that, most quoting
+ * only a 決算短信 segment note or a listing site (review of 2026-11-05).
+ */
+export function hasEmptySummary(entry: VerifiedDescription): boolean {
+	return entry.businesses.length > 0 && entry.businesses.every(saysNothingOfTheBusiness);
+}
+
 /**
  * Why a verified entry is not stored, or null when it is. 【事業内容】 is the
  * summary of the business (ADR-0064 §5c): an entry without one is not
@@ -56,6 +110,7 @@ export function describesBusiness(entry: VerifiedDescription, stock: StockSource
 export function storeRefusal(entry: VerifiedDescription, stock: StockSources): string | null {
 	if (!describesBusiness(entry, stock)) return NOTHING_VERIFIED;
 	if (entry.businesses.length === 0 && hasBusinessSource(stock)) return NO_SUMMARY;
+	if (hasEmptySummary(entry)) return EMPTY_SUMMARY;
 	return null;
 }
 
@@ -72,12 +127,15 @@ export function filledRows(entry: VerifiedDescription): number {
 
 /**
  * Whether a rewrite may replace the stored entry: not when it loses
- * 【事業内容】 or fills fewer rows. The first `--force` rewrite replaced
+ * 【事業内容】 or fills fewer rows, unless the stored 【事業内容】 says nothing
+ * (`hasEmptySummary`) and the new one does. The first `--force` rewrite replaced
  * entries unconditionally and left 32 without a 【事業内容】 and 27 without a
  * 【特色】 that had one (review of 2026-11-04).
  */
 export function mayReplace(next: VerifiedDescription, stored: VerifiedDescription | null): boolean {
 	if (stored === null) return true;
+	// A stored 【事業内容】 that says nothing is no loss.
+	if (hasEmptySummary(stored) && !hasEmptySummary(next) && next.businesses.length > 0) return true;
 	if (stored.businesses.length > 0 && next.businesses.length === 0) return false;
 	return filledRows(next) >= filledRows(stored);
 }
@@ -122,7 +180,12 @@ export function recentlyUnreadable(
 		const parsed = loggedOutcomeSchema.safeParse(parseJsonLine(line));
 		if (parsed.success && parsed.data.at >= since) latest.set(parsed.data.stock, parsed.data);
 	}
-	const fruitless = new Set<string | null>([NO_BUSINESS_SOURCE, NOTHING_VERIFIED, NO_SUMMARY]);
+	const fruitless = new Set<string | null>([
+		NO_BUSINESS_SOURCE,
+		NOTHING_VERIFIED,
+		NO_SUMMARY,
+		EMPTY_SUMMARY,
+	]);
 	return new Set(
 		[...latest.values()]
 			.filter(
@@ -175,26 +238,46 @@ interface PlanWindowUse {
  * `rate_limit_event` of each page-search turn), for a run on the
  * claude-code backend (ADR-0064 §2d). The run pauses before the 5-hour
  * window is used up and stops before the 7-day one is, so the owner keeps
- * room for their own work.
+ * room for their own work. With `ignoreUsage` (the owner's choice,
+ * `--ignore-plan-usage`) only a window the plan refuses (`rejected`) pauses
+ * or stops the run: a warning such as `allowed_warning` at 90% does not.
  */
 export class PlanGate {
 	pausedUntilMs = 0;
 	/** Why the run must stop (the 7-day window), or null. */
 	exhaustedBy: string | null = null;
 	private readonly now: () => number;
+	private readonly ignoreUsage: boolean;
+	private readonly pauseAt: number;
+	private readonly stopAt: number;
 
-	constructor(now: () => number = Date.now) {
+	constructor(now: () => number = Date.now, options: { readonly ignoreUsage?: boolean } = {}) {
 		this.now = now;
+		this.ignoreUsage = options.ignoreUsage === true;
+		this.pauseAt = this.ignoreUsage ? Number.POSITIVE_INFINITY : PLAN_PAUSE_UTILIZATION;
+		this.stopAt = this.ignoreUsage ? Number.POSITIVE_INFINITY : PLAN_STOP_UTILIZATION;
 	}
 
 	observe(status: { readonly status: string; readonly windows: readonly PlanWindowUse[] }): void {
+		// The event's own status is `rejected` when any one window is full, so
+		// each window is judged by its own status: on 2026-11-04 a full 5-hour
+		// window stopped the run as if the 7-day one (at 45%) were used up.
+		if (
+			status.status === "rejected" &&
+			!status.windows.some((window) => window.status === "rejected")
+		) {
+			this.rateLimited();
+		}
 		for (const window of status.windows) {
-			const full = window.status !== "allowed" || status.status === "rejected";
+			// Claude Code warns (`allowed_warning`) well before a window is full;
+			// only `rejected` means the plan refuses turns.
+			const refused = window.status === "rejected";
+			const full = this.ignoreUsage ? refused : refused || window.status !== "allowed";
 			if (window.name === "seven_day") {
-				if (full || window.utilization >= PLAN_STOP_UTILIZATION) {
+				if (full || window.utilization >= this.stopAt) {
 					this.exhaustedBy ??= `the plan's 7-day usage is at ${Math.round(window.utilization * 100)}% (resets ${new Date(window.resetsAtMs).toISOString()})`;
 				}
-			} else if (full || window.utilization >= PLAN_PAUSE_UTILIZATION) {
+			} else if (full || window.utilization >= this.pauseAt) {
 				this.pauseUntil(
 					window.resetsAtMs,
 					`${window.name} at ${Math.round(window.utilization * 100)}%`,

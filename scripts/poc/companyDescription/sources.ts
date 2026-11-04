@@ -144,7 +144,18 @@ export function isIssuerSymbol(issuer: string, security: string): boolean {
  * the issuer's (`isIssuerSymbol`; the shortest when several are): 70 of
  * the first 171 stocks the 2026-11-04 run could not write were such
  * listings (EFSCP, HBANP, EDBLW, FCNCN), searched as companies of their own.
+ *
+ * The symbol before the hyphen is the issuer only when the stock list names
+ * both alike: EP-PC is a Kinder Morgan preferred, not Empire Petroleum's
+ * (EP), and copied the wrong entry (review of 2026-11-05). Such a listing
+ * takes a same-name listing without a hyphen instead (KMI), else is
+ * written on its own (CMS-PB, a Consumers Energy preferred).
  */
+/** A company name without case, punctuation or spaces ("Kinder Morgan, Inc." = "KINDER MORGAN INC"). */
+function comparableName(name: string): string {
+	return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 export function issuerFinder(
 	directory: readonly DirectoryListing[],
 ): (stock: StockKey) => StockKey | null {
@@ -158,13 +169,19 @@ export function issuerFinder(
 		if (symbols === undefined) symbolsOf.set(listing.name, [listing.symbol]);
 		else symbols.push(listing.symbol);
 	}
+	const sameName = (a: string | undefined, b: string | undefined) =>
+		a === undefined || b === undefined || comparableName(a) === comparableName(b);
 	return (stock) => {
 		if (stock.market !== "US") return null;
-		const base = /^([A-Z0-9.]+)-[A-Z]{1,3}$/.exec(stock.symbol)?.[1];
-		if (base !== undefined && listed.has(`US:${base}`)) return { market: "US", symbol: base };
 		const name = nameOf.get(stock.symbol);
+		const base = /^([A-Z0-9.]+)-[A-Z]{1,3}$/.exec(stock.symbol)?.[1];
+		if (base !== undefined && listed.has(`US:${base}`) && sameName(name, nameOf.get(base))) {
+			return { market: "US", symbol: base };
+		}
+		const isIssuer = (symbol: string) =>
+			base === undefined ? isIssuerSymbol(symbol, stock.symbol) : !symbol.includes("-");
 		const issuer = (name === undefined ? [] : (symbolsOf.get(name) ?? []))
-			.filter((symbol) => isIssuerSymbol(symbol, stock.symbol))
+			.filter((symbol) => symbol !== stock.symbol && isIssuer(symbol))
 			.sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0))[0];
 		return issuer === undefined ? null : { market: "US", symbol: issuer };
 	};
@@ -299,6 +316,30 @@ export interface StockSources {
 		readonly figures: SourceId | null;
 	};
 	readonly figures: readonly Figure[];
+	/**
+	 * Other US listings the stock list gives the same company name, hyphenated
+	 * ones (preferred shares) and those whose symbol is built from this one's
+	 * (`isIssuerSymbol`, either way) aside. The list names an exchange-traded note
+	 * by its bank (DULL, FLYD and 43 more are "BANK OF MONTREAL /CAN/"), so
+	 * a name shared like this says the listing may be a security of the
+	 * issuer rather than its common stock (review of 2026-11-05: 47 ETNs
+	 * were described as their bank).
+	 */
+	readonly listingsSharingName: readonly string[];
+}
+
+/** How many other listings sharing the name make a listing look like an issuer's security, not its stock. */
+export const SHARED_NAME_LISTINGS = 2;
+
+/**
+ * The note for the page search and the writer when the stock list names
+ * this listing after an issuer that has other listings under that name.
+ */
+export function sharedNameNote(stock: StockSources): string | null {
+	const others = stock.listingsSharingName;
+	if (others.length < SHARED_NAME_LISTINGS) return null;
+	const shown = others.slice(0, 4).join(", ");
+	return `The stock list gives code ${stock.stock.symbol} its issuer's name, which ${others.length} other listings share (${shown}${others.length > 4 ? ", …" : ""}). Code ${stock.stock.symbol} may be an exchange-traded note (ETN), a fund or another security of that issuer rather than its common stock.`;
 }
 
 export function readStockSources(databasePath: string, stock: StockKey): StockSources {
@@ -322,6 +363,24 @@ export function readStockSources(databasePath: string, stock: StockKey): StockSo
 		`SELECT eco.fiscal_year_end FROM equity_company AS eco WHERE ${keyClause("eco", stock)}`,
 		companyRow,
 	);
+	const listingsSharingName =
+		stock.market === "US"
+			? query(
+					databasePath,
+					`SELECT other.symbol FROM stock_directory AS d
+					 JOIN stock_directory AS other
+					   ON other.owner_id = d.owner_id AND other.market = d.market AND other.name = d.name
+					 WHERE ${keyClause("d", stock)} AND other.symbol <> d.symbol AND instr(other.symbol, '-') = 0
+					 ORDER BY other.symbol`,
+					z.object({ symbol: z.string() }),
+				)
+					.map((row) => row.symbol)
+					// A SPAC's units and warrants (AACIU, AACIW) and a bank's notes (AGNCL) are its own.
+					.filter(
+						(symbol) =>
+							!isIssuerSymbol(symbol, stock.symbol) && !isIssuerSymbol(stock.symbol, symbol),
+					)
+			: [];
 	if (directory !== undefined) {
 		cites.listing = nextId();
 		sources.push({
@@ -357,10 +416,17 @@ export function readStockSources(databasePath: string, stock: StockKey): StockSo
 			hasBusinessText = true;
 			sources.push({
 				id: nextId(),
-				title: {
-					en: `Form ${business.form}, Item 1. Business (fiscal year ended ${business.period_end})`,
-					ja: `Form ${business.form} 第1項「事業の内容」(${business.period_end} 終了事業年度)`,
-				},
+				// A 20-F's business section is Item 4, "Information on the Company".
+				title:
+					business.form === "20-F"
+						? {
+								en: `Form 20-F, Item 4. Information on the Company (fiscal year ended ${business.period_end})`,
+								ja: `Form 20-F 第4項「企業情報」(${business.period_end} 終了事業年度)`,
+							}
+						: {
+								en: `Form ${business.form}, Item 1. Business (fiscal year ended ${business.period_end})`,
+								ja: `Form ${business.form} 第1項「事業の内容」(${business.period_end} 終了事業年度)`,
+							},
 				publisher: "U.S. SEC EDGAR",
 				asOf: business.period_end,
 				url: business.source_url,
@@ -465,6 +531,7 @@ export function readStockSources(databasePath: string, stock: StockKey): StockSo
 		},
 		hasBusinessText,
 		sources,
+		listingsSharingName,
 		profile: {
 			listing: directory?.listing ?? null,
 			sector,

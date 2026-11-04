@@ -30,6 +30,8 @@ import {
 } from "../../scripts/poc/companyDescription/render.ts";
 import { salvageReply } from "../../scripts/poc/companyDescription/reply.ts";
 import {
+	EMPTY_SUMMARY,
+	hasEmptySummary,
 	isOutOfCredit,
 	KEPT_STORED,
 	MAX_SEARCH_FAILURES_IN_A_ROW,
@@ -39,6 +41,7 @@ import {
 	PlanGate,
 	recentlyUnreadable,
 	SEARCH_PAUSE_MS,
+	saysNothingOfTheBusiness,
 	storeRefusal,
 	WebBudget,
 } from "../../scripts/poc/companyDescription/runPolicy.ts";
@@ -46,6 +49,7 @@ import {
 	groupDigits,
 	isIssuerSymbol,
 	issuerFinder,
+	sharedNameNote,
 } from "../../scripts/poc/companyDescription/sources.ts";
 import { styleProblems } from "../../scripts/poc/companyDescription/style.ts";
 import {
@@ -62,6 +66,7 @@ import {
 	choosePages,
 	cooldownSeconds,
 	isJobSiteHost,
+	isRegisterPageOfAnother,
 	nameWords,
 	pageKind,
 	pageTextForModel,
@@ -311,6 +316,7 @@ describe("company description prompt (PoC)", () => {
 				profile: { listing: "nasdaq", sector: null, fiscalYearEnd: "09-26" },
 				cites: { listing: null, sector: null, figures: null },
 				figures: [],
+				listingsSharingName: [],
 			},
 			fenceToken: "fence123",
 			repairNote: null,
@@ -322,6 +328,8 @@ describe("company description prompt (PoC)", () => {
 		// The limits the reply is checked against, so a long theme label does not cost a turn.
 		expect(prompt).toContain(`a theme label at most ${TEMPLATE_LIMITS.maxThemeChars}`);
 		expect(prompt).toContain("only a count dated 2023 or later");
+		// An ETN is described as the note, not its bank (VXX read as a 1690 London bank).
+		expect(prompt).toContain("exchange-traded note (ETN)");
 	});
 });
 
@@ -488,10 +496,38 @@ describe("company overview web sources (PoC, ADR-0064)", () => {
 			profile: { listing: "nyse", sector: null, fiscalYearEnd: null },
 			cites: { listing: null, sector: null, figures: null },
 			figures: [],
+			listingsSharingName: [],
 		};
 		const prompt = pageFinderPrompt(fund, []);
 		expect(prompt).toContain("10-K, 20-F, 40-F, N-CSR");
 		expect(prompt).toContain("the fund manager's own page");
+		expect(prompt).not.toContain("exchange-traded note");
+	});
+
+	it("tells the search and the writer that a listing named after a bank with many listings may be an ETN", () => {
+		const note = {
+			stock: { market: "US" as const, symbol: "DULL" },
+			name: { en: "BANK OF MONTREAL /CAN/", ja: "BANK OF MONTREAL /CAN/" },
+			hasBusinessText: false,
+			sources,
+			profile: { listing: "nyse", sector: null, fiscalYearEnd: null },
+			cites: { listing: null, sector: null, figures: null },
+			figures: [],
+			listingsSharingName: ["AIQD", "AIQU", "BMO", "FLYD", "FNGD"],
+		};
+		expect(sharedNameNote(note)).toContain(
+			"which 5 other listings share (AIQD, AIQU, BMO, FLYD, …)",
+		);
+		expect(pageFinderPrompt(note, [])).toContain('"DULL ETN"');
+		const written = companyDescriptionPrompt({
+			stock: note,
+			fenceToken: "fence123",
+			repairNote: null,
+			today: "2026-11-05",
+		});
+		expect(written).toContain("Code DULL may be an exchange-traded note (ETN)");
+		// One other listing under the name (a second share class) is not a hint.
+		expect(sharedNameNote({ ...note, listingsSharingName: ["BMO"] })).toBeNull();
 	});
 
 	it("chooses acceptable pages, official first, each once, up to the limit", () => {
@@ -680,6 +716,57 @@ describe("job and recruiting sites (PoC)", () => {
 		expect(isJobSiteHost("www.toyota.co.jp")).toBe(false);
 		expect(pageKind("https://www.nikkei.com/nkd/company/gaiyo?scode=4188", "X")).toBeNull();
 	});
+
+	it("excludes the recruiting sites, blogs and forums the 2026-11-05 review found", () => {
+		for (const url of [
+			"https://mynavi-agent.jp/company/1.html",
+			"https://www.r-agent.com/kensaku/companydetail/1/",
+			"https://hrmos.co/pages/x/jobs",
+			"https://www.wantedly.com/companies/x",
+			"https://x.herp.careers/jobs",
+			"https://www.corp-research.jp/x",
+			"https://www.agrijob.jp/x",
+			"https://ja.wikid.org/x",
+			"https://tomokutchi.hatenablog.com/entry/x",
+			"https://www.tradingview.com/symbols/X/",
+			"https://seekingalpha.com/symbol/X",
+		]) {
+			expect(pageKind(url, "Akikawa Foods & Farms"), url).toBeNull();
+		}
+	});
+});
+
+describe("company register pages (PoC)", () => {
+	const japanese = { market: "JP", symbol: "6555" };
+	it("count for a Japanese stock only when they show its code", () => {
+		const url = "https://compalyze.co.jp/company/8010002047064";
+		expect(
+			isRegisterPageOfAnother(
+				url,
+				"有限会社エムエス・コンサルティング（東京都）の会社概要",
+				japanese,
+			),
+		).toBe(true);
+		expect(
+			isRegisterPageOfAnother(
+				url,
+				"株式会社エムエス＆コンサルティング（東京都） (6555 東証スタンダード)",
+				japanese,
+			),
+		).toBe(false);
+		// Full-width digits, and a code inside a longer number does not count.
+		expect(isRegisterPageOfAnother("https://atsoho.com/c/1", "証券コード ６５５５", japanese)).toBe(
+			false,
+		);
+		expect(
+			isRegisterPageOfAnother("https://atsoho.com/c/1", "法人番号 8010065550001", japanese),
+		).toBe(true);
+		// Other hosts and US stocks are not judged.
+		expect(isRegisterPageOfAnother("https://www.ms-con.co.jp/", "会社概要", japanese)).toBe(false);
+		expect(isRegisterPageOfAnother(url, "Empire Petroleum", { market: "US", symbol: "EP" })).toBe(
+			false,
+		);
+	});
 });
 
 describe("run policy (PoC)", () => {
@@ -692,6 +779,7 @@ describe("run policy (PoC)", () => {
 		// S1 is the fixture's 10-K text: a business source, not a record.
 		cites: { listing: null, sector: null, figures: null },
 		figures: [],
+		listingsSharingName: [],
 	};
 	const statement = {
 		en: "Makes seats.",
@@ -718,6 +806,55 @@ describe("run policy (PoC)", () => {
 		expect(mayReplace({ ...entry, feature: null }, entry)).toBe(false);
 		expect(mayReplace(entry, { ...entry, feature: null })).toBe(true);
 		expect(KEPT_STORED).toContain("kept");
+	});
+
+	it("does not store a 事業内容 that names only segments or a web address (review of 2026-11-05)", () => {
+		const said = (ja: string, en = "Makes seats for cars.") => ({ ...statement, en, ja });
+		for (const ja of [
+			"公式サイトはgamewith.co.jp。",
+			"報告セグメントはプラットフォーム事業の単一セグメント。",
+			"インキュベーション事業を展開。",
+			"報告セグメントは産業機械関連事業とソリューション事業。",
+		]) {
+			expect(saysNothingOfTheBusiness(said(ja)), ja).toBe(true);
+		}
+		expect(
+			saysNothingOfTheBusiness(said("自動車用シートを製造。", "Operates the seating business.")),
+		).toBe(true);
+		// Filler written to get past the first version of the check (JP:1446, 1723, 1718).
+		for (const ja of [
+			"業種区分は建設業。",
+			"もう一つは産業システム関連事業。",
+			"業種は建設業。東証スタンダードに上場。",
+		]) {
+			expect(saysNothingOfTheBusiness(said(ja)), ja).toBe(true);
+		}
+		for (const ja of [
+			"自動車用シートと内装品を製造し、トヨタ自動車に販売。",
+			"保険セグメントは専門保険を世界の特定市場向けに提供。",
+			"カナダで鉱物資産の取得と探鉱を行う。",
+			"エンジニアリング・プラスチックの販売（主力）事業を展開。",
+			"VLCC原油タンカーを世界のエネルギー企業に定期用船契約で貸し出す。",
+		]) {
+			expect(saysNothingOfTheBusiness(said(ja)), ja).toBe(false);
+		}
+		const empty = {
+			...entry,
+			businesses: [
+				said("マンションマネジメント事業を展開。"),
+				said("インキュベーション事業を展開。"),
+			],
+		};
+		expect(hasEmptySummary(empty)).toBe(true);
+		expect(storeRefusal(empty, stock)).toBe(EMPTY_SUMMARY);
+		// One sentence that says what the company does is enough.
+		expect(hasEmptySummary({ ...empty, businesses: [...empty.businesses, statement] })).toBe(false);
+		// A rewrite replaces an empty 事業内容 even when it fills fewer rows.
+		const fuller = {
+			...empty,
+			themes: [{ label: { en: "Seats", ja: "シート" }, reason: statement }],
+		};
+		expect(mayReplace({ ...entry, feature: null }, fuller)).toBe(true);
 	});
 
 	it("leaves out for 30 days only stocks this provider searched without a usable result", () => {
@@ -777,6 +914,22 @@ describe("listings that are not companies (PoC, ADR-0064 §5e)", () => {
 		expect(issuerOf({ market: "JP", symbol: "7203" })).toBeNull();
 	});
 
+	it("takes the symbol before the hyphen only when the stock list names it alike (EP-PC)", () => {
+		const listing = (symbol: string, name: string) => ({ market: "US" as const, symbol, name });
+		const issuerOf = issuerFinder([
+			listing("EP", "EMPIRE PETROLEUM CORP"),
+			listing("EP-PC", "KINDER MORGAN, INC."),
+			listing("KMI", "KINDER MORGAN, INC."),
+			listing("CMS", "CMS ENERGY CORP"),
+			listing("CMS-PB", "CONSUMERS ENERGY CO"),
+			listing("BAC", "Bank of America Corp."),
+			listing("BAC-PL", "BANK OF AMERICA CORP"),
+		]);
+		expect(issuerOf({ market: "US", symbol: "EP-PC" })?.symbol).toBe("KMI");
+		expect(issuerOf({ market: "US", symbol: "CMS-PB" })).toBeNull();
+		expect(issuerOf({ market: "US", symbol: "BAC-PL" })?.symbol).toBe("BAC");
+	});
+
 	it("finds an issuer listed under the same name by its symbol (the 2026-11-04 failures)", () => {
 		const listing = (symbol: string, name: string) => ({ market: "US" as const, symbol, name });
 		const issuerOf = issuerFinder([
@@ -832,6 +985,7 @@ describe("web fetch fallback (PoC, ADR-0064 §2c)", () => {
 		profile: { listing: "prime", sector: null, fiscalYearEnd: "03-31" },
 		cites: { listing: null, sector: null, figures: null },
 		figures: [],
+		listingsSharingName: [],
 	};
 	const failingFetch = (code: string): ToolDefinition => ({
 		toolId: "web.fetch_page",
@@ -934,6 +1088,46 @@ describe("the claude-code backend (PoC, ADR-0064 §2d)", () => {
 		expect(plan.exhaustedBy).toBeNull();
 		plan.observe({ status: "allowed", windows: [window("seven_day", 0.82, now + 86_400_000)] });
 		expect(plan.exhaustedBy).toContain("7-day usage is at 82%");
+	});
+
+	it("waits only for a full window when the owner ignores plan usage", () => {
+		const now = 1_000_000;
+		const plan = new PlanGate(() => now, { ignoreUsage: true });
+		const window = (name: string, utilization: number, status: string) => ({
+			name,
+			utilization,
+			resetsAtMs: now + 60_000,
+			status,
+		});
+		plan.observe({
+			status: "allowed",
+			windows: [
+				window("five_hour", 0.95, "allowed_warning"),
+				window("seven_day", 0.97, "allowed_warning"),
+			],
+		});
+		expect(plan.pausedUntilMs).toBe(0);
+		expect(plan.exhaustedBy).toBeNull();
+		plan.observe({ status: "rejected", windows: [window("five_hour", 1, "rejected")] });
+		expect(plan.pausedUntilMs).toBe(now + 60_000);
+		plan.observe({ status: "rejected", windows: [window("seven_day", 1, "rejected")] });
+		expect(plan.exhaustedBy).toContain("7-day usage is at 100%");
+	});
+
+	it("pauses, not stops, when the 5-hour window is full and the 7-day one is not", () => {
+		const now = 1_000_000;
+		for (const ignoreUsage of [false, true]) {
+			const plan = new PlanGate(() => now, { ignoreUsage });
+			plan.observe({
+				status: "rejected",
+				windows: [
+					{ name: "five_hour", utilization: 1, resetsAtMs: now + 60_000, status: "rejected" },
+					{ name: "seven_day", utilization: 0.45, resetsAtMs: now + 86_400_000, status: "allowed" },
+				],
+			});
+			expect(plan.exhaustedBy).toBeNull();
+			expect(plan.pausedUntilMs).toBe(now + 60_000);
+		}
 	});
 });
 

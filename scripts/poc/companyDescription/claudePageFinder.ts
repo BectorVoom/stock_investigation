@@ -6,7 +6,7 @@ import {
 } from "@research/adapters/providers";
 import { extractJsonObject } from "@research/agent-core";
 import { z } from "zod";
-import type { StockSources } from "./sources.ts";
+import { type StockSources, sharedNameNote } from "./sources.ts";
 
 /**
  * Finds the pages that describe a company's business with a Claude Haiku
@@ -179,6 +179,7 @@ export function pageFinderPrompt(
 	toolName = "web_search",
 ): string {
 	const japanese = stock.stock.market === "JP";
+	const sharedNote = sharedNameNote(stock);
 	const exchange = japanese ? "Tokyo Stock Exchange" : "a US exchange";
 	return [
 		`Find web pages that describe the business of this listed company: ${stock.name.ja}${stock.name.ja === stock.name.en ? "" : ` (${stock.name.en})`}, ${exchange}, code ${stock.stock.symbol}.`,
@@ -194,6 +195,11 @@ export function pageFinderPrompt(
 		"Pick web pages (HTML), not PDF files: a PDF cannot be read.",
 		"From sec.gov, pick only a short document such as a press release: an annual or fund report (10-K, 20-F, 40-F, N-CSR) or a prospectus is too large to read.",
 		"For a fund, trust or ETF, pick first the fund manager's own page for this fund (its objective, holdings and manager).",
+		...(sharedNote === null
+			? []
+			: [
+					`${sharedNote} Search for the code itself (e.g. "${stock.stock.symbol} ETN") and pick pages about the security with this code — its issuer's product page first — not about the issuer.`,
+				]),
 		'Answer with one JSON object and nothing else: {"pages": [{"url": "https://...", "kind": "official" | "regulator" | "other"}]}. When nothing suitable was found, answer {"pages": []}.',
 	].join("\n");
 }
