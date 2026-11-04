@@ -16,7 +16,6 @@ import {
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import {
-	BUTTON,
 	BUTTON_PRIMARY,
 	ErrorNotice,
 	IconButton,
@@ -25,8 +24,9 @@ import {
 	Loading,
 	Section,
 } from "../components/ui.tsx";
-import { STOCKS_HASH, stockHash, type ThemeRoute, themeSearchHash } from "../router.ts";
+import { stockHash, type ThemeRoute, themeSearchHash } from "../router.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
+import { pageNumbers } from "./pageNumbers.ts";
 import { STOCK_DETAIL_HEADING_ID } from "./stockTabs.ts";
 import { themeSearchMessages } from "./themeSearch.messages.ts";
 
@@ -278,11 +278,6 @@ function ThemeResults(props: {
 					)}
 				</Show>
 			</div>
-			<p class="text-sm">
-				<a href={STOCKS_HASH} class={TASK_LINK} data-field="theme-search-close">
-					{t().closeResults}
-				</a>
-			</p>
 		</div>
 	);
 }
@@ -371,9 +366,10 @@ function ResultsTable(props: {
 }
 
 /**
- * First / Previous / "Page n of m" / Next / Last under the table, shown
- * only when the results span more than one page. Each is a link to its
- * page's URL (so it opens in a new tab too); a plain click moves in place.
+ * Previous, the page numbers ("1 2 3 4 … 10", `pageNumbers`) and Next under
+ * the table, shown only when the results span more than one page. Each is a
+ * link to its page's URL (so it opens in a new tab too); a plain click moves
+ * in place. The current page is not a link.
  */
 function Pagination(props: {
 	readonly answer: ThemeSearchResponse;
@@ -381,63 +377,106 @@ function Pagination(props: {
 	readonly onPage: (page: number) => void;
 }): JSX.Element {
 	const t = useMessages(themeSearchMessages);
+	const items = createMemo(() => pageNumbers(props.answer.page, props.answer.pageCount));
 	const PageLink = (link: {
 		readonly page: number;
 		readonly label: string;
+		readonly ariaLabel?: string;
 		readonly field: string;
 	}): JSX.Element => (
-		<Show
-			when={link.page !== props.answer.page}
-			fallback={
-				<span
-					class={`${BUTTON} cursor-not-allowed opacity-50`}
-					aria-disabled="true"
-					data-field={link.field}
-				>
-					{link.label}
-				</span>
-			}
+		<a
+			href={themeSearchHash(props.words, link.page)}
+			class={PAGE_ITEM}
+			aria-label={link.ariaLabel}
+			data-field={link.field}
+			onClick={(event) => {
+				if (!isPlainClick(event)) return;
+				event.preventDefault();
+				props.onPage(link.page);
+			}}
 		>
-			<a
-				href={themeSearchHash(props.words, link.page)}
-				class={BUTTON}
-				data-field={link.field}
-				onClick={(event) => {
-					if (!isPlainClick(event)) return;
-					event.preventDefault();
-					props.onPage(link.page);
-				}}
-			>
-				{link.label}
-			</a>
-		</Show>
+			{link.label}
+		</a>
+	);
+	const Disabled = (item: { readonly label: string; readonly field: string }): JSX.Element => (
+		<span
+			class={`${PAGE_ITEM} cursor-not-allowed opacity-50`}
+			aria-disabled="true"
+			data-field={item.field}
+		>
+			{item.label}
+		</span>
 	);
 	return (
 		<Show when={props.answer.pageCount > 1}>
-			<nav
-				aria-label={t().pagesLabel}
-				class="flex flex-wrap items-center gap-2"
-				data-field="theme-search-pages"
-			>
-				<PageLink page={1} label={t().firstPage} field="theme-page-first" />
-				<PageLink
-					page={Math.max(1, props.answer.page - 1)}
-					label={t().previousPage}
-					field="theme-page-previous"
-				/>
-				<span class="text-xs text-slate-700" data-field="theme-page-position">
-					{t().pageOf(props.answer.page, props.answer.pageCount)}
-				</span>
-				<PageLink
-					page={Math.min(props.answer.pageCount, props.answer.page + 1)}
-					label={t().nextPage}
-					field="theme-page-next"
-				/>
-				<PageLink page={props.answer.pageCount} label={t().lastPage} field="theme-page-last" />
+			<nav aria-label={t().pagesLabel} data-field="theme-search-pages">
+				<ul class="flex flex-wrap items-center gap-1">
+					<li>
+						<Show
+							when={props.answer.page > 1}
+							fallback={<Disabled label={t().previousPage} field="theme-page-previous" />}
+						>
+							<PageLink
+								page={props.answer.page - 1}
+								label={t().previousPage}
+								field="theme-page-previous"
+							/>
+						</Show>
+					</li>
+					<For each={items()}>
+						{(item) => (
+							<li>
+								<Show
+									when={item !== "gap" ? item : null}
+									fallback={
+										<span class="px-1 text-sm text-slate-600" aria-hidden="true">
+											…
+										</span>
+									}
+								>
+									{(page) => (
+										<Show
+											when={page() !== props.answer.page}
+											fallback={
+												<span
+													class={`${PAGE_ITEM} bg-blue-700 font-semibold text-white`}
+													aria-current="page"
+													data-field="theme-page-current"
+												>
+													<span aria-hidden="true">{page()}</span>
+													<span class="sr-only">{t().pageLabel(page())}</span>
+												</span>
+											}
+										>
+											<PageLink
+												page={page()}
+												label={String(page())}
+												ariaLabel={t().pageLabel(page())}
+												field="theme-page-number"
+											/>
+										</Show>
+									)}
+								</Show>
+							</li>
+						)}
+					</For>
+					<li>
+						<Show
+							when={props.answer.page < props.answer.pageCount}
+							fallback={<Disabled label={t().nextPage} field="theme-page-next" />}
+						>
+							<PageLink page={props.answer.page + 1} label={t().nextPage} field="theme-page-next" />
+						</Show>
+					</li>
+				</ul>
 			</nav>
 		</Show>
 	);
 }
+
+/** A pager item: at least 32 px square, the page number centred. */
+const PAGE_ITEM =
+	"inline-flex min-h-8 min-w-8 items-center justify-center rounded px-2 text-sm text-slate-800 hover:bg-slate-100 pointer-coarse:min-h-11 pointer-coarse:min-w-11";
 
 /**
  * A theme as the Company tab shows it, linking to the stocks that share it

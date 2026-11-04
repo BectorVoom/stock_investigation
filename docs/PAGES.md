@@ -311,9 +311,9 @@ Watchlist to get its data.
   business overview's 【テーマ】, else the AI-written summary's themes —
   contain the words (English or Japanese, ASCII case ignored, full-width
   letters read as ASCII): a table of Stock, Symbol and the matching themes,
-  50 a page (ADR-0070), "No stock has a theme containing …" when none does,
-  and "Close the results" back to `#/stocks`. With more than one page,
-  First / Previous / "Page n of m" / Next / Last sit under the table (each a
+  50 a page (ADR-0070), or "No stock has a theme containing …" when none
+  does. With more than one page, Previous, the page numbers ("1 2 3 4 …
+  10", the current one highlighted) and Next sit under the table (each a
   link to `#/stocks/themes/<words>/<page>`, a new history entry; the caption
   says "51–100 of 120 stocks") and focus moves to the caption. A click on a
   stock's name shows that stock in a panel to the right of the results

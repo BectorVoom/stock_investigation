@@ -18,11 +18,10 @@ export const themeSearchMessages = defineMessages({
 		resultRange: (from: number, to: number, total: number): string =>
 			`${from}–${to} of ${total} stocks`,
 		pagesLabel: "Result pages",
-		firstPage: "First",
 		previousPage: "Previous",
 		nextPage: "Next",
-		lastPage: "Last",
-		pageOf: (page: number, count: number): string => `Page ${page} of ${count}`,
+		/** A page number's accessible name. */
+		pageLabel: (page: number): string => `Page ${page}`,
 		/** The panel beside the results that shows a clicked stock. */
 		panelLabel: "Chosen stock",
 		openStockPage: "Open on its own page",
@@ -35,7 +34,6 @@ export const themeSearchMessages = defineMessages({
 		themesColumn: "Matching themes",
 		searching: "theme search",
 		failed: "The theme search failed",
-		closeResults: "Close the results",
 		/** A theme on the Company tab is a link to this search. */
 		themeLink: (theme: string): string => `Find stocks with the theme ${theme}`,
 	},
@@ -48,11 +46,9 @@ export const themeSearchMessages = defineMessages({
 		resultCount: (count) => `${count} 銘柄`,
 		resultRange: (from, to, total) => `${total} 銘柄中 ${from}–${to}`,
 		pagesLabel: "検索結果のページ",
-		firstPage: "最初",
 		previousPage: "前へ",
 		nextPage: "次へ",
-		lastPage: "最後",
-		pageOf: (page, count) => `${page} / ${count} ページ`,
+		pageLabel: (page) => `${page} ページ`,
 		panelLabel: "選んだ銘柄",
 		openStockPage: "銘柄のページで開く",
 		closePanel: "銘柄を閉じる",
@@ -64,7 +60,6 @@ export const themeSearchMessages = defineMessages({
 		themesColumn: "一致したテーマ",
 		searching: "テーマ検索",
 		failed: "テーマ検索に失敗しました",
-		closeResults: "検索結果を閉じる",
 		themeLink: (theme) => `テーマ「${theme}」の銘柄を探す`,
 	},
 });

@@ -80,6 +80,8 @@ describe("Stocks page: find stocks by theme (ADR-0066)", () => {
 		).toEqual(["Hybrid vehicles"]);
 		// No "choose a stock" line under a theme search.
 		expect(document.querySelector('[data-field="choose-stock"]')).toBeNull();
+		// No "Close the results" link (removed 2026-11-04, ADR-0070 §5).
+		expect(screen.queryByRole("link", { name: "Close the results" })).toBeNull();
 		expect(screen.getByRole("searchbox", { name: "Theme words" })).toHaveProperty(
 			"value",
 			"VEHICLES",
@@ -146,6 +148,11 @@ function cloudStocks(count: number): string[] {
 	return ids;
 }
 
+/** The pager's items as text, one space apart (the current page reads "1Page 1"). */
+function pagerText(pages: HTMLElement): string {
+	return [...pages.querySelectorAll("li")].map((item) => item.textContent?.trim()).join(" ");
+}
+
 function rowSymbols(table: HTMLElement): string[] {
 	return within(table)
 		.getAllByRole("row")
@@ -154,7 +161,7 @@ function rowSymbols(table: HTMLElement): string[] {
 }
 
 describe("Stocks page: theme results pages (ADR-0070)", () => {
-	it("shows 50 stocks a page with First / Previous / Next / Last", async () => {
+	it("shows 50 stocks a page with Previous, the page numbers and Next", async () => {
 		const ids = cloudStocks(120);
 		const page = mountStocks(api.backend, { theme: "cloud" });
 		const table = await resultsTable();
@@ -163,17 +170,18 @@ describe("Stocks page: theme results pages (ADR-0070)", () => {
 			"Stocks with a theme containing “cloud” · 1–50 of 120 stocks",
 		);
 		const pages = screen.getByRole("navigation", { name: "Result pages" });
-		expect(within(pages).getByText("Page 1 of 3")).toBeTruthy();
-		// On page 1, First and Previous are not links.
-		expect(within(pages).queryByRole("link", { name: "First" })).toBeNull();
+		expect(pagerText(pages)).toBe("Previous 1Page 1 2 3 Next");
+		// On page 1, Previous and the current page are not links.
 		expect(within(pages).queryByRole("link", { name: "Previous" })).toBeNull();
-		const next = within(pages).getByRole("link", { name: "Next" });
-		expect(next.getAttribute("href")).toBe("#/stocks/themes/cloud/2");
-		expect(within(pages).getByRole("link", { name: "Last" }).getAttribute("href")).toBe(
+		expect(within(pages).queryByRole("link", { name: "Page 1" })).toBeNull();
+		expect(pages.querySelector('[aria-current="page"]')?.textContent).toBe("1Page 1");
+		expect(within(pages).getByRole("link", { name: "Page 3" }).getAttribute("href")).toBe(
 			"#/stocks/themes/cloud/3",
 		);
+		const next = within(pages).getByRole("link", { name: "Next" });
+		expect(next.getAttribute("href")).toBe("#/stocks/themes/cloud/2");
 
-		fireEvent.click(next);
+		fireEvent.click(within(pages).getByRole("link", { name: "Page 2" }));
 		expect(page.themeSearches).toEqual([{ words: "cloud", page: 2 }]);
 		await waitFor(() =>
 			expect(rowSymbols(document.querySelector("table") as HTMLElement)).toEqual(
@@ -188,6 +196,14 @@ describe("Stocks page: theme results pages (ADR-0070)", () => {
 		await waitFor(() => expect(document.activeElement?.tagName).toBe("CAPTION"));
 	});
 
+	it("shows 1 2 3 4 … and the last page when there are many pages", async () => {
+		cloudStocks(500);
+		mountStocks(api.backend, { theme: "cloud" });
+		await resultsTable();
+		const pages = screen.getByRole("navigation", { name: "Result pages" });
+		expect(pagerText(pages)).toBe("Previous 1Page 1 2 3 4 … 10 Next");
+	});
+
 	it("opens at the URL's page and shows the last page's rest", async () => {
 		const ids = cloudStocks(120);
 		mountStocks(api.backend, { theme: "cloud", themePage: 3 });
@@ -197,12 +213,12 @@ describe("Stocks page: theme results pages (ADR-0070)", () => {
 			"Stocks with a theme containing “cloud” · 101–120 of 120 stocks",
 		);
 		const pages = screen.getByRole("navigation", { name: "Result pages" });
-		expect(within(pages).getByText("Page 3 of 3")).toBeTruthy();
+		expect(pages.querySelector('[aria-current="page"]')?.textContent).toBe("3Page 3");
 		expect(within(pages).queryByRole("link", { name: "Next" })).toBeNull();
 		expect(within(pages).getByRole("link", { name: "Previous" }).getAttribute("href")).toBe(
 			"#/stocks/themes/cloud/2",
 		);
-		expect(within(pages).getByRole("link", { name: "First" }).getAttribute("href")).toBe(
+		expect(within(pages).getByRole("link", { name: "Page 1" }).getAttribute("href")).toBe(
 			"#/stocks/themes/cloud",
 		);
 	});
@@ -223,7 +239,7 @@ describe("Stocks page: theme results pages (ADR-0070)", () => {
 			"「クラウド」を含むテーマの銘柄 · 60 銘柄中 1–50",
 		);
 		const pages = screen.getByRole("navigation", { name: "検索結果のページ" });
-		expect(within(pages).getByText("1 / 2 ページ")).toBeTruthy();
+		expect(within(pages).getByRole("link", { name: "2 ページ" })).toBeTruthy();
 		expect(within(pages).getByRole("link", { name: "次へ" })).toBeTruthy();
 	});
 });

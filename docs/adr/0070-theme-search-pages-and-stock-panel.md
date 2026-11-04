@@ -32,15 +32,23 @@ the results.
    `#/stocks/themes/<words>/<page>` is page 2 and later. A page that is not
    1–10,000 written in plain digits reads as page 1. Reloading, sharing or
    Back restores the page.
-3. **The page controls.** Under the table, when there is more than one
-   page: First, Previous, "Page n of m" (n / m ページ), Next, Last, in a
-   navigation landmark "Result pages" (検索結果のページ). Each control is a
-   link to its page's URL, so it can open in a new tab; a plain click moves
-   to that page as a new history entry. On the first page First and
-   Previous are shown disabled, on the last Next and Last. The caption
-   names the range ("1–50 of 120 stocks", 120 銘柄中 1–50). Once the new
-   page is shown, focus moves to the caption and it is scrolled into view.
-   With one page the caption says the count and no controls are shown.
+3. **The page controls** (changed 2026-11-04, the owner: page numbers
+   "1, 2, 3, 4, …"). Under the table, when there is more than one page, in
+   a navigation landmark "Result pages" (検索結果のページ): Previous (前へ),
+   the page numbers, Next (次へ). The numbers are every page up to seven;
+   beyond that the first and last page, the current page and its
+   neighbours, and the first or last four near either end — `1 2 3 4 … 10`,
+   `1 … 5 6 7 … 12`, `1 … 7 8 9 10` (`pageNumbers`; "…" always stands for
+   two or more pages). Each number and Previous / Next is a link to its
+   page's URL ("Page 3", 3 ページ, as its accessible name), so it can open
+   in a new tab; a plain click moves to that page as a new history entry.
+   The current page is highlighted, marked `aria-current="page"` and not a
+   link; on the first page Previous is shown disabled, on the last Next.
+   The caption names the range ("1–50 of 120 stocks", 120 銘柄中 1–50).
+   Once the new page is shown, focus moves to the caption and it is
+   scrolled into view. With one page the caption says the count and no
+   controls are shown. (The first version had First / Previous / "Page n
+   of m" / Next / Last.)
 4. **A stock opens beside the results.** A plain click on a stock's name
    shows that stock in a panel ("Chosen stock", 選んだ銘柄) to the right of
    the results; the URL does not change. On screens narrower than `lg`
@@ -64,6 +72,11 @@ the results.
    - The Watchlist is read when the panel first opens, as the Stocks page
      reads it when a stock is shown.
 
+5. **No "Close the results".** The link under the results back to
+   `#/stocks` (ADR-0066 §3) is removed (the owner, 2026-11-04). A new
+   search replaces the results; Back or the Stocks tab in the navigation
+   leaves them.
+
 ## Verification
 
 - Application tests: page slicing, total, page count, a page past the
@@ -71,8 +84,11 @@ the results.
 - API tests: the paged answer, a page past the last, and 400 for a bad
   `page`.
 - Router tests: parsing and formatting the page, and bad pages read as 1.
-- Web tests: 50 rows a page, the controls on the first and last pages, no
-  controls for one page, Japanese, the panel's stock and tab, no
+- `pageNumbers` unit and property tests: 1, the last and the current page
+  always shown, ascending, at most seven items, "…" only for two or more
+  pages.
+- Web tests: 50 rows a page, the page numbers on the first and last pages
+  and with many pages, no controls for one page, no Close the results, Japanese, the panel's stock and tab, no
   navigation on a click, swapping and closing the panel, and the panel
   kept across pages but closed by a new search.
 
