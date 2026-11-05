@@ -45,6 +45,7 @@ import {
 	runScheduledTaskResponseSchema,
 	scheduledTaskListResponseSchema,
 	scheduledTaskResponseSchema,
+	stockDataSearchRequestSchema,
 	stockDirectorySearchQuerySchema,
 	stockDirectorySearchResponseSchema,
 	stockDirectoryStatusResponseSchema,
@@ -273,6 +274,25 @@ export function createApp(options: AppOptions = {}) {
 					c.var.services.runnerJobs.complete(c.var.runner, runId, body),
 				);
 				return c.json(completed);
+			}),
+		),
+	);
+
+	/**
+	 * ADR-0071: the lease holder of a research run searches its owner's stored
+	 * stock data (the `stocks.search_data` tool). Reads only.
+	 */
+	runner.post("/jobs/:id/stock-data/search", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const runId = yield* pathId(c, "id");
+				const body = yield* readJson(c, stockDataSearchRequestSchema);
+				const found = yield* useCase("runner.stock_data.search", () =>
+					c.var.services.stockData.search(c.var.runner, runId, body),
+				);
+				return c.json(found);
 			}),
 		),
 	);

@@ -135,6 +135,9 @@ pub trait IdAllocator: Send + Sync {
 pub struct ToolContext {
 	/// The run id.
 	pub run_id: String,
+	/// The run's current lease generation: the proof a tool presents when it
+	/// reads the owner's stored data through the runner API (ADR-0071).
+	pub lease_generation: u64,
 	/// The call's cancellation: the run's token combined with the tool's
 	/// time limit by `execute_tool_call`.
 	pub cancel: CancellationToken,

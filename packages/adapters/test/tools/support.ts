@@ -77,6 +77,7 @@ export function createToolContext(
 	let counter = 0;
 	return {
 		runId: "run_test",
+		leaseGeneration: 1,
 		signal,
 		nowIso: () => NOW_ISO,
 		nextId: (prefix) => {

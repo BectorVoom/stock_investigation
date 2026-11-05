@@ -112,6 +112,8 @@ export interface PipelineReporter {
 
 export interface ResearchPipelineInput {
 	readonly runId: string;
+	/** The claim's lease generation, handed to tools that read stored data (ADR-0071). */
+	readonly leaseGeneration: number;
 	readonly request: ResearchRequest;
 	readonly sources: readonly SubscribedSourceRef[];
 	readonly workspaceComponents: readonly WorkspaceComponentSummary[];
@@ -347,6 +349,7 @@ export async function runResearchPipeline(
 	const permittedToolIds = new Set(permittedTools.map((tool) => tool.toolId));
 	const toolContext: ToolContext = {
 		runId,
+		leaseGeneration: input.leaseGeneration,
 		signal: input.signal,
 		nowIso: () => deps.clock.nowIso(),
 		nextId,

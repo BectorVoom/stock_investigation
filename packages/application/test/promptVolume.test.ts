@@ -137,6 +137,7 @@ async function runVolumeScenario() {
 	const outcome = await runResearchPipeline(
 		{
 			runId: RUN_ID,
+			leaseGeneration: 1,
 			request: request({
 				// Three collection rounds plus the three reserved post-collection steps
 				// (analysis, its repair turn, verification).

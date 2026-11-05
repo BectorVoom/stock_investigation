@@ -92,6 +92,8 @@ impl From<research_agent_core::model_text::EmptyFenceToken> for PipelineError {
 pub struct ResearchPipelineInput {
 	/// Stable run id.
 	pub run_id: String,
+	/// The claim's lease generation, handed to tools that read stored data (ADR-0071).
+	pub lease_generation: u64,
 	/// Validated owner request.
 	pub request: ResearchRequest,
 	/// Subscribed sources.
@@ -270,6 +272,7 @@ pub async fn run_research_pipeline(
 	let clock = Arc::clone(&deps.clock);
 	let tool_context = ToolContext {
 		run_id: input.run_id.clone(),
+		lease_generation: input.lease_generation,
 		cancel: input.cancel.clone(),
 		now_iso: Arc::new(move || clock.now_iso()),
 		ids: Arc::clone(&ids_),

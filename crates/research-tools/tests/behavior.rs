@@ -60,6 +60,7 @@ impl IdAllocator for Ids {
 fn context() -> ToolContext {
 	ToolContext {
 		run_id: "run_test".into(),
+		lease_generation: 1,
 		cancel: CancellationToken::new(),
 		now_iso: Arc::new(|| "2026-10-17T00:00:00.000Z".into()),
 		ids: Arc::new(Ids(AtomicUsize::new(0))),

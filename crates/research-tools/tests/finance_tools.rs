@@ -149,6 +149,7 @@ impl IdAllocator for SharedCounter {
 fn context() -> ToolContext {
 	ToolContext {
 		run_id: "run_test".to_owned(),
+		lease_generation: 1,
 		cancel: CancellationToken::new(),
 		now_iso: Arc::new(|| "2026-10-11T03:00:00.000Z".to_owned()),
 		ids: Arc::new(SharedCounter(AtomicU64::new(0))),

@@ -14,4 +14,5 @@ pub mod robots;
 pub mod search;
 pub mod sec;
 pub mod shared;
+pub mod stock_data;
 pub mod web;

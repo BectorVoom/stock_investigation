@@ -702,6 +702,7 @@ function scenarioInput(random: Random): {
 		metered,
 		input: {
 			runId: RUN_ID,
+			leaseGeneration: 1,
 			request,
 			sources,
 			workspaceComponents: components,

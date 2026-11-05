@@ -18,6 +18,7 @@ export * from "./records.ts";
 export * from "./scheduledTasks.ts";
 export * from "./settings.ts";
 export * from "./stockCompanyProfile.ts";
+export * from "./stockData.ts";
 export * from "./stockDirectory.ts";
 export * from "./stockPrices.ts";
 export * from "./stocks.ts";

@@ -14,6 +14,9 @@ import {
 	RUNNER_API_PREFIX,
 	type RunnerEventsRequest,
 	releaseJobResponseSchema,
+	type StockDataSearchRequest,
+	type StockDataSearchResponse,
+	stockDataSearchResponseSchema,
 } from "@research/contracts";
 import { err, ok, type Result, thrownName } from "@research/domain";
 import { z } from "zod";
@@ -45,6 +48,17 @@ export interface RunnerApi {
 	renewCredential(expiresInDays: number): Promise<RunnerApiResult<{ token: string }>>;
 }
 
+/**
+ * The stored stock data a research tool may search (ADR-0071), read through
+ * the runner API with the run's lease as proof.
+ */
+export interface StockDataApi {
+	searchStockData(
+		runId: string,
+		request: StockDataSearchRequest,
+	): Promise<RunnerApiResult<StockDataSearchResponse>>;
+}
+
 export interface HttpRunnerApiOptions {
 	readonly apiUrl: string;
 	readonly runnerToken: string;
@@ -70,7 +84,7 @@ export const RELEASE_TIMEOUT_MS = 2_000;
  * validated against the shared contract. Only transport failures, 429 and 5xx
  * are retried; all runner endpoints are idempotent, so a retry is safe.
  */
-export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi {
+export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi & StockDataApi {
 	const timeoutMs = options.requestTimeoutMs ?? 20_000;
 	const maxAttempts = options.maxAttempts ?? 4;
 	const headers: Record<string, string> = {
@@ -165,5 +179,7 @@ export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi {
 			),
 		renewCredential: (expiresInDays) =>
 			post("/credentials/renew", { expiresInDays }, issuedRunnerCredentialSchema),
+		searchStockData: (runId, request) =>
+			post(`/jobs/${runId}/stock-data/search`, request, stockDataSearchResponseSchema),
 	};
 }

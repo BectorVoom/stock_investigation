@@ -26,6 +26,7 @@ import {
 	createRunnerJobService,
 	createScheduledTaskService,
 	createSourceService,
+	createStockDataSearchService,
 	createStockDirectoryService,
 	createStockPageService,
 	createSyncCheckGate,
@@ -157,6 +158,17 @@ export function createServices(
 		gate: shared.equityGate,
 		reconciled: shared.equityReconciled,
 		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
+	});
+	const stockPages = createStockPageService({
+		stockDirectory: persistence.stockDirectory,
+		market: persistence.market,
+		articles: persistence.articles,
+		equitySync: persistence.equitySync,
+		equityCompanies: equitySync,
+		watchlist: persistence.watchlist,
+		companySummaries: persistence.companySummaries,
+		earningsCalendar: persistence.earningsCalendar,
+		clock,
 	});
 	const jobRetention = createJobRetentionService({
 		retention: persistence.jobRetention,
@@ -340,16 +352,14 @@ export function createServices(
 			watchlist: persistence.watchlist,
 			jobs: persistence.jobs,
 		}),
-		stockPages: createStockPageService({
+		stockPages,
+		// ADR-0071: the runner's stocks.search_data tool reads the same stored records.
+		stockData: createStockDataSearchService({
+			jobs: persistence.jobs,
+			stockPages,
 			stockDirectory: persistence.stockDirectory,
-			market: persistence.market,
-			articles: persistence.articles,
-			equitySync: persistence.equitySync,
-			equityCompanies: equitySync,
 			watchlist: persistence.watchlist,
-			companySummaries: persistence.companySummaries,
-			earningsCalendar: persistence.earningsCalendar,
-			clock,
+			equityCompanies: equitySync,
 		}),
 		googleCalendar: createGoogleCalendarService({
 			jobs: persistence.jobs,

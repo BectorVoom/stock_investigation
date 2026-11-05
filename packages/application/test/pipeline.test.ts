@@ -58,6 +58,7 @@ function setup(
 		runResearchPipeline(
 			{
 				runId: RUN_ID,
+				leaseGeneration: 1,
 				request: request(),
 				sources: SOURCES,
 				workspaceComponents: [],
@@ -359,6 +360,7 @@ describe("research pipeline: generated claims are checked against retrieved evid
 		const outcome = await runResearchPipeline(
 			{
 				runId: RUN_ID,
+				leaseGeneration: 1,
 				request: request(),
 				sources: SOURCES,
 				workspaceComponents: [],
@@ -1036,6 +1038,7 @@ describe("research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)", ()
 		const outcome = await runResearchPipeline(
 			{
 				runId: RUN_ID,
+				leaseGeneration: 1,
 				request: request({ budget: { ...request().budget, maxWallClockMs: 30_000 } }),
 				sources: SOURCES,
 				workspaceComponents: [],
@@ -1350,6 +1353,7 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 		const outcome = await runResearchPipeline(
 			{
 				runId: RUN_ID,
+				leaseGeneration: 1,
 				request: request(),
 				sources: SOURCES,
 				workspaceComponents: [],
@@ -1415,6 +1419,7 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 		const outcome = await runResearchPipeline(
 			{
 				runId: RUN_ID,
+				leaseGeneration: 1,
 				request: request(),
 				sources: SOURCES,
 				workspaceComponents: [],
@@ -1467,6 +1472,7 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 		const outcome = await runResearchPipeline(
 			{
 				runId: RUN_ID,
+				leaseGeneration: 1,
 				request: request(),
 				sources: SOURCES,
 				workspaceComponents: [],
@@ -1512,6 +1518,7 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 		const outcome = await runResearchPipeline(
 			{
 				runId: RUN_ID,
+				leaseGeneration: 1,
 				request: request(),
 				sources: SOURCES,
 				workspaceComponents: [],
@@ -1706,6 +1713,7 @@ describe("research pipeline: tool-derived records stay referentially sound (DATA
 		const outcome = await runResearchPipeline(
 			{
 				runId: RUN_ID,
+				leaseGeneration: 1,
 				request: request(),
 				sources: SOURCES,
 				workspaceComponents: [],
@@ -1768,6 +1776,7 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 		const outcome = await runResearchPipeline(
 			{
 				runId: RUN_ID,
+				leaseGeneration: 1,
 				request: request({ webAccess }),
 				sources: SOURCES,
 				workspaceComponents: [],

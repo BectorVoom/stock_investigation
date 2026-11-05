@@ -162,6 +162,7 @@ async function execute(
 	};
 	const input = {
 		runId: RUN_ID,
+		leaseGeneration: 1,
 		request: {
 			...baseRequest(),
 			...(spec.question === undefined ? {} : { question: spec.question }),

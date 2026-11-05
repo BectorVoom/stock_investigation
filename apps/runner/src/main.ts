@@ -215,6 +215,8 @@ function runnerProgram(
 											hasher: webCryptoHasher,
 										}),
 							sleep,
+							// ADR-0071: stocks.search_data reads stored stock data through the API.
+							stockData: api,
 						}),
 					),
 					feed: { fetcher, feedParser, hasher: webCryptoHasher },

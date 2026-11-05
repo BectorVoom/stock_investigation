@@ -405,6 +405,7 @@ export async function executeJob(
 					: await runResearchPipeline(
 							{
 								runId: job.runId,
+								leaseGeneration: job.leaseGeneration,
 								request: job.request,
 								sources: job.sources,
 								workspaceComponents: job.workspaceComponents,

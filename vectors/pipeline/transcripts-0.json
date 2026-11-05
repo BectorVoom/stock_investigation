@@ -4,6 +4,7 @@
 			"name": "/research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)/plans, collects, analyses, verifies and publishes a contract-valid, integrity-clean bundle",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -808,6 +809,7 @@
 			"name": "/research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)/derives growth rates itself instead of taking them from the model",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -1612,6 +1614,7 @@
 			"name": "/research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)/builds the report, tables and chart deterministically from verified records",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -2416,6 +2419,7 @@
 			"name": "/research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)/reports plan-limited usage as an unknown cost, never as zero",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -3220,6 +3224,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/marks a claim that %s as unsupported and keeps it visible [0]",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -3985,6 +3990,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/marks a claim that %s as unsupported and keeps it visible [1]",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -4750,6 +4756,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/marks a claim that %s as unsupported and keeps it visible [2]",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -5512,6 +5519,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/marks a claim that %s as unsupported and keeps it visible [3]",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -6273,6 +6281,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/records contradicting evidence as a conflict rather than dropping it",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -7035,6 +7044,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/lets the independent verifier downgrade a claim but never upgrade one",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -7871,6 +7881,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/fails closed when the verifier is silent, unusable or unavailable: nothing stays 'supported'",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -8679,6 +8690,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/fails closed when the verifier is silent, unusable or unavailable: nothing stays 'supported'",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -9487,6 +9499,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/fails closed when the verifier is silent, unusable or unavailable: nothing stays 'supported'",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -10289,6 +10302,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/never publishes the model's own narrative",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -11093,6 +11107,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/does not store quotes from sources licensed for headline and link only",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -11897,6 +11912,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/drops suppliers whose relationship is not established by a passage naming them",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -12700,6 +12716,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/does not accept a baseline number that merely occurs elsewhere in the document",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -13423,6 +13440,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/refuses a baseline the cited source does not state, and then derives no growth rate",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -14146,6 +14164,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/rejects scenarios outside the 3-5 year horizon or without falsifiers",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -14713,6 +14732,7 @@
 			"name": "/research pipeline: generated claims are checked against retrieved evidence (AGT-009, AGT-013)/computes the pricing-power classification from disclosed inputs, never from the model's wording",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -15551,6 +15571,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/denies every tool the run was not granted, however the model asks",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -16400,6 +16421,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/treats instructions inside retrieved content as data: budgets and permissions do not move",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -17420,6 +17442,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/fences retrieved text so it cannot close its own data block",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -18282,6 +18305,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/carries earlier conversation into planning and analysis, fenced as data",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -19095,6 +19119,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/treats instructions inside the conversation context as data: budgets and permissions do not move",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -19910,6 +19935,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/validates model-proposed display instructions against the UI protocol",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -20722,6 +20748,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/renames a model-created component into the run's namespace so Chat shows it after the answer",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -21544,6 +21571,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/refuses a model-proposed image gallery: the withdrawn type is not authorable",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -22352,6 +22380,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/does not let the model author a report or alter the run's own verified presentation",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -23164,6 +23193,7 @@
 			"name": "/research pipeline: tool authorization happens outside the model (AGT-006, AGT-007, hard gate 3)/ties every badge in its own report to the claim that earned it",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -23968,6 +23998,7 @@
 			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/stops at the agent-step ceiling",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -24846,6 +24877,7 @@
 			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/stops when the wall-clock budget is spent",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -25609,6 +25641,7 @@
 			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/refuses a prompt that would exceed the input-size budget",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -25870,6 +25903,7 @@
 			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/runs a metered backend without a spend ceiling (cost %s) [0]",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -26686,6 +26720,7 @@
 			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/runs a metered backend without a spend ceiling (cost %s) [1]",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -27502,6 +27537,7 @@
 			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/pauses for owner approval BEFORE a request that could exceed the spend ceiling",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -27770,6 +27806,7 @@
 			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/stops a metered run whose cost went unreported instead of spending blind",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -28033,6 +28070,7 @@
 			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/counts what earlier attempts of the same run consumed against the same ceilings",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -28150,6 +28188,7 @@
 			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/does not let a tool outlive the run's wall-clock budget",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -28364,6 +28403,7 @@
 			"name": "/research pipeline: the collection allowance leaves room for repair and verification/reaches the verifier on the repair turn with a 6-step budget",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -29351,6 +29391,7 @@
 			"name": "/research pipeline: the collection allowance leaves room for repair and verification/still verifies with room to spare when no repair is needed",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -30291,6 +30332,7 @@
 			"name": "/research pipeline: the collection allowance leaves room for repair and verification/keeps today's split on a 3-step budget: 1 collection turn, then analysis and verification",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -31095,6 +31137,7 @@
 			"name": "/research pipeline: the collection allowance leaves room for repair and verification/keeps today's behaviour on a 2-step budget: no step left for the verifier",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -31858,6 +31901,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/fails closed, without spending quota, when the backend is unavailable",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -31968,6 +32012,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/refuses a backend whose tool isolation is unverified unless the owner opted in",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -32076,6 +32121,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/refuses a backend whose tool isolation is unverified unless the owner opted in",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -32880,6 +32926,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/propagates a provider failure with its retryability",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -33038,6 +33085,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/keeps the provider's answer status unchanged on the failed run (§4a)",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -33197,6 +33245,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/rejects malformed adapter events and streams that end without a terminal event",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -33354,6 +33403,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/rejects malformed adapter events and streams that end without a terminal event",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -33511,6 +33561,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/reminds once after a zero-call first plan, then fails NO_TOOL_REQUESTED when still empty",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -33751,6 +33802,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/runs the tool calls of the plan after the reminder",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -34617,6 +34669,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/sends the reminder at most once: a third zero-call plan ends the run",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -34857,6 +34910,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/fails PLAN_NOT_JSON when no planning reply was valid JSON",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -35133,6 +35187,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/fails honestly when nothing could be collected",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -35373,6 +35428,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/says ALL_TOOL_CALLS_FAILED with the most frequent tool error when every call failed",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -35726,6 +35782,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/reports the most frequent upstream status of the reported tool error, the latest winning a tie (§4a rule 6)",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -36217,6 +36274,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/replaces a page-derived tool error code with TOOL_ERROR (finding 10)",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -36448,6 +36506,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/keeps NO_EVIDENCE_COLLECTED when tools succeeded but returned nothing",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -36683,6 +36742,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/walks the reported states through the legal transition matrix in order",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -37487,6 +37547,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/asks once for a corrected analysis, then gives up without inventing a result",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -38338,6 +38399,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/asks once for a corrected analysis, then gives up without inventing a result",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -38694,6 +38756,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/stops promptly when cancelled",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -38999,6 +39062,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/routes natively-emitted tool requests through the same authorization",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -39821,6 +39885,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/takes natively-emitted tool requests as the plan when the reply has no valid JSON (ADR-0028)",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -40687,6 +40752,7 @@
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/still reports PLAN_NOT_JSON when a reply has neither valid JSON nor tool requests",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -40959,6 +41025,7 @@
 			"name": "/research pipeline: tool-derived records stay referentially sound (DATA-001)/does not store an observation that no identified security backs",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -41864,6 +41931,7 @@
 			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/webAccess \"off\": the tool is absent from the planning prompt, and a plan that requests it anyway is denied and never executes",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -42692,6 +42760,7 @@
 			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/webAccess \"public-web\": the tool is listed, and executes",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -43517,6 +43586,7 @@
 			"name": "/research pipeline: collection latency/moves to analysis after three planning rounds even when the planner asks to continue",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -44595,6 +44665,7 @@
 			"name": "/research pipeline: collection latency/retrieves identical successful requests only once within a run",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -45477,6 +45548,7 @@
 			"name": "/does not re-run an unavailable tool, even with different arguments",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -46365,6 +46437,7 @@
 			"name": "/does not re-run an unavailable tool, even with different arguments",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -47253,6 +47326,7 @@
 			"name": "/prompt volume budget (FR-016, ADR-0010)/sends each tool output once, digests the rest, and stays within budget",
 			"job": {
 				"runId": "run_test",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -48798,6 +48872,7 @@
 			"name": "edge/pack-cjk-edge0-1",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -49192,6 +49267,7 @@
 			"name": "edge/pack-cjk-edge0+0",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -49586,6 +49662,7 @@
 			"name": "edge/pack-cjk-edge0+1",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -49980,6 +50057,7 @@
 			"name": "edge/pack-cjk-edge1-1",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -50374,6 +50452,7 @@
 			"name": "edge/pack-cjk-edge1+0",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -50768,6 +50847,7 @@
 			"name": "edge/pack-cjk-edge1+1",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -51162,6 +51242,7 @@
 			"name": "edge/pack-cjk-first-misses",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -51451,6 +51532,7 @@
 			"name": "edge/pack-emoji-edge0-1",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -51845,6 +51927,7 @@
 			"name": "edge/pack-emoji-edge0+0",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -52239,6 +52322,7 @@
 			"name": "edge/pack-emoji-edge0+1",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -52633,6 +52717,7 @@
 			"name": "edge/pack-emoji-edge1-1",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -53027,6 +53112,7 @@
 			"name": "edge/pack-emoji-edge1+0",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -53421,6 +53507,7 @@
 			"name": "edge/pack-emoji-edge1+1",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -53815,6 +53902,7 @@
 			"name": "edge/pack-emoji-first-misses",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -54104,6 +54192,7 @@
 			"name": "edge/pack-combining-edge0-1",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",
@@ -54498,6 +54587,7 @@
 			"name": "edge/pack-combining-edge0+0",
 			"job": {
 				"runId": "run_edge",
+				"leaseGeneration": 1,
 				"request": {
 					"workspaceId": "ws_test",
 					"question": "Which storage products will see demand growth?",

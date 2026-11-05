@@ -46,6 +46,7 @@ export function toolContext(overrides: Partial<ToolContext> = {}): ToolContext {
 	let counter = 0;
 	return {
 		runId: "run_1",
+		leaseGeneration: 1,
 		signal: new AbortController().signal,
 		nowIso: () => "2026-10-11T00:00:00.000Z",
 		nextId: (prefix) => {

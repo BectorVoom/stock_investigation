@@ -488,6 +488,7 @@ POST   /api/v1/runner/jobs/claim
 POST   /api/v1/runner/jobs/:id/heartbeat
 POST   /api/v1/runner/jobs/:id/events
 POST   /api/v1/runner/jobs/:id/complete
+POST   /api/v1/runner/jobs/:id/stock-data/search
 ```
 
 `GET /api/v1/workspaces/:id/messages` accepts optional `before` (a message `seq`;

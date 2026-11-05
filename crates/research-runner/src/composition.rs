@@ -366,6 +366,10 @@ pub fn compose(
 	let page_archive = config.pages_directory.as_ref().map(|directory| {
 		Arc::new(FilePageArchive::new(directory, Arc::clone(&hasher))) as Arc<dyn PageArchive>
 	});
+	let api = Arc::new(
+		HttpRunnerApi::new(api_options(config), Arc::clone(&sleeper))
+			.map_err(|_| CompositionError::Tls)?,
+	);
 	let tools = ToolRegistry::new(create_research_tools(ResearchToolDeps {
 		fetcher: Arc::clone(&fetcher),
 		feed_parser: feed_parser.clone(),
@@ -376,6 +380,8 @@ pub fn compose(
 		page_archive,
 		sleep: Arc::new(TokioSleep),
 		sec_sleep: Arc::clone(&sleeper),
+		// ADR-0071: stocks.search_data reads stored stock data through the API.
+		stock_data: Some(api.clone()),
 	}))?;
 
 	let runtimes = create_agent_runtimes(ProviderEnvironment {
@@ -414,10 +420,6 @@ pub fn compose(
 
 	let sec = sec_job_client(config, &fetcher, &clock, &sleeper);
 	let earnings = earnings_sources(config, &fetcher, &binary_fetcher, &clock);
-	let api = Arc::new(
-		HttpRunnerApi::new(api_options(config), Arc::clone(&sleeper))
-			.map_err(|_| CompositionError::Tls)?,
-	);
 	Ok(LoopDeps {
 		jobs: Arc::new(JobDeps {
 			api,

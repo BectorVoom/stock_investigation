@@ -279,6 +279,7 @@ mod tests {
 	fn context(cancel: CancellationToken) -> ToolContext {
 		ToolContext {
 			run_id: "run_1".to_owned(),
+			lease_generation: 1,
 			cancel,
 			now_iso: Arc::new(|| "2026-10-11T00:00:00.000Z".to_owned()),
 			ids: Arc::new(Ids(Mutex::new(0))),

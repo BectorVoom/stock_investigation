@@ -1116,6 +1116,7 @@ async fn dispatch(
 			let outcome = run_research_pipeline(
 				ResearchPipelineInput {
 					run_id: research.lease.run_id.clone(),
+					lease_generation: research.lease.lease_generation,
 					request: research.request.clone(),
 					sources: research.lease.sources.clone(),
 					workspace_components: research.workspace_components.clone(),

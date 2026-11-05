@@ -27,8 +27,10 @@ use research_contracts::jobs::{
 	RunnerEventsRequest,
 };
 use research_contracts::json::to_js_json;
+use research_contracts::stock_data::{StockDataSearchRequest, StockDataSearchResponse};
 use research_contracts::{Contract, ContractError};
 use research_finance::ports::Sleeper;
+use research_tools::stock_data::{StockDataReadError, StockDataReader};
 use rustls::ClientConfig;
 use rustls_pki_types::ServerName;
 use serde::Serialize;
@@ -670,6 +672,26 @@ impl RunnerApi for HttpRunnerApi {
 	) -> RunnerApiResult<IssuedRunnerCredential> {
 		self.post("/credentials/renew", &RenewRequest { expires_in_days })
 			.await
+	}
+}
+
+/// ADR-0071: the `stocks.search_data` tool reads the owner's stored stock
+/// data through `POST /jobs/{runId}/stock-data/search`, retried like every
+/// other runner call (it only reads).
+#[async_trait]
+impl StockDataReader for HttpRunnerApi {
+	async fn search_stock_data(
+		&self,
+		run_id: &str,
+		request: &StockDataSearchRequest,
+	) -> Result<StockDataSearchResponse, StockDataReadError> {
+		self.post::<StockDataSearchResponse>(&format!("/jobs/{run_id}/stock-data/search"), request)
+			.await
+			.map_err(|error| StockDataReadError {
+				code: error.code,
+				detail: error.detail,
+				transient: error.transient,
+			})
 	}
 }
 

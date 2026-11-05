@@ -91,6 +91,7 @@ import {
 	planGoogleSync,
 	planSyncDays,
 	type RawFeed,
+	rankStockPassages,
 	resampleSeries,
 	STOCK_MENTION_LIMITS,
 	selectFiscalYearMetrics,
@@ -1828,7 +1829,30 @@ const EQUITY_BENCH_COMPLETION_FILINGS = Array.from({ length: 60 }, (_, index) =>
 	};
 });
 
+/**
+ * The stock-data search's worst answer (ADR-0071): five stocks' passages
+ * (about 30 each: business paragraphs, statements, summaries in English and
+ * Japanese), each near the 1,200-character cap, against a 24-term query.
+ */
+const STOCK_PASSAGE_BENCH_CORPUS = Array.from({ length: 150 }, (_, index) =>
+	(index % 3 === 0
+		? `Income statement FY${2020 + (index % 6)}: revenue (net sales) ${index}416161000000 USD; operating income 133050000000 USD; net income (profit attributable to owners of the parent) 112010000000 USD. `
+		: index % 3 === 1
+			? "The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories, and sells a variety of related services. "
+			: "当社グループは、ゲーム専用機およびソフトウェアの開発・製造・販売を主な事業としており、連結売上高は増加した。"
+	)
+		.repeat(8)
+		.slice(0, 1200),
+);
+const STOCK_PASSAGE_BENCH_QUERY =
+	"revenue operating income net income fiscal year 2025 smartphones services 売上高 連結 ゲーム earnings date close price growth margin cash flow assets";
+
 const cases: Case[] = [
+	{
+		name: "rank 150 stock-data passages (5 stocks) against a 24-term query",
+		budgetMs: 15,
+		run: () => rankStockPassages(STOCK_PASSAGE_BENCH_QUERY, STOCK_PASSAGE_BENCH_CORPUS, 12),
+	},
 	{
 		name: "select every metric of one company-year (60 facts, 5 filings)",
 		budgetMs: 1,

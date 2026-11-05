@@ -481,6 +481,7 @@ function toolContext(runId: string): ToolContext {
 	let next = 0;
 	return {
 		runId,
+		leaseGeneration: 1,
 		signal: AbortSignal.timeout(120_000),
 		nowIso: () => new Date().toISOString(),
 		nextId: (prefix) => {

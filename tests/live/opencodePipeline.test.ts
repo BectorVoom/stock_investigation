@@ -127,6 +127,7 @@ describe.skipIf(!LIVE)("live OpenCode research pipeline (spends real quota)", ()
 			const outcome = await runResearchPipeline(
 				{
 					runId: RUN_ID,
+					leaseGeneration: 1,
 					request: {
 						workspaceId: "ws_live",
 						question:

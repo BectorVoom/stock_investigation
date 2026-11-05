@@ -37,6 +37,7 @@ try {
 	let next = 0;
 	const context: ToolContext = {
 		runId: "run_live",
+		leaseGeneration: 1,
 		signal: new AbortController().signal,
 		subscribedSources: [],
 		nowIso: () => new Date().toISOString(),

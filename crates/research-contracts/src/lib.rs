@@ -27,6 +27,7 @@ pub mod patterns;
 pub mod primitives;
 pub mod records;
 pub mod stock_company_profile;
+pub mod stock_data;
 pub mod stock_directory;
 pub mod stock_prices;
 pub mod ui;
@@ -128,6 +129,8 @@ contract!(
 	equity_financials::EquitySyncIdentity,
 	equity_financials::EquitySyncRequest,
 	api::ApiErrorBody,
+	stock_data::StockDataSearchArgs,
+	stock_data::StockDataSearchResponse,
 	api::IssuedRunnerCredential,
 	api::RunnerCredential,
 	company_summary::CompanySummary,

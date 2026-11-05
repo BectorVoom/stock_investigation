@@ -21,6 +21,7 @@ use crate::news::{NewsToolDeps, create_news_tools_sharing};
 use crate::positions::{PositionToolDeps, create_position_tools};
 use crate::search::{SearchToolDeps, Sleep, create_search_tools};
 use crate::sec::{SecToolDeps, create_sec_tools};
+use crate::stock_data::{StockDataReader, StockDataToolDeps, create_stock_data_tools};
 use crate::web::{PageAccess, WebToolDeps, create_web_tools_sharing};
 
 /// What the catalogue is built from.
@@ -46,6 +47,9 @@ pub struct ResearchToolDeps {
 	pub sleep: Arc<dyn Sleep>,
 	/// The same wait for the SEC fair-access queue.
 	pub sec_sleep: Arc<dyn Sleeper>,
+	/// The runner API's stored-stock-data search (ADR-0071). `None` → the
+	/// `stocks.search_data` tool is not registered (tests, tools without an API).
+	pub stock_data: Option<Arc<dyn StockDataReader>>,
 }
 
 /// The tools in catalogue order; the conditional web tool is last.
@@ -99,6 +103,12 @@ pub fn create_research_tools(deps: ResearchToolDeps) -> Vec<Arc<dyn Tool>> {
 		jp_margin_balance: Arc::new(UnconfiguredJpMarginBalanceSource),
 		hasher: Arc::clone(&deps.hasher),
 	}));
+	if let Some(reader) = deps.stock_data {
+		tools.extend(create_stock_data_tools(StockDataToolDeps {
+			reader,
+			hasher: Arc::clone(&deps.hasher),
+		}));
+	}
 	if let Some(page_archive) = deps.page_archive {
 		tools.extend(create_web_tools_sharing(
 			WebToolDeps {
@@ -186,6 +196,7 @@ mod tests {
 			page_archive: with_archive.then(|| never.clone() as Arc<dyn PageArchive>),
 			sleep: never.clone(),
 			sec_sleep: never,
+			stock_data: None,
 		})
 	}
 

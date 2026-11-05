@@ -160,6 +160,7 @@ pub async fn compose(
 		page_archive: None,
 		sleep: capped,
 		sec_sleep: Arc::clone(&sleeper),
+		stock_data: None,
 	}))?;
 
 	let (agents, scratch) = agents(settings)?;

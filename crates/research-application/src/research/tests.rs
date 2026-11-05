@@ -438,6 +438,7 @@ async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
 			let run_cancel = cancel.clone();
 			let input = ResearchPipelineInput {
 				run_id: field(job, "runId").to_owned(),
+				lease_generation: 1,
 				request: request(get(job, "request")),
 				sources: decode_vec(get(job, "sources")),
 				workspace_components: decode_vec(get(job, "workspaceComponents")),
@@ -772,6 +773,7 @@ mod in_flight_tool {
 		Fixture {
 			input: ResearchPipelineInput {
 				run_id: "run_t".to_owned(),
+				lease_generation: 1,
 				request: request(&job),
 				sources: Vec::new(),
 				workspace_components: Vec::new(),

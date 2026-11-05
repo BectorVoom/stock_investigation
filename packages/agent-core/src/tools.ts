@@ -58,6 +58,11 @@ export interface ToolFailure {
 
 export interface ToolContext {
 	readonly runId: string;
+	/**
+	 * The run's current lease generation: the proof a tool presents when it
+	 * reads the owner's stored data through the runner API (ADR-0071).
+	 */
+	readonly leaseGeneration: number;
 	readonly signal: AbortSignal;
 	readonly nowIso: () => string;
 	/** Allocates a run-scoped id, e.g. `nextId("ev")` -> "<runId>_ev3". */

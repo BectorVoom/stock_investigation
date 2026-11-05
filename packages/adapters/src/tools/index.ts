@@ -19,6 +19,10 @@ import { createPageAccess } from "./pageAccess.ts";
 import { createPositionTools } from "./positionTools.ts";
 import { createSearchTools } from "./searchTools.ts";
 import { createSecTools } from "./secTools.ts";
+import { createStockDataTools, type StockDataReader } from "./stockDataTools.ts";
+
+export { createStockDataTools, type StockDataReader } from "./stockDataTools.ts";
+
 import { createWebTools } from "./webTools.ts";
 
 export interface ResearchToolDeps {
@@ -36,6 +40,11 @@ export interface ResearchToolDeps {
 	 * (DATA-010), so the tool must not run.
 	 */
 	pageArchive: PageArchive | null;
+	/**
+	 * The runner API's stored-stock-data search (ADR-0071). Null → the
+	 * `stocks.search_data` tool is not registered (tests, scripts without an API).
+	 */
+	stockData?: StockDataReader | null;
 	/** Wait that ends early when the run is aborted (politeness between page requests, GDELT spacing). */
 	sleep: (ms: number, signal: AbortSignal) => Promise<void>;
 }
@@ -76,6 +85,9 @@ export function createResearchTools(deps: ResearchToolDeps): readonly ToolDefini
 			jpMarginBalance: unconfiguredJpMarginBalanceSource,
 			hasher: deps.hasher,
 		}),
+		...(deps.stockData === undefined || deps.stockData === null
+			? []
+			: createStockDataTools({ reader: deps.stockData, hasher: deps.hasher })),
 		...(deps.pageArchive === null
 			? []
 			: createWebTools(

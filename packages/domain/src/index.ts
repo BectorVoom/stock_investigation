@@ -43,6 +43,7 @@ export * from "./upstream.ts";
 export * from "./url.ts";
 export * from "./watchlist/limits.ts";
 export * from "./watchlist/lists.ts";
+export * from "./watchlist/stockDataRetrieval.ts";
 export * from "./watchlist/stockId.ts";
 export * from "./watchlist/stockSearch.ts";
 export * from "./watchlist/themeSearch.ts";

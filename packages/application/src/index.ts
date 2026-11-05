@@ -32,6 +32,7 @@ export * from "./runnerJobs.ts";
 export * from "./runView.ts";
 export * from "./scheduledTasks.ts";
 export * from "./sources.ts";
+export * from "./stockDataSearch.ts";
 export * from "./stockDirectory.ts";
 export * from "./stockPages.ts";
 export * from "./stockPrices.ts";

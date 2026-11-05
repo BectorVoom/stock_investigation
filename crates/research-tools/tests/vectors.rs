@@ -264,6 +264,7 @@ async fn transcript(value: Value) {
 		let clock = times.clone();
 		let context = ToolContext {
 			run_id: "run_test".into(),
+			lease_generation: 1,
 			cancel,
 			now_iso: Arc::new(move || {
 				clock

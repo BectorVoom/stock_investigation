@@ -386,6 +386,12 @@ fails is paused for a while and a successful answer is reused for 15 minutes
 outage pause and the cache: [Tavily Search](external-apis/apis/tavily-search.md),
 [GDELT DOC 2.0](external-apis/apis/gdelt-doc.md).
 
+`stocks.search_data` (ADR-0071) reads the app's own stored stock data —
+listing, profile, AI summary, overview, business text, financial statements,
+earnings dates, closes — through the runner API, so it needs no key and no
+web access and is always offered. It answers with ranked passages; the
+sourced ones are evidence the answer can cite.
+
 - **Where the files are:** `data/pages/` (or wherever `RUNNER_PAGES_DIR` points). File names carry the retrieval date, the host and a hash of the URL; each file's front matter records the requested and final URLs, the title, the retrieval time and a checksum of the Markdown.
 - **How to turn web access off:** uncheck "Allow the agent to open public web pages" in Settings → AI agent and save — the request then says `"off"`, the tool is not even advertised to the model, and without `RUNNER_PAGES_DIR` it is not registered at all.
 - **How to delete them:** delete the files (or the whole directory; it is recreated on the next save). They are outside the database, so workspace export/import and database backup copies do not include them — but a directory copy of `data/` does.
