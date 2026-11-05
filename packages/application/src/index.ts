@@ -35,6 +35,7 @@ export * from "./sources.ts";
 export * from "./stockDirectory.ts";
 export * from "./stockPages.ts";
 export * from "./stockPrices.ts";
+export * from "./stockResearch.ts";
 export * from "./syncJobKinds.ts";
 export * from "./watchlist.ts";
 export * from "./workspaceCommands.ts";

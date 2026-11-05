@@ -128,7 +128,12 @@ function archiveAndInstall(repoRoot: string, root: string): PristineCopy {
 		"./data-dev",
 		"./node_modules",
 		"./.git",
+		"./.codegraph",
+		"./formal/.lake",
+		"./scripts/poc/companyDescription/output",
+		"./.env",
 		"./test-results",
+		"./test-results-real",
 		"./.wrangler",
 		// Rust build output is GBs: the copy builds into the SAME shared
 		// RESEARCH_CARGO_TARGET_DIR instead (see `suiteRunnerSettings`), so

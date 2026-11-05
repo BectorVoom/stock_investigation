@@ -27,3 +27,5 @@ import ResearchFormal.SyncDays
 import ResearchFormal.PeriodChange
 
 import ResearchFormal.SecIdentity
+
+import ResearchFormal.ResearchRetrieval

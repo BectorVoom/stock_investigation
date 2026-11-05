@@ -1,0 +1,1326 @@
+{
+	"schema": "stockResearchQuery",
+	"cases": [
+		{
+			"input": "{\"query\":\"solar\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"solar\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"solar\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"query"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"WRONG-VALUE\"}",
+			"valid": true,
+			"output": "{\"query\":\"WRONG-VALUE\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"SOLAR\"}",
+			"valid": true,
+			"output": "{\"query\":\"SOLAR\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"solar\\u0000\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\\u0000\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"\\tsolar\\t\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"\\nsolar\\n\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"\\u000bsolar\\u000b\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"\\fsolar\\f\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"\\rsolar\\r\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\" solar \"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\" solar \"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\" solar \"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\" solar \"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\" solar \"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\" solar \"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\" solar \"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\" solar \"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\" solar \"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"　solar　\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"﻿solar﻿\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"solar\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"​solar​\"}",
+			"valid": true,
+			"output": "{\"query\":\"​solar​\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"᠎solar᠎\"}",
+			"valid": true,
+			"output": "{\"query\":\"᠎solar᠎\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"solaraaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": true,
+			"output": "{\"query\":\"solaraaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"solaraaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"query"
+					],
+					"message": "Too big: expected string to have <=128 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"solarééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": true,
+			"output": "{\"query\":\"solarééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"solaréééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"query"
+					],
+					"message": "Too big: expected string to have <=128 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"solar😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": true,
+			"output": "{\"query\":\"solar😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"solar😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"query"
+					],
+					"message": "Too big: expected string to have <=128 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"s\"}",
+			"valid": true,
+			"output": "{\"query\":\"s\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":null,\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":1,\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":[\"x\"],\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":{\"length\":1},\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"query"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"\",\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"query"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"WRONG-VALUE\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"WRONG-VALUE\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\\u0000\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\\u0000\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"\\t太陽光 蓄電池\\t\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"\\n太陽光 蓄電池\\n\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"\\u000b太陽光 蓄電池\\u000b\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"\\f太陽光 蓄電池\\f\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"\\r太陽光 蓄電池\\r\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\" 太陽光 蓄電池 \",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\" 太陽光 蓄電池 \",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\" 太陽光 蓄電池 \",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\" 太陽光 蓄電池 \",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\" 太陽光 蓄電池 \",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\" 太陽光 蓄電池 \",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\" 太陽光 蓄電池 \",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\" 太陽光 蓄電池 \",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\" 太陽光 蓄電池 \",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"　太陽光 蓄電池　\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"﻿太陽光 蓄電池﻿\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"​太陽光 蓄電池​\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"​太陽光 蓄電池​\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"᠎太陽光 蓄電池᠎\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"᠎太陽光 蓄電池᠎\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"query"
+					],
+					"message": "Too big: expected string to have <=128 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"query"
+					],
+					"message": "Too big: expected string to have <=128 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"query"
+					],
+					"message": "Too big: expected string to have <=128 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太\",\"kind\":\"company\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太\",\"kind\":\"company\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":null,\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":1,\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":[\"x\"],\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":{\"length\":1},\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"WRONG-VALUE\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"COMPANY\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\\u0000\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"\\tcompany\\t\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"\\ncompany\\n\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"\\u000bcompany\\u000b\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"\\fcompany\\f\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"\\rcompany\\r\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\" company \",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\" company \",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\" company \",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\" company \",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\" company \",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\" company \",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\" company \",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\" company \",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\" company \",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"　company　\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"﻿company﻿\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"​company​\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"᠎company᠎\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"companya\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"companyé\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company😀\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"compan\",\"limit\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"company\"|\"financials\"|\"news\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"financials\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"financials\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"news\",\"limit\":3}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"news\",\"limit\":3}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"limit"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":\"3\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"limit"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"limit"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\"}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":6}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":-1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"limit"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"limit"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":1}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":1}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"limit"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":1.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"limit"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":4}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":4}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":2}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":2}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":3.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"limit"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":9007199254740991}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"limit"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"limit"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"limit"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":-9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"limit"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"limit"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":1e+21}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"limit"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"limit"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":-1e-7}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"limit"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":12}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":12}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":13}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"limit"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":-0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"limit"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"limit"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":-1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"limit"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":1.0}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":1}"
+		},
+		{
+			"input": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":2e0}",
+			"valid": true,
+			"output": "{\"query\":\"太陽光 蓄電池\",\"kind\":\"company\",\"limit\":2}"
+		},
+		{
+			"input": "{\"query\":\"a b c d e f g h i\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"query"
+					],
+					"message": "Use at most eight search terms."
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"solar\",\"ownerId\":\"victim\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"ownerId\""
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"solar\",\"limit\":0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"limit"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"query\":\"solar\",\"limit\":13}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"limit"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		}
+	]
+}

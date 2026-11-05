@@ -379,3 +379,50 @@ Implemented [ADR-0059](adr/0059-japanese-statements-from-jquants.md) (owner's re
 Limits (ADR-0059 Consequences): Japanese statements cover about the last two fiscal years, about 12 weeks behind, from earnings summaries rather than the audited annual securities report; gross profit, total liabilities and capital expenditures are "Not reported" and free cash flow "Cannot be derived" for Japanese companies; Japanese stocks have no business description. Migration 0027 deletes the stored EDINET filings, facts, values and descriptions of Japanese companies (they cannot be rebuilt from J-Quants).
 
 Not verified live yet: the real-environment specs (`equitySyncReal`, `watchlistDataReal`) now expect J-Quants with `JQUANTS_API_KEY` and `FINANCIAL_SOURCE_NOT_CONFIGURED` for Japanese companies without it; the J-Quants answers the code is built on were captured live on 2026-11-02 ([J-Quants](external-apis/apis/jquants.md)).
+
+### 2026-11-05 — Stored stock retrieval (`stocks.search`, ADR-0071)
+
+Implemented in both runners: owner- and live-lease-scoped lexical retrieval over stored company descriptions/AI context, current annual financial projections for all stored fiscal years, and news. Source-backed passages enter the existing evidence/checksum/citation pipeline; generated company descriptions stay labelled AI context. No external provider calls, embeddings, keys, schema changes or operational data writes were added.
+
+Verification:
+
+- New SQLite tests pass against the canonical schema and migration-built schema; the new API tests pass in Workers/local D1 and node:sqlite. The real-source data path is not implied by the synthetic fixtures.
+- Shared contract mutation vectors pass in Rust; five tool-output vectors match TypeScript through the Rust HTTP client, including AI context, retention and multibyte output bounds. The TypeScript job execution regression completes from stored evidence and checks the injected run id/generation. Cancelled, expired, wrong-owner, wrong-credential and stale-generation reads are refused.
+- Lean proofs and exported round-robin conformance vectors pass. Typecheck, Biome, production build/dry-run, workspace Clippy and Rust workspace tests pass. Rust outgoing golden payloads were regenerated because the new tool changes prompt byte usage.
+- The first full TypeScript suite reported 8,115 passing tests and five failures: a stock-directory timeout, an import cycle, SQL conventions and two registry-fault regressions. The implementation defects were fixed; all five failures pass in focused reruns, including the stock-directory timeout. The full suite has not been rerun after those fixes.
+- The final `bun run bench` passes all budgets. The new 20,000-news-row retrieval case measured 0.924 ms locally (40 ms budget, broad matching query). This is not a measurement of a full-market financial corpus or D1 latency. An earlier benchmark run under simultaneous test/build load exceeded an existing history-write budget; the completed subsequent run passed.
+- Real environment: `RUN_LIVE_AGENT=claude-code RESEARCH_RUNNER=node bunx playwright test --config tests/real/playwright.config.ts tests/real/live.spec.ts -g 'fresh state:|stored stock retrieval'`, Chrome, real `bun run dev`, throwaway fresh database, real network, subscription CLI backend. **Incomplete:** source subscription did not finish: the EIA subscription was still absent after 45 seconds, before the first question was sent. The new retrieval question was consequently not run; no live-agent retrieval/citation success is claimed. No model turn or paid API was reached. Trace: `test-results-real/live-live-positive-path-th-4ca9b-save-subscribe-ask-complete/trace.zip` (local ignored artifact). Earlier attempts encountered the same subscription prerequisite and a too-large pristine-copy archive; the archive now excludes local PoC output, index/build caches, operational `.env` and real-test output. The upgraded-settings live scenario and Rust live-backend scenario remain unverified for this change.
+
+Known limits: literal substring matching rather than semantic relevance, no substring index (owner-range scans for rare queries), no raw as-filed revision retrieval, no verification of AI-only company context. Restart updated server and runner together; no migration or embedding backfill.
+
+### 2026-11-05 — Stored retrieval end-to-end follow-up
+
+The focused `tests/real/stockResearch.live.spec.ts` now exercises the actual `bun run dev` launcher, actual local D1, Chrome, the real Codex subscription CLI, and the browser's Settings → Chat → sourced answer flow. It searches company descriptions, financial statements and news, opens a source card, reloads the answer, then restarts the launcher with prior request history but no saved agent settings and sends again. Public web access is disabled in the fresh case, and the assertions require that every executed research tool is `stocks.search`. All records are explicitly **synthetic stored fixtures**; this verifies retrieval and publication, not SEC/J-Quants/feed ingestion or real-company financial correctness. The CLI used its configured default model; `providerModel` was not reported, so no specific model name is claimed.
+
+Final batch (main working tree, isolated throwaway directories and test ports):
+
+| Runner | Scenario | Outcome | Run id |
+|---|---|---|---|
+| Rust | Fresh settings selected and saved in UI | PASS: 3 tool calls, 3 evidence items, 3 supported claims; source card and reload pass | `run_296b1d24fa2495439b9a7edd` |
+| Rust | Restart, previous run present, saved settings deleted | PASS: same assertions | `run_ead9e2718c0d51467d7e9d8a` |
+| TypeScript (`node`) | Fresh settings selected and saved in UI | PASS: same assertions | `run_062f9385aaaed2ebe35b71d1` |
+| TypeScript (`node`) | Restart, previous run present, saved settings deleted | PASS: same assertions | `run_4fef58958160d2eb544d4e9b` |
+
+Commands (each ran two tests; Rust 3.8 minutes, Node 2.7 minutes):
+
+```sh
+RUN_LIVE_AGENT=codex RESEARCH_RUNNER=rust bunx playwright test --config tests/real/playwright.config.ts tests/real/stockResearch.live.spec.ts --output=test-results-real/stock-rag-rust
+RUN_LIVE_AGENT=codex RESEARCH_RUNNER=node bunx playwright test --config tests/real/playwright.config.ts tests/real/stockResearch.live.spec.ts --output=test-results-real/stock-rag-node
+```
+
+Fixes made from the real runs:
+
+- `stocks.search` had shown publication dates to the model but omitted them from the verifier's retrieved text. A real news-date claim lost its quote and number support. Tool version **1.0.2** includes explicitly labelled stored source metadata in the same verifiable text shown to the model. The metadata is identified as stored metadata, not a publisher quotation. Plain passage text follows a JSON reference header to avoid nested JSON escaping when copying quotes. Original stored excerpts and retention rules remain intact. A regression test sends a publication-date claim through the deterministic verifier; shared tool vectors check Rust/TypeScript parity.
+- The synthetic available financial value had incorrectly retained the schema's default `reported_value_count = 0`. The fixture now states one reported value, and its SQLite regression checks that count.
+- Test navigation now creates/awaits the actual chat route after visiting Settings. Assertions check the visible assistant answer and citation controls; the completed-run marker is attached but intentionally hidden inside collapsed progress. The restart test can establish prior request history through the supported API when run alone or after a Playwright worker restart; that setup request is cancelled and no fabricated answer is inserted.
+
+Additional checks after the tool change: targeted TypeScript tool/job tests (28 tests), SQLite + Workers/D1/API fixture tests (14 tests), Rust runner/tool tests, Rust outgoing golden payloads, Clippy, Biome, typecheck, runner bundle and conformance vectors pass. No domain algorithm or Lean model changed in this follow-up.
+
+**Unresolved reliability findings (the final green batch does not erase these):** earlier real Codex runs on both runners also executed all three retrieval calls but published a completed report with zero claims; other runs downgraded a retrieved fact through `QUOTE_NOT_FOUND` or `NOT_INDEPENDENTLY_VERIFIED`. For example Rust `run_9c7cd85315368a7947005495` completed with zero claims, and restart run `run_e7d206c4ac6c6c321733108b` left its financial claim not independently verified. The assertions failed in those runs; no test retry setting or verification rule was relaxed. This remains a research generation/verification quality gap requiring a separate reproducible pipeline investigation/evaluation; it is not evidence of consistently reliable sourced answers. Claude Code also returned `PROVIDER_AUTH` on an actual turn despite its login probe reporting available; the successful batch used Codex, with no paid API fallback. The EIA-dependent broader live suite remains a separate unverified prerequisite from the prior record.
+
+The operational `data/`, `data-dev/` and port 8787 were not used as test targets. Successful test launchers and throwaway data were cleaned up; failed-run traces and logs remain under ignored test output/temporary paths.

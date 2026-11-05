@@ -1,8 +1,9 @@
-import type { ClaimedJob, CompleteJobRequest } from "@research/contracts";
-import { EMPTY_USAGE } from "@research/domain";
+import type { ClaimedJob, CompleteJobRequest, StockResearchRequest } from "@research/contracts";
+import { EMPTY_USAGE, ok } from "@research/domain";
 import type { EventLogger, LogFields } from "@research/effects";
 import { silentEventLogger } from "@research/effects";
 import { describe, expect, it } from "vitest";
+import { analysis, VERDICT_SUPPORTED } from "../../../packages/application/test/support.ts";
 import { executeJob, runFinishedFields, toCompletion } from "../src/jobExecution.ts";
 import {
 	apiFailure,
@@ -25,6 +26,64 @@ function stateSequence(
 }
 
 describe("job execution under a lease", () => {
+	it("binds stocks.search to this research lease and publishes its stored evidence", async () => {
+		const { api, calls } = createFakeApi();
+		const searches: { runId: string; request: StockResearchRequest }[] = [];
+		const harness = createDeps(
+			{
+				...api,
+				stockSearch: async (runId, request) => {
+					searches.push({ runId, request });
+					return ok({
+						hits: [
+							{
+								kind: "news",
+								recordId: "article_stored",
+								title: "Grid storage orders rise",
+								text: "Orders for grid storage reached 100 GWh in 2026.",
+								sourceUrl: "https://news.example.org/articles/grid-storage",
+								publisher: "Synthetic Wire",
+								publishedAt: "2026-10-10T00:00:00.000Z",
+								retrievedAt: "2026-10-11T00:00:00.000Z",
+								effectiveAt: null,
+								sourceClass: "news",
+								retainQuotes: true,
+								aiGenerated: false,
+							},
+						],
+						truncated: false,
+					});
+				},
+			},
+			{
+				replies: [
+					JSON.stringify({
+						toolCalls: [{ toolId: "stocks.search", args: { query: "grid storage", kind: "news" } }],
+						done: true,
+					}),
+					analysis(),
+					VERDICT_SUPPORTED,
+				],
+			},
+		);
+		await executeJob(RESEARCH_JOB, harness.deps, never);
+		expect(searches).toEqual([
+			{
+				runId: RESEARCH_JOB.runId,
+				request: {
+					query: "grid storage",
+					kind: "news",
+					limit: 6,
+					leaseGeneration: RESEARCH_JOB.leaseGeneration,
+				},
+			},
+		]);
+		expect(calls.completions[0]).toMatchObject({
+			outcome: "completed",
+			bundle: { evidence: [{ sourceUrl: "https://news.example.org/articles/grid-storage" }] },
+		});
+		expect(harness.tools.executed).toEqual([]);
+	});
 	it("reports ordered progress, completes exactly once and discards its scratch directory", async () => {
 		const { api, calls } = createFakeApi();
 		const harness = createDeps(api);

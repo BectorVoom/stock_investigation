@@ -61,5 +61,7 @@
 	"stockHistoryResult",
 	"companySummary",
 	"companySummaryFacts",
-	"equityBusinessDescription"
+	"equityBusinessDescription",
+	"stockResearchQuery",
+	"stockResearchResponse"
 ]

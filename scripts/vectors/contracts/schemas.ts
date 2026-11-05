@@ -2170,4 +2170,41 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		baselines: [secDescription, secNotFound],
 		extra: BUSINESS_DESCRIPTION_EDGES,
 	},
+	{
+		name: "stockResearchQuery",
+		schema: contracts.stockResearchQuerySchema,
+		baselines: [{ query: "solar" }, { query: "太陽光 蓄電池", kind: "company", limit: 3 }],
+		extra: [
+			'{"query":"a b c d e f g h i"}',
+			'{"query":"solar","ownerId":"victim"}',
+			'{"query":"solar","limit":0}',
+			'{"query":"solar","limit":13}',
+		],
+	},
+	{
+		name: "stockResearchResponse",
+		schema: contracts.stockResearchResponseSchema,
+		baselines: [
+			{ hits: [], truncated: false },
+			{
+				hits: [
+					{
+						kind: "financials",
+						recordId: "eqc:2026:revenue",
+						title: "Synthetic Solar revenue",
+						text: "value=12345678901234567890.12; currency=USD",
+						sourceUrl: "https://filings.example.org/solar",
+						publisher: "SEC EDGAR",
+						publishedAt: "2026-10-01T00:00:00Z",
+						retrievedAt: "2026-11-05T00:00:00Z",
+						effectiveAt: "2026-09-30T00:00:00Z",
+						sourceClass: "regulatory-filing",
+						retainQuotes: true,
+						aiGenerated: false,
+					},
+				],
+				truncated: true,
+			},
+		],
+	},
 ];

@@ -1126,7 +1126,17 @@ async fn dispatch(
 				},
 				ResearchPipelineDeps {
 					agent: Arc::clone(agent),
-					tools: deps.tools.clone(),
+					tools: {
+						let mut tools = deps.tools.list().to_vec();
+						tools.push(Arc::new(crate::stock_research::StockResearchTool::new(
+							Arc::clone(&deps.api),
+							research.lease.run_id.clone(),
+							core.lease_generation,
+							Arc::clone(&deps.ingest.hasher),
+						)));
+						research_agent_core::authorize::ToolRegistry::new(tools)
+							.map_err(|_| Fault::new(fault_names::ERROR))?
+					},
 					clock: Arc::clone(&deps.clock),
 					reporter: Arc::clone(reporter) as Arc<dyn PipelineReporter>,
 					new_fence_token: Arc::clone(&deps.new_fence_token),

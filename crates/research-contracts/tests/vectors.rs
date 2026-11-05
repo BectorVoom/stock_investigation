@@ -41,6 +41,8 @@ macro_rules! registry {
 fn runners() -> BTreeMap<&'static str, Runner> {
 	use research_contracts::*;
 	registry! {
+		"stockResearchQuery" => stock_research::StockResearchQuery,
+		"stockResearchResponse" => stock_research::StockResearchResponse,
 		"agentDescriptor" => agent::AgentDescriptor,
 		"agentRequest" => agent::AgentRequest,
 		"agentEvent" => agent::AgentEvent,

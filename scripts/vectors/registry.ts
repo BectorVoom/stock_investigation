@@ -25,10 +25,12 @@ import { pipelineExporter } from "./pipeline.ts";
 import { providersExporter } from "./providers.ts";
 import { runnerExporter } from "./runner.ts";
 import type { VectorExporter } from "./shared.ts";
+import { stockResearchExporter } from "./stockResearch.ts";
 import { toolsExporter } from "./tools.ts";
 import { widgetGridExporter } from "./widgetGrid.ts";
 
 export const exporters: readonly VectorExporter[] = [
+	stockResearchExporter,
 	jsExporter,
 	domainNewsExporter,
 	dateExporter,

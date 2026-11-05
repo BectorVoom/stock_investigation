@@ -77,6 +77,8 @@ So a change to the TypeScript that departs from the model fails step 2, and a ch
 
  - The period-change model fixes which two observations are compared; the subtraction and the percent (floating point, a zero base giving a null percent, non-finite values giving `NON_FINITE`) and ISO parsing are covered by unit tests (`packages/domain/test/market/changes.test.ts`). The code compares the mark with ISO dates as text, the model with day numbers: the same order for valid dates.
 
+The stored-stock retrieval tool's `ResearchRetrieval.lean` mirrors `packages/domain/src/researchRetrieval.ts`: round-robin selection stays within its limit, zero returns no passages, and every returned value belongs to an input corpus. `researchRetrieval` conformance vectors cover empty and uneven corpora and limits 0–13. SQL matching, row decoding and source authorization are integration-tested rather than formally modelled.
+
 ## Running
 
 ```sh

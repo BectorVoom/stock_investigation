@@ -19,6 +19,7 @@ pub mod runner_loop;
 pub mod runtime;
 pub mod scratch;
 pub mod startup;
+mod stock_research;
 
 #[cfg(test)]
 mod job_tests;

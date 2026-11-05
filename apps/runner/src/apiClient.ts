@@ -14,6 +14,9 @@ import {
 	RUNNER_API_PREFIX,
 	type RunnerEventsRequest,
 	releaseJobResponseSchema,
+	type StockResearchRequest,
+	type StockResearchResponse,
+	stockResearchResponseSchema,
 } from "@research/contracts";
 import { err, ok, type Result, thrownName } from "@research/domain";
 import { z } from "zod";
@@ -30,6 +33,11 @@ export type RunnerApiResult<T> = Result<T, RunnerApiError>;
 
 /** The runner's view of the Worker. A port, so job execution is testable without HTTP. */
 export interface RunnerApi {
+	stockSearch?(
+		runId: string,
+		request: StockResearchRequest,
+		signal?: AbortSignal,
+	): Promise<RunnerApiResult<StockResearchResponse>>;
 	claim(request: ClaimJobRequest): Promise<RunnerApiResult<ClaimJobResponse>>;
 	heartbeat(runId: string, leaseGeneration: number): Promise<RunnerApiResult<HeartbeatResponse>>;
 	events(
@@ -87,6 +95,7 @@ export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi {
 		body: unknown,
 		schema: z.ZodType<T>,
 		attemptTimeoutMs = timeoutMs,
+		signal?: AbortSignal,
 	): Promise<RunnerApiResult<T>> {
 		let response: Response;
 		try {
@@ -94,7 +103,10 @@ export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi {
 				method: "POST",
 				headers,
 				body: JSON.stringify(body),
-				signal: AbortSignal.timeout(attemptTimeoutMs),
+				signal:
+					signal === undefined
+						? AbortSignal.timeout(attemptTimeoutMs)
+						: AbortSignal.any([signal, AbortSignal.timeout(attemptTimeoutMs)]),
 				redirect: "error",
 			});
 		} catch (error) {
@@ -137,16 +149,28 @@ export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi {
 		path: string,
 		body: unknown,
 		schema: z.ZodType<T>,
+		signal?: AbortSignal,
 	): Promise<RunnerApiResult<T>> {
-		let result = await attempt(path, body, schema);
-		for (let tries = 1; tries < maxAttempts && !result.ok && result.error.transient; tries += 1) {
+		let result = await attempt(path, body, schema, timeoutMs, signal);
+		for (
+			let tries = 1;
+			tries < maxAttempts && !result.ok && result.error.transient && !signal?.aborted;
+			tries += 1
+		) {
 			await options.sleep(500 * 2 ** (tries - 1));
-			result = await attempt(path, body, schema);
+			result = await attempt(path, body, schema, timeoutMs, signal);
 		}
 		return result;
 	}
 
 	return {
+		stockSearch: (runId, request, signal) =>
+			post(
+				`/jobs/${encodeURIComponent(runId)}/stock-search`,
+				request,
+				stockResearchResponseSchema,
+				signal,
+			),
 		claim: (request) => post("/jobs/claim", request, claimJobResponseSchema),
 		heartbeat: (runId, leaseGeneration) =>
 			post(`/jobs/${runId}/heartbeat`, { leaseGeneration }, heartbeatResponseSchema),

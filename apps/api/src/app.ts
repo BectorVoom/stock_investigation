@@ -48,6 +48,8 @@ import {
 	stockDirectorySearchQuerySchema,
 	stockDirectorySearchResponseSchema,
 	stockDirectoryStatusResponseSchema,
+	stockResearchRequestSchema,
+	stockResearchResponseSchema,
 	taskResultResponseSchema,
 	uiCommandSchema,
 	undoNotebookRequestSchema,
@@ -305,6 +307,21 @@ export function createApp(options: AppOptions = {}) {
 		),
 	);
 
+	runner.post("/jobs/:id/stock-search", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const runId = yield* pathId(c, "id");
+				const body = yield* readJson(c, stockResearchRequestSchema);
+				const { leaseGeneration, ...query } = body;
+				const result = yield* useCase("runner.stock_search", () =>
+					c.var.services.stockResearch.search(c.var.runner, runId, leaseGeneration, query),
+				);
+				return c.json(stockResearchResponseSchema.parse(result));
+			}),
+		),
+	);
 	app.route("/api/v1/runner", runner);
 
 	/* ---------- Owner API: authenticated session + CSRF defence on every write ---------- */

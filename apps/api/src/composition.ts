@@ -28,6 +28,7 @@ import {
 	createSourceService,
 	createStockDirectoryService,
 	createStockPageService,
+	createStockResearchService,
 	createSyncCheckGate,
 	createWatchlistService,
 	createWorkspaceService,
@@ -214,6 +215,11 @@ export function createServices(
 	});
 	return {
 		authenticateOwner: overrides.ownerAuthenticator ?? ownerAuthenticatorFor(env),
+		stockResearch: createStockResearchService({
+			repository: persistence.stockResearch,
+			jobs: persistence.jobs,
+			clock,
+		}),
 		materials: persistence.materials,
 		runnerStatus: persistence.runnerStatus,
 		clock,

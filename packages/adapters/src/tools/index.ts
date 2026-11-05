@@ -21,6 +21,8 @@ import { createSearchTools } from "./searchTools.ts";
 import { createSecTools } from "./secTools.ts";
 import { createWebTools } from "./webTools.ts";
 
+export { createStockResearchTool } from "./stockResearch.ts";
+
 export interface ResearchToolDeps {
 	fetcher: SafeFetcher;
 	feedParser: FeedParser;

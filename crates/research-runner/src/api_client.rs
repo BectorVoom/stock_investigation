@@ -58,6 +58,19 @@ pub type RunnerApiResult<T> = Result<T, RunnerApiError>;
 /// without HTTP.
 #[async_trait]
 pub trait RunnerApi: Send + Sync {
+	/// Searches stored data for the caller's current research lease.
+	async fn stock_search(
+		&self,
+		_run_id: &str,
+		_lease_generation: u64,
+		_query: &research_contracts::stock_research::StockResearchQuery,
+	) -> RunnerApiResult<research_contracts::stock_research::StockResearchResponse> {
+		Err(RunnerApiError {
+			code: "NOT_CONFIGURED".to_owned(),
+			detail: "Stored retrieval is unavailable.".to_owned(),
+			transient: false,
+		})
+	}
 	/// `POST /jobs/claim`.
 	async fn claim(&self, request: &ClaimJobRequest) -> RunnerApiResult<ClaimJobResponse>;
 	/// `POST /jobs/{runId}/heartbeat`.
@@ -619,6 +632,28 @@ struct RenewRequest {
 
 #[async_trait]
 impl RunnerApi for HttpRunnerApi {
+	async fn stock_search(
+		&self,
+		run_id: &str,
+		lease_generation: u64,
+		query: &research_contracts::stock_research::StockResearchQuery,
+	) -> RunnerApiResult<research_contracts::stock_research::StockResearchResponse> {
+		#[derive(Serialize)]
+		#[serde(rename_all = "camelCase")]
+		struct SearchRequest<'a> {
+			#[serde(flatten)]
+			query: &'a research_contracts::stock_research::StockResearchQuery,
+			lease_generation: u64,
+		}
+		self.post(
+			&format!("/jobs/{run_id}/stock-search"),
+			&SearchRequest {
+				query,
+				lease_generation,
+			},
+		)
+		.await
+	}
 	async fn claim(&self, request: &ClaimJobRequest) -> RunnerApiResult<ClaimJobResponse> {
 		self.post("/jobs/claim", request).await
 	}

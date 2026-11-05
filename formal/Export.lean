@@ -1740,8 +1740,20 @@ def periodChangeVectors : List String := Id.run do
 
 end PeriodChangeVectors
 
+def retrievalVectors : List String := Id.run do
+  let mut out := []
+  for a in [[], [1], [1, 2, 3]] do
+    for b in [[], [4], [4, 5]] do
+      for c in [[], [6], [6, 7, 8, 9]] do
+        for limit in List.range 14 do
+          let groups := [a, b, c]
+          out := out ++ [jsonObj [("groups", jsonArr (groups.map jsonNatList)),
+            ("limit", jsonNat limit), ("result", jsonNatList (Research.Retrieval.interleave groups limit))]]
+  return out
+
 def main : IO Unit := do
   IO.println "{"
+  IO.println ("\"researchRetrieval\": " ++ jsonArr retrievalVectors ++ ",")
   IO.println ("\"materialSeries\": " ++ jsonArr materialSeriesVectors ++ ",")
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")
   IO.println ("\"states\": " ++ jsonArr (JobState.all.map (jsonStr ∘ JobState.name)) ++ ",")

@@ -8,6 +8,7 @@ import {
 	type StockPricesJob,
 	syncStockPrices,
 } from "@research/adapters/finance";
+import { createStockResearchTool } from "@research/adapters/tools";
 import type { AgentRegistry, ToolRegistry } from "@research/agent-core";
 import {
 	type Clock,
@@ -82,6 +83,32 @@ import {
 	type PacerKey,
 	STOCK_PRICE_RATE_LIMIT_HOLD_MS,
 } from "./marketPacing.ts";
+
+/** Overlay the run-bound tool without replacing the injected registry's lookup behavior. */
+function researchToolsForJob(
+	deps: JobExecutionDeps,
+	job: Extract<ClaimedJob, { kind: "research" }>,
+): ToolRegistry {
+	const stored = createStockResearchTool({
+		hasher: deps.feed.hasher,
+		search: (query, signal) => {
+			const search = deps.api.stockSearch;
+			if (search === undefined)
+				return Promise.resolve(
+					err({
+						code: "NOT_CONFIGURED",
+						detail: "Stored retrieval is unavailable.",
+						transient: false,
+					}),
+				);
+			return search(job.runId, { ...query, leaseGeneration: job.leaseGeneration }, signal);
+		},
+	});
+	return {
+		get: (id) => (id === stored.toolId ? stored : deps.tools.get(id)),
+		list: () => [...deps.tools.list(), stored],
+	};
+}
 
 /** Per-job scratch directories (AGT-004): created empty, removed when the job ends. */
 export interface ScratchDirectories {
@@ -415,7 +442,7 @@ export async function executeJob(
 							},
 							{
 								agent,
-								tools: deps.tools,
+								tools: researchToolsForJob(deps, job),
 								clock: deps.clock,
 								reporter,
 								newFenceToken: deps.newFenceToken,

@@ -1,3 +1,4 @@
+import { createStockResearchRepository } from "../packages/adapters/src/sql/stockResearch.ts";
 /**
  * Micro-benchmarks for the hot paths that run inside the Worker's CPU budget
  * (10 ms per request on Workers Free) or on every poll. Performance work in
@@ -1974,6 +1975,15 @@ const cases: Case[] = [
 		name: `stock news mention filter: one request's worst case (${STOCK_LIMITS.newsMaxBatches} batches, ${NEWS_BENCH_REQUEST.length} candidates)`,
 		budgetMs: 2,
 		run: () => mentionsIn(NEWS_BENCH_REQUEST),
+	},
+	{
+		name: "stocks.search across stored corpora with 20,000 news articles (node:sqlite)",
+		budgetMs: 40,
+		run: () =>
+			createStockResearchRepository(NEWS_BENCH_DB).search(NEWS_BENCH_OWNER, {
+				query: "growers",
+				limit: 6,
+			}),
 	},
 	{
 		name: "stock news request: digest + 5 candidate batches over 20,000 stored articles (node:sqlite)",

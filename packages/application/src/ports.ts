@@ -2113,7 +2113,15 @@ export interface ThemeSearchRow {
 	readonly themes: readonly ThemeName[];
 }
 
+export interface StockResearchRepository {
+	search(
+		ownerId: string,
+		query: import("@research/contracts").StockResearchQuery,
+	): Promise<import("@research/contracts").StockResearchResponse>;
+}
+
 export interface Persistence {
+	readonly stockResearch: StockResearchRepository;
 	readonly materials: import("./materialPorts.ts").MaterialRepository;
 	readonly sources: SourceRepository;
 	readonly articles: ArticleRepository;

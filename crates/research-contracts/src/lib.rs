@@ -29,6 +29,7 @@ pub mod records;
 pub mod stock_company_profile;
 pub mod stock_directory;
 pub mod stock_prices;
+pub mod stock_research;
 pub mod ui;
 pub mod watchlist;
 pub mod widget_rules;

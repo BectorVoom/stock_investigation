@@ -3,7 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
-import { agentsResponseSchema } from "@research/contracts";
+import {
+	agentsResponseSchema,
+	articleListResponseSchema,
+	researchRunListResponseSchema,
+} from "@research/contracts";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
 import {
 	idempotencyKey,
@@ -412,7 +416,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await expect(eia).toBeVisible();
 		await eia.getByRole("button", { name: "Subscribe to EIA Today in Energy" }).click();
 		const subscribed = page.getByRole("region", { name: "Subscribed sources" });
-		await expect(subscribed).toContainText("EIA Today in Energy");
+		await expect(subscribed).toContainText("EIA Today in Energy", { timeout: 45_000 });
 
 		// A question asked; the run completes with a claim and a source link.
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
@@ -462,17 +466,60 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await page.goto(chatUrl);
 	});
 
+	test("stored stock retrieval uses stocks.search and cites a stored real-news article", async () => {
+		test.setTimeout(900_000);
+		const articles = articleListResponseSchema.parse(await apiJson("GET", "/api/v1/articles"));
+		const article = articles.articles[0];
+		if (article === undefined) throw new Error("The real feed produced no stored article.");
+		const term = article.title.match(/[A-Za-z]{4,}/u)?.[0];
+		if (term === undefined) throw new Error("The stored headline has no searchable word.");
+		const page = activePage();
+		const composer = page.getByRole("form", { name: "Research composer" });
+		const thread = page.getByRole("list", { name: "Messages" });
+		const completedBefore = await thread.locator('[data-run-state="completed"]').count();
+		await composer
+			.getByRole("textbox", { name: "Question" })
+			.fill(
+				`Use stocks.search with query "${term}" and kind "news" to retrieve stored news. Report one factual statement supported by the returned passage, cite its evidence, and state its publication date. Use only stored retrieval; do not fetch feeds, web pages or live search.`,
+			);
+		await composer.getByRole("button", { name: "Send question" }).click();
+		try {
+			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(
+				completedBefore + 1,
+				{ timeout: 720_000 },
+			);
+		} catch (error) {
+			await dumpDiagnostics("stored stock retrieval", dataDirA);
+			throw error;
+		}
+		const runs = researchRunListResponseSchema.parse(await apiJson("GET", "/api/v1/research-runs"));
+		const searched = runs.runs.find((run) => run.request?.question.startsWith("Use stocks.search"));
+		if (searched === undefined) throw new Error("Stored retrieval run was not listed.");
+		const detail = await apiJson("GET", `/api/v1/research-runs/${stringField(searched, "runId")}`);
+		expect(JSON.stringify(detail)).toContain("stocks.search: executed");
+		await expect(
+			thread.locator('[data-run-state="completed"]').last().locator("[data-citation-chip]").first(),
+		).toBeVisible();
+	});
+
 	test("a question naming a public page archives it as Markdown starting with its heading", async () => {
 		test.setTimeout(900_000);
 		const page = activePage();
 		try {
 			const composer = page.getByRole("form", { name: "Research composer" });
+			const completedBefore = await page
+				.getByRole("list", { name: "Messages" })
+				.locator('[data-run-state="completed"]')
+				.count();
 			await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_2);
 			await composer.getByRole("button", { name: "Send question" }).click();
 			const thread = page.getByRole("list", { name: "Messages" });
-			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(2, {
-				timeout: 720_000,
-			});
+			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(
+				completedBefore + 1,
+				{
+					timeout: 720_000,
+				},
+			);
 		} catch (error) {
 			await dumpDiagnostics("public-page question", dataDirA);
 			throw error;

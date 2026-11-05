@@ -31,6 +31,7 @@ export * from "./news/feed.ts";
 export * from "./news/ipClassification.ts";
 export * from "./news/stockMentions.ts";
 export * from "./news/urlPolicy.ts";
+export * from "./researchRetrieval.ts";
 export * from "./result.ts";
 export * from "./schedule/schedule.ts";
 export * from "./schedule/timeZone.ts";
