@@ -134,6 +134,18 @@ fn without_heading_marker(text: &str) -> &str {
 	}
 }
 
+fn is_about_heading(text: &str) -> bool {
+	let Some(rest) = text.strip_prefix("about ") else {
+		return false;
+	};
+	let rest = rest.strip_suffix('.').unwrap_or(rest);
+	(2..=61).contains(&utf16_len(rest))
+		&& rest.as_bytes().first().is_some_and(u8::is_ascii_lowercase)
+		&& rest
+			.chars()
+			.all(|c| c.is_ascii_lowercase() || matches!(c, ' ' | '&' | '’' | '\'' | '-'))
+}
+
 /// `/^\|[\s:|-]+\|$/`.
 fn is_table_separator_row(line: &str) -> bool {
 	line.strip_prefix('|')
@@ -170,11 +182,43 @@ fn word_ends(text: &str) -> bool {
 		.is_some_and(|character| character.is_ascii_alphanumeric() || character == '_')
 }
 
-/// `/^items?\s*1\.?(?:\s*(?:and|&)\s*2\.?)?\s*[.:\-–—]?\s*business\b/i`.
+/// `(?:part\s+i\s*[.,:\-–—]?\s*)?` at the start: "Part I." before an item
+/// heading (Expedia). When it matches, the text without it is tried; a text
+/// that starts with "part" can match no item heading otherwise.
+fn without_part_one(text: &str) -> &str {
+	strip_ascii_ci(text, "part")
+		.and_then(spaces1)
+		.and_then(|rest| strip_ascii_ci(rest, "i"))
+		.map(|rest| {
+			let rest = spaces(rest);
+			spaces(
+				rest.strip_prefix(&['.', ',', ':', '-', '–', '—'][..])
+					.unwrap_or(rest),
+			)
+		})
+		.unwrap_or(text)
+}
+
+/// `(?:description\s+of\s+(?:the\s+)?)?` before "business" ("Item 1.
+/// Description of Business", World Acceptance).
+fn without_description_of(text: &str) -> &str {
+	strip_ascii_ci(text, "description")
+		.and_then(spaces1)
+		.and_then(|rest| strip_ascii_ci(rest, "of"))
+		.and_then(spaces1)
+		.map(|rest| {
+			strip_ascii_ci(rest, "the")
+				.and_then(spaces1)
+				.unwrap_or(rest)
+		})
+		.unwrap_or(text)
+}
+
+/// `/^(?:part\s+i\s*[.,:\-–—]?\s*)?items?\s*1\.?(?:\s*(?:and|&)\s*2\.?)?\s*[.:\-–—|]?\s*(?:description\s+of\s+(?:the\s+)?)?business\b/i`.
 /// A "." taken after a number is never needed back: the punctuation that
 /// could take it instead is optional and followed by the same "business".
 fn is_start_heading(text: &str) -> bool {
-	let Some(rest) = strip_ascii_ci(text, "item") else {
+	let Some(rest) = strip_ascii_ci(without_part_one(text), "item") else {
 		return false;
 	};
 	let rest = rest.strip_prefix(&['s', 'S'][..]).unwrap_or(rest);
@@ -191,14 +235,14 @@ fn is_start_heading(text: &str) -> bool {
 	}
 	let rest = spaces(rest);
 	let rest = rest
-		.strip_prefix(&['.', ':', '-', '–', '—'][..])
+		.strip_prefix(&['.', ':', '-', '–', '—', '|'][..])
 		.unwrap_or(rest);
-	strip_ascii_ci(spaces(rest), "business").is_some_and(word_ends)
+	strip_ascii_ci(without_description_of(spaces(rest)), "business").is_some_and(word_ends)
 }
 
-/// `/^item\s*(?:1a|1b|1c|2|3)\b/i`.
+/// `/^(?:part\s+i\s*[.,:\-–—]?\s*)?item\s*(?:1a|1b|1c|2|3)\b/i`.
 fn is_end_heading(text: &str) -> bool {
-	let Some(rest) = strip_ascii_ci(text, "item") else {
+	let Some(rest) = strip_ascii_ci(without_part_one(text), "item") else {
 		return false;
 	};
 	let rest = spaces(rest);
@@ -325,6 +369,14 @@ fn is_split_start_title(text: &str) -> bool {
 	strip_ascii_ci(text, "business").is_some_and(|rest| rest.is_empty() || rest == ".")
 }
 
+/// `/^risk\s+factors\.?$/i`: Item 1A's title where a 10-K writes no item numbers.
+fn is_bare_end_title(text: &str) -> bool {
+	strip_ascii_ci(text, "risk")
+		.and_then(spaces1)
+		.and_then(|rest| strip_ascii_ci(rest, "factors"))
+		.is_some_and(|rest| rest.is_empty() || rest == ".")
+}
+
 /// `/^item\s*4\.?$/i`.
 fn is_bare_item_four(text: &str) -> bool {
 	strip_ascii_ci(text, "item")
@@ -384,7 +436,32 @@ fn split_blocks(markdown: &str) -> Vec<&str> {
 /// `secMarkdownBlocks`: the blocks of a converted primary document, in order.
 #[must_use]
 pub fn sec_markdown_blocks(markdown: &str) -> Vec<SecBlock> {
-	split_blocks(markdown).into_iter().map(sec_block).collect()
+	split_blocks(markdown)
+		.into_iter()
+		.map(sec_block)
+		.flat_map(|block| {
+			if !block.table {
+				if let Some((heading, body)) = block.text.split_once(". ") {
+					if heading.starts_with("ABOUT ")
+						&& is_about_heading(&heading.to_ascii_lowercase())
+						&& heading.chars().all(|c| !c.is_ascii_lowercase())
+					{
+						return vec![
+							SecBlock {
+								text: format!("{heading}."),
+								table: false,
+							},
+							SecBlock {
+								text: body.to_owned(),
+								table: false,
+							},
+						];
+					}
+				}
+			}
+			vec![block]
+		})
+		.collect()
 }
 
 /// `secSectionMark`: what a block is to the search for one section
@@ -417,7 +494,10 @@ pub fn sec_section_mark(text: &str, section: SecBusinessSection) -> SectionMark 
 
 /// `secSectionMarks`: every block's mark for one section — `sec_section_mark`,
 /// and in a 10-K a "Business" block right after a bare "Item 1." block also
-/// starts the section (the heading split in two).
+/// starts the section (the heading split in two). A 10-K with no start
+/// heading at all (item numbers only in its table of contents: Morgan
+/// Stanley, Cardinal Health) starts at a bare "Business" block and ends at a
+/// bare "Risk Factors" block, table rows aside.
 #[must_use]
 pub fn sec_section_marks(blocks: &[SecBlock], section: SecBusinessSection) -> Vec<SectionMark> {
 	let mut marks: Vec<SectionMark> = blocks
@@ -431,6 +511,49 @@ pub fn sec_section_marks(blocks: &[SecBlock], section: SecBusinessSection) -> Ve
 					if let Some(mark) = marks.get_mut(index + 1) {
 						*mark = SectionMark::Start;
 					}
+				}
+			}
+		}
+		if !blocks
+			.iter()
+			.zip(&marks)
+			.any(|(block, mark)| !block.table && *mark == SectionMark::Start)
+		{
+			let report_marks: Vec<SectionMark> = blocks
+				.iter()
+				.map(|block| {
+					if block.table {
+						return SectionMark::Other;
+					}
+					let lower = block.text.to_ascii_lowercase();
+					if lower == "our business"
+						|| lower == "business summary"
+						|| is_about_heading(&lower)
+					{
+						SectionMark::Start
+					} else if lower.starts_with("management’s discussion and analysis")
+						|| lower.starts_with("management's discussion and analysis")
+						|| lower.starts_with("risk factors")
+					{
+						SectionMark::End
+					} else {
+						SectionMark::Other
+					}
+				})
+				.collect();
+			if report_marks.contains(&SectionMark::Start) {
+				return report_marks;
+			}
+		}
+		if !marks.contains(&SectionMark::Start) {
+			for (block, mark) in blocks.iter().zip(marks.iter_mut()) {
+				if block.table {
+					continue;
+				}
+				if is_split_start_title(&block.text) {
+					*mark = SectionMark::Start;
+				} else if is_bare_end_title(&block.text) {
+					*mark = SectionMark::End;
 				}
 			}
 		}
@@ -454,6 +577,8 @@ fn is_furniture(block: &SecBlock, form: SecDescribedForm) -> bool {
 	match form {
 		SecDescribedForm::TenK => {
 			is_bare_item_one(text)
+				// A start heading repeated as a running page header ("ITEM 1 | Business", AIG).
+				|| (length <= MAX_START_CHARS && is_start_heading(text))
 				|| (length < MAX_FOOTER_CHARS && contains_ascii_ci(text, "form 10-k"))
 		}
 		SecDescribedForm::TwentyF => {
@@ -658,10 +783,94 @@ mod tests {
 			sec_business_blocks(&markdown, SecDescribedForm::TenK),
 			Some(vec!["Overview".to_owned(), body.to_owned()])
 		);
+		// A longer body after a lookalike is not read while the 10-K has an Item 1 heading.
+		let longer = [body, body, body].join(" ");
 		for lookalike in [["Item 1.", "Businesses"], ["Item 2.", "Business"]] {
-			let markdown = [lookalike[0], lookalike[1], body, "Item 2"].join("\n\n");
-			assert_eq!(sec_business_blocks(&markdown, SecDescribedForm::TenK), None);
+			let markdown = [
+				"Item 1. Business",
+				body,
+				"Item 1A",
+				lookalike[0],
+				lookalike[1],
+				longer.as_str(),
+				"Item 2",
+			]
+			.join("\n\n");
+			assert_eq!(
+				sec_business_blocks(&markdown, SecDescribedForm::TenK),
+				Some(vec![body.to_owned()])
+			);
 		}
+	}
+
+	#[test]
+	fn a_ten_k_with_item_numbers_only_in_its_contents_starts_at_a_bare_business() {
+		let body = "We are a global financial services firm.";
+		let risk = "Our results can be affected by many factors.";
+		let markdown = [
+			"| Table of Contents | Part | Item | Page |",
+			"| --- | --- | --- | --- |",
+			"| Business | I | 1 | 5 |",
+			"| Business |  |  |",
+			"Business",
+			"Overview",
+			body,
+			"Risk Factors",
+			risk,
+		]
+		.join("\n\n");
+		assert_eq!(
+			sec_business_blocks(&markdown, SecDescribedForm::TenK),
+			Some(vec!["Overview".to_owned(), body.to_owned()])
+		);
+		let with_item_one = [
+			"Item 1. Business",
+			risk,
+			"Item 1A",
+			"Business",
+			body,
+			"Risk Factors",
+		]
+		.join("\n\n");
+		assert_eq!(
+			sec_business_blocks(&with_item_one, SecDescribedForm::TenK),
+			Some(vec![risk.to_owned()])
+		);
+		let table_row = ["| Business |", body, "Risk Factors"].join("\n\n");
+		assert_eq!(
+			sec_business_blocks(&table_row, SecDescribedForm::TenK),
+			None
+		);
+	}
+
+	#[test]
+	fn item_one_after_part_one_with_a_pipe_or_as_description_of_business() {
+		let body = "We are a global financial services firm.";
+		let risk = "Our results can be affected by many factors.";
+		for heading in [
+			"Part I. Item 1. Business",
+			"ITEM 1 | Business",
+			"| Item 1. | Description of Business |",
+		] {
+			let markdown = [
+				heading,
+				body,
+				heading,
+				risk,
+				"Part I. Item 1A. Risk Factors",
+			]
+			.join("\n\n");
+			assert_eq!(
+				sec_business_blocks(&markdown, SecDescribedForm::TenK),
+				Some(vec![body.to_owned(), risk.to_owned()]),
+				"{heading}"
+			);
+		}
+		assert!(!is_start_heading("Part II. Item 1. Business"));
+		assert!(!is_start_heading("Item 1. Description of Properties"));
+		assert!(is_end_heading("Part I, Item 1A"));
+		assert!(is_bare_end_title("Risk  Factors."));
+		assert!(!is_bare_end_title("Risk Factors Summary"));
 	}
 
 	#[test]

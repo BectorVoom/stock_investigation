@@ -743,6 +743,7 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 			}
 
 			let cik = request.cik;
+			let primaryListing: true | undefined;
 			if (cik === null) {
 				const found = await directory.lookup(query.target.symbol, {
 					signal: query.signal,
@@ -765,6 +766,22 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 				if (found.value.issuer === null) {
 					return err({ code: "FINANCIAL_COMPANY_NOT_FOUND", upstreamStatus: null, requests });
 				}
+				if (found.value.issuer.ticker !== found.value.issuer.primaryTicker) {
+					return ok({
+						identity: {
+							sourceCompanyId: found.value.issuer.cik,
+							name: found.value.issuer.name,
+							fiscalYearEnd: null,
+							primaryListing: false,
+						},
+						filings: [],
+						more: false,
+						requests,
+						description: null,
+						descriptionUnread: null,
+					});
+				}
+				primaryListing = true;
 				cik = found.value.issuer.cik;
 			}
 
@@ -831,6 +848,7 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 			}
 			return ok({
 				...result,
+				identity: { ...result.identity, ...(primaryListing ? { primaryListing } : {}) },
 				requests,
 				description,
 				descriptionUnread,

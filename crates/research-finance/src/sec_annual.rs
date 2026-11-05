@@ -779,6 +779,7 @@ pub fn sec_sync_result(input: &SecSyncInput<'_>, caps: CompletionCaps) -> SecSyn
 	let fitted = fit_completion_caps(filings, caps);
 	SecSyncResult {
 		identity: EquitySyncIdentity {
+			primary_listing: None,
 			source_company_id: cik.to_owned(),
 			name: submissions.name.clone(),
 			fiscal_year_end: submissions.fiscal_year_end.clone(),
@@ -928,6 +929,7 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 			EquitySyncFailure::own(EquitySyncFailureCode::ParseFailed, gate.count())
 		};
 
+		let mut primary_listing = None;
 		let cik = match &request.cik {
 			Some(cik) => cik.clone(),
 			None => {
@@ -952,7 +954,25 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 								gate.count(),
 							));
 						}
-						Some(issuer) => issuer.cik,
+						Some(issuer) => {
+							if issuer.ticker != issuer.primary_ticker {
+								return Ok(EquitySyncData {
+									identity: Some(EquitySyncIdentity {
+										primary_listing: Some(false),
+										source_company_id: issuer.cik,
+										name: Some(issuer.name),
+										fiscal_year_end: None,
+									}),
+									filings: Vec::new(),
+									more: false,
+									requests: gate.count(),
+									description: None,
+									description_unread: None,
+								});
+							}
+							primary_listing = Some(true);
+							issuer.cik
+						}
 					},
 				}
 			}
@@ -1023,7 +1043,7 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 			}
 		}
 
-		let result = sec_sync_result(
+		let mut result = sec_sync_result(
 			&SecSyncInput {
 				request,
 				cik: &cik,
@@ -1032,6 +1052,8 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 			},
 			COMPLETION_CAPS,
 		);
+
+		result.identity.primary_listing = primary_listing;
 
 		// The business description: one more request only for a 10-K or 20-F
 		// not read yet; a 40-F is recorded as not found without one.

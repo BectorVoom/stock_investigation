@@ -14,6 +14,10 @@ document (no article start at its `<h1>`), more heading forms are read, the
 cap is 32,000,000 bytes, and migration 0033 has every report stored as
 `not-found` read again.
 
+**Amended 2026-11-05** (§3b): more 10-K heading forms, a 10-K with item
+numbers only in its table of contents, and migration 0034 has every 10-K
+stored as `not-found` read again.
+
 ## Context
 
 The owner asked (2026-11-01):
@@ -152,6 +156,34 @@ scheduled sync due now: its next `financial-sync` reads the report again
 database (2026-11-04, about 40 minutes): 782 of the 913 now have the
 section (693 of 773 10-Ks, 89 of 140 20-Fs); 131 stay `not-found`.
 
+### 3b. 10-Ks still read as having none (2026-11-05)
+
+After §3a, 80 10-Ks (and 51 20-Fs) stayed `not-found`, among them Morgan
+Stanley, AIG, Cardinal Health, Expedia, GE and McDonald's. Nine of the
+10-Ks downloaded again show:
+
+- **More heading forms**: "Part I. Item 1. Business" and "Part I. Item 1A.
+  Risk Factors" (Expedia; an optional "Part I" before the item), "ITEM 1 |
+  Business" (AIG; "|" between number and title, repeated as a running page
+  header, which is dropped from the body like a bare "Item 1"), and "Item
+  1. Description of Business" in a table row (World Acceptance).
+- **No item numbers in the body**: Morgan Stanley and Cardinal Health write
+  "Item 1" only in the table of contents; the body has a bare "Business"
+  heading and a bare "Risk Factors" after it. When no block of a 10-K is a
+  start heading, a bare "Business" block (not a table row) starts the
+  section and a bare "Risk Factors" block ends it (`secSectionMarks`, Rust
+  `sec_section_marks`); the Lean-verified choice among candidates
+  (`businessSectionBounds`) is unchanged.
+- **A cross-reference index instead of items** (GE, Honeywell,
+  McDonald's, Synchrony: the 10-K is laid out as an annual report with a
+  "Form 10-K Cross Reference Index" at the end): not read; they stay
+  `not-found`.
+
+With these, 5 of the 9 are read (Morgan Stanley 45 paragraphs, AIG,
+Cardinal Health, Expedia, World Acceptance). Migration 0034 deletes the
+`not-found` 10-K rows and makes their companies' syncs due now, as 0033
+did.
+
 ### 4. Paragraphs
 
 `businessParagraphs` (packages/domain) turns blocks — the cleaned 10-K
@@ -211,3 +243,8 @@ Below Listing, a **Business** group (事業内容):
 - EDINET's text block is built from the specification and examples only;
   it is verified live when the owner sets `EDINET_API_KEY` (as the rest of
   the EDINET sync, ADR-0048).
+
+
+### 3c. Annual-report cross-reference layouts (2026-11-05)
+
+GE, Honeywell, McDonald's and Synchrony put Item 1 in a cross-reference index rather than a body heading. With no explicit non-table Item 1 start, both readers prefer non-table About … / Our Business / Business Summary headings, ending at MD&A or Risk Factors. An uppercase About heading joined to prose is split, retaining that prose. These marks use the existing Lean-verified section selection unchanged. Saved downloads and synthetic cross-language vectors cover the four layouts. Migration 0035 schedules a re-read of failed 10-K descriptions; extracted descriptions and other forms remain stored.

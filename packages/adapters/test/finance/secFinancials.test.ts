@@ -80,6 +80,7 @@ describe("SEC financials: latest fiscal year from the synthetic issuer fixture",
 			cik: "0009999991",
 			name: "Synthetic Alpha Devices Inc.",
 			ticker: "XTESTA",
+			primaryTicker: "XTESTA",
 			secExchange: "Nasdaq",
 		});
 		expect(result.value.companyFactsUrl).toBe(FACTS_ALPHA_URL);
@@ -685,6 +686,7 @@ describe("SEC ticker directory", () => {
 			cik: "0009999992",
 			name: "Synthetic Beta Logistics Corp",
 			ticker: "XTESTB",
+			primaryTicker: "XTESTB",
 			secExchange: "NYSE",
 		});
 	});
@@ -836,4 +838,20 @@ describe("market data without a configured source", () => {
 			expect(reason.length).toBeLessThanOrEqual(300);
 		}
 	});
+});
+
+it("keeps the first SEC ticker as primary even when a secondary sorts first", () => {
+	const parsed = parseTickerDirectory({
+		fields: ["cik", "name", "ticker", "exchange"],
+		data: [
+			[19617, "JPMorgan Chase", "JPM", "NYSE"],
+			[19617, "JPMorgan Chase", "AMJB", "NYSE"],
+		],
+	});
+	expect(
+		parsed.ok && [...parsed.value.values()].map((issuer) => [issuer.ticker, issuer.primaryTicker]),
+	).toEqual([
+		["JPM", "JPM"],
+		["AMJB", "JPM"],
+	]);
 });

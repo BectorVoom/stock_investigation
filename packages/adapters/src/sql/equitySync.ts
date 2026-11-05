@@ -600,16 +600,23 @@ export function equitySyncStatements(
 	const statements: SqlStatement[] = [];
 	const identity = effects.identity;
 	if (identity !== null && effects.releasedIdentityOf !== null) {
-		// The renamed listing's old, untracked company gives up the issuer
+		// The renamed or secondary listing gives up the issuer
 		// first (the source id is unique per owner and provider).
 		statements.push(
 			db
 				.prepare(
 					`UPDATE equity_company SET source_company_id = NULL
-					WHERE owner_id = ? AND company_id = ? AND tracked = 0 AND source_company_id = ?
+					WHERE owner_id = ? AND company_id = ? AND source_company_id = ?
+						AND (tracked = 0 OR (? = 1 AND provider = 'sec'))
 						AND ${g}`,
 				)
-				.bind(ownerId, effects.releasedIdentityOf, identity.sourceCompanyId, ...gv),
+				.bind(
+					ownerId,
+					effects.releasedIdentityOf,
+					identity.sourceCompanyId,
+					identity.primaryListing === true ? 1 : 0,
+					...gv,
+				),
 		);
 	}
 	if (identity !== null) {

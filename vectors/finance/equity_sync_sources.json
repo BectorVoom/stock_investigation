@@ -465,7 +465,8 @@
 							"identity": {
 								"sourceCompanyId": "0009999981",
 								"name": "Synthetic Devices Inc.",
-								"fiscalYearEnd": "09-30"
+								"fiscalYearEnd": "09-30",
+								"primaryListing": true
 							},
 							"filings": [
 								{
@@ -2696,7 +2697,8 @@
 							"identity": {
 								"sourceCompanyId": "0009999981",
 								"name": "Synthetic Devices Inc.",
-								"fiscalYearEnd": "09-30"
+								"fiscalYearEnd": "09-30",
+								"primaryListing": true
 							},
 							"filings": [],
 							"more": false,
@@ -2819,7 +2821,8 @@
 							"identity": {
 								"sourceCompanyId": "0009999981",
 								"name": "Synthetic Devices Inc.",
-								"fiscalYearEnd": "09-30"
+								"fiscalYearEnd": "09-30",
+								"primaryListing": true
 							},
 							"filings": [],
 							"more": false,
@@ -3081,6 +3084,109 @@
 								],
 								"truncated": false
 							},
+							"descriptionUnread": null
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "sec secondary listing cannot take the CIK",
+			"provider": "sec",
+			"credential": "Synthetic Research Workspace owner@synthetic-wire.org",
+			"answers": [
+				[
+					"https://www.sec.gov/files/company_tickers_exchange.json",
+					{
+						"text": "{\"fields\":[\"cik\",\"name\",\"ticker\",\"exchange\"],\"data\":[[9999981,\"Synthetic\",\"MAIN\",\"NYSE\"],[9999981,\"Synthetic\",\"SECONDARY\",\"NYSE\"]]}"
+					}
+				]
+			],
+			"jobs": [
+				{
+					"target": {
+						"companyId": "eqc_us",
+						"market": "US",
+						"symbol": "SECONDARY",
+						"concepts": [
+							"ifrs-full:Assets",
+							"ifrs-full:CashAndCashEquivalents",
+							"ifrs-full:CashFlowsFromUsedInFinancingActivities",
+							"ifrs-full:CashFlowsFromUsedInInvestingActivities",
+							"ifrs-full:CashFlowsFromUsedInOperatingActivities",
+							"ifrs-full:Equity",
+							"ifrs-full:EquityAttributableToOwnersOfParent",
+							"ifrs-full:GrossProfit",
+							"ifrs-full:Liabilities",
+							"ifrs-full:ProfitLossAttributableToOwnersOfParent",
+							"ifrs-full:ProfitLossFromOperatingActivities",
+							"ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
+							"ifrs-full:Revenue",
+							"ifrs-full:RevenueFromContractsWithCustomers",
+							"us-gaap:Assets",
+							"us-gaap:CashAndCashEquivalentsAtCarryingValue",
+							"us-gaap:GrossProfit",
+							"us-gaap:Liabilities",
+							"us-gaap:NetCashProvidedByUsedInFinancingActivities",
+							"us-gaap:NetCashProvidedByUsedInInvestingActivities",
+							"us-gaap:NetCashProvidedByUsedInOperatingActivities",
+							"us-gaap:NetIncomeLoss",
+							"us-gaap:OperatingIncomeLoss",
+							"us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+							"us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+							"us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
+							"us-gaap:Revenues",
+							"us-gaap:SalesRevenueNet",
+							"us-gaap:StockholdersEquity",
+							"us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"
+						],
+						"source": {
+							"provider": "sec",
+							"cik": null,
+							"knownAccessions": [],
+							"pendingFilings": [],
+							"filedSince": "2020-10-31",
+							"fullCheck": false,
+							"describedDocumentId": null
+						}
+					},
+					"grants": [],
+					"advanceMs": 0
+				}
+			],
+			"runs": [
+				{
+					"requests": [
+						{
+							"url": "https://www.sec.gov/files/company_tickers_exchange.json",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"data.sec.gov",
+								"www.sec.gov"
+							],
+							"userAgent": "Synthetic Research Workspace owner@synthetic-wire.org",
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						}
+					],
+					"grants": 1,
+					"result": {
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "0009999981",
+								"name": "Synthetic",
+								"fiscalYearEnd": null,
+								"primaryListing": false
+							},
+							"filings": [],
+							"more": false,
+							"requests": 1,
+							"description": null,
 							"descriptionUnread": null
 						}
 					}

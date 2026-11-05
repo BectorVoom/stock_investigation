@@ -302,15 +302,17 @@ export interface EquitySyncCompletionEffects {
 	readonly kind: "synced";
 	readonly companyId: string;
 	/**
-	 * An untracked company whose source id (the same issuer) this company
-	 * takes over — a renamed or re-listed ticker (ADR-0058 §3): its
-	 * `source_company_id` is cleared, guarded on it being untracked still,
+	 * A company whose source id this listing takes over: a renamed listing
+	 * (ADR-0058 §3) or a SEC-confirmed primary listing. Its
+	 * `source_company_id` is cleared, guarded on it being untracked still
+	 * unless the completion confirms a primary SEC listing,
 	 * before `identity` is applied. Its stored data stays with it. Null
 	 * otherwise.
 	 */
 	readonly releasedIdentityOf: string | null;
 	/** Applied only where the stored source id is null (a resolved identity is never rewritten). */
 	readonly identity: {
+		readonly primaryListing?: boolean;
 		readonly sourceCompanyId: string;
 		readonly name: string | null;
 		readonly fiscalYearEnd: string | null;

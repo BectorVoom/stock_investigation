@@ -226,9 +226,60 @@ describe("secBusinessParagraphs", () => {
 			RISK,
 		);
 		expect(secBusinessBlocks(markdown, "10-K")).toEqual(["Overview", DESCRIBES]);
-		// Only "Business" (or "Business.") right after a bare "Item 1." starts it.
-		expect(secBusinessBlocks(doc("Item 1.", "Businesses", DESCRIBES, "Item 2"), "10-K")).toBe(null);
-		expect(secBusinessBlocks(doc("Business", DESCRIBES, "Item 2"), "10-K")).toBe(null);
+		// Only "Business" (or "Business.") right after a bare "Item 1." starts it: a longer
+		// body after a lookalike is not read while the 10-K has an Item 1 heading.
+		const longer = `${DESCRIBES} ${DESCRIBES} ${DESCRIBES}`;
+		for (const lookalike of [
+			["Item 1.", "Businesses"],
+			["Item 2.", "Business"],
+		]) {
+			const markdown = doc(
+				"Item 1. Business",
+				DESCRIBES,
+				"Item 1A",
+				...lookalike,
+				longer,
+				"Item 2",
+			);
+			expect(secBusinessBlocks(markdown, "10-K"), lookalike.join(" ")).toEqual([DESCRIBES]);
+		}
+	});
+
+	it("reads a 10-K that writes its item numbers only in the table of contents (Morgan Stanley)", () => {
+		const markdown = doc(
+			"| Table of Contents | Part | Item | Page |",
+			"| --- | --- | --- | --- |",
+			"| Business | I | 1 | 5 |",
+			"| Business |  |  |",
+			"Business",
+			"Overview",
+			DESCRIBES,
+			"Risk Factors",
+			RISK,
+		);
+		expect(secBusinessBlocks(markdown, "10-K")).toEqual(["Overview", DESCRIBES]);
+		// Not while the 10-K has an Item 1 heading, and never at a table row.
+		expect(
+			secBusinessBlocks(
+				doc("Item 1. Business", RISK, "Item 1A", "Business", DESCRIBES, "Risk Factors"),
+				"10-K",
+			),
+		).toEqual([RISK]);
+		expect(secBusinessBlocks(doc("| Business |", DESCRIBES, "Risk Factors"), "10-K")).toBe(null);
+	});
+
+	it("reads Item 1 headed after Part I, with a pipe, or as Description of Business", () => {
+		for (const heading of [
+			"Part I. Item 1. Business",
+			"ITEM 1 | Business",
+			"| Item 1. | Description of Business |",
+		]) {
+			const markdown = doc(heading, DESCRIBES, heading, RISK, "Part I. Item 1A. Risk Factors");
+			// The heading repeated as a running page header is not description.
+			expect(secBusinessBlocks(markdown, "10-K"), heading).toEqual([DESCRIBES, RISK]);
+		}
+		expect(secSectionMark("Part II. Item 1. Business", "10-K item 1")).toBe("other");
+		expect(secSectionMark("Item 1. Description of Properties", "10-K item 1")).toBe("other");
 	});
 
 	it("finds nothing without the section, with an empty one, or without an end", () => {
@@ -347,5 +398,26 @@ describe("a 20-F's Item 4.B (ADR-0058 §5)", () => {
 			"Item 4.C Organizational Structure",
 		);
 		expect(secBusinessParagraphs(markdown, "20-F")).toEqual({ paragraphs: [], truncated: false });
+	});
+});
+
+describe("annual-report layouts with a 10-K cross-reference index", () => {
+	it.each([
+		"ABOUT HONEYWELL",
+		"OUR BUSINESS",
+		"BUSINESS SUMMARY",
+		"ABOUT GE AEROSPACE.",
+	])("reads %s and stops before MD&A", (heading) => {
+		const embedded = heading.endsWith(".");
+		const text = [
+			"| Item 1. | Business | 4 |\n| --- | --- | --- |\n| Item 1A. | Risk Factors | 20 |",
+			embedded ? `${heading} ${DESCRIBES}` : heading,
+			...(embedded ? [] : [DESCRIBES]),
+			MORE,
+			"MANAGEMENT’S DISCUSSION AND ANALYSIS. Results follow.",
+			RISK,
+		].join("\n\n");
+		const result = secBusinessParagraphs(text, "10-K");
+		expect(result.paragraphs.map((p) => p.text)).toEqual([DESCRIBES, MORE]);
 	});
 });

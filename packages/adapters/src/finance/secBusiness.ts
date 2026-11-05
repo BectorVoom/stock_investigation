@@ -17,7 +17,8 @@
  *    company's history, which is not its description.
  * 3. The body is cleaned for SEC: tables (the description is prose), page
  *    numbers, `---` page breaks, "Table of Contents", "Part I", a bare
- *    "Item 1" (20-F: "Item 4") running header and short running footers
+ *    "Item 1" (20-F: "Item 4") or repeated start heading running header
+ *    and short running footers
  *    naming "Form 10-K" (20-F: "Form 20-F") go; in a 20-F also a short
  *    note incorporating text "by reference" (many foreign issuers put the
  *    description in an annual-report exhibit: then nothing is left and the
@@ -79,11 +80,16 @@ const WHITESPACE_RUN = /\s+/g;
 
 /**
  * "Item 1. Business", "ITEM 1 — BUSINESS", "Items 1 and 2. Business and
- * Properties", "Items 1. and 2. Business and Properties." (Freeport-McMoRan).
+ * Properties", "Items 1. and 2. Business and Properties." (Freeport-McMoRan),
+ * "Part I. Item 1. Business" (Expedia), "ITEM 1 | Business" (AIG), "Item 1.
+ * Description of Business" (World Acceptance, a table row).
  */
-const START_HEADING = /^items?\s*1\.?(?:\s*(?:and|&)\s*2\.?)?\s*[.:\-–—]?\s*business\b/i;
-/** "Item 1A", "Item 1B", "Item 1C", "Item 2", "Item 3", with or without a title. */
-const END_HEADING = /^item\s*(?:1a|1b|1c|2|3)\b/i;
+const START_HEADING =
+	/^(?:part\s+i\s*[.,:\-–—]?\s*)?items?\s*1\.?(?:\s*(?:and|&)\s*2\.?)?\s*[.:\-–—|]?\s*(?:description\s+of\s+(?:the\s+)?)?business\b/i;
+/** "Item 1A", "Item 1B", "Item 1C", "Item 2", "Item 3", with or without a title or "Part I." before it. */
+const END_HEADING = /^(?:part\s+i\s*[.,:\-–—]?\s*)?item\s*(?:1a|1b|1c|2|3)\b/i;
+/** A bare "Risk Factors" heading: Item 1A's title where a 10-K writes no item numbers. */
+const BARE_END_TITLE = /^risk\s+factors\.?$/i;
 
 /** "Item 4.B Business Overview", "4B. Business overview", "B. Business Overview". */
 const OVERVIEW_HEADING = /^(?:(?:item\s*)?4\s*\.?\s*)?b\s*[.:\-–—]?\s*business\s+overview\b/i;
@@ -148,7 +154,16 @@ export function secBlock(block: string): SecBlock {
 
 /** The blocks of a converted primary document, in order. */
 export function secMarkdownBlocks(markdown: string): readonly SecBlock[] {
-	return markdown.split(BLOCK_SEPARATOR).map(secBlock);
+	return markdown.split(BLOCK_SEPARATOR).flatMap((raw) => {
+		const block = secBlock(raw);
+		const about = !block.table ? /^(ABOUT [A-Z][A-Z &’'’-]{1,60}\.)\s+/.exec(block.text) : null;
+		return about?.[1]
+			? [
+					{ text: about[1], table: false },
+					{ text: block.text.slice(about[0].length), table: false },
+				]
+			: [block];
+	});
 }
 
 function isStartHeading(text: string, section: SecBusinessSection): boolean {
@@ -182,7 +197,10 @@ export function secSectionMark(text: string, section: SecBusinessSection): Secti
 /**
  * Every block's mark for one section: `secSectionMark`, and in a 10-K a
  * "Business" block right after a bare "Item 1." block also starts the
- * section (the heading split in two).
+ * section (the heading split in two). A 10-K with no start heading at all
+ * writes its item numbers only in the table of contents (Morgan Stanley,
+ * Cardinal Health): then a bare "Business" block starts the section and a
+ * bare "Risk Factors" block ends it.
  */
 export function secSectionMarks(
 	blocks: readonly SecBlock[],
@@ -195,6 +213,24 @@ export function secSectionMarks(
 		const text = blocks[index]?.text ?? "";
 		if (BARE_ITEM_ONE.test(previous) && SPLIT_START_TITLE.test(text)) marks[index] = "start";
 	}
+	if (marks.some((mark, index) => mark === "start" && !blocks[index]?.table)) return marks;
+	// Annual-report layouts put item numbers in a cross-reference table only.
+	const reportMarks: SectionMark[] = blocks.map((block) => {
+		if (block.table) return "other";
+		if (/^(?:about [a-z][a-z &’'’-]{1,60}\.?|our business|business summary)$/i.test(block.text))
+			return "start";
+		if (/^(?:management[’']s discussion and analysis|risk factors\b)/i.test(block.text))
+			return "end";
+		return "other";
+	});
+	if (reportMarks.includes("start")) return reportMarks;
+	if (marks.includes("start")) return marks;
+	blocks.forEach((block, index) => {
+		// A one-cell table row "Business" is a page header, not the heading.
+		if (block.table) return;
+		if (SPLIT_START_TITLE.test(block.text)) marks[index] = "start";
+		else if (BARE_END_TITLE.test(block.text)) marks[index] = "end";
+	});
 	return marks;
 }
 
@@ -212,7 +248,12 @@ function isFurniture(block: SecBlock, form: SecDescribedForm): boolean {
 		return true;
 	}
 	if (form === "10-K") {
-		return BARE_ITEM_ONE.test(text) || (text.length < MAX_FOOTER_CHARS && FORM_10K.test(text));
+		return (
+			BARE_ITEM_ONE.test(text) ||
+			// A start heading repeated as a running page header ("ITEM 1 | Business", AIG).
+			(text.length <= MAX_START_CHARS && START_HEADING.test(text)) ||
+			(text.length < MAX_FOOTER_CHARS && FORM_10K.test(text))
+		);
 	}
 	return (
 		BARE_ITEM_FOUR.test(text) ||

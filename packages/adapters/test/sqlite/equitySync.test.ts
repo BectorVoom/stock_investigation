@@ -209,6 +209,38 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		);
 	}
 
+	it("atomically hands the CIK from a tracked secondary to the main listing", async () => {
+		const persistence = createSqlPersistence(db);
+		const secondary = "eqc_000000000000000000000002";
+		await trackOne(persistence, secondary, "US", "AMJB", AT);
+		await db
+			.prepare(
+				"UPDATE equity_company SET source_company_id = ? WHERE owner_id = ? AND company_id = ?",
+			)
+			.bind("0000320193", OWNER, secondary)
+			.run();
+		await persistence.jobs.insert(job("handover"), "handover", "f", 5);
+		expect(
+			(
+				await commit(
+					"handover",
+					synced({
+						releasedIdentityOf: secondary,
+						identity: {
+							...synced().identity,
+							sourceCompanyId: "0000320193",
+							name: "Apple Inc.",
+							fiscalYearEnd: "09-30",
+							primaryListing: true,
+						},
+					}),
+				)
+			).kind,
+		).toBe("committed");
+		const companies = await rows("equity_company");
+		expect(companies.find((c) => c.company_id === secondary)?.source_company_id).toBeNull();
+		expect(companies.find((c) => c.company_id === COMPANY)?.source_company_id).toBe("0000320193");
+	});
 	it("commits filings, facts, values and the sync state with the job", async () => {
 		const persistence = createSqlPersistence(db);
 		await persistence.jobs.insert(job("run_1"), "k1", "f", 5);

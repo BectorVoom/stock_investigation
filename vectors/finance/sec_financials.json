@@ -83901,6 +83901,7 @@
 					[
 						"XTESTA",
 						{
+							"primaryTicker": "XTESTA",
 							"cik": "0009999991",
 							"name": "Synthetic Alpha Devices Inc.",
 							"ticker": "XTESTA",
@@ -83910,6 +83911,7 @@
 					[
 						"XTESTB",
 						{
+							"primaryTicker": "XTESTB",
 							"cik": "0009999992",
 							"name": "Synthetic Beta Logistics Corp",
 							"ticker": "XTESTB",
@@ -83919,6 +83921,7 @@
 					[
 						"XTESTC",
 						{
+							"primaryTicker": "XTESTC",
 							"cik": "0009999994",
 							"name": "Synthetic Gamma Holdings",
 							"ticker": "XTESTC",
@@ -83928,6 +83931,7 @@
 					[
 						"XTESTD",
 						{
+							"primaryTicker": "XTESTD",
 							"cik": "0009999995",
 							"name": "Synthetic Delta Trust",
 							"ticker": "XTESTD",
@@ -83937,6 +83941,7 @@
 					[
 						"XTESTE",
 						{
+							"primaryTicker": "XTESTE",
 							"cik": "0009999996",
 							"name": "Synthetic Epsilon ETF Trust",
 							"ticker": "XTESTE",
@@ -83946,6 +83951,7 @@
 					[
 						"XTST-B",
 						{
+							"primaryTicker": "XTST-B",
 							"cik": "0009999997",
 							"name": "Synthetic Zeta Group",
 							"ticker": "XTST-B",
@@ -84100,6 +84106,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "BRK.B",
@@ -84109,6 +84116,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000005",
 							"name": "",
 							"ticker": "MSFT",
@@ -84118,6 +84126,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0009999991",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -84210,6 +84219,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "BRK.B",
@@ -84303,6 +84313,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "BRK.B",
@@ -84377,6 +84388,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0009999991",
 							"name": "Padded",
 							"ticker": "BRK.B",
@@ -84478,6 +84490,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -84487,6 +84500,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -84560,6 +84574,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000003",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -84569,6 +84584,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "BRK-B",
@@ -84662,6 +84678,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "BRK.B",
@@ -84671,6 +84688,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "Padded",
 							"ticker": "AAPL",
@@ -84925,6 +84943,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "Ä",
@@ -85074,6 +85093,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "BRK.B",
@@ -85083,6 +85103,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "Ä",
@@ -85132,6 +85153,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -85231,6 +85253,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -85379,6 +85402,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000005",
 							"name": "",
 							"ticker": "Ä",
@@ -85416,6 +85440,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000003",
 							"name": "",
 							"ticker": "AAPL",
@@ -85471,6 +85496,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -85584,6 +85610,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -85657,6 +85684,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -85666,6 +85694,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "000001e+21",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -85733,6 +85762,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0009999991",
 							"name": "Padded",
 							"ticker": "MSFT",
@@ -85742,6 +85772,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "BRK.B",
@@ -85791,6 +85822,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "BRK.B",
@@ -86000,6 +86032,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "Ä",
@@ -86115,6 +86148,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "BRK-B",
@@ -86176,6 +86210,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "BRK.B",
@@ -86185,6 +86220,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -86277,6 +86313,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -86364,6 +86401,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000320193",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -86437,6 +86475,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "AAPL",
@@ -86446,6 +86485,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -86455,6 +86495,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -86546,6 +86587,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -86555,6 +86597,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "000001e+21",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -86588,6 +86631,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "MSFT",
@@ -86700,6 +86744,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "Ä",
@@ -86709,6 +86754,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "12345678901",
 							"name": "",
 							"ticker": "AAPL",
@@ -86821,6 +86867,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000320193",
 							"name": "Apple Inc.",
 							"ticker": "BRK.B",
@@ -86888,6 +86935,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "000001e+21",
 							"name": "Padded",
 							"ticker": "Ä",
@@ -86950,6 +86998,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -86959,6 +87008,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "BRK-B",
@@ -87026,6 +87076,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "BRK.B",
@@ -87125,6 +87176,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0009999991",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -87134,6 +87186,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000005",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -87183,6 +87236,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "BRK-B",
@@ -87282,6 +87336,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -87291,6 +87346,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "Padded",
 							"ticker": "BRK.B",
@@ -87364,6 +87420,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -87373,6 +87430,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "MSFT",
@@ -87581,6 +87639,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "000001e+21",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -87654,6 +87713,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "Ä",
@@ -87663,6 +87723,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "AAPL",
@@ -87718,6 +87779,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -87773,6 +87835,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "Ä",
@@ -87782,6 +87845,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "BRK-B",
@@ -87837,6 +87901,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0009999991",
 							"name": "Padded",
 							"ticker": "Ä",
@@ -87892,6 +87957,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -87901,6 +87967,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "BRK.B",
@@ -88119,6 +88186,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000003",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -88168,6 +88236,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -88344,6 +88413,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0009999991",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -88481,6 +88551,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0009999991",
 							"name": "",
 							"ticker": "A.B.C",
@@ -88542,6 +88613,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -88750,6 +88822,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -88832,6 +88905,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -88841,6 +88915,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0009999991",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -88984,6 +89059,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -88993,6 +89069,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "BRK-B",
@@ -89054,6 +89131,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "12345678901",
 							"name": "",
 							"ticker": "AAPL",
@@ -89063,6 +89141,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "BRK.B",
@@ -89112,6 +89191,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "MSFT",
@@ -89121,6 +89201,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "AAPL",
@@ -89182,6 +89263,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "MSFT",
@@ -89243,6 +89325,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0009999991",
 							"name": "Padded",
 							"ticker": "MSFT",
@@ -89370,6 +89453,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "000001e+21",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -89482,6 +89566,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000003",
 							"name": "",
 							"ticker": "A.B.C",
@@ -89491,6 +89576,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "Ä",
@@ -89604,6 +89690,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000003",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -89691,6 +89778,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "000001e+21",
 							"name": "Padded",
 							"ticker": "MSFT",
@@ -89777,6 +89865,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000003",
 							"name": "",
 							"ticker": "AAPL",
@@ -89786,6 +89875,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "Ä",
@@ -89795,6 +89885,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -89868,6 +89959,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0009999991",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -89954,6 +90046,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000320193",
 							"name": "Padded",
 							"ticker": "MSFT",
@@ -90192,6 +90285,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -90201,6 +90295,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -90312,6 +90407,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "AAPL",
@@ -90321,6 +90417,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "BRK.B",
@@ -90382,6 +90479,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -90443,6 +90541,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "BRK-B",
@@ -90566,6 +90665,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "12345678901",
 							"name": "",
 							"ticker": "AAPL",
@@ -90575,6 +90675,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "BRK-B",
@@ -90584,6 +90685,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -90683,6 +90785,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -90932,6 +91035,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -90941,6 +91045,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -90950,6 +91055,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "12345678901",
 							"name": "",
 							"ticker": "BRK.B",
@@ -91005,6 +91111,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000005",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -91014,6 +91121,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "BRK.B",
@@ -91075,6 +91183,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "A.B.C",
@@ -91112,6 +91221,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -91224,6 +91334,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "BRK.B",
@@ -91376,6 +91487,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -91449,6 +91561,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "A.B.C",
@@ -91522,6 +91635,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000005",
 							"name": "Padded",
 							"ticker": "AAPL",
@@ -91531,6 +91645,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "Ä",
@@ -91574,6 +91689,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "BRK-B",
@@ -91641,6 +91757,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000003",
 							"name": "",
 							"ticker": "A.B.C",
@@ -91650,6 +91767,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "Ä",
@@ -91659,6 +91777,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "AAPL",
@@ -91739,6 +91858,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000000003",
 							"name": "",
 							"ticker": "BRK.B",
@@ -91856,6 +91976,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000320193",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -91929,6 +92050,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "MSFT",
@@ -91938,6 +92060,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -92110,6 +92233,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000003",
 							"name": "",
 							"ticker": "MSFT",
@@ -92171,6 +92295,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000005",
 							"name": "",
 							"ticker": "BRK-B",
@@ -92244,6 +92369,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "BRK.B",
@@ -92253,6 +92379,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000005",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -92262,6 +92389,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000003",
 							"name": "",
 							"ticker": "MSFT",
@@ -92311,6 +92439,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -92391,6 +92520,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -92458,6 +92588,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0009999991",
 							"name": "",
 							"ticker": "Ä",
@@ -92467,6 +92598,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -92540,6 +92672,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0009999991",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -92589,6 +92722,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "Padded",
 							"ticker": "BRK.B",
@@ -92598,6 +92732,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "A.B.C",
@@ -92725,6 +92860,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "BRK-B",
@@ -92786,6 +92922,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "AAPL",
@@ -92795,6 +92932,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0009999991",
 							"name": "",
 							"ticker": "Ä",
@@ -92838,6 +92976,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0009999991",
 							"name": "",
 							"ticker": "A.B.C",
@@ -92899,6 +93038,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "000001e+21",
 							"name": "Padded",
 							"ticker": "BRK.B",
@@ -92974,6 +93114,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -93089,6 +93230,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -93098,6 +93240,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "BRK-B",
@@ -93107,6 +93250,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -93150,6 +93294,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -93205,6 +93350,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -93316,6 +93462,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "A.B.C",
@@ -93353,6 +93500,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -93362,6 +93510,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0009999991",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -93468,6 +93617,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -93902,6 +94052,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000003",
 							"name": "",
 							"ticker": "BRK-B",
@@ -93995,6 +94146,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "BRK.B",
@@ -94112,6 +94264,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -94121,6 +94274,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000003",
 							"name": "Padded",
 							"ticker": "AAPL",
@@ -94243,6 +94397,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -94298,6 +94453,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "Ä",
@@ -94307,6 +94463,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "12345678901",
 							"name": "",
 							"ticker": "AAPL",
@@ -94638,6 +94795,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000003",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -94647,6 +94805,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "BRK-B",
@@ -94656,6 +94815,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000005",
 							"name": "Padded",
 							"ticker": "MSFT",
@@ -94805,6 +94965,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -94814,6 +94975,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -94965,6 +95127,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -94974,6 +95137,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000003",
 							"name": "Padded",
 							"ticker": "AAPL",
@@ -95164,6 +95328,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000005",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -95281,6 +95446,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000003",
 							"name": "Padded",
 							"ticker": "Ä",
@@ -95348,6 +95514,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "BRK-B",
@@ -95357,6 +95524,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000320193",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -95424,6 +95592,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0009999991",
 							"name": "Padded",
 							"ticker": "AAPL",
@@ -95433,6 +95602,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -95519,6 +95689,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "MSFT",
@@ -95586,6 +95757,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -95666,6 +95838,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -95731,6 +95904,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "A.B.C",
@@ -95740,6 +95914,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000005",
 							"name": "",
 							"ticker": "MSFT",
@@ -95845,6 +96020,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "000001e+21",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -95982,6 +96158,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -96099,6 +96276,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "MSFT",
@@ -96108,6 +96286,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0009999991",
 							"name": "",
 							"ticker": "AAPL",
@@ -96175,6 +96354,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -96242,6 +96422,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -96251,6 +96432,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "AAPL",
@@ -96260,6 +96442,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000003",
 							"name": "Apple Inc.",
 							"ticker": "BRK-B",
@@ -96323,6 +96506,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000005",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -96378,6 +96562,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "A.B.C",
@@ -96421,6 +96606,7 @@
 					[
 						"AAPL",
 						{
+							"primaryTicker": "AAPL",
 							"cik": "0000000001",
 							"name": "Apple Inc.",
 							"ticker": "AAPL",
@@ -96470,6 +96656,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000005",
 							"name": "",
 							"ticker": "MSFT",
@@ -96558,6 +96745,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000000003",
 							"name": "",
 							"ticker": "MSFT",
@@ -96663,6 +96851,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -96800,6 +96989,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000320193",
 							"name": "Apple Inc.",
 							"ticker": "MSFT",
@@ -96861,6 +97051,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "MSFT",
@@ -96942,6 +97133,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "BRK.B",
@@ -96951,6 +97143,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "MSFT",
@@ -97038,6 +97231,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0000320193",
 							"name": "Apple Inc.",
 							"ticker": "BRK.B",
@@ -97047,6 +97241,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Padded",
 							"ticker": "Ä",
@@ -97393,6 +97588,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000320193",
 							"name": "Padded",
 							"ticker": "MSFT",
@@ -97402,6 +97598,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000001",
 							"name": "",
 							"ticker": "A.B.C",
@@ -97457,6 +97654,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK.B",
 							"cik": "0009999991",
 							"name": "",
 							"ticker": "BRK.B",
@@ -97466,6 +97664,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "0000000001",
 							"name": "Padded",
 							"ticker": "A.B.C",
@@ -97630,6 +97829,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "Ä",
 							"cik": "12345678901",
 							"name": "Apple Inc.",
 							"ticker": "Ä",
@@ -97685,6 +97885,7 @@
 					[
 						"A-B-C",
 						{
+							"primaryTicker": "A.B.C",
 							"cik": "000001e+21",
 							"name": "",
 							"ticker": "A.B.C",
@@ -97694,6 +97895,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "12345678901",
 							"name": "",
 							"ticker": "BRK-B",
@@ -97787,6 +97989,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0009999991",
 							"name": "Padded",
 							"ticker": "BRK-B",
@@ -97848,6 +98051,7 @@
 					[
 						"BRK-B",
 						{
+							"primaryTicker": "BRK-B",
 							"cik": "0009999991",
 							"name": "",
 							"ticker": "BRK-B",
@@ -97929,6 +98133,7 @@
 					[
 						"MSFT",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "MSFT",
@@ -97938,6 +98143,7 @@
 					[
 						"Ä",
 						{
+							"primaryTicker": "MSFT",
 							"cik": "0000320193",
 							"name": "",
 							"ticker": "Ä",

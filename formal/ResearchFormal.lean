@@ -25,3 +25,5 @@ import ResearchFormal.SyncSchedule
 import ResearchFormal.BusinessSection
 import ResearchFormal.SyncDays
 import ResearchFormal.PeriodChange
+
+import ResearchFormal.SecIdentity

@@ -38,6 +38,7 @@ describe("SEC EDGAR document examples", () => {
 			cik: "0000320193",
 			name: "Apple Inc.",
 			ticker: "AAPL",
+			primaryTicker: "AAPL",
 			secExchange: "Nasdaq",
 		});
 		expect(issuers.get("INBT")?.secExchange).toBeNull();

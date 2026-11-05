@@ -376,6 +376,7 @@ pub fn jquants_summaries_to_sync(
 	let fitted = fit_completion_caps(filings, COMPLETION_CAPS);
 	JquantsSyncData {
 		identity: newest_year_end.map(|end| EquitySyncIdentity {
+			primary_listing: None,
 			source_company_id: code.to_owned(),
 			name: None,
 			fiscal_year_end: end.get(5..).map(str::to_owned),

@@ -117,7 +117,7 @@ async function runFinancials(args: unknown, setup: FinancialsSetup): Promise<Too
 				if (setup.sourceError !== null) return err(setup.sourceError);
 				if (!selected.ok) return err(selected.error);
 				const financials: SecCompanyFinancials = {
-					issuer: setup.issuer,
+					issuer: { ...setup.issuer, primaryTicker: setup.issuer.ticker },
 					...selected.value,
 					tickerDirectoryUrl: setup.directoryUrl,
 					companyFactsUrl: setup.factsUrl,

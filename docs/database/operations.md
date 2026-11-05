@@ -278,6 +278,24 @@ database. A 40-F's row stays (never downloaded). Rollback: none needed for
 an older release; a report still without a readable section is stored as
 `not-found` again.
 
+### 0034 — 10-K business descriptions read again
+
+Migration `0034_reread_ten_k_business_descriptions.sql` (ADR-0053 §3b)
+changes no table. Like 0033, for 10-Ks only: it deletes every `not-found`
+10-K row in
+[`equity_business_description`](tables/equity_business_description.md)
+(the reader before 2026-11-05 did not know "Part I. Item 1. Business",
+"ITEM 1 | Business", "Item 1. Description of Business" or a 10-K with item
+numbers only in its table of contents) and makes each such company's
+scheduled sync in [`equity_sync_state`](tables/equity_sync_state.md) due
+now (never later; an unscheduled one is left alone): one SEC request per
+company, 80 on the development database. 20-F and 40-F rows stay.
+Rollback: none needed for an older release; a 10-K still without a
+readable section is stored as `not-found` again.
+
 ## Switching the database engine
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](../adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.
+
+
+Migration `0035_sec_primary_listing_and_report_layouts.sql` changes no schema. It advances scheduled SEC identity conflicts and failed 10-K descriptions to now and deletes only those `not-found` 10-K descriptions. Restart with updated runners after applying pending migrations; the next main-listing completion atomically takes the CIK from a secondary, retaining each listing's stored history. It does not rewrite identities during migration. Rollback needs no schema reversal: an older runner can read the database, but cannot perform the primary-listing repair. Upgrade tests use isolated SQLite databases; applying this to the owner's database is a separate operation.

@@ -26,8 +26,8 @@ use crate::Contract;
 use crate::primitives::{HTTPS_URL, ISO_DATE_TIME, id};
 use crate::zod::{
 	ArrCheck, Cx, Pattern, StrCheck, UnionOption, array, boolean, decode_fields, decode_object,
-	js_enum, nullable, object_input, refine, run_discriminated, run_string, run_union, string,
-	unrecognized,
+	js_enum, nullable, object_input, optional, refine, run_discriminated, run_string, run_union,
+	string, unrecognized,
 };
 
 /// `EQUITY_FINANCIAL_LIMITS` (the runner-side part).
@@ -658,6 +658,9 @@ impl EquityBusinessDescription {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EquitySyncIdentity {
+	/// Whether this is the first SEC listing; absent for older runners.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub primary_listing: Option<bool>,
 	/// CIK (SEC) or the J-Quants issue code.
 	pub source_company_id: String,
 	/// SEC entity name (J-Quants states none).
@@ -678,6 +681,7 @@ impl EquitySyncIdentity {
 	/// zod decoder.
 	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		decode_object!(cx, input, strict, [], Self {
+			primary_listing: "primaryListing" => optional(boolean),
 			source_company_id: "sourceCompanyId" => source_company_id,
 			name: "name" => nullable(string(COMPANY_NAME)),
 			fiscal_year_end: "fiscalYearEnd" => nullable(string(FISCAL_YEAR_END_CHECKS)),

@@ -377,6 +377,11 @@ const TEN_K_BLOCKS: readonly string[] = [
 	"BUSINESS.",
 	"Item 1. *Business*",
 	"Items 1. and 2. Business and Properties.",
+	"Part I. Item 1. Business",
+	"ITEM 1 | Business",
+	"| Item 1. | Description of Business |\n| --- | --- |",
+	"Part I. Item 1A. Risk Factors",
+	"Risk Factors",
 	"Item 12. Business Combinations",
 	"Item 1A",
 	"ITEM 1A. RISK FACTORS",
@@ -522,6 +527,20 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 		tenKInputs.push({ name: null, fiscalYearEnd: null, annualRows: rows });
 	}
 	const markdowns: string[] = [
+		...[
+			"ABOUT HONEYWELL",
+			"OUR BUSINESS",
+			"BUSINESS SUMMARY",
+			"ABOUT GE AEROSPACE. A global aerospace company serves customers worldwide.",
+		].map((heading) =>
+			[
+				"| Item 1. | Business | 4 |\n| --- | --- | --- |\n| Item 1A. | Risk Factors | 20 |",
+				heading,
+				"The Company designs, manufactures and sells laboratory instruments.",
+				"MANAGEMENT’S DISCUSSION AND ANALYSIS. Results follow.",
+				"This risk paragraph must stay out.",
+			].join("\n\n"),
+		),
 		"",
 		[
 			"FORM 10-K",
@@ -555,6 +574,39 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 		["Item 1", "Business.", "Banking", "We lend.", "Item 2"].join("\n\n"),
 		["Item 1.", "Businesses", "We lend.", "Item 2"].join("\n\n"),
 		["Business", "We lend.", "Item 2"].join("\n\n"),
+		// Item numbers only in the table of contents (Morgan Stanley), and with an Item 1 heading.
+		[
+			"| Table of Contents | Part | Item | Page |\n| --- | --- | --- | --- |\n| Business | I | 1 | 5 |",
+			"| Business |  |  |",
+			"Business",
+			"Overview",
+			"We are a global financial services firm.",
+			"Risk Factors",
+			"Our results can change.",
+		].join("\n\n"),
+		[
+			"Item 1. Business",
+			"We lend.",
+			"Item 1A",
+			"Business",
+			"We borrow and lend.",
+			"Risk Factors",
+		].join("\n\n"),
+		["| Business |", "We lend.", "Risk Factors"].join("\n\n"),
+		// "Part I." before the headings (Expedia), a pipe and a running header (AIG), a table row (World Acceptance).
+		[
+			"Part I. Item 1. Business",
+			"We book travel.",
+			"Part I. Item 1. Business",
+			"We sell.",
+			"Part I. Item 1A. Risk Factors",
+		].join("\n\n"),
+		["ITEM 1 | Business", "We insure.", "ITEM 1 | Business", "ITEM 1A | Risk Factors"].join("\n\n"),
+		[
+			"| Item 1. | Description of Business |\n| --- | --- |",
+			"General. We lend.",
+			"| Item 1A. | Risk Factors |\n| --- | --- |",
+		].join("\n\n"),
 		["Item 1. *Business*", "*Overview*", "AXT makes substrates.", "Item 1A. *Risk Factors*"].join(
 			"\n\n",
 		),
@@ -706,6 +758,18 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 			"Item 1A. *Risk Factors*",
 			`*${"Item 1. Business".padEnd(60, "x")}*`,
 			"Item 4. Information On Our Company",
+			"Part I. Item 1. Business",
+			"part  i,item 1 business",
+			"Part II. Item 1. Business",
+			"Part Iitem 1 Business",
+			"ITEM 1 | Business",
+			"Item 1 || Business",
+			"Item 1. Description of Business",
+			"Item 1. Description of the Business",
+			"Item 1. Description of theBusiness",
+			"Item 1. Description Business",
+			"Part I, Item 1A",
+			"Part I. Item 2. Properties",
 			"Item 4 Information on ourCompany",
 			"Item 4 Information on our  Company.",
 			"item1business",
@@ -1612,6 +1676,26 @@ async function sourcesFile(): Promise<VectorFile> {
 			credential: SEC_AGENT,
 			answers: secPages,
 			jobs: [job(secTarget({ knownAccessions: allAnnual }))],
+		},
+		{
+			name: "sec secondary listing cannot take the CIK",
+			provider: "sec",
+			credential: SEC_AGENT,
+			answers: [
+				[
+					SEC_TICKER_DIRECTORY_URL,
+					{
+						text: JSON.stringify({
+							fields: ["cik", "name", "ticker", "exchange"],
+							data: [
+								[9999981, "Synthetic", "MAIN", "NYSE"],
+								[9999981, "Synthetic", "SECONDARY", "NYSE"],
+							],
+						}),
+					},
+				],
+			],
+			jobs: [job(secTarget({ cik: null }, "SECONDARY"))],
 		},
 		{
 			name: "sec ticker not listed",

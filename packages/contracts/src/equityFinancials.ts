@@ -375,6 +375,8 @@ export const equitySyncCompletionShape = {
 			sourceCompanyId: z.union([secCikSchema, jquantsIssueCodeSchema]),
 			name: companyNameSchema.nullable(),
 			fiscalYearEnd: fiscalYearEndSchema.nullable(),
+			/** SEC directory confirms this is the first listing for the CIK. */
+			primaryListing: z.boolean().optional(),
 		})
 		.nullable(),
 	filings: z.array(equityFilingResultSchema).max(EQUITY_FINANCIAL_LIMITS.maxFilingsPerCompletion),

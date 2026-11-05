@@ -1341,8 +1341,8 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			if (company.provider !== request.provider) {
 				return fail("VALIDATION_FAILED", "The result is not from this company's provider.");
 			}
-			// The untracked company whose issuer identity this listing takes
-			// over (a renamed or re-listed ticker: FB → META, ADR-0058 §3).
+			// A renamed listing or SEC-confirmed main listing can take the
+			// identity; the previous listing keeps its stored history.
 			let releasedIdentityOf: string | null = null;
 			if (request.identity !== null) {
 				const reported = request.identity.sourceCompanyId;
@@ -1354,10 +1354,16 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				// The issuer of an untracked company — its listing left the
 				// directory — moves to this listing: the old company keeps its
 				// stored data under its old listing and gives up the identity.
-				// Two tracked listings of one issuer (GOOG / GOOGL) still conflict.
-				if (otherCompany !== null && !otherCompany.tracked) {
+				// A tracked listing yields only to the SEC-confirmed main listing.
+				if (
+					request.identity.primaryListing !== false &&
+					otherCompany !== null &&
+					(!otherCompany.tracked ||
+						(company.provider === "sec" && request.identity.primaryListing === true))
+				) {
 					releasedIdentityOf = otherCompany.companyId;
 				} else if (
+					request.identity.primaryListing === false ||
 					(company.sourceCompanyId !== null && company.sourceCompanyId !== reported) ||
 					otherCompany !== null
 				) {

@@ -170,6 +170,8 @@ export interface SecIssuer {
 	readonly name: string;
 	/** Ticker exactly as SEC lists it, e.g. "BRK-B". */
 	readonly ticker: string;
+	/** First ticker of this CIK in SEC directory order. */
+	readonly primaryTicker: string;
 	/** Exchange text exactly as SEC states it ("Nasdaq", "NYSE", "OTC", ...); null when SEC states none. */
 	readonly secExchange: string | null;
 }
@@ -246,6 +248,7 @@ export function parseTickerDirectory(
 		return err(secError("UNEXPECTED_RESPONSE", "SEC ticker directory is missing expected columns"));
 	}
 	const issuers = new Map<string, SecIssuer>();
+	const primaryTickers = new Map<number, string>();
 	for (const row of parsed.data.data) {
 		const cik = row[cikAt];
 		const name = row[nameAt];
@@ -255,7 +258,10 @@ export function parseTickerDirectory(
 		if (typeof name !== "string" || typeof ticker !== "string" || ticker.trim() === "") continue;
 		const key = normalizeTickerKey(ticker);
 		if (issuers.has(key)) continue;
+		const primaryTicker = primaryTickers.get(cik) ?? ticker.trim().toUpperCase();
+		primaryTickers.set(cik, primaryTicker);
 		issuers.set(key, {
+			primaryTicker,
 			cik: String(cik).padStart(10, "0"),
 			name: name.trim(),
 			ticker: ticker.trim().toUpperCase(),

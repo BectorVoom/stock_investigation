@@ -1359,6 +1359,46 @@ describe("business description (ADR-0053 §2)", () => {
 			expect(await storedDescription(STORED, older)).toBeNull();
 		});
 
+		it.each([
+			true,
+			false,
+			undefined,
+		])("transfers a tracked secondary's CIK only with primary confirmation: %s", async (primaryListing) => {
+			const current = { ...secCompany, sourceCompanyId: null };
+			const other = { ...secCompany, companyId: "secondary", symbol: "AMJB" };
+			const svc = serviceOver(
+				repository({
+					claimContext: async () => context({ company: current }),
+					findBySourceId: async () => other,
+					factsOfKeys: async () => [],
+					valuesOfYears: async () => [],
+				}),
+			);
+			const result = await svc.completionEffects("owner", job, {
+				...completion(null),
+				identity: {
+					...completion(null).identity,
+					...(primaryListing === undefined ? {} : { primaryListing }),
+				},
+			});
+			if (!result.ok) throw new Error("expected completion effects");
+			expect(result.value.kind).toBe(primaryListing === true ? "synced" : "failed");
+			if (result.value.kind === "synced") expect(result.value.releasedIdentityOf).toBe("secondary");
+		});
+
+		it("refuses a secondary listing even before another listing owns the CIK", async () => {
+			const svc = serviceOver(
+				repository({
+					claimContext: async () => context({ company: { ...secCompany, sourceCompanyId: null } }),
+					findBySourceId: async () => null,
+				}),
+			);
+			const result = await svc.completionEffects("owner", job, {
+				...completion(null),
+				identity: { ...completion(null).identity, primaryListing: false },
+			});
+			expect(result.ok && result.value.kind).toBe("failed");
+		});
 		it("stores nothing, description included, on an identity conflict", async () => {
 			const read = description(ACCESSION, "2025-09-27", "2025-10-31", "extracted");
 			const effects = await serviceWith(null).completionEffects(

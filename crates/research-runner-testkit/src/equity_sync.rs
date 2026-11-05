@@ -137,6 +137,7 @@ impl EquitySyncSource for FixtureEquitySyncSource {
 		}
 		Ok(EquitySyncData {
 			identity: Some(EquitySyncIdentity {
+				primary_listing: None,
 				source_company_id,
 				..self.fixture.identity.clone()
 			}),

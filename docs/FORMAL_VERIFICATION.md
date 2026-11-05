@@ -89,3 +89,6 @@ bun run test                  # includes tests/formal/conformance.test.ts
 The research clipboard snapshot reuses the existing `RecentWithinBudget.lean` selector; its wrapper's JSON-size bound is checked by a UI helper test.
 
 `formal/ResearchFormal/MaterialSeries.lean` proves namespace and symbol validity for imported material IDs. Its vectors in `formal/vectors.json` are replayed by `tests/formal/materialSeries.test.ts` against the TypeScript parser; Rust receives the same generated domain parser vectors. These proofs cover identifier acceptance, not SQL, provider truth or licensing.
+
+
+SEC identity handover: `ResearchFormal/SecIdentity.lean` models the optional `primaryListing` release predicate in `completionEffects`. It proves that a secondary never releases another listing, a confirmed main can release a tracked listing, and an older runner cannot release a tracked listing. Application regressions exercise the same three cases; SQL integration tests cover atomic handover. Directory decoding, SEC row ordering and report heading recognition remain outside the Lean model and are checked by parser tests and cross-language vectors. The existing `BusinessSection` proofs cover section bounds without changes.

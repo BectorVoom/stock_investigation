@@ -83,6 +83,8 @@ pub struct SecIssuer {
 	pub name: String,
 	/// SEC spelling of the ticker.
 	pub ticker: String,
+	/// First listing for this CIK in directory order.
+	pub primary_ticker: String,
 	/// Exchange text exactly as SEC publishes it.
 	pub sec_exchange: Option<String>,
 }
@@ -179,6 +181,7 @@ pub fn parse_ticker_directory(value: &Value) -> Result<IndexMap<String, SecIssue
 		));
 	};
 	let mut issuers = IndexMap::new();
+	let mut primary_tickers = std::collections::HashMap::new();
 	for row in rows.iter().filter_map(Value::as_array) {
 		let Some(cik) = row
 			.get(cik_at)
@@ -198,7 +201,15 @@ pub fn parse_ticker_directory(value: &Value) -> Result<IndexMap<String, SecIssue
 			continue;
 		};
 		let key = normalize_ticker_key(ticker);
+		if issuers.contains_key(&key) {
+			continue;
+		}
+		let primary_ticker = primary_tickers
+			.entry(to_js_string(cik))
+			.or_insert_with(|| trim(ticker).to_uppercase())
+			.clone();
 		issuers.entry(key).or_insert_with(|| SecIssuer {
+			primary_ticker,
 			cik: format!("{:0>10}", to_js_string(cik)),
 			name: trim(name).to_owned(),
 			ticker: trim(ticker).to_uppercase(),

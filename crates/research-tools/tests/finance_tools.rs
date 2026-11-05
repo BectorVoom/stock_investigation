@@ -258,6 +258,7 @@ impl SecFinancialsSource for FakeFinancials {
 		let selected = select_annual_financials(field(&self.setup, "facts"))?;
 		Ok(SecCompanyFinancials {
 			issuer: SecIssuer {
+				primary_ticker: "AAPL".to_owned(),
 				cik: text(issuer, "cik").to_owned(),
 				name: text(issuer, "name").to_owned(),
 				ticker: text(issuer, "ticker").to_owned(),
