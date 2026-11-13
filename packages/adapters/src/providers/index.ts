@@ -5,6 +5,7 @@ import { createCodexRuntime } from "./codex.ts";
 import type { ProviderEnvironment } from "./environment.ts";
 import { createOpenCodeRuntime } from "./openCode.ts";
 import { createOpenRouterFreeRuntime, createOpenRouterRuntime } from "./openRouter.ts";
+import { createSarashinaApiRuntime } from "./sarashinaApi.ts";
 
 export {
 	CLAUDE_API_MESSAGES_URL,
@@ -35,6 +36,15 @@ export {
 	type SpawnedChild,
 	type TerminationSignal,
 } from "./processRunner.ts";
+export {
+	buildSarashinaRequestBody,
+	createSarashinaApiRuntime,
+	isSarashinaThinkingModel,
+	SARASHINA_API_DEFAULT_MODEL,
+	SARASHINA_API_MODELS,
+	SARASHINA_CHAT_COMPLETIONS_URL,
+	SARASHINA_MAX_COMPLETION_TOKENS,
+} from "./sarashinaApi.ts";
 export { PROVIDER_FAILURES, type ProviderFailure } from "./turn.ts";
 
 /**
@@ -53,11 +63,12 @@ export function createBaselineAgentRuntimes(
 	];
 }
 
-/** Baseline backends plus the OpenRouter free-models and Claude API backends. */
+/** Baseline backends plus the OpenRouter free-models, Claude API and Sarashina API backends. */
 export function createAgentRuntimes(environment: ProviderEnvironment): readonly AgentRuntime[] {
 	return [
 		...createBaselineAgentRuntimes(environment),
 		createOpenRouterFreeRuntime(environment),
 		createClaudeApiRuntime(environment),
+		createSarashinaApiRuntime(environment),
 	];
 }

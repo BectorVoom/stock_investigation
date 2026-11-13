@@ -81,7 +81,8 @@ test("the development app renders imported material database prices after restar
 		await page.goto(`${origin}/#/home`);
 		const table = page.locator('article[data-widget-id="material-table"]');
 		await expect(table).toContainText("72.5");
-		await expect(table).toContainText("USD/kg product");
+		// The stored unit is "USD/kg product"; widgets show it as "$/kg product" (`displayUnit`).
+		await expect(table).toContainText("$/kg product");
 		await expect(
 			page.locator('article[data-widget-id="material-chart"] svg path').first(),
 		).toBeVisible();

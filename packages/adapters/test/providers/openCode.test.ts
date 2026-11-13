@@ -789,6 +789,19 @@ it.each([
 	expect(events.some((event) => event.type === "tool.request")).toBe(false);
 });
 
+it("replays real 2.3.0 rejected read and shell write without executing a tool", async () => {
+	// Recorded 2026-11-14 on the installed 2.3.0 with the free-tier permission
+	// rules (system prompt neutralised so the model really tries both tools).
+	const { runtime } = runtimeFor(fixtureLines("opencode/v230-read-write-rejected.jsonl"));
+	const events = await collect(
+		runtime.run(makeRequest(), makeContext({ model: "opencode/glm-5.3-flash-free" })),
+	);
+	expect(textOf(events)).toBe("ISOLATED");
+	expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+	expect(events.some((event) => event.type === "tool.request")).toBe(false);
+	expect(textOf(events)).not.toContain("CANARY");
+});
+
 describe("opencode probe", () => {
 	function probeRuntime(
 		authList: { lines: readonly string[]; code: number },
@@ -862,6 +875,8 @@ describe("opencode probe", () => {
 		"opencode v2.1.0",
 		"opencode v2.2.4",
 		"opencode v2.2.7",
+		"opencode v2.3.1",
+		"opencode v2.4.0",
 		"opencode v3.0.0",
 	])("reports TOOL_ISOLATION_UNVERIFIED for %s, beyond the verified release line", async (version) => {
 		const { fake, runtime } = probeRuntime({ lines: ["[]"], code: 0 }, version);
@@ -885,6 +900,7 @@ describe("opencode probe", () => {
 	it.each([
 		"2.2.5",
 		"2.2.6",
+		"2.3.0",
 	])("accepts reverified %s with stored credentials and a model catalogue", async (version) => {
 		const { runtime } = probeRuntime(
 			{ lines: fixtureText("opencode/auth-list.json").split("\n"), code: 0 },

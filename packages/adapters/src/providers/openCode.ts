@@ -34,8 +34,11 @@
  *   `Agent not found: "research-text"` (verified). Any tool event in the
  *   stream still fails the turn closed. Because there is no per-run tool
  *   listing to re-check, the claim is pinned to the verified release line:
- *   outside 2.0.x (>= 2.0.27, < 2.1.0) and exact 2.2.5/2.2.6 `probe()` reports
+ *   outside 2.0.x (>= 2.0.27, < 2.1.0) and exact 2.2.5/2.2.6/2.3.0 `probe()` reports
  *   UNSUPPORTED_VERSION / TOOL_ISOLATION_UNVERIFIED instead of "available".
+ *   2.3.0 (re-verified 2026-11-14) adds the built-in `opencode_worktree_remove`
+ *   tool; it declares and asserts the `edit` permission, so deny-all strips it
+ *   and the free-tier config asks for it (auto-rejected like every other ask).
  * - Tool isolation, free-tier models (`-free` suffix, ask-and-reject): the
  *   provider refuses a free-tier request that does not carry OpenCode's tool
  *   set, so the deny-all config above is answered with `provider.auth` / 403.
@@ -140,6 +143,7 @@ const UNVERIFIED_FROM_VERSION: Version = [2, 1, 0];
 const VERIFIED_ADDITIONAL_VERSIONS: readonly Version[] = [
 	[2, 2, 5],
 	[2, 2, 6],
+	[2, 3, 0],
 ];
 
 /** Where OpenCode keeps its config, credentials and cache (XDG base directories). */
@@ -549,7 +553,7 @@ export function createOpenCodeRuntime(
 				capabilities: capabilities(),
 				availability: unavailable(
 					"TOOL_ISOLATION_UNVERIFIED",
-					`OpenCode ${formatVersion(version.version)} is outside the verified 2.0.x line and exact 2.2.5/2.2.6 releases`,
+					`OpenCode ${formatVersion(version.version)} is outside the verified 2.0.x line and exact 2.2.5/2.2.6/2.3.0 releases`,
 				),
 			};
 		}

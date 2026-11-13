@@ -20,6 +20,7 @@ import {
 	createOpenCodeRuntime,
 	createOpenRouterFreeRuntime,
 	createOpenRouterRuntime,
+	createSarashinaApiRuntime,
 	type ProviderEnvironment,
 } from "../../src/providers/index.ts";
 import {
@@ -51,6 +52,11 @@ const CLAUDE_API_ENV = {
 	ANTHROPIC_API_KEY: "sk-ant-api03-TEST-KEY-0123456789abcdef",
 };
 
+const SARASHINA_API_ENV = {
+	...BASE_ENV,
+	SARASHINA_API_KEY: "TEST-SARASHINA-KEY-0123456789abcdef",
+};
+
 interface Scenario {
 	readonly name: string;
 	readonly runtime: AgentRuntime;
@@ -80,6 +86,17 @@ function claudeApiScenario(
 ): Scenario {
 	const runtime = createClaudeApiRuntime(
 		makeEnvironment({ env: CLAUDE_API_ENV, fetch: () => Promise.resolve(respond()) }),
+	);
+	return { name, runtime, ...extra };
+}
+
+function sarashinaApiScenario(
+	name: string,
+	respond: () => Response,
+	extra: Partial<Scenario> = {},
+): Scenario {
+	const runtime = createSarashinaApiRuntime(
+		makeEnvironment({ env: SARASHINA_API_ENV, fetch: () => Promise.resolve(respond()) }),
 	);
 	return { name, runtime, ...extra };
 }
@@ -230,12 +247,30 @@ const SCENARIOS: readonly Scenario[] = [
 		name: "claude-api not configured",
 		runtime: createClaudeApiRuntime(makeEnvironment({ env: BASE_ENV })),
 	},
+	sarashinaApiScenario("sarashina-api ok", () => sse(fixtureText("sarashina-api/ok.sse"))),
+	sarashinaApiScenario("sarashina-api thinking ok", () =>
+		sse(fixtureText("sarashina-api/thinking-ok.sse")),
+	),
+	sarashinaApiScenario("sarashina-api length", () => sse(fixtureText("sarashina-api/length.sse"))),
+	sarashinaApiScenario(
+		"sarashina-api 429",
+		() => new Response("{}", { status: 429, headers: { "Retry-After": "3600" } }),
+	),
+	sarashinaApiScenario("sarashina-api garbage", () =>
+		sse(GARBAGE.map((line) => `data: ${line}\n\n`).join("")),
+	),
+	sarashinaApiScenario("sarashina-api invalid model id", () => sse(""), { model: "bad model" }),
+	{
+		name: "sarashina-api not configured",
+		runtime: createSarashinaApiRuntime(makeEnvironment({ env: BASE_ENV })),
+	},
 ];
 
 const HTTP_AGENT_IDS: ReadonlySet<string> = new Set([
 	"openrouter",
 	"openrouter-free",
 	"claude-api",
+	"sarashina-api",
 ]);
 
 async function runScenario(scenario: Scenario): Promise<AgentEvent[]> {
@@ -359,7 +394,7 @@ describe("baseline registry", () => {
 		]);
 	});
 
-	it("provides the baseline four, then openrouter-free and claude-api, through createAgentRuntimes", () => {
+	it("provides the baseline four, then openrouter-free, claude-api and sarashina-api, through createAgentRuntimes", () => {
 		const all = createAgentRuntimes(
 			makeEnvironment({
 				processRunner: createFakeProcessRunner({ spawnErrorCode: "ENOENT" }).runner,
@@ -369,6 +404,7 @@ describe("baseline registry", () => {
 			...BASELINE_AGENT_IDS,
 			"openrouter-free",
 			"claude-api",
+			"sarashina-api",
 		]);
 	});
 });

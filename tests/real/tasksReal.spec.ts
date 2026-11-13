@@ -1,6 +1,7 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
 import {
@@ -83,6 +84,36 @@ function throwawayDirs(label: string): { readonly dataDir: string; readonly extr
 	const extraRoot = mkdtempSync(join(tmpdir(), `research-real-tasks-${label}-extra-`));
 	resources.add(() => rmSync(extraRoot, { recursive: true, force: true }));
 	return { dataDir, extraRoot };
+}
+
+/** Marks the stored Home dashboard as saved in the stopped development database (a version-9 save). */
+function markDashboardSaved(dataDir: string): void {
+	const candidates: string[] = [];
+	const walk = (dir: string): void => {
+		for (const name of readdirSync(dir)) {
+			const path = join(dir, name);
+			if (statSync(path).isDirectory()) walk(path);
+			else if (name.endsWith(".sqlite")) candidates.push(path);
+		}
+	};
+	walk(dataDir);
+	let updated = 0;
+	for (const path of candidates) {
+		const db = new DatabaseSync(path);
+		try {
+			const table = db
+				.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'home_dashboards'")
+				.get();
+			if (table === undefined) continue;
+			const result = db
+				.prepare("UPDATE home_dashboards SET version = 1, updated_at = ? WHERE version = 0")
+				.run(new Date().toISOString());
+			updated += Number(result.changes);
+		} finally {
+			db.close();
+		}
+	}
+	if (updated !== 1) throw new Error(`expected one stored default dashboard, updated ${updated}`);
 }
 
 function devEnv(
@@ -294,15 +325,12 @@ test("upgraded state: a version-9 database gains the tasks table and Home keeps 
 		const workspace = await api(createdWorkspaceSchema, apiOrigin, "POST", "/api/v1/workspaces", {
 			title: "Upgrade probe",
 		});
-		const conversations = await api(
-			conversationListResponseSchema,
-			apiOrigin,
-			"GET",
-			"/api/v1/conversations",
-		);
-		expect(conversations.conversations.map((entry) => entry.workspaceId)).toContain(
-			workspace.workspaceId,
-		);
+		// Only created here: every read of the conversation list now also reads
+		// `scheduled_tasks.output_type` (migration 0038), which an installation
+		// at this older schema cannot have until the restart below applies the
+		// pending migrations (the launcher always migrates before it serves). The
+		// restarted installation must list it (phase 2).
+		expect(workspace.workspaceId).toMatch(/^ws_/);
 		const dashboard = await api(
 			homeDashboardResponseSchema,
 			apiOrigin,
@@ -310,21 +338,15 @@ test("upgraded state: a version-9 database gains the tasks table and Home keeps 
 			"/api/v1/home/dashboard",
 		);
 		expect(dashboard.origin).toBe("defaults");
-		const saved = await api(
-			homeDashboardResponseSchema,
-			apiOrigin,
-			"PUT",
-			"/api/v1/home/dashboard",
-			{
-				dashboard: dashboard.dashboard,
-				expectedVersion: dashboard.version,
-			},
-		);
-		expect(saved.origin).toBe("saved");
 		savedWidgetIds = dashboard.dashboard.widgets.map((widget) => widget.widgetId);
 	} finally {
 		await before.stop();
 	}
+	// The dashboard is saved the way a version-9 installation stored it: a
+	// `home_dashboards` row past version 0. Today's save endpoint also prunes
+	// market series against tables added after version 9, so it cannot be the
+	// writer on this schema (the launcher always migrates before it serves).
+	markDashboardSaved(dirs.dataDir);
 
 	// Phase 2: the migration returns; the SAME data directory restarts at version 10.
 	restore();

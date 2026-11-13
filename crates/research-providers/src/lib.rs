@@ -15,6 +15,7 @@ pub mod opencode;
 pub mod openrouter;
 pub mod openrouter_models;
 pub mod process;
+pub mod sarashina_api;
 mod schema;
 pub mod spawn_helper;
 pub mod turn;

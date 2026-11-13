@@ -49,7 +49,9 @@ export function noEvidenceHint(run: ResearchRun, text: RunText): string | null {
 /**
  * A next step for a provider that turned the run away. The runner already
  * retried after a backoff, so "a few minutes" is the honest wait; another
- * model is the way out when one model's upstream stays overloaded.
+ * model is the way out when one model's upstream stays overloaded. A
+ * rejected credential (`PROVIDER_AUTH`: signed out, expired or revoked key)
+ * is not retried by waiting: the owner renews it or picks another backend.
  */
 export function providerFailureHint(run: ResearchRun, text: RunText): string | null {
 	switch (run.failureCode) {
@@ -59,6 +61,8 @@ export function providerFailureHint(run: ResearchRun, text: RunText): string | n
 			return text.providerRateLimited;
 		case "PROVIDER_REFUSED":
 			return text.providerRefused;
+		case "PROVIDER_AUTH":
+			return text.providerAuth;
 		default:
 			return null;
 	}

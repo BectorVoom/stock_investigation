@@ -5,6 +5,7 @@ import {
 	DEFAULT_AGENT_SETTINGS,
 	OPENROUTER_FREE_AGENT_ID,
 	RUN_LIMITS,
+	SARASHINA_API_AGENT_ID,
 } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -817,5 +818,67 @@ describe("Agent settings: Codex and Claude Code model lists", () => {
 
 		expect(modelSelectValue()).toBe("claude-opus-5-5");
 		expect(modelOptionTexts()).toContain("claude-opus-5-5 (saved — not in the runner's list)");
+	});
+});
+
+const SARASHINA_AGENTS = agentsResponseSchema.parse({
+	...AGENTS,
+	agents: [
+		...AGENTS.agents,
+		{
+			agentId: SARASHINA_API_AGENT_ID,
+			displayName: "Sarashina API",
+			capabilities: {
+				supported: ["stream", "cancel"],
+				model: "sarashina3.2-mini-thinking",
+				models: ["sarashina3.2-mini-thinking", "sarashina3-mini", "sarashina3-nano"],
+			},
+			costModel: "plan-limited",
+			toolIsolation: "enforced",
+			availability: { status: "available" },
+		},
+	],
+});
+
+describe("Agent settings: Sarashina API backend", () => {
+	it("offers the reported models in the runner's order and saves one with no spend cap", async () => {
+		mount(agentSettingsResponseSchema.parse(UNSAVED), SARASHINA_AGENTS);
+		await sectionReady();
+		chooseBackend(SARASHINA_API_AGENT_ID);
+		const values = [...modelSelect().querySelectorAll("option")].map((option) =>
+			option.getAttribute("value"),
+		);
+		expect(values.filter((value) => value?.startsWith("sarashina"))).toEqual([
+			"sarashina3.2-mini-thinking",
+			"sarashina3-mini",
+			"sarashina3-nano",
+		]);
+		chooseModel("sarashina3-mini");
+		expect(saveButton().disabled).toBe(false);
+		fireEvent.click(saveButton());
+		await screen.findByText(/Saved /);
+		expect(backend.requestsTo("PUT", /settings\/agent/)[0]?.body).toMatchObject({
+			defaultAgentId: SARASHINA_API_AGENT_ID,
+			models: { [SARASHINA_API_AGENT_ID]: "sarashina3-mini" },
+			budget: expect.objectContaining({ maxSpendUsd: null }),
+		});
+	});
+
+	it("shows the beta note only for the Sarashina API and links it to the select", async () => {
+		mount(agentSettingsResponseSchema.parse(UNSAVED), SARASHINA_AGENTS);
+		await sectionReady();
+		expect(screen.queryByText(/SB Intuitions' free beta/)).toBeNull();
+
+		chooseBackend(SARASHINA_API_AGENT_ID);
+		const note = await screen.findByText(/SB Intuitions' free beta/);
+		expect(note.getAttribute("data-sarashina-note")).toBe("true");
+		const describedBy = modelSelect().getAttribute("aria-describedby") ?? "";
+		expect(describedBy.split(" ")).toContain(note.getAttribute("id"));
+
+		chooseOther();
+		expect(screen.getByLabelText("Model id").getAttribute("placeholder")).toBe("sarashina…");
+
+		chooseBackend("claude-code");
+		expect(screen.queryByText(/SB Intuitions' free beta/)).toBeNull();
 	});
 });

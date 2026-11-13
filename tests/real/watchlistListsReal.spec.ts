@@ -180,7 +180,8 @@ test("a list of watched stocks shows real prices from the previous close on Home
 	await expect(appleRow.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}$/, {
 		timeout: 600_000,
 	});
-	await expect(appleRow).toContainText("USD");
+	// The stored unit is "USD"; widgets show it as "$" (`displayUnit`).
+	await expect(appleRow).toContainText(/\d[\d,.]*\s*\$/);
 	await expect(appleRow).toContainText(/[+−-]?\d[\d,.]*%/);
 	if (realKey) {
 		const msftRow = widget.locator("tbody tr").filter({ hasText: "MSFT" });

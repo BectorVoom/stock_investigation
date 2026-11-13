@@ -534,6 +534,7 @@ describe("model selector options", () => {
 		expect(customModelPlaceholder("codex", EN)).toBe("model id");
 		expect(customModelPlaceholder("claude-code", EN)).toBe("model id");
 		expect(customModelPlaceholder("claude-api", EN)).toBe("claude-…");
+		expect(customModelPlaceholder("sarashina-api", EN)).toBe("sarashina…");
 	});
 
 	it("falls back to first plus Other when no models are reported", () => {

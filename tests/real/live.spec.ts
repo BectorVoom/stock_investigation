@@ -79,8 +79,13 @@ const METERED_KEYS: Readonly<Record<string, string>> = {
 	"claude-api": "ANTHROPIC_API_KEY",
 	openrouter: "OPENROUTER_API_KEY",
 };
+/** Plan-limited HTTPS backends that still need their key in the runner env file (ADR-0074). */
+const PLAN_KEYS: Readonly<Record<string, string>> = {
+	"sarashina-api": "SARASHINA_API_KEY",
+};
 const METERED_KEY = METERED_KEYS[AGENT_ID] ?? null;
 const METERED = METERED_KEY !== null;
+const PLAN_KEY = PLAN_KEYS[AGENT_ID] ?? null;
 /** The spend ceiling per question on a metered backend, in USD (`RUN_LIVE_MAX_SPEND`, default 0.50). */
 const MAX_SPEND_USD = Number((process.env.RUN_LIVE_MAX_SPEND ?? "0.5").trim());
 
@@ -309,6 +314,10 @@ test.describe("live positive path through the real backend (spends real quota)",
 		if (METERED_KEY !== null && meteredKey === "") {
 			throw new Error(`RUN_LIVE_AGENT=${AGENT_ID} needs ${METERED_KEY} in the environment`);
 		}
+		const planKey = PLAN_KEY === null ? "" : (process.env[PLAN_KEY] ?? "").trim();
+		if (PLAN_KEY !== null && planKey === "") {
+			throw new Error(`RUN_LIVE_AGENT=${AGENT_ID} needs ${PLAN_KEY} in the environment`);
+		}
 		if (METERED && !(MAX_SPEND_USD > 0)) {
 			throw new Error("RUN_LIVE_MAX_SPEND must be a positive number of USD");
 		}
@@ -320,6 +329,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 				: { AGENT_WEB_SEARCH_API_KEY: searchKey, AGENT_WEB_SEARCH_URL: searchUrl }),
 			...(AGENT_ID === "opencode" ? {} : { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" }),
 			...(METERED_KEY === null ? {} : { [METERED_KEY]: meteredKey }),
+			...(PLAN_KEY === null ? {} : { [PLAN_KEY]: planKey }),
 			...(AGENT_ID === "openrouter" && MODEL !== "" ? { OPENROUTER_MODEL: MODEL } : {}),
 		});
 		service = await startDev(dataDirA);

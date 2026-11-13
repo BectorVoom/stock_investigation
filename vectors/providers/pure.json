@@ -2991,6 +2991,10 @@
 			"output": null
 		},
 		{
+			"input": "TEST-SARASHINA-KEY-0123456789abcdef",
+			"output": null
+		},
+		{
 			"input": "Content-Type",
 			"output": null
 		},
@@ -3203,11 +3207,59 @@
 			"output": null
 		},
 		{
+			"input": "sarashina-api ok",
+			"output": null
+		},
+		{
+			"input": "sarashina-api/ok.sse",
+			"output": null
+		},
+		{
+			"input": "sarashina-api thinking ok",
+			"output": null
+		},
+		{
+			"input": "sarashina-api/thinking-ok.sse",
+			"output": null
+		},
+		{
+			"input": "sarashina-api length",
+			"output": null
+		},
+		{
+			"input": "sarashina-api/length.sse",
+			"output": null
+		},
+		{
+			"input": "sarashina-api 429",
+			"output": "rate-limit"
+		},
+		{
+			"input": "sarashina-api garbage",
+			"output": null
+		},
+		{
+			"input": "sarashina-api invalid model id",
+			"output": null
+		},
+		{
+			"input": "bad model",
+			"output": null
+		},
+		{
+			"input": "sarashina-api not configured",
+			"output": null
+		},
+		{
 			"input": "openrouter",
 			"output": null
 		},
 		{
 			"input": "openrouter-free",
+			"output": null
+		},
+		{
+			"input": "sarashina-api",
 			"output": null
 		},
 		{
@@ -3255,7 +3307,7 @@
 			"output": null
 		},
 		{
-			"input": "provides the baseline four, then openrouter-free and claude-api, through createAgentRuntimes",
+			"input": "provides the baseline four, then openrouter-free, claude-api and sarashina-api, through createAgentRuntimes",
 			"output": null
 		},
 		{
@@ -3987,6 +4039,22 @@
 			"output": null
 		},
 		{
+			"input": "replays real 2.3.0 rejected read and shell write without executing a tool",
+			"output": null
+		},
+		{
+			"input": "opencode/v230-read-write-rejected.jsonl",
+			"output": null
+		},
+		{
+			"input": "opencode/glm-5.3-flash-free",
+			"output": null
+		},
+		{
+			"input": "CANARY",
+			"output": null
+		},
+		{
 			"input": "opencode probe",
 			"output": null
 		},
@@ -4055,6 +4123,14 @@
 			"output": null
 		},
 		{
+			"input": "opencode v2.3.1",
+			"output": null
+		},
+		{
+			"input": "opencode v2.4.0",
+			"output": null
+		},
+		{
 			"input": "opencode v3.0.0",
 			"output": null
 		},
@@ -4080,6 +4156,10 @@
 		},
 		{
 			"input": "2.2.6",
+			"output": null
+		},
+		{
+			"input": "2.3.0",
 			"output": null
 		},
 		{
@@ -5176,6 +5256,146 @@
 		},
 		{
 			"input": "without process groups, signals only the direct child and escalates until it closes",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/sarashinaApi.ts",
+			"output": null
+		},
+		{
+			"input": "expected a string body",
+			"output": null
+		},
+		{
+			"input": "sarashina-api runtime metadata",
+			"output": null
+		},
+		{
+			"input": "is a plan-limited, tool-isolated backend",
+			"output": null
+		},
+		{
+			"input": "Sarashina API",
+			"output": null
+		},
+		{
+			"input": "sarashina-api probe",
+			"output": null
+		},
+		{
+			"input": "is NOT_CONFIGURED without SARASHINA_API_KEY and never contacts the network",
+			"output": null
+		},
+		{
+			"input": "The Sarashina API needs SARASHINA_API_KEY in the runner environment",
+			"output": null
+		},
+		{
+			"input": "is available with a key and offers the chat models, offline",
+			"output": null
+		},
+		{
+			"input": "sarashina3.2-mini-thinking",
+			"output": null
+		},
+		{
+			"input": "sarashina3-mini",
+			"output": null
+		},
+		{
+			"input": "sarashina3-nano",
+			"output": null
+		},
+		{
+			"input": "reports SARASHINA_MODEL as the default model when set",
+			"output": null
+		},
+		{
+			"input": " sarashina3-nano ",
+			"output": null
+		},
+		{
+			"input": "sarashina-api request",
+			"output": null
+		},
+		{
+			"input": "sends reasoning_effort only to a thinking model, and the API's 8,000-token cap",
+			"output": null
+		},
+		{
+			"input": "p",
+			"output": null
+		},
+		{
+			"input": "chooses Settings' model, then SARASHINA_MODEL, then the default",
+			"output": null
+		},
+		{
+			"input": "  ",
+			"output": null
+		},
+		{
+			"input": "posts to the fixed endpoint with the key only in Authorization",
+			"output": null
+		},
+		{
+			"input": "Reply with exactly: OK",
+			"output": null
+		},
+		{
+			"input": "secret",
+			"output": null
+		},
+		{
+			"input": "passes the run's effort to a thinking model",
+			"output": null
+		},
+		{
+			"input": "sarashina-api recorded streams",
+			"output": null
+		},
+		{
+			"input": "completes with the answer and an unknown cost (ok.sse)",
+			"output": null
+		},
+		{
+			"input": "forwards a thinking model's answer and never its encrypted reasoning",
+			"output": null
+		},
+		{
+			"input": "reports a turn stopped by the token cap as truncated, not completed",
+			"output": null
+		},
+		{
+			"input": "maps a 401 to PROVIDER_AUTH with the status unchanged, without retrying",
+			"output": "auth"
+		},
+		{
+			"input": "sarashina-api/error-401.json",
+			"output": "auth"
+		},
+		{
+			"input": "fails closed before any request without a key or with an invalid model id",
+			"output": null
+		},
+		{
+			"input": "DOC-EXAMPLE-SARASHINA-0123456789abcdef",
+			"output": null
+		},
+		{
+			"input": "sarashina-api-chat-request",
+			"output": null
+		},
+		{
+			"input": "sarashina-api-chat-stream",
+			"output": null
+		},
+		{
+			"input": "sarashina-api.md examples",
+			"output": null
+		},
+		{
+			"input": "parses the live stream into the answer text and a completed turn of unknown cost",
 			"output": null
 		},
 		{

@@ -3,6 +3,7 @@ import {
 	type AgentSettingsResponse,
 	type AgentsResponse,
 	OPENROUTER_FREE_AGENT_ID,
+	SARASHINA_API_AGENT_ID,
 } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
 import {
@@ -204,6 +205,7 @@ export function AgentSettingsSection(props: {
 			isFreeTierModelId(trimmedModel()),
 	);
 	const isFreeBackend = createMemo(() => selectedBackendId() === OPENROUTER_FREE_AGENT_ID);
+	const isSarashinaBackend = createMemo(() => selectedBackendId() === SARASHINA_API_AGENT_ID);
 	const selectedDisplayName = createMemo(() => evaluation()?.selectedAgent?.displayName ?? "");
 
 	const backendId = createUniqueId();
@@ -212,10 +214,12 @@ export function AgentSettingsSection(props: {
 	const modelHelpId = createUniqueId();
 	const modelCautionId = createUniqueId();
 	const freePlanNoteId = createUniqueId();
+	const sarashinaNoteId = createUniqueId();
 	const modelDescribedBy = createMemo(() => {
 		const ids = [modelHelpId];
 		if (showFreeCaution()) ids.push(modelCautionId);
 		if (isFreeBackend()) ids.push(freePlanNoteId);
+		if (isSarashinaBackend()) ids.push(sarashinaNoteId);
 		return ids.join(" ");
 	});
 	const effortId = createUniqueId();
@@ -424,6 +428,15 @@ export function AgentSettingsSection(props: {
 											class="mt-0.5 text-2xs text-slate-600"
 										>
 											{text().freePlanNote}
+										</p>
+									</Show>
+									<Show when={isSarashinaBackend()}>
+										<p
+											id={sarashinaNoteId}
+											data-sarashina-note="true"
+											class="mt-0.5 text-2xs text-slate-600"
+										>
+											{text().sarashinaNote}
 										</p>
 									</Show>
 								</>

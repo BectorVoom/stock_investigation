@@ -340,7 +340,10 @@ impl OpenCodeRuntime {
 /// Release policy pinned to the permission configurations verified for this adapter.
 fn verified_release(version: Version) -> bool {
 	([2.0, 0.0, 27.0]..[2.0, 1.0, 0.0]).contains(&version)
-		|| matches!(version, [2.0, 2.0, 5.0] | [2.0, 2.0, 6.0])
+		|| matches!(
+			version,
+			[2.0, 2.0, 5.0] | [2.0, 2.0, 6.0] | [2.0, 3.0, 0.0]
+		)
 }
 
 #[async_trait]
@@ -385,7 +388,7 @@ impl AgentRuntime for OpenCodeRuntime {
 				availability: unavailable(
 					UnavailableReason::ToolIsolationUnverified,
 					&format!(
-						"OpenCode {} is outside the verified 2.0.x line and exact 2.2.5/2.2.6 releases",
+						"OpenCode {} is outside the verified 2.0.x line and exact 2.2.5/2.2.6/2.3.0 releases",
 						format_version(version)
 					),
 				),
@@ -580,12 +583,13 @@ mod release_policy_tests {
 	use super::*;
 
 	#[test]
-	fn accepts_reverified_225_226_and_legacy_line_only() {
+	fn accepts_reverified_225_226_230_and_legacy_line_only() {
 		for version in [
 			[2.0, 0.0, 27.0],
 			[2.0, 0.0, 32.0],
 			[2.0, 2.0, 5.0],
 			[2.0, 2.0, 6.0],
+			[2.0, 3.0, 0.0],
 		] {
 			assert!(verified_release(version));
 		}
@@ -594,6 +598,8 @@ mod release_policy_tests {
 			[2.0, 1.0, 0.0],
 			[2.0, 2.0, 4.0],
 			[2.0, 2.0, 7.0],
+			[2.0, 3.0, 1.0],
+			[2.0, 4.0, 0.0],
 			[3.0, 0.0, 0.0],
 		] {
 			assert!(!verified_release(version));

@@ -55,6 +55,8 @@ export const runMessages = defineMessages({
 			"The model's provider is limiting requests (free models have per-minute and daily limits). Retry later, or choose another model in Settings.",
 		providerRefused:
 			"The model declined to answer this question. Rephrase it, or choose another model in Settings.",
+		providerAuth:
+			"The backend's provider rejected its credential (signed out, or the key expired or was revoked). Sign in again or replace the key for this backend, then retry — or choose another backend in Settings.",
 		approveRun: (runId: string) => `Approve run ${runId}`,
 		approvalRequested: "Approval requested: ",
 		reasonNotStated: "reason not stated",
@@ -112,6 +114,8 @@ export const runMessages = defineMessages({
 			"モデルのプロバイダーがリクエストを制限しています（無料モデルには 1 分あたりと 1 日あたりの上限があります）。時間をおいて再試行するか、設定で別のモデルを選んでください。",
 		providerRefused:
 			"モデルがこの質問への回答を断りました。質問を言い換えるか、設定で別のモデルを選んでください。",
+		providerAuth:
+			"バックエンドのプロバイダーが認証情報を拒否しました（サインアウト、またはキーの期限切れや無効化）。このバックエンドに再度サインインするかキーを差し替えてから再試行するか、設定で別のバックエンドを選んでください。",
 		approveRun: (runId) => `実行 ${runId} を承認`,
 		approvalRequested: "承認が必要です: ",
 		reasonNotStated: "理由の記載なし",

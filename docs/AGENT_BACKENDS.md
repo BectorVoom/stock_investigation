@@ -1,16 +1,16 @@
 # Agent backends
 
-Status as verified on 2026-10-12 against the locally installed tools, plus the Claude API backend written from Anthropic's documentation on 2026-10-24; the Claude API and OpenRouter HTTP traffic was re-checked live on 2026-10-31 ([external API documents](external-apis/README.md)) (OpenCode v2.0.27 with the Go-plan model `opencode-go/muse-spark-1.3-contributor` and the free-tier model `opencode/muse-spark-1.3-contributor-free` — the CLI has since been re-verified on exact 2.2.5 and 2.2.6, see the re-verification records below — codex-cli 0.160.0, Claude Code 2.1.296; OpenRouter chat completions from documentation only, no API key; the OpenRouter model list from the live public endpoint). Re-verify after any CLI upgrade (section 13: provider terms and flags change). Adapters live in `packages/adapters/src/providers`; each file's header records the exact version and evidence.
+Status as verified on 2026-10-12 against the locally installed tools, plus the Claude API backend written from Anthropic's documentation on 2026-10-24; the Claude API and OpenRouter HTTP traffic was re-checked live on 2026-10-31 ([external API documents](external-apis/README.md)) (OpenCode v2.0.27 with the Go-plan model `opencode-go/muse-spark-1.3-contributor` and the free-tier model `opencode/muse-spark-1.3-contributor-free` — the CLI has since been re-verified on exact 2.2.5, 2.2.6 and 2.3.0, see the re-verification records below — codex-cli 0.160.0, Claude Code 2.1.296; OpenRouter chat completions from documentation only, no API key; the OpenRouter model list from the live public endpoint). Re-verify after any CLI upgrade (section 13: provider terms and flags change). Adapters live in `packages/adapters/src/providers`; each file's header records the exact version and evidence.
 
 All adapters are **text in, text out**. The orchestrator owns tools (ADR-0003), so no adapter claims `tool-calls` or `structured-output`.
 
-| | OpenCode | Codex | Claude Code | OpenRouter | OpenRouter (free models) | Claude API |
-|---|---|---|---|---|---|---|
-| Integration | `opencode run --standalone --format json` | `codex exec --json` | `claude -p --output-format stream-json` | HTTPS chat completions (SSE) | the same HTTPS chat completions, free model ids only | HTTPS Messages API (SSE), `anthropic-version: 2026-10-21` |
-| Capabilities claimed | none | none | `stream` | `stream`, `cancel` | `stream`, `cancel` | `stream`, `cancel` |
-| Cost model | plan-limited (unknown) | plan-limited (unknown) | plan-limited (unknown) | metered | plan-limited (no spend authorized; a reported charge fails the turn) | metered (cost computed from token counts and the adapter's price table) |
-| Tool isolation | enforced (version-pinned) | **unverified** | enforced (checked per run) | enforced (no tools sent) | enforced (no tools sent) | enforced (no tools sent; a tool block fails the turn) |
-| Verified | live, v2.0.27, Go-plan model `opencode-go/muse-spark-1.3-contributor` and free-tier model `opencode/muse-spark-1.3-contributor-free` (2026-10-12) | live, codex-cli 0.160.0 | live, 2.1.296 | request and error answers live (2026-10-31); no paid completion (the key's credit limit is $0) — [OpenRouter](external-apis/apis/openrouter.md) | model list: live public endpoint (2026-10-12, again 2026-10-31); chat: live (2026-10-31; free models were rate-limited or truncated, so no completed answer was captured) | live (2026-10-24 per [REQUIREMENTS_STATUS.md](REQUIREMENTS_STATUS.md), again 2026-10-31, [Claude API](external-apis/apis/claude-api.md)) |
+| | OpenCode | Codex | Claude Code | OpenRouter | OpenRouter (free models) | Claude API | Sarashina API |
+|---|---|---|---|---|---|---|---|
+| Integration | `opencode run --standalone --format json` | `codex exec --json` | `claude -p --output-format stream-json` | HTTPS chat completions (SSE) | the same HTTPS chat completions, free model ids only | HTTPS Messages API (SSE), `anthropic-version: 2026-10-21` | HTTPS OpenAI-compatible chat completions (SSE) |
+| Capabilities claimed | none | none | `stream` | `stream`, `cancel` | `stream`, `cancel` | `stream`, `cancel` | `stream`, `cancel` |
+| Cost model | plan-limited (unknown) | plan-limited (unknown) | plan-limited (unknown) | metered | plan-limited (no spend authorized; a reported charge fails the turn) | metered (cost computed from token counts and the adapter's price table) | plan-limited (free beta; usage has token counts only, cost always unknown) |
+| Tool isolation | enforced (version-pinned) | **unverified** | enforced (checked per run) | enforced (no tools sent) | enforced (no tools sent) | enforced (no tools sent; a tool block fails the turn) | enforced (no tools sent) |
+| Verified | live, v2.0.27, Go-plan model `opencode-go/muse-spark-1.3-contributor` and free-tier model `opencode/muse-spark-1.3-contributor-free` (2026-10-12) | live, codex-cli 0.160.0 | live, 2.1.296 | request and error answers live (2026-10-31); no paid completion (the key's credit limit is $0) — [OpenRouter](external-apis/apis/openrouter.md) | model list: live public endpoint (2026-10-12, again 2026-10-31); chat: live (2026-10-31; free models were rate-limited or truncated, so no completed answer was captured) | live (2026-10-24 per [REQUIREMENTS_STATUS.md](REQUIREMENTS_STATUS.md), again 2026-10-31, [Claude API](external-apis/apis/claude-api.md)) | live (2026-11-13, both runners' adapters, [Sarashina API](external-apis/apis/sarashina-api.md)) |
 
 ## What "enforced" rests on
 
@@ -20,6 +20,8 @@ All adapters are **text in, text out**. The orchestrator owns tools (ADR-0003), 
 - **OpenRouter (free models).** Backend id `openrouter-free`: the same request as OpenRouter, restricted to models OpenRouter serves at no charge — an id ending in `:free`, or the router `openrouter/free`. It exists so a free-plan account (no credits) can be used without authorizing any spend: the backend is plan-limited, so a question carries no maximum spend and asks for no consent. Two checks keep that honest. Before any network activity a model id that is not a free one is refused (`PROVIDER_MODEL_INVALID`), and the model never falls back to `OPENROUTER_MODEL`. If the provider nevertheless reports a cost above zero, the turn stops, reports that cost and fails with `PROVIDER_FREE_MODEL_CHARGED` (not retryable). Otherwise cost is reported as unknown, as for every plan-limited backend. Requires `OPENROUTER_API_KEY` (a free account's key works) and a model chosen in Settings → AI agent, with `OPENROUTER_FREE_MODEL` as the runner-side fallback.
 
 - **Claude API.** Backend id `claude-api` (ADR-0031): one streaming `POST https://api.anthropic.com/v1/messages` with one user message, no `tools`, no `fallbacks`, no sampling parameters, `max_tokens` 16,000 (thinking and answer together) and `output_config.effort` set to the run's effort. Requires `ANTHROPIC_API_KEY`, sent only in the `x-api-key` header to that fixed origin; `ANTHROPIC_BASE_URL` is ignored and redirects are refused. The models are the ones in `CLAUDE_API_MODELS` (Claude Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5; Opus 5.5 when Settings leaves the model empty), each with its first-party price per million tokens; any other id is refused before any network activity (`PROVIDER_MODEL_INVALID`). The API reports token counts, so the adapter computes the cost from the final `message_delta` usage and the model's price (Haiku 5.5's higher price above 100K prompt tokens included); a turn without that usage reports its cost as unknown. Thinking text is never forwarded; a `tool_use` / `server_tool_use` block fails the turn with `PROVIDER_TOOL_ISOLATION_VIOLATED`, and a refusal is never answered by a fallback model. Request body, stream events, stop reasons, the retry rule (shared with OpenRouter in `httpTurn.ts` / `http_turn.rs`; a spend-limit answer fails at once as `PROVIDER_PAYMENT_REQUIRED`, a 504 is `PROVIDER_TIMEOUT`) and the status mapping: [Claude API](external-apis/apis/claude-api.md).
+
+- **Sarashina API.** Backend id `sarashina-api` (ADR-0074): one streaming `POST https://api.sarashina.ai/v1/chat/completions` with one user message, no `tools`, `max_completion_tokens` 8,000 (the API's maximum) and, only for a model id ending in `-thinking`, `reasoning_effort` set to the run's effort (other models refuse the field with 400). Requires `SARASHINA_API_KEY`, sent only in the `Authorization` header to that fixed origin; redirects are refused. Plan-limited: the API is a free beta whose usage reports token counts only, so every turn's cost is unknown and no spend is authorized; Settings notes that beta inputs may be used for training. Chunks are read by OpenRouter's parser and the retry rule is the shared one (`httpTurn.ts` / `http_turn.rs`). Model: Settings' choice, else `SARASHINA_MODEL`, else `sarashina3.2-mini-thinking`. Request, stream and status mapping: [Sarashina API](external-apis/apis/sarashina-api.md).
 
 **Claude Code and metered authentication.** The adapter is plan-limited by declaration, so it refuses API-key or third-party-provider authentication, which would be metered: `probe()` reports such a login as `NOT_CONFIGURED`, and a run whose init event shows an API key source is killed with `PROVIDER_METERED_AUTH_NOT_ALLOWED` before any text is accepted. For metered access to Claude use the Claude API backend; for other models, OpenRouter (both with an explicit spend ceiling).
 
@@ -36,6 +38,7 @@ With every hardening flag applied (`--sandbox read-only`, `--ephemeral`, `--igno
 - **Codex model list.** Once the login check passes, `probe()` runs `codex debug models`, which prints the catalog behind Codex's own model picker without sending a prompt or spending quota. The adapter reports the slugs whose visibility is `list`, by the catalog's `priority` (newest first; ties keep catalog order), as `capabilities.models`. The catalog is a single JSON line carrying each model's instructions (about 560 KB for nine models in codex-cli 0.163.0), so this one capture gets a 4 MiB output budget instead of the 256 KiB status-command budget. A failed or unreadable catalog omits the list; the backend stays available.
 - **Claude Code model list.** The CLI has no command that lists models, but `--model` takes the aliases `fable`, `opus`, `sonnet` and `haiku`, each naming the newest model of its family. A probe that finds a subscription login reports these aliases as `capabilities.models`, and Settings → AI agent shows them as "Fable (latest)", "Opus (latest)" and so on. Checked on 2026-10-19 with Claude Code 2.1.302: each alias answered on a subscription login (`claude-fable-5-1`, `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`).
 - **Claude API model list.** The probe never contacts Anthropic: with `ANTHROPIC_API_KEY` set it reports the ids of `CLAUDE_API_MODELS` as `capabilities.models`, most capable first, and Settings → AI agent shows them as "Claude Opus 5.5 (claude-opus-5-5)" and so on. Settings refuses to save an id outside that list, because the runner could not price it. A new model or price is added to `CLAUDE_API_MODELS` in both runners (then regenerate the provider vectors).
+- **Sarashina API model list.** The probe never contacts SB Intuitions: it reports the fixed chat models of `SARASHINA_API_MODELS` (`sarashina3.2-mini-thinking`, `sarashina3-mini`, `sarashina3-nano`, from `GET /v1/models` on 2026-11-13 without the embedding, rerank and guard models) as `capabilities.models`; another id can be typed through "Other".
 - **How the selector shows a list.** Ids with a `provider/` prefix (OpenCode, OpenRouter) are grouped under their provider and sorted. A list in which no id names a provider (Codex, Claude Code, Claude API) is shown flat in the order the runner reported, which is the backend's own newest-first order. "Other — type a model id…" stays available for an id the list does not hold.
 - **OpenRouter free model list.** When `OPENROUTER_API_KEY` is set, the `openrouter-free` probe reads OpenRouter's public model list (`GET https://openrouter.ai/api/v1/models`) and reports the free ids as `capabilities.models`, which is what Settings → AI agent offers in the model selector. The request carries no API key and no prompt and spends no quota; without a key the runner never contacts OpenRouter at all. An id is listed only when it is a free id (`:free` or `openrouter/free`), both its prices are zero and it produces text; a zero-priced model without a `:free` id is left out, because its price can change while its id stays the same. Caching, bounds and fields read: [OpenRouter](external-apis/apis/openrouter.md).
 
@@ -79,3 +82,37 @@ auto-approval policy or model fallback changed. Settings can list and save the
 installed CLI's models; saved configuration is checked after browser reload in
 the isolated real development environment. Existing running releases must load
 the updated runner before the next probe can report availability.
+
+### OpenCode 2.3.0 re-verification (2026-11-14)
+
+Settings and the live pipeline marked the installed 2.3.0 `TOOL_ISOLATION_UNVERIFIED`
+(both runners accepted only 2.0.x, 2.2.5 and 2.2.6). Rechecked with the unchanged
+production configurations (generated from the adapter's own constants) using
+`opencode debug agents --standalone`: for `research-text` the inherited allows are
+still followed by the general deny (plan config, plus trailing `browser` denies), and
+the free-model config still ends deny-first, then only the ten known `ask`
+permissions, then the `browser` denies.
+
+2.3.0 adds built-in OpenCode-management tools (`worktree_*`, `session_*`,
+`schedule_*`, `models`). Only `opencode_worktree_remove` was advertised to a free
+model under the free config: in the CLI it declares `permission: "edit"` and asserts
+`action: "edit"` before removing anything, so deny-all strips it and the free config
+asks for it (auto-rejected like every other ask in a non-interactive run). The others
+declare no permission and were not advertised (the deny-first rule strips them, as it
+strips `execute`).
+
+Live free-model runs (`opencode/glm-5.3-flash-free`, `opencode/deepseek-v4.1-flash-free`)
+with the free permission rules and a neutral system prompt (the production prompt makes
+the models refuse to try) called `read` on a canary file and `shell` with a file write;
+both calls were auto-rejected (`providerCall.executed=false`, stderr
+`permission requested: …; auto-rejecting`), the write target was absent, the canary
+was not returned and the models answered `ISOLATED`. With the production prompt the
+models (glm-5.3-flash-free, deepseek-v4.1-flash-free, longcat-2.5-free, iceman-free) did
+not attempt any tool. The glm stream is the replay fixture `v230-read-write-rejected.jsonl`.
+
+Not verified live: a Go-plan model under deny-all (the stored `opencode-go` API key has
+expired — every `opencode-go/*` model answers `provider.auth` 401), and a live call of
+`opencode_worktree_remove` (the free-tier usage limit was reached during the probes);
+its gating rests on the CLI code above. Both runners now accept exactly 2.2.5, 2.2.6
+and 2.3.0 alongside the legacy 2.0.x line; 2.2.7, 2.3.1, 2.4.x and 3.x remain refused.
+No permission configuration, auto-approval policy or model fallback changed.

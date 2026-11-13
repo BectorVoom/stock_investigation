@@ -55,6 +55,8 @@ export const agentSettingsModelMessages = defineMessages({
 			"The OpenRouter free model must end in :free (or be openrouter/free) — any other model is billed and is refused by this backend.",
 		claudeApiModelNotListed:
 			"The Claude API runs only the models the runner lists, because it prices each answer from them. Choose one from the list.",
+		sarashinaNote:
+			"The Sarashina API is SB Intuitions' free beta: it reports no price, so the cost is unknown and no spend is authorized. During the beta, SB Intuitions may use what you send to train its models — do not send confidential or personal information.",
 		modelTooLong: (max: number) => `The model must be at most ${max} characters.`,
 	},
 	ja: {
@@ -105,6 +107,8 @@ export const agentSettingsModelMessages = defineMessages({
 			"OpenRouter の無料モデルは :free で終わる（または openrouter/free である）必要があります。それ以外のモデルは課金されるため、このバックエンドでは拒否されます。",
 		claudeApiModelNotListed:
 			"Claude API はランナーが一覧にしたモデルだけを実行します。回答ごとの料金をその一覧から計算するためです。一覧から選んでください。",
+		sarashinaNote:
+			"Sarashina API は SB Intuitions の無償ベータ版です。価格を報告しないため費用は不明で、支出は一切許可しません。ベータ期間中、送信した内容はモデルの学習に使われることがあります。機密情報や個人情報は送らないでください。",
 		modelTooLong: (max) => `モデルは ${max} 文字以内にしてください。`,
 	},
 });

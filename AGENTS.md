@@ -64,3 +64,5 @@ bun run deploy         # optional, postponed: deploy env.production to Cloudflar
 Apple Human Interface Guidelines(ios,macos)
 
 Web search now uses the separately built Agent Web Search service: [ADR-0073](docs/adr/0073-agent-web-search.md) and [API reference](docs/external-apis/apis/agent-web-search.md). Normal runner composition does not use Tavily.
+
+Settings → AI agent offers the Sarashina API (`sarashina-api`, SB Intuitions' OpenAI-compatible chat completions, `SARASHINA_API_KEY`): plan-limited while it is a free beta (cost always unknown), `reasoning_effort` only for `-thinking` models, 8,000 output tokens, in both runners: [ADR-0074](docs/adr/0074-sarashina-api-backend.md), [API reference](docs/external-apis/apis/sarashina-api.md).

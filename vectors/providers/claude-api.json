@@ -6593,6 +6593,12 @@
 				}
 			},
 			{
+				"input": "data:TEST-SARASHINA-KEY-0123456789abcdef",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
 				"input": "data:{\"status\":200,\"headers\":{\"Content-Type\":\"text/event-stream\"}}",
 				"output": {
 					"kind": "malformed"
@@ -6989,6 +6995,78 @@
 				}
 			},
 			{
+				"input": "data:sarashina-api ok",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api/ok.sse",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api thinking ok",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api/thinking-ok.sse",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api length",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api/length.sse",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api 429",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api garbage",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api invalid model id",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"bad model\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:bad model",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api not configured",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
 				"input": "data:openrouter",
 				"output": {
 					"kind": "malformed"
@@ -6996,6 +7074,12 @@
 			},
 			{
 				"input": "data:openrouter-free",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api",
 				"output": {
 					"kind": "malformed"
 				}
@@ -7067,7 +7151,7 @@
 				}
 			},
 			{
-				"input": "data:provides the baseline four, then openrouter-free and claude-api, through createAgentRuntimes",
+				"input": "data:provides the baseline four, then openrouter-free, claude-api and sarashina-api, through createAgentRuntimes",
 				"output": {
 					"kind": "malformed"
 				}
@@ -8517,6 +8601,36 @@
 				}
 			},
 			{
+				"input": "data:replays real 2.3.0 rejected read and shell write without executing a tool",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:opencode/v230-read-write-rejected.jsonl",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"opencode/glm-5.3-flash-free\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:opencode/glm-5.3-flash-free",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:CANARY",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
 				"input": "data:opencode probe",
 				"output": {
 					"kind": "malformed"
@@ -8667,6 +8781,18 @@
 				}
 			},
 			{
+				"input": "data:opencode v2.3.1",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:opencode v2.4.0",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
 				"input": "data:opencode v3.0.0",
 				"output": {
 					"kind": "malformed"
@@ -8710,6 +8836,12 @@
 			},
 			{
 				"input": "data:2.2.6",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:2.3.0",
 				"output": {
 					"kind": "malformed"
 				}
@@ -11020,6 +11152,318 @@
 			},
 			{
 				"input": "data:{\"diesOn\":[],\"hasProcessGroups\":false}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:../../src/providers/sarashinaApi.ts",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:expected a string body",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api runtime metadata",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:is a plan-limited, tool-isolated backend",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:Sarashina API",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api probe",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:is NOT_CONFIGURED without SARASHINA_API_KEY and never contacts the network",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"status\":\"unavailable\",\"reasonCode\":\"NOT_CONFIGURED\",\"detail\":\"The Sarashina API needs SARASHINA_API_KEY in the runner environment\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:The Sarashina API needs SARASHINA_API_KEY in the runner environment",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:is available with a key and offers the chat models, offline",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"supported\":[\"stream\",\"cancel\"],\"model\":\"sarashina3.2-mini-thinking\",\"models\":[\"sarashina3.2-mini-thinking\",\"sarashina3-mini\",\"sarashina3-nano\"]}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina3.2-mini-thinking",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina3-mini",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina3-nano",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:reports SARASHINA_MODEL as the default model when set",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data: sarashina3-nano ",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api request",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sends reasoning_effort only to a thinking model, and the API's 8,000-token cap",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:p",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"sarashina3.2-mini-thinking\",\"messages\":[{\"role\":\"user\",\"content\":\"p\"}],\"stream\":true,\"max_completion_tokens\":8000,\"reasoning_effort\":\"high\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"sarashina3-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"p\"}],\"stream\":true,\"max_completion_tokens\":8000}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:chooses Settings' model, then SARASHINA_MODEL, then the default",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"SARASHINA_MODEL\":\"sarashina3-nano\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"SARASHINA_MODEL\":\"  \"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:  ",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:posts to the fixed endpoint with the key only in Authorization",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"prompt\":\"Reply with exactly: OK\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:Reply with exactly: OK",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"sarashina3-mini\",\"effort\":\"medium\",\"scratchDirectory\":null}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"sarashina3-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly: OK\"}],\"stream\":true,\"max_completion_tokens\":8000}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"role\":\"user\",\"content\":\"Reply with exactly: OK\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:secret",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:passes the run's effort to a thinking model",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":null,\"effort\":\"low\",\"scratchDirectory\":null}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"sarashina3.2-mini-thinking\",\"reasoning_effort\":\"low\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api recorded streams",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:completes with the answer and an unknown cost (ok.sse)",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"sarashina3-mini\",\"scratchDirectory\":null}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:forwards a thinking model's answer and never its encrypted reasoning",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":null,\"scratchDirectory\":null}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:reports a turn stopped by the token cap as truncated, not completed",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:maps a 401 to PROVIDER_AUTH with the status unchanged, without retrying",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api/error-401.json",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"status\":401,\"headers\":{\"Content-Type\":\"application/json\"}}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_AUTH\",\"upstreamStatus\":401}",
+				"output": {
+					"kind": "ignored"
+				}
+			},
+			{
+				"input": "data:fails closed before any request without a key or with an invalid model id",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:DOC-EXAMPLE-SARASHINA-0123456789abcdef",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api-chat-request",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api-chat-stream",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sarashina-api.md examples",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"sarashina3-mini\",\"effort\":\"low\",\"scratchDirectory\":null}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:parses the live stream into the answer text and a completed turn of unknown cost",
 				"output": {
 					"kind": "malformed"
 				}

@@ -15,10 +15,10 @@
  * - Plan-limited: the API is a free beta, publishes no prices and reports
  *   token counts only (`usage` has no cost), so every turn's cost is unknown
  *   (null) — never 0 — and a question carries no maximum spend.
- * - The API refuses undocumented fields with 400, so the body carries only
- *   `model`, `messages`, `stream`, `max_completion_tokens` and, for a thinking
- *   model (id ending in `-thinking`), `reasoning_effort`; other models answer
- *   `reasoning_effort` with 400 ("not supported for model").
+ * - Only documented fields are sent (the API documents a 400 for disallowed
+ *   fields): `model`, `messages`, `stream`, `max_completion_tokens` and, for a
+ *   thinking model (id ending in `-thinking`), `reasoning_effort`; other
+ *   models answer `reasoning_effort` with 400 ("not supported for model").
  * - Bounded output per turn: `max_completion_tokens` is the API's own maximum,
  *   8,000 (a larger value is refused with 400). It covers thinking and answer;
  *   a turn stopped by it is PROVIDER_OUTPUT_TRUNCATED, never a completed answer.

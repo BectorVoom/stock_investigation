@@ -1290,6 +1290,19 @@ describe("chat run controls", () => {
 		expect(shown).toContain("choose another model in Settings");
 	});
 
+	it("hints renewing the credential for PROVIDER_AUTH (an expired key is not fixed by waiting)", async () => {
+		server.runs = [
+			makeRun({ runId: "run_provider", state: "failed", failureCode: "PROVIDER_AUTH" }),
+		];
+		mountApp(backend);
+
+		const failed = await screen.findByRole("article", { name: "Run run_provider" });
+		expect(failed.querySelector('[data-field="failure-code"]')?.textContent).toBe("PROVIDER_AUTH");
+		const shown = failed.querySelector('[data-field="failure-hint"]')?.textContent;
+		expect(shown).toContain("rejected its credential");
+		expect(shown).toContain("choose another backend in Settings");
+	});
+
 	it("shows the approval request and resumes under the fixed limits (ADR-0029)", async () => {
 		server.runs = [
 			makeRun({

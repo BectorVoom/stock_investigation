@@ -174,7 +174,8 @@ test("the server-side market sync shows a real Twelve Data price with an as-of d
 		await expect(watchlist).toBeVisible({ timeout: 60_000 });
 		const aaplRow = watchlist.getByRole("row", { name: /AAPL/ });
 		await expect(aaplRow).toContainText(/\d+\.\d+/, { timeout: 120_000 });
-		await expect(aaplRow).toContainText("USD");
+		// The stored unit is "USD"; widgets show it as "$" (`displayUnit`).
+		await expect(aaplRow).toContainText(/\d[\d,.]*\s*\$/);
 		await expect(aaplRow).toContainText(/\d{4}-\d{2}-\d{2}/);
 		const aaplSource = aaplRow.getByRole("link", { name: "Twelve Data" });
 		await expect(aaplSource).toHaveAttribute("href", "https://twelvedata.com/");

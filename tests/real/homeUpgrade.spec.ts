@@ -117,13 +117,12 @@ test("a pre-0006 database gains the Home tables on restart and keeps its data", 
 		const workspace = await api<{ workspaceId: string }>("POST", "/api/v1/workspaces", {
 			title: "Upgrade probe",
 		});
-		const conversations = await api<{ conversations: { workspaceId: string }[] }>(
-			"GET",
-			"/api/v1/conversations",
-		);
-		expect(conversations.conversations.map((entry) => entry.workspaceId)).toContain(
-			workspace.workspaceId,
-		);
+		// Only created here: every read of the conversation list now also reads
+		// `scheduled_tasks.output_type` (migration 0038), which an installation
+		// at this older schema cannot have until the restart below applies the
+		// pending migrations (the launcher always migrates before it serves). The
+		// restarted installation must list it (phase 2).
+		expect(workspace.workspaceId).toMatch(/^ws_/);
 	} finally {
 		await before.stop();
 	}
@@ -177,7 +176,8 @@ test("a pre-0006 database gains the Home tables on restart and keeps its data", 
 		await expect(watchlist).toBeVisible({ timeout: 60_000 });
 		const aaplRow = watchlist.getByRole("row", { name: /AAPL/ });
 		await expect(aaplRow).toContainText(/\d+\.\d+/, { timeout: 120_000 });
-		await expect(aaplRow).toContainText("USD");
+		// The stored unit is "USD"; widgets show it as "$" (`displayUnit`).
+		await expect(aaplRow).toContainText(/\d[\d,.]*\s*\$/);
 		await expect(aaplRow).toContainText(/\d{4}-\d{2}-\d{2}/);
 
 		// F4: leave something to look at — a full-page 1440×900 screenshot

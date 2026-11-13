@@ -36,6 +36,7 @@ const PAGES = [
 	{ hash: "#/registered", heading: "登録済みの銘柄", shot: "registered" },
 	{ hash: "#/stocks", heading: "株式データ", shot: "stocks" },
 	{ hash: "#/chat", heading: "チャット", shot: "chat" },
+	{ hash: "#/news", heading: "ニュース", shot: "news" },
 	{ hash: "#/sources", heading: "情報源", shot: "sources" },
 	{ hash: "#/settings", heading: "設定", shot: "settings" },
 ] as const;
@@ -101,8 +102,11 @@ test("the development stack shows every page in Japanese over real data", async 
 		}
 
 		// The real articles: listed under the Japanese UI, titles as published.
-		await page.goto(`${VITE_ORIGIN}/#/sources`);
-		const articles = page.getByRole("region", { name: "最近の記事" });
+		// They are on the News page since ADR-0072 (Sources manages subscriptions).
+		await page.goto(`${VITE_ORIGIN}/#/news`);
+		const articles = page
+			.getByRole("region", { name: "最近の記事" })
+			.getByRole("list", { name: "記事" });
 		await expect(articles.getByRole("link").first()).toBeVisible({ timeout: 60_000 });
 
 		// Settings → Language: English and back, without a reload.

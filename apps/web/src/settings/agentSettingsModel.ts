@@ -10,6 +10,7 @@ import {
 	OPENROUTER_FREE_AGENT_ID,
 	type ResearchRequest,
 	runBudget,
+	SARASHINA_API_AGENT_ID,
 	type WebAccess,
 } from "@research/contracts";
 import type { MessagesOf } from "@research/i18n";
@@ -290,6 +291,7 @@ export function customModelPlaceholder(agentId: string, text: AgentSettingsText)
 	if (agentId === OPENROUTER_FREE_AGENT_ID) return "provider/model:free";
 	if (agentId === "opencode" || agentId === "openrouter") return "provider/model";
 	if (agentId === CLAUDE_API_AGENT_ID) return "claude-…";
+	if (agentId === SARASHINA_API_AGENT_ID) return "sarashina…";
 	return text.modelIdPlaceholder;
 }
 
