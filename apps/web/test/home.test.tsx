@@ -528,11 +528,11 @@ describe("home view", () => {
 			home.dashboard = { schemaVersion: 2, widgets: [] };
 			home.series = [];
 			mountApp(backend);
-			expect(screen.getByRole("heading", { level: 2, name: "Home" })).toBeDefined();
 			await settleUntil(
 				() => (document.body.textContent ?? "").includes("No widgets yet."),
 				"empty state",
 			);
+			expect(screen.getByRole("heading", { level: 2, name: "Home" })).toBeDefined();
 			await vi.advanceTimersByTimeAsync(60_000);
 			expect(refreshPosts()).toHaveLength(0);
 		} finally {

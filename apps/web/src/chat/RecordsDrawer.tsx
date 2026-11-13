@@ -12,7 +12,6 @@ import type { MessagesOf } from "@research/i18n";
 import { useMessages } from "@research/i18n/solid";
 import {
 	ClaimStatusBadge,
-	ClaimTypeBadge,
 	DateText,
 	formatNumber,
 	positionLabelMessages,
@@ -186,10 +185,11 @@ function ClaimCard(props: { readonly claim: Claim; readonly evidence: EvidenceMa
 	return (
 		<li data-claim-id={props.claim.claimId} class="rounded border border-slate-200 p-2">
 			<p class="text-sm text-slate-900">{props.claim.text}</p>
-			<p class="mt-0.5 flex flex-wrap gap-1">
-				<ClaimTypeBadge claimType={props.claim.claimType} />
-				<ClaimStatusBadge status={props.claim.status} />
-			</p>
+			<Show when={props.claim.status !== "supported"}>
+				<p class="mt-0.5 flex flex-wrap gap-1">
+					<ClaimStatusBadge status={props.claim.status} />
+				</p>
+			</Show>
 			<EvidenceRefs
 				label={m().supportingEvidence}
 				evidenceIds={linked("supports")}

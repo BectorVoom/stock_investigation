@@ -49,9 +49,8 @@
 			],
 			"vars": {
 				"AUTH_MODE": "cloudflare-access",
-				// Still to set before the deployed app can be used: the address allowed
-				// by the Cloudflare Access policy.
-				"OWNER_EMAIL": "",
+				// Must match the sole administrator allowed by the Cloudflare Access policy.
+				"OWNER_EMAIL": "appservice27@gmail.com",
 				"ACCESS_TEAM_DOMAIN": "appservice27.cloudflareaccess.com",
 				"ACCESS_AUDIENCE": "912583ab3f55d5eb2b926166ba706da83b0c35af5913184d65c76365599460ba"
 			},

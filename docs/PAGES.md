@@ -1,12 +1,12 @@
 # Pages
 
-The SPA is split into seven pages by user action (MECE): every action lives on
+The SPA is split into eight pages by user action (MECE): every action lives on
 exactly one page, and every primary journey step has a page. A "chat" and a
 "workspace" are the same stored thing (one conversation with its research
 results and notebook); the UI
 says "chat" for a conversation everywhere.
 
-Routes: `#/home` (default), `#/chat` and `#/chat/<workspaceId>`, `#/sources`,
+Routes: `#/home` (default), `#/chat` and `#/chat/<workspaceId>`, `#/sources`, `#/news`,
 `#/settings`, `#/registered`, `#/stocks` (with `#/stocks/<stockId>[/<tab>]`
 and the theme search `#/stocks/themes/<words>[/<page>]`)
 and `#/tasks`. The old `#/watchlist` and `#/equities` hashes open the
@@ -23,7 +23,7 @@ notice in Chat can link straight to the control that fixes it, and one to
 it in Settings" link); the old `#/watchlist/calendar` and
 `#/watchlist/calendar/YYYY-MM-DD` links open it too (ADR-0022). An empty or
 unknown hash opens Home. The top bar's navigation lists every page except
-Settings — Home, Registered stocks, Stocks, Tasks, Chat, Sources; the owner
+Settings — Home, Registered stocks, Stocks, Tasks, Chat, News, Sources; the owner
 ID at the right of the bar is the link to Settings (`#/settings`). The Stocks
 link reopens the stock last shown in this browser tab (as the Chat link
 reopens the open conversation), else `#/stocks`.
@@ -532,7 +532,7 @@ Schedule research questions to run by themselves and see when each runs next and
 
 A task (ADR-0033) is a research question with a schedule — once, daily,
 weekdays, weekly or monthly, at a local time in its own time zone — that
-runs by itself in its own chat. It fires when the local runner next asks for
+runs by itself and sends reports to its selected News or Chat destination. It fires when the local runner next asks for
 work after its time; times missed while no runner polled run once on
 return. At most 10 tasks are active and 30 stored.
 
@@ -731,6 +731,34 @@ Ask research questions and read the answers, with their sources and run progress
 - Scheduling a question to run by itself — see Tasks (`#/tasks`); a task's
   answers still arrive here, in its own chat.
 
+## News — `#/news`
+
+The page lists stored articles from subscribed news sources. Repeated
+cursors stop with an actionable error, and repeated canonical URLs count
+once. Reload shows the stored list again; Load more reads the next cursor.
+No page triggers feed ingestion.
+
+AI News shows persisted reports from tasks whose output is News, including
+an article headline, lead and body paragraphs, inline numbered source citations
+and older history. Unverified/conflicting material is separated and labelled;
+verified factual paragraphs do not repeat badges. See [report formats](REPORT_FORMATS.md).
+Those tasks do not appear in the Chat list. Their links on Tasks and task
+widgets open News; Chat tasks continue to open their own conversations.
+
+**Purpose**
+
+Read recent articles from your subscribed news sources.
+
+**User actions**
+
+- Read stored article headlines, publishers, publication and retrieval dates, and permitted excerpts.
+- Open an article at its publisher, load more articles, or reload the stored list.
+- Open Sources to manage subscriptions. Feed ingestion remains server scheduled.
+
+**Shows**
+
+Recent articles with loading, empty and retryable error states.
+
 ## Sources — `#/sources`
 
 **Purpose**
@@ -743,14 +771,13 @@ Choose which news sources research may read.
 - Subscribe to a previewed source with a license policy and trust classification.
 - Pause, resume or remove a subscribed source.
 - Browse the recommended catalog, preview an entry and subscribe to it.
-- Browse recent articles. Nothing to refresh (ADR-0054 §4): the server
+- The server (ADR-0054 §4)
   queues a news ingest at once for a new source and for every active
   source about every 30 minutes; the local runner fetches them.
 
 **Shows**
 
-- The source preview, subscribed sources, recommended sources and recent
-  articles.
+- The source preview, subscribed sources, recommended sources. Articles live on News (`#/news`).
 
 **Not here**
 
@@ -866,3 +893,13 @@ Stocks page with no stock in the URL links to Registered stocks and reads
 nothing, that `#/watchlist` and `#/equities` open Registered stocks, and
 `tests/architecture/pagesDoc.test.ts` fails if this document drifts from
 `apps/web/src/pages.ts` (titles, routes, purpose sentences).
+
+## Administrator login (Cloudflare deployment)
+
+Before rendering a page, the app verifies `/api/v1/session`. Cloudflare Access
+handles deployed sign-in; the API accepts only `OWNER_EMAIL`. The login page
+provides sign-in for an absent session, sign-out for a different account, and
+Retry when verification is unavailable. It is available in English and
+Japanese. An authenticated local session opens the workspace automatically.
+The deployed hostname remains protected by Access, so its login can appear
+before the application's page. See [operations](OPERATIONS.md#administrator-login-page-cloudflare).

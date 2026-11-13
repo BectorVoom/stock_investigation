@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import solid from "vite-plugin-solid";
 import { defineConfig } from "vitest/config";
+import { chartViewerChunkPlugin } from "./apps/web/build/chartViewerChunk.ts";
 
 /**
  * Four projects: plain Node for runtime-neutral packages and the runner, a
@@ -29,7 +30,7 @@ export default defineConfig({
 			},
 			{
 				// Hot reloading pulls in a virtual module that cannot resolve solid-js from the repo root.
-				plugins: [solid({ hot: false })],
+				plugins: [solid({ hot: false }), chartViewerChunkPlugin()],
 				resolve: { conditions: ["development", "browser"] },
 				test: {
 					name: "web",

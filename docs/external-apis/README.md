@@ -20,7 +20,8 @@ One reference document per external API the application calls: what we send, wha
 | [Massive](apis/massive.md) | Massive (formerly Polygon.io) | Daily prices of every US directory stock (grouped daily, ranges, splits) | `api.massive.com` | `MASSIVE_API_KEY` (`Authorization: Bearer`) |
 | [J-Quants](apis/jquants.md) | JPX Market Innovation & Research | Daily prices, annual financial statements (earnings summaries) and company profiles of every Japanese directory stock (about 12 weeks behind on the Free plan) | `api.jquants.com` | `JQUANTS_API_KEY` (`x-api-key` header) |
 | [Finnhub](apis/finnhub.md) | Finnhub | US earnings dates for the watchlist | `finnhub.io` | `FINNHUB_API_KEY` |
-| [Tavily Search](apis/tavily-search.md) | Tavily | `web.search` research tool | `api.tavily.com` | `TAVILY_API_KEY` |
+| [Agent Web Search](apis/agent-web-search.md) | Local Rust service | `web.search` research tool | `127.0.0.1`, `::1` | `AGENT_WEB_SEARCH_API_KEY` |
+| [Tavily Search](apis/tavily-search.md) | Tavily | Legacy replay/explicit compatibility calls only | `api.tavily.com` | `TAVILY_API_KEY` |
 | [GDELT DOC 2.0](apis/gdelt-doc.md) | The GDELT Project | `news.search` research tool | `api.gdeltproject.org` | None |
 | [Google OAuth 2.0](apis/google-oauth.md) | Google | Connecting Google Calendar | `accounts.google.com`, `oauth2.googleapis.com` | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` |
 | [Google Calendar API](apis/google-calendar.md) | Google | Syncing earnings dates to a dedicated calendar | `www.googleapis.com` | OAuth access token |
@@ -40,6 +41,7 @@ Production code names these hosts without calling an API on them. The checker ac
 | Host | Where | Why it is not an API call |
 |---|---|---|
 | `127.0.0.1` | Google OAuth loopback redirect, MCP server default | Our own loopback listener ([Google OAuth](apis/google-oauth.md) describes the redirect). |
+| `news.google.com` | `packages/domain/src/news/demandDiscovery.ts` | Demand-discovery URL builder; the app reads no response and does not relay RSS. |
 | `example.com` | `apps/web/src/sources/SourcesView.tsx` | Placeholder text in the add-a-source field. |
 | `fred.stlouisfed.org` | FRED adapters, `packages/adapters/src/sql/unitOfWork.ts` | A series' public page, stored as its source link ([FRED § 6](apis/fred.md#6-data-mapping)). |
 | `twelvedata.com` | Twelve Data adapters, `packages/adapters/src/sql/unitOfWork.ts` | Attribution link ([Twelve Data § 6](apis/twelve-data.md#6-data-mapping)). |

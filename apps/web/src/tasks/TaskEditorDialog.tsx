@@ -187,6 +187,23 @@ export function TaskEditorDialog(props: {
 					void save();
 				}}
 			>
+				<Field label={m().outputType}>
+					{(id) => (
+						<Select
+							id={id}
+							onChange={(event) =>
+								patch({ outputType: event.currentTarget.value === "news" ? "news" : "chat" })
+							}
+						>
+							<option value="news" selected={draft().outputType === "news"}>
+								{m().newsOutput}
+							</option>
+							<option value="chat" selected={(draft().outputType ?? "chat") === "chat"}>
+								{m().chatOutput}
+							</option>
+						</Select>
+					)}
+				</Field>
 				<Field label={m().titleField}>
 					{(id) => (
 						<input

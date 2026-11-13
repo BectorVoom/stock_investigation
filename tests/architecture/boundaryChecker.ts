@@ -76,6 +76,13 @@ export interface PackageRule {
 	 * dependency into a zone that imports it.
 	 */
 	readonly sourceDirectories?: readonly string[];
+	/**
+	 * Repo-relative files allowed to compute a dynamic import's specifier at run
+	 * time (e.g. a cache-busted retry URL for a build-emitted chunk). Named one
+	 * by one, because such an import leaves the static graph: the checker cannot
+	 * see what it loads, so the file itself must keep the URL to its own origin.
+	 */
+	readonly computedDynamicImports?: readonly string[];
 }
 
 export interface BoundaryConfig {
@@ -301,6 +308,9 @@ function checkImport(
 	});
 	const specifier = reference.specifier;
 	if (specifier === null) {
+		// A declared file may compute its import URL (a cache-busted retry of its
+		// own chunk); everywhere else a computed specifier is a violation.
+		if (rule.computedDynamicImports?.includes(reference.file) === true) return null;
 		return violation(
 			"NON_LITERAL_IMPORT",
 			`${reference.kind} with a computed specifier cannot be checked; use a string literal`,

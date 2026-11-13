@@ -147,3 +147,12 @@ document-to-Markdown conversion at that size (0.3 ms).
 - New route `GET /workspaces/:id/notebook/market-data`.
 - Market data still needs `FRED_API_KEY` / `TWELVE_DATA_API_KEY`; notebook
   market widgets show the same configured/unavailable states as Home.
+
+### Selection geometry follow-up (2026-11-13)
+
+While editing, the selection toolbar retains its layout space when inactive;
+its controls are invisible, inert and hidden from accessibility APIs until a
+selection exists. Inserting the toolbar above the text during a double-click
+moved the word under the pointer and could collapse the selection. Browser
+coverage checks that selection does not move the text, alongside link, autosave
+and reload behavior; inactive controls remain inaccessible.

@@ -763,6 +763,32 @@ describe("opencode failures", () => {
 	});
 });
 
+it("replays real 2.2.5 denied reads and shell calls, then accepts the text answer", async () => {
+	const { runtime } = runtimeFor(fixtureLines("opencode/v225-permission-rejected.jsonl"));
+	const events = await collect(
+		runtime.run(makeRequest(), makeContext({ model: "opencode/nemotron-3.5-lightning-free" })),
+	);
+	expect(textOf(events)).toBe(
+		"I'll start by exploring the current directory structure to understand what's available.\nISOLATED",
+	);
+	expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+	expect(events.some((event) => event.type === "tool.request")).toBe(false);
+	expect(textOf(events)).not.toContain("OPENCODE_ISOLATION_CANARY_225");
+});
+
+it.each([
+	"read",
+	"write",
+])("replays real 2.2.6 rejected %s without executing a tool", async (kind) => {
+	const { runtime } = runtimeFor(fixtureLines(`opencode/v226-${kind}-rejected.jsonl`));
+	const events = await collect(
+		runtime.run(makeRequest(), makeContext({ model: "opencode/nemotron-3.5-lightning-free" })),
+	);
+	expect(textOf(events)).toBe("ISOLATED");
+	expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+	expect(events.some((event) => event.type === "tool.request")).toBe(false);
+});
+
 describe("opencode probe", () => {
 	function probeRuntime(
 		authList: { lines: readonly string[]; code: number },
@@ -834,6 +860,8 @@ describe("opencode probe", () => {
 
 	it.each([
 		"opencode v2.1.0",
+		"opencode v2.2.4",
+		"opencode v2.2.7",
 		"opencode v3.0.0",
 	])("reports TOOL_ISOLATION_UNVERIFIED for %s, beyond the verified release line", async (version) => {
 		const { fake, runtime } = probeRuntime({ lines: ["[]"], code: 0 }, version);
@@ -852,6 +880,20 @@ describe("opencode probe", () => {
 		);
 
 		expect((await runtime.probe()).availability).toEqual({ status: "available" });
+	});
+
+	it.each([
+		"2.2.5",
+		"2.2.6",
+	])("accepts reverified %s with stored credentials and a model catalogue", async (version) => {
+		const { runtime } = probeRuntime(
+			{ lines: fixtureText("opencode/auth-list.json").split("\n"), code: 0 },
+			`opencode v${version}`,
+			{ lines: ["opencode/nemotron-3.5-lightning-free"], code: 0 },
+		);
+		const result = await runtime.probe();
+		expect(result.availability).toEqual({ status: "available" });
+		expect(result.capabilities.models).toEqual(["opencode/nemotron-3.5-lightning-free"]);
 	});
 
 	it("reports UNSUPPORTED_VERSION for a CLI older than the 2.0.27 floor", async () => {

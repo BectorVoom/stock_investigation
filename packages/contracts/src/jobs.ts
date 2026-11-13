@@ -207,6 +207,8 @@ export type WebAccess = z.infer<typeof webAccessSchema>;
 export const researchRequestSchema = z.strictObject({
 	workspaceId: idSchema,
 	question: z.string().trim().min(3).max(2000),
+	/** Editorial destination; absent on older requests and ordinary Chat research. */
+	outputType: z.enum(["news", "chat"]).optional(),
 	agentId: agentIdSchema,
 	model: z.string().min(1).max(100).nullable(),
 	effort: effortSchema,

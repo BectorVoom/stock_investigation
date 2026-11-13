@@ -3959,6 +3959,34 @@
 			"output": null
 		},
 		{
+			"input": "replays real 2.2.5 denied reads and shell calls, then accepts the text answer",
+			"output": null
+		},
+		{
+			"input": "opencode/v225-permission-rejected.jsonl",
+			"output": null
+		},
+		{
+			"input": "I'll start by exploring the current directory structure to understand what's available.\nISOLATED",
+			"output": null
+		},
+		{
+			"input": "OPENCODE_ISOLATION_CANARY_225",
+			"output": null
+		},
+		{
+			"input": "write",
+			"output": null
+		},
+		{
+			"input": "replays real 2.2.6 rejected %s without executing a tool",
+			"output": null
+		},
+		{
+			"input": "ISOLATED",
+			"output": null
+		},
+		{
 			"input": "opencode probe",
 			"output": null
 		},
@@ -4019,6 +4047,14 @@
 			"output": null
 		},
 		{
+			"input": "opencode v2.2.4",
+			"output": null
+		},
+		{
+			"input": "opencode v2.2.7",
+			"output": null
+		},
+		{
 			"input": "opencode v3.0.0",
 			"output": null
 		},
@@ -4036,6 +4072,18 @@
 		},
 		{
 			"input": "opencode v2.0.31",
+			"output": null
+		},
+		{
+			"input": "2.2.5",
+			"output": null
+		},
+		{
+			"input": "2.2.6",
+			"output": null
+		},
+		{
+			"input": "accepts reverified %s with stored credentials and a model catalogue",
 			"output": null
 		},
 		{
@@ -4119,6 +4167,38 @@
 			"output": null
 		},
 		{
+			"input": "nvidia/nemotron-3.5-lightning:free",
+			"output": null
+		},
+		{
+			"input": "dots-studio/dots-3-note-preview:free",
+			"output": null
+		},
+		{
+			"input": "dots-studio/dots-3-note-preview",
+			"output": null
+		},
+		{
+			"input": "dots-studio/dots-3-note-preview:free-extra",
+			"output": null
+		},
+		{
+			"input": "nvidia/nemotron-3.5-lightning",
+			"output": null
+		},
+		{
+			"input": "nvidia/nemotron-3.5-lightning:free-extra",
+			"output": null
+		},
+		{
+			"input": "other/model:free",
+			"output": null
+		},
+		{
+			"input": "reserves the model-specific completion allowance for %s without changing effort",
+			"output": null
+		},
+		{
 			"input": "posts one streaming chat completion with the prompt, no tools and no fallback models",
 			"output": null
 		},
@@ -4172,10 +4252,6 @@
 		},
 		{
 			"input": "prefers the model from the run context over OPENROUTER_MODEL",
-			"output": null
-		},
-		{
-			"input": "other/model:free",
 			"output": null
 		},
 		{
@@ -4551,10 +4627,6 @@
 			"output": null
 		},
 		{
-			"input": "nvidia/nemotron-3.5-lightning:free",
-			"output": null
-		},
-		{
 			"input": "openrouter-chat-stream-length",
 			"output": null
 		},
@@ -4576,6 +4648,14 @@
 		},
 		{
 			"input": "Host",
+			"output": null
+		},
+		{
+			"input": "documents the exact Dots Note free request at its production completion cap",
+			"output": null
+		},
+		{
+			"input": "openrouter-dots-request",
 			"output": null
 		},
 		{

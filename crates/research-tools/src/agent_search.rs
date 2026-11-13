@@ -1,0 +1,346 @@
+//! Narrow configured loopback transport for Agent Web Search. Public page
+//! fetchers keep their SSRF policy; this client cannot follow redirects or dial
+//! a model-supplied URL. All I/O is cancellation/deadline/size bounded.
+use async_trait::async_trait;
+use bytes::Bytes;
+use http_body_util::{BodyExt, Full};
+use hyper::{
+	Request,
+	header::{ACCEPT, ACCEPT_ENCODING, AUTHORIZATION, CONTENT_TYPE, HOST},
+};
+use hyper_util::rt::TokioIo;
+use research_application::ports::{
+	FetchedDocument, SafeFetchError, SafeFetchErrorCode, SafeFetchOptions, SafeFetcher,
+};
+use std::net::{IpAddr, SocketAddr};
+use std::time::Duration;
+use tokio::net::TcpStream;
+use url::Url;
+
+/// Default operator-owned search service origin.
+pub const DEFAULT_AGENT_SEARCH_URL: &str = "http://127.0.0.1:8090";
+/// One configured service, its credential and its scoped transport.
+#[derive(Clone)]
+pub struct AgentWebSearch {
+	/// Validated endpoint including /search.
+	pub endpoint: String,
+	/// Service bearer credential; Debug always redacts it.
+	pub api_key: String,
+	/// Scoped trusted transport, never the public-page fetcher.
+	pub fetcher: std::sync::Arc<dyn SafeFetcher>,
+}
+impl std::fmt::Debug for AgentWebSearch {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("AgentWebSearch")
+			.field("endpoint", &self.endpoint)
+			.field("api_key", &"[redacted]")
+			.finish_non_exhaustive()
+	}
+}
+/// Only operator-configured literal loopback HTTP, never DNS, private LAN or a
+/// general proxy. A remote deployment requires a separately reviewed transport.
+pub fn agent_search_endpoint(base: &str) -> Result<Url, &'static str> {
+	let mut url = Url::parse(base)
+		.map_err(|_| "AGENT_WEB_SEARCH_URL must be a literal loopback HTTP origin")?;
+	let ip = url
+		.host_str()
+		.and_then(|s| s.trim_matches(['[', ']']).parse::<IpAddr>().ok());
+	if url.scheme() != "http"
+		|| !ip.is_some_and(|ip| ip.is_loopback())
+		|| !url.username().is_empty()
+		|| url.password().is_some()
+		|| url.query().is_some()
+		|| url.fragment().is_some()
+		|| url.path() != "/"
+		|| url.port_or_known_default() == Some(0)
+	{
+		return Err("AGENT_WEB_SEARCH_URL must be a literal loopback HTTP origin");
+	}
+	url.set_path("/search");
+	Ok(url)
+}
+/// A POST client restricted to one literal loopback endpoint.
+pub struct LoopbackSearchFetcher {
+	endpoint: Url,
+	address: SocketAddr,
+}
+impl LoopbackSearchFetcher {
+	/// Validate the operator origin before any connection can be opened.
+	pub fn new(base: &str) -> Result<Self, &'static str> {
+		let endpoint = agent_search_endpoint(base)?;
+		let ip = endpoint
+			.host_str()
+			.and_then(|s| s.trim_matches(['[', ']']).parse().ok())
+			.ok_or("invalid loopback address")?;
+		let address = SocketAddr::new(ip, endpoint.port_or_known_default().ok_or("missing port")?);
+		Ok(Self { endpoint, address })
+	}
+	async fn request(&self, options: &SafeFetchOptions) -> Result<FetchedDocument, SafeFetchError> {
+		let body = options
+			.json_body
+			.as_deref()
+			.ok_or_else(|| failure("JSON search body required"))?;
+		let authorization = options
+			.authorization
+			.as_deref()
+			.ok_or_else(|| failure("Search authorization required"))?;
+		if body.len() > 65536
+			|| authorization.len() > 300
+			|| !authorization
+				.bytes()
+				.all(|b| (33..=126).contains(&b) || b == b' ')
+		{
+			return Err(failure("Invalid search request headers or size"));
+		}
+		let socket = TcpStream::connect(self.address)
+			.await
+			.map_err(|_| failure("Agent Web Search connection failed"))?;
+		let (mut sender, connection) = hyper::client::conn::http1::handshake(TokioIo::new(socket))
+			.await
+			.map_err(|_| failure("Agent Web Search HTTP handshake failed"))?;
+		let driver = tokio::spawn(connection);
+		// A bounded request owns its driver; cancellation also drops this guard.
+		struct Driver(tokio::task::JoinHandle<Result<(), hyper::Error>>);
+		impl Drop for Driver {
+			fn drop(&mut self) {
+				self.0.abort();
+			}
+		}
+		let _driver = Driver(driver);
+		let host = self.endpoint[url::Position::BeforeHost..url::Position::AfterPort].to_string();
+		let request = Request::post("/search")
+			.header(HOST, host)
+			.header(AUTHORIZATION, authorization)
+			.header(ACCEPT, "application/json")
+			.header(CONTENT_TYPE, "application/json")
+			.header(ACCEPT_ENCODING, "identity")
+			.body(Full::new(Bytes::copy_from_slice(body.as_bytes())))
+			.map_err(|_| failure("Invalid search request"))?;
+		let response = sender
+			.send_request(request)
+			.await
+			.map_err(|_| failure("Agent Web Search request failed"))?;
+		let status = response.status().as_u16();
+		if !(200..300).contains(&status) {
+			let retry = response
+				.headers()
+				.get("retry-after")
+				.and_then(|h| h.to_str().ok())
+				.filter(|h| h.len() <= 300)
+				.map(str::to_owned);
+			return Err(SafeFetchError::http(status, format!("HTTP {status}"), None)
+				.with_retry_after(retry));
+		}
+		if response
+			.headers()
+			.get("content-encoding")
+			.is_some_and(|h| h.as_bytes() != b"identity")
+		{
+			return Err(failure("Unexpected search content encoding"));
+		}
+		let content_type = response
+			.headers()
+			.get(CONTENT_TYPE)
+			.and_then(|h| h.to_str().ok())
+			.map(str::to_owned);
+		let mut body = response.into_body();
+		let mut bytes = Vec::new();
+		while let Some(frame) = body.frame().await {
+			let frame = frame.map_err(|_| failure("Agent Web Search body interrupted"))?;
+			if let Ok(data) = frame.into_data() {
+				if bytes.len() + data.len() > options.max_bytes.min(1_000_000) {
+					return Err(SafeFetchError::new(
+						SafeFetchErrorCode::ResponseTooLarge,
+						"Agent Web Search response too large",
+					));
+				}
+				bytes.extend_from_slice(&data);
+			}
+		}
+		let text = String::from_utf8(bytes)
+			.map_err(|_| failure("Agent Web Search response is not UTF-8"))?;
+		Ok(FetchedDocument {
+			final_url: self.endpoint.to_string(),
+			content_type,
+			text,
+		})
+	}
+}
+fn failure(detail: &str) -> SafeFetchError {
+	SafeFetchError::new(SafeFetchErrorCode::NetworkError, detail)
+}
+#[async_trait]
+impl SafeFetcher for LoopbackSearchFetcher {
+	async fn fetch_text(
+		&self,
+		url: &str,
+		options: &SafeFetchOptions,
+	) -> Result<FetchedDocument, SafeFetchError> {
+		if url != self.endpoint.as_str() {
+			return Err(SafeFetchError::new(
+				SafeFetchErrorCode::UnsafeUrl,
+				"Only the configured search endpoint is permitted",
+			));
+		}
+		if options
+			.allowed_hosts
+			.as_ref()
+			.is_some_and(|hosts| !hosts.contains(self.endpoint.host_str().unwrap_or_default()))
+		{
+			return Err(SafeFetchError::new(
+				SafeFetchErrorCode::HostNotAllowed,
+				"Configured search host is not on the caller allowlist",
+			));
+		}
+		let timeout = SafeFetchError::new(
+			SafeFetchErrorCode::Timeout,
+			"Agent Web Search request timed out or was cancelled",
+		);
+		let cancel = options.cancel.clone().unwrap_or_default();
+		if cancel.is_cancelled() {
+			return Err(timeout);
+		}
+		tokio::select! {
+			()=cancel.cancelled()=>Err(timeout),
+			result=tokio::time::timeout(Duration::from_millis(options.timeout_ms.min(30_000)),self.request(options))=>result.unwrap_or(Err(timeout)),
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use tokio::io::{AsyncReadExt, AsyncWriteExt};
+	use tokio_util::sync::CancellationToken;
+	fn options() -> SafeFetchOptions {
+		SafeFetchOptions {
+			max_bytes: 1000,
+			timeout_ms: 2000,
+			accept: "application/json".into(),
+			cancel: None,
+			allowed_hosts: None,
+			authorize_redirect: None,
+			user_agent: None,
+			authorization: Some("Bearer agent-search-test-key".into()),
+			finnhub_token: None,
+			x_api_key: None,
+			include_error_body: false,
+			json_body: Some("{\"query\":\"training\"}".into()),
+		}
+	}
+	async fn server(status: u16, body: Vec<u8>) -> (String, tokio::task::JoinHandle<String>) {
+		let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+		let address = listener.local_addr().unwrap();
+		let task = tokio::spawn(async move {
+			let (mut socket, _) = listener.accept().await.unwrap();
+			let mut input = Vec::new();
+			let mut buffer = [0; 1024];
+			loop {
+				let n = socket.read(&mut buffer).await.unwrap();
+				if n == 0 {
+					break;
+				}
+				input.extend_from_slice(&buffer[..n]);
+				if let Some(end) = input.windows(4).position(|b| b == b"\r\n\r\n") {
+					let headers = String::from_utf8_lossy(&input[..end]);
+					let size = headers
+						.lines()
+						.find_map(|l| {
+							l.to_lowercase()
+								.strip_prefix("content-length:")
+								.and_then(|v| v.trim().parse::<usize>().ok())
+						})
+						.unwrap_or(0);
+					if input.len() >= end + 4 + size {
+						break;
+					}
+				}
+			}
+			let head = format!(
+				"HTTP/1.1 {status} Response\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n",
+				body.len()
+			);
+			let _ = socket.write_all(head.as_bytes()).await;
+			let _ = socket.write_all(&body).await;
+			String::from_utf8(input).unwrap()
+		});
+		(format!("http://{address}"), task)
+	}
+	#[test]
+	fn only_literal_loopback_origins_are_allowed() {
+		for base in [
+			"http://localhost:8090",
+			"http://10.0.0.1:8090",
+			"https://example.com",
+			"http://127.0.0.1:8090/other",
+			"http://user:pass@127.0.0.1:8090",
+			"http://127.0.0.1:8090/?key=x",
+		] {
+			assert!(agent_search_endpoint(base).is_err(), "{base}")
+		}
+		assert!(agent_search_endpoint("http://[::1]:8090").is_ok());
+	}
+	#[tokio::test]
+	async fn authenticated_post_is_scoped_and_bounded() {
+		let (base, task) = server(200, b"{\"results\":[]}".to_vec()).await;
+		let fetcher = LoopbackSearchFetcher::new(&base).unwrap();
+		let endpoint = agent_search_endpoint(&base).unwrap().to_string();
+		let got = fetcher.fetch_text(&endpoint, &options()).await.unwrap();
+		assert_eq!(got.text, "{\"results\":[]}");
+		let request = task.await.unwrap();
+		assert!(request.starts_with("POST /search HTTP/1.1"));
+		assert!(
+			request
+				.to_lowercase()
+				.contains("authorization: bearer agent-search-test-key")
+		);
+		assert!(
+			fetcher
+				.fetch_text("http://127.0.0.1:80/other", &options())
+				.await
+				.is_err()
+		);
+	}
+	#[tokio::test]
+	async fn upstream_status_precedes_body_decoding() {
+		for status in [302, 401, 429, 503] {
+			let (base, task) = server(status, vec![255; 2000]).await;
+			let f = LoopbackSearchFetcher::new(&base).unwrap();
+			let e = f
+				.fetch_text(agent_search_endpoint(&base).unwrap().as_str(), &options())
+				.await
+				.unwrap_err();
+			assert_eq!(e.status, Some(status));
+			assert_eq!(e.code, SafeFetchErrorCode::HttpError);
+			task.await.unwrap();
+		}
+	}
+	#[tokio::test]
+	async fn oversized_success_body_is_refused() {
+		let (base, task) = server(200, vec![b'x'; 2000]).await;
+		let f = LoopbackSearchFetcher::new(&base).unwrap();
+		assert_eq!(
+			f.fetch_text(agent_search_endpoint(&base).unwrap().as_str(), &options())
+				.await
+				.unwrap_err()
+				.code,
+			SafeFetchErrorCode::ResponseTooLarge
+		);
+		task.await.unwrap();
+	}
+	#[tokio::test]
+	async fn cancelled_request_dials_nothing() {
+		let f = LoopbackSearchFetcher::new("http://127.0.0.1:1").unwrap();
+		let mut o = options();
+		let token = CancellationToken::new();
+		token.cancel();
+		o.cancel = Some(token);
+		assert_eq!(
+			f.fetch_text("http://127.0.0.1:1/search", &o)
+				.await
+				.unwrap_err()
+				.code,
+			SafeFetchErrorCode::Timeout
+		);
+	}
+}

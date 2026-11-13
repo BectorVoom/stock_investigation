@@ -146,7 +146,7 @@ test("the server-side market sync runs through the real runner loop and widgets 
 	// Gold (Twelve Data recorded response).
 	const gold = page.locator('article[data-widget-id="w-gold"]');
 	await expect(gold).toContainText("4,168.44");
-	await expect(gold).toContainText("USD per XAU (troy ounce of gold)");
+	await expect(gold).toContainText("$ per XAU (troy ounce of gold)");
 
 	// Watchlist (Twelve Data recorded AAPL close).
 	const watchlist = page.locator('article[data-widget-id="w-watchlist"]');
@@ -974,15 +974,20 @@ test("a wheel scroll in the middle of a drag still drops over the intended widge
 		await page.waitForTimeout(300);
 		// Scroll the page under the held pointer without moving the mouse:
 		// the cached slots are page coordinates, so the decision stays right.
+		const beforeWheel = await page.evaluate(() => window.scrollY);
 		await page.mouse.wheel(0, 800);
-		await page.waitForTimeout(400);
-		let box = await page.locator(`article[data-widget-id="${targetId}"]`).boundingBox();
-		if (box === null) {
-			await page.locator(`article[data-widget-id="${targetId}"]`).scrollIntoViewIfNeeded();
-			box = await page.locator(`article[data-widget-id="${targetId}"]`).boundingBox();
-		}
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(beforeWheel);
+		// A bounding box also exists below the viewport. Bring the entire target
+		// into view before choosing a real pointer position (Firefox drops events
+		// outside the viewport rather than delivering an artificial off-screen drop).
+		const target = page.locator(`article[data-widget-id="${targetId}"]`);
+		await target.scrollIntoViewIfNeeded();
+		const box = await target.boundingBox();
 		if (box === null) throw new Error(`the ${targetId} widget has no box`);
-		await page.mouse.move(box.x + box.width / 2, box.y + (box.height * 3) / 4, { steps: 10 });
+		const dropY = box.y + (box.height * 3) / 4;
+		expect(dropY).toBeGreaterThan(0);
+		expect(dropY).toBeLessThan(900);
+		await page.mouse.move(box.x + box.width / 2, dropY, { steps: 10 });
 		await page.waitForTimeout(300);
 		await page.mouse.up();
 		await expect.poll(() => puts, { timeout: 30_000 }).toBeGreaterThan(0);

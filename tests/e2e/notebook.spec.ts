@@ -179,9 +179,14 @@ test("a research run renders its results in the thread with Add to Notebook acti
 	await expect(conversation.getByRole("article", { name: "Assistant message" })).toContainText(
 		"1 of 2 claim(s) are supported",
 	);
-	for (const type of ["research-report", "source-list", "data-table", "bar-chart"]) {
+	for (const type of ["source-list", "data-table", "bar-chart"]) {
 		await expect(conversation.locator(`[data-component-type="${type}"]`).first()).toBeVisible();
 	}
+	// The answer renders the report prose; do not duplicate it as a preview.
+	await expect(conversation.locator('[data-report-format="investigation"]')).toContainText(
+		"Grid storage orders reached 100 GWh in 2026.",
+	);
+	await expect(conversation.locator('[data-component-type="research-report"]')).toHaveCount(0);
 	// First notebook step: every preview and the answer offer one save.
 	await expect(conversation.getByRole("button", { name: "Add to Notebook" }).first()).toBeVisible();
 });

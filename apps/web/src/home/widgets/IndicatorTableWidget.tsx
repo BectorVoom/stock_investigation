@@ -75,25 +75,25 @@ export function IndicatorTableWidget(props: {
 					</caption>
 					<thead>
 						<tr class="whitespace-nowrap border-b border-slate-200 text-xs text-slate-700">
-							<th scope="col" class="py-1 pr-3 font-semibold">
+							<th scope="col" class="py-1 pr-2 @2xl:pr-3 font-semibold">
 								{m().indicator}
 							</th>
-							<th scope="col" class="py-1 pr-3 text-right font-semibold">
+							<th scope="col" class="py-1 pr-2 @2xl:pr-3 text-right font-semibold">
 								{m().latest}
 							</th>
-							<th scope="col" class="py-1 pr-3 font-semibold">
+							<th scope="col" class="py-1 pr-2 @2xl:pr-3 font-semibold">
 								{m().asOf}
 							</th>
-							<th scope="col" class="py-1 pr-3 text-right font-semibold">
+							<th scope="col" class="py-1 pr-2 @2xl:pr-3 text-right font-semibold">
 								{m().monthAgo}
 							</th>
-							<th scope="col" class="py-1 pr-3 text-right font-semibold">
+							<th scope="col" class="py-1 pr-2 @2xl:pr-3 text-right font-semibold">
 								{m().monthChange}
 							</th>
-							<th scope="col" class="py-1 pr-3 text-right font-semibold">
+							<th scope="col" class="py-1 pr-2 @2xl:pr-3 text-right font-semibold">
 								{m().yearChange}
 							</th>
-							<th scope="col" class={`py-1 pr-3 font-semibold ${TREND_COLUMN}`}>
+							<th scope="col" class={`py-1 pr-2 @2xl:pr-3 font-semibold ${TREND_COLUMN}`}>
 								{m().trend}
 							</th>
 							<th scope="col" class="py-1 font-semibold">
@@ -171,7 +171,7 @@ function IndicatorRow(props: {
 			{(entry) => (
 				<>
 					<tr class="border-b border-slate-200 align-top">
-						<th scope="row" class="py-1 pr-3 font-medium">
+						<th scope="row" class="py-1 pr-2 @2xl:pr-3 font-medium">
 							<Show when={openable()} fallback={<RowName series={entry()} />}>
 								<ChartOpener
 									srPrefix={m().openChart}
@@ -185,33 +185,33 @@ function IndicatorRow(props: {
 						<Show
 							when={ready()}
 							fallback={
-								<td colspan="5" class="py-1 pr-3 text-sm text-amber-900">
+								<td colspan="5" class="py-1 pr-2 @2xl:pr-3 text-sm text-amber-900">
 									{common().unavailable(missingReason())}
 								</td>
 							}
 						>
 							{(good) => (
 								<>
-									<td class="py-1 pr-3 text-right tabular-nums">
+									<td class="py-1 pr-2 @2xl:pr-3 text-right tabular-nums">
 										<ValueWithUnit
 											value={formatValue(good().latest.value)}
 											unit={good().entry.unit}
 										/>
 									</td>
-									<td class="py-1 pr-3 text-xs">
+									<td class="py-1 pr-2 @2xl:pr-3 text-xs">
 										<time dateTime={good().latest.observedOn}>{good().latest.observedOn}</time>
 									</td>
-									<td class="py-1 pr-3 text-right tabular-nums">
+									<td class="py-1 pr-2 @2xl:pr-3 text-right tabular-nums">
 										<MonthAgoCell change={good().summary.monthChange} unit={good().entry.unit} />
 									</td>
-									<td class="py-1 pr-3 text-right tabular-nums">
+									<td class="py-1 pr-2 @2xl:pr-3 text-right tabular-nums">
 										<FullChangeCell
 											change={good().summary.monthChange}
 											basis="month"
 											unit={good().entry.unit}
 										/>
 									</td>
-									<td class="py-1 pr-3 text-right tabular-nums">
+									<td class="py-1 pr-2 @2xl:pr-3 text-right tabular-nums">
 										<FullChangeCell
 											change={good().summary.yearChange}
 											basis="year"
@@ -267,7 +267,7 @@ function TrendCell(props: {
 }): JSX.Element {
 	const m = useMessages(marketWidgetMessages);
 	return (
-		<td class={`py-1 pr-3 ${TREND_COLUMN}`} data-field="indicator-trend">
+		<td class={`py-1 pr-2 @2xl:pr-3 ${TREND_COLUMN}`} data-field="indicator-trend">
 			<Show
 				when={props.ready}
 				fallback={

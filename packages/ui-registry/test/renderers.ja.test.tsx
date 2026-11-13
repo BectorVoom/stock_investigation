@@ -41,7 +41,7 @@ describe("registry components in Japanese (ADR-0032)", () => {
 		const text = container.textContent ?? "";
 		// The registry's own words.
 		expect(text).toContain("観察");
-		expect(text).toContain("裏付けあり");
+		expect(text).not.toContain("裏付けあり");
 		expect(text).toContain("根拠が矛盾");
 		expect(text).toContain("未検証のメモ — 保存された根拠と照合していません");
 		expect(text).toContain("作成日 2026-10-05");

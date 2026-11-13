@@ -67,6 +67,9 @@ pub enum CompositionError {
 	/// rustls could not be configured.
 	#[error("TLS configuration failed")]
 	Tls,
+	/// The local search service configuration is invalid.
+	#[error("Agent Web Search configuration failed")]
+	AgentSearch,
 	/// The agent backends could not be registered (a bad `RESEARCH_AGENT_SET`
 	/// or external-agent registration file).
 	#[error("agent backends could not be composed")]
@@ -372,7 +375,26 @@ pub fn compose(
 		hasher: Arc::clone(&hasher),
 		clock: Arc::clone(&clock),
 		sec_user_agent: config.sec_user_agent.clone(),
-		tavily_api_key: config.tavily_api_key.clone(),
+		tavily_api_key: None,
+		agent_web_search: config
+			.agent_web_search_api_key
+			.as_ref()
+			.map(|key| {
+				use research_tools::agent_search::{
+					AgentWebSearch, LoopbackSearchFetcher, agent_search_endpoint,
+				};
+				Ok::<_, CompositionError>(AgentWebSearch {
+					endpoint: agent_search_endpoint(&config.agent_web_search_url)
+						.map_err(|_| CompositionError::AgentSearch)?
+						.to_string(),
+					api_key: key.clone(),
+					fetcher: Arc::new(
+						LoopbackSearchFetcher::new(&config.agent_web_search_url)
+							.map_err(|_| CompositionError::AgentSearch)?,
+					),
+				})
+			})
+			.transpose()?,
 		page_archive,
 		sleep: Arc::new(TokioSleep),
 		sec_sleep: Arc::clone(&sleeper),

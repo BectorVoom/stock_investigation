@@ -40,6 +40,56 @@ def jsonOptNat : Option Nat → String
   | none => "null"
   | some n => jsonNat n
 
+def demandKindName : Option DemandSignals.Kind → String
+  | none => "null"
+  | some .expanding => jsonStr "expanding"
+  | some .emerging => jsonStr "emerging"
+  | some .weakening => jsonStr "weakening"
+  | some .uncertain => jsonStr "uncertain"
+
+def demandKindVectors : List String := Id.run do
+  let mut output := []
+  for e in [false, true] do
+    for n in [false, true] do
+      for w in [false, true] do
+        for u in [false, true] do
+          output := output ++ [jsonObj [
+            ("expanding", jsonBool e), ("emerging", jsonBool n),
+            ("weakening", jsonBool w), ("uncertain", jsonBool u),
+            ("result", demandKindName (DemandSignals.classify e n w u))]]
+  return output
+
+def demandFilterVectors : List String := Id.run do
+  let mut output := []
+  for s in [false, true] do
+    for t in [false, true] do
+      for q in [false, true] do
+        output := output ++ [jsonObj [
+          ("signal", jsonBool s), ("theme", jsonBool t), ("query", jsonBool q),
+          ("result", jsonBool (DemandSignals.accepts s t q))]]
+  return output
+
+def demandCoverageVectors : List String := Id.run do
+  let mut output := []
+  for c in [false, true] do
+    for s in [false, true] do
+      for t in [false, true] do
+        for q in [false, true] do
+          output := output ++ [jsonObj [
+            ("coverage", jsonBool c), ("signal", jsonBool s), ("theme", jsonBool t),
+            ("query", jsonBool q), ("result", jsonBool (DemandSignals.accepts (DemandSignals.eligible c s) t q))]]
+  return output
+
+def citationReferenceVectors : List String := Id.run do
+  let mut output := []
+  for runId in ["run_test", "run_other"] do
+    for shown in [[], ["run_test_ev1", "run_test_ev2"], ["ev1", "run_test_ev1"], ["run_other_ev1"]] do
+      for reference in ["ev1", "ev2", "ev999", "ev01", "ev0", "EV1", "ev1x", "run_test_ev1", "run_other_ev1", "invented", ""] do
+        output := output ++ [jsonObj [("runId", jsonStr runId), ("reference", jsonStr reference),
+          ("shown", jsonArr (shown.map jsonStr)),
+          ("result", jsonStr (CitationReference.resolve runId reference shown))]]
+  return output
+
 def transitionsJson : String :=
   jsonObj (JobState.all.map fun s => (JobState.name s, jsonArr ((JobState.next s).map (jsonStr ∘ JobState.name))))
 
@@ -1811,5 +1861,9 @@ def main : IO Unit := do
   IO.println ("\"businessSection\": [\n" ++ ",\n".intercalate bsVectors ++ "\n],")
   IO.println ("\"periodChange\": [\n" ++ ",\n".intercalate periodChangeVectors ++ "\n],")
   IO.println ("\"stockSearch\": " ++ ssVectorsJson ++ ",")
+  IO.println ("\"demandCoverage\": " ++ jsonArr demandCoverageVectors ++ ",")
+  IO.println ("\"demandKind\": " ++ jsonArr demandKindVectors ++ ",")
+  IO.println ("\"demandFilter\": " ++ jsonArr demandFilterVectors ++ ",")
+  IO.println ("\"citationReference\": [\n" ++ ",\n".intercalate citationReferenceVectors ++ "\n],")
   IO.println ("\"stockMentions\": " ++ StockMentionsVectors.vectorsJson)
   IO.println "}"

@@ -7,9 +7,10 @@ import type {
 	WorkspaceComponentSummary,
 } from "@research/contracts";
 import { MAX_TOOL_CALLS_PER_REPLY } from "./draft.ts";
+import { NEWS_SENTENCE_FORMAT } from "./newsSentenceFormat.ts";
 
 /** Bump when any prompt text changes; stored with every run for reproducibility (AGT-010). */
-export const PROMPT_VERSION = "research-v5";
+export const PROMPT_VERSION = "research-v8";
 
 /** One planning retry note (ADR-0025): sent once when the first plan asks for no tools. */
 export const PLANNING_REMINDER =
@@ -140,7 +141,9 @@ Collected so far:
 
 Decide what evidence is still needed, including evidence that could CONTRADICT the emerging thesis.
 While nothing has been collected, return at least one tool call: done with no calls is only for when evidence has been collected or every listed tool has been tried.
-When no subscribed source fits the question, use a search tool if one is listed, with short keyword queries (2-6 words, not the whole question), and read promising results with the page tool.${reminderBlock}
+For stock screening, use stocks.search in stages: first discover candidates with short theme terms (try Japanese and English variants separately), then retrieve each candidate's financials by ticker/company plus metric, not theme plus a numeric condition. Its search is literal all-term matching, not a numeric filter. For net income use "純利益" or "profit attributable to owners"; fetch the latest two comparable annual fiscal years per candidate with a sufficient limit. Request missing periods before setting done=true. AI-written themes identify candidates only; verify thematic exposure from source passages or fetch a referenced primary page. A search miss or missing period is not proof that no stock qualifies. State the screened subset and data gaps; do not claim market-wide coverage from a limited search.
+For demand research, prioritize primary measures of orders net of cancellations, shipments, inventories, consumption and customer spending. Retrieve original releases: Census M3 and retail sales (US), METI shipments/inventories and Cabinet Office machinery orders (Japan), EIA electricity consumption, JMTBA machine-tool orders and SIA/WSTS semiconductor shipments as relevant. Pair orders with realized sales/usage and inventory; separate volume from prices, forecasts from actuals and company guidance from independent evidence. News aggregators are discovery tools, not primary evidence. State coverage gaps; never infer demand growth from headline counts or supply expansion alone.
+Use general web search when available for public facts that need external evidence, including industry demand. Search in the market’s language using short keywords. Prefer official statistics, regulators and original releases. Open promising results with the page tool and assess who publishes the page, its date, scope, methodology and incentives. Trace summaries to their original sources, and corroborate consequential claims from interested publishers with independent evidence. Skip anonymous, promotional or unverifiable pages as support for factual claims. Search snippets are leads only. If search is unavailable, fetch known official URLs with the page tool and disclose any remaining coverage gap.${reminderBlock}
 Return: {"toolCalls":[{"toolId":"<id>","args":{...}}],"done":<true when enough evidence is collected or no tool can help>}`;
 	// The collected section gets whatever the fixed sections leave of the
 	// budget, fence wrapper included; it is trimmed from its tail first (with
@@ -242,16 +245,24 @@ ${GROUND_RULES}
 
 ${describeRequest(input.request, input.nowIso)}${conversationSection(input.conversationContext, input.fenceToken)}
 
-Evidence (cite ONLY these ids; quotes must be copied verbatim from the evidence text):
+Evidence (cite ONLY each entry’s bracketed [id]; the random UUID in the enclosing <<<...>>> fence is a boundary marker, NEVER an evidenceId. Quotes must be copied verbatim from the evidence text):
 ${fenceUntrustedText("evidence", input.evidencePack, input.fenceToken)}
 
 Structured records already retrieved by tools (do not restate their numbers from memory):
 ${fenceUntrustedText("records", input.recordSummary, input.fenceToken)}
 
 Requirements:
+${input.request.outputType === "news" ? `${NEWS_SENTENCE_FORMAT}\n` : ""}- For news reports, write in a natural, professional journalistic style in the question’s language. Lead with the most consequential verified development, then dates, attribution, figures and context in descending importance. Each atomic claim should read as a publishable news sentence supported by a verbatim source quote. Use concrete subjects, direct verbs and concise prose; avoid promotional language, stock AI phrases, rhetorical questions and repetitive conclusions. Attribute statements and forecasts; distinguish reporting periods from release dates and observed demand from forecasts. Never invent quotations or causal links.
+- For news reports, every factual detail, date, reporting period, number and causal explanation in a claim must follow from its attached verbatim supporting quotes, not merely appear somewhere in the full article. Attach a separate date-heading quote when a dated sentence also cites a body paragraph; multiple supports links may cite the same evidenceId. Never append a current-week absence claim or a multi-year service-demand hypothesis to historical production data. For a news outlook, quote a named source that explicitly states the relevant forecast and timeframe; otherwise omit the outlook and leave scenarios empty. Use contradicts only for evidence that directly opposes the claim; background caveats belong in context links. Preserve genuine contrary evidence and report the disagreement without inventing a resolution.
+- Present investigations as a conventional research report: the first supported claim is a concise answer to the question (the summary); follow with factual findings, then evidence-based analysis and uncertainty. When a supported inference provides a conclusion, place it last among the inferences. Write complete connected sentences that can stand as report paragraphs. Do not repeat technical verification counts, tool names, canvas totals or boilerplate in the prose. A section heading never makes a hypothesis a fact.
+- Keep claims short and atomic: separate thematic exposure, annual profit inputs, computed growth and the inclusion/exclusion decision. Do not append uncited claims about dataset completeness, latest coverage, test provenance or market-wide absence to an otherwise sourced financial comparison.
+- Answer the research question in its language. Stock screening belongs in claims; leave unrelated scenarios, suppliers and pricingPower empty rather than forcing a forecast template.
+- For profit-growth screening, unless the question specifies another basis, compare the latest stored full fiscal year with the preceding fiscal year, using the same metric, currency and scope. "純利益" means profit attributable to owners. Cite both periods and the source for thematic exposure. State fiscal years, both profit values, currency, calculation and whether the inclusive threshold is met. For a positive prior profit, growthPercent = (current - prior) / prior * 100. Label your computed comparison as an inference, not a source-reported observation. Never treat loss narrowing, a zero/negative prior profit, missing years, changed currency/scope or quarterly/forecast values as qualifying annual profit growth. Separate unverified theme candidates from verified matches and explain missing comparisons.
+- Do not return an empty claims array merely because no candidate qualifies. Where evidence permits, give cited exclusions or limited findings about the inspected candidates. Never turn incomplete coverage into "no stocks qualify" and never fabricate a match. A claim needs supporting quoted passages even when it reports a screening limitation.
 - Classify every claim: "observation" (stated by a source), "inference", "hypothesis" or "forecast".
+- For public web evidence, cite the original page, check the publisher and the reported period, scope and methodology, and attribute interested sources. Use independent corroboration for consequential claims from interested publishers or report the limitation.
 - Every claim needs at least one evidence link with relation "supports" and a verbatim quote. Add "contradicts" links for counter-evidence; do not omit evidence because it disagrees.
-- Numbers in an "observation" must appear in the cited evidence text.
+- Numbers in an "observation" must appear in the cited evidence text. Preserve source digits and units in every language (for example $108.5 billion); do not silently convert them to Japanese 万/億/兆. A unit conversion is a calculation: classify it as inference and quote its original numeric inputs.
 - Demand scenarios: forecast horizon ${input.request.horizonYears} years (targetYear - baseYear between 3 and 5). State what is measured (unit demand vs revenue vs price) and its unit. Give bear/base/bull target values with assumptions, drivers, barriers and falsifying observations. Set "baselineValue" only when an evidence item states it: give "baselineEvidenceId" and "baselineQuote", a verbatim passage containing that number; otherwise null. Do NOT compute growth rates; they are derived from your values.
 - Suppliers: only companies listed in ${input.request.markets.join(" or ")} with ticker AND exchange (JP: TSE, NSE, FSE, SSE; US: NYSE, NASDAQ, NYSE American, NYSE Arca, Cboe BZX, TXSE), and, for the supplier relationship itself, "evidence" entries each with a verbatim "quote" from a passage that names the company. Do not state figures about a supplier that the quoted evidence does not contain.
 - Pricing power: report price realization separately from volume, mix, FX and input costs, in percent; give only figures that appear in the cited evidence and null for everything else. A margin improvement alone is not evidence of pricing power.
@@ -288,6 +299,7 @@ For each claim decide, using ONLY its quoted passages:
 - "supported": the passages state or directly entail the claim.
 - "unsupported": the passages do not establish the claim (too weak, off-topic, or only loosely related).
 - "contradicted": the passages state the opposite.
+For an arithmetic inference, recompute the calculation from the quoted input values and periods; a derived percentage need not occur verbatim, but the inputs, comparable metric/currency/scope and threshold conclusion must follow from the passages. Do not infer thematic exposure from financial numbers alone.
 Be strict; when in doubt answer "unsupported".
 
 ${items}

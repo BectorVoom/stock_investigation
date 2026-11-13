@@ -43,6 +43,13 @@ async function setSlValue(selector: string, value: string): Promise<void> {
 	);
 }
 
+/** Screenshots inject an inline style in WebKit; keep the CSP gate free of tool artifacts. */
+async function reviewShot(name: string): Promise<void> {
+	if (page.context().browser()?.browserType().name() === "chromium") {
+		await page.screenshot({ path: test.info().outputPath(name) });
+	}
+}
+
 function viewer() {
 	return page.locator("sl-dialog.chart-viewer");
 }
@@ -100,9 +107,7 @@ test("fixture market data loads and the line chart opens the viewer filling the 
 	// A screenshot of the open viewer, for reading the layout. Chromium
 	// only: Playwright's WebKit screenshot injects a <style> the app's CSP
 	// refuses, which would log a console error this spec fails on.
-	if (page.context().browser()?.browserType().name() === "chromium") {
-		await page.screenshot({ path: test.info().outputPath("chart-viewer-open.png") });
-	}
+	await reviewShot("chart-viewer-open.png");
 });
 
 test("presets 1M then 1Y keep the clamped window, custom From/To narrows it", async () => {
@@ -503,7 +508,7 @@ async function expectViewerLayout(): Promise<void> {
 test("viewer layout holds together at desktop 1280x720", async () => {
 	await openViewerAt(1280, 720);
 	await expectViewerLayout();
-	await page.screenshot({ path: test.info().outputPath("chart-viewer-layout-1280.png") });
+	await reviewShot("chart-viewer-layout-1280.png");
 	await page.keyboard.press("Escape");
 	await expect(viewer()).toHaveCount(0);
 });
@@ -511,7 +516,7 @@ test("viewer layout holds together at desktop 1280x720", async () => {
 test("viewer layout holds together at phone 390x844", async () => {
 	await openViewerAt(390, 844);
 	await expectViewerLayout();
-	await page.screenshot({ path: test.info().outputPath("chart-viewer-layout-390.png") });
+	await reviewShot("chart-viewer-layout-390.png");
 	await page.keyboard.press("Escape");
 	await expect(viewer()).toHaveCount(0);
 	await page.setViewportSize({ width: 1280, height: 720 });
@@ -526,7 +531,7 @@ test("a failed chunk download shows its alert in view with Try again focused, an
 	const failing = await browser.newPage();
 	try {
 		await failing.setViewportSize({ width: 1280, height: 720 });
-		const chunkUrl = /\/assets\/ChartViewer-[^/]*\.js$/;
+		const chunkUrl = /\/assets\/ChartViewer-[^/?]*\.js(?:\?.*)?$/;
 		let blocked = 0;
 		await failing.route(chunkUrl, async (route) => {
 			blocked += 1;
@@ -537,6 +542,8 @@ test("a failed chunk download shows its alert in view with Try again focused, an
 			.locator('article[data-widget-id="w-vix-chart"]')
 			.getByRole("button", { name: /^Open chart: Line chart: VIX\./ });
 		await expect(open).toBeVisible({ timeout: 20_000 });
+		// The retry URL metadata must not turn the lazy viewer into an eager download.
+		expect(blocked).toBe(0);
 		await open.click();
 		// The line chart's plot is the opener; the alert is not below the
 		// legend, readout and data table (off screen at 720 px) but in view.

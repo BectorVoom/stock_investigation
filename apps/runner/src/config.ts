@@ -1,4 +1,5 @@
 import { DEFAULT_JQUANTS_DELAY_DAYS } from "@research/adapters/finance";
+import { agentSearchEndpoint, DEFAULT_AGENT_WEB_SEARCH_URL } from "@research/adapters/tools";
 import { z } from "zod";
 import {
 	DEFAULT_JQUANTS_REQUESTS_PER_MINUTE,
@@ -68,6 +69,19 @@ const configSchema = z.object({
 	 * is offered. It travels as `Authorization: Bearer <key>`, so it must fit the
 	 * fetcher's header rule (printable ASCII, no spaces).
 	 */
+	agentWebSearchUrl: z
+		.string()
+		.refine(
+			(v) => agentSearchEndpoint(v) !== null,
+			"AGENT_WEB_SEARCH_URL must be a literal loopback HTTP origin",
+		),
+	agentWebSearchApiKey: z
+		.string()
+		.regex(
+			/^[\x21-\x7e]{16,256}$/,
+			"AGENT_WEB_SEARCH_API_KEY must be 16–256 printable characters without spaces",
+		)
+		.nullable(),
 	tavilyApiKey: z
 		.string()
 		.regex(
@@ -187,6 +201,8 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
 		fredApiKey: blankToNull(env.FRED_API_KEY),
 		twelveDataApiKey: blankToNull(env.TWELVE_DATA_API_KEY),
 		finnhubApiKey: blankToNull(env.FINNHUB_API_KEY),
+		agentWebSearchUrl: blankToNull(env.AGENT_WEB_SEARCH_URL) ?? DEFAULT_AGENT_WEB_SEARCH_URL,
+		agentWebSearchApiKey: blankToNull(env.AGENT_WEB_SEARCH_API_KEY),
 		tavilyApiKey: blankToNull(env.TAVILY_API_KEY),
 		googleOAuthClientId: blankToNull(env.GOOGLE_OAUTH_CLIENT_ID),
 		googleOAuthClientSecret: blankToNull(env.GOOGLE_OAUTH_CLIENT_SECRET),

@@ -21,12 +21,13 @@ import {
 import { createGoogleHttp } from "@research/adapters/google";
 import {
 	createFilePageArchive,
+	createLoopbackSearchFetcher,
 	createNodeSafeBinaryFetcher,
 	createNodeSafeFetcher,
 } from "@research/adapters/node";
 import { createAgentRuntimes, createNodeProcessRunner } from "@research/adapters/providers";
 import { systemClock, webCryptoHasher } from "@research/adapters/runtime";
-import { createResearchTools } from "@research/adapters/tools";
+import { agentSearchEndpoint, createResearchTools } from "@research/adapters/tools";
 import { createAgentRegistry, createToolRegistry } from "@research/agent-core";
 import {
 	type EarningsMarketCalendarSource,
@@ -171,8 +172,8 @@ function runnerProgram(
 		}
 		if (value.secUserAgent === null)
 			logger.warn("sec_tools_disabled", { reason: "SEC_USER_AGENT not set" });
-		if (value.tavilyApiKey === null)
-			logger.warn("web_search_disabled", { reason: "TAVILY_API_KEY not set" });
+		if (value.agentWebSearchApiKey === null)
+			logger.warn("web_search_disabled", { reason: "AGENT_WEB_SEARCH_API_KEY not set" });
 		if (value.pagesDirectory === null)
 			logger.warn("web_pages_disabled", { reason: "RUNNER_PAGES_DIR not set" });
 		if (value.fredApiKey === null)
@@ -206,7 +207,16 @@ function runnerProgram(
 							hasher: webCryptoHasher,
 							clock: systemClock,
 							secUserAgent: value.secUserAgent,
-							tavilyApiKey: value.tavilyApiKey,
+							tavilyApiKey: null,
+							...(value.agentWebSearchApiKey === null
+								? {}
+								: {
+										agentWebSearch: {
+											endpoint: agentSearchEndpoint(value.agentWebSearchUrl) ?? "",
+											apiKey: value.agentWebSearchApiKey,
+											fetcher: createLoopbackSearchFetcher(value.agentWebSearchUrl),
+										},
+									}),
 							pageArchive:
 								value.pagesDirectory === null
 									? null

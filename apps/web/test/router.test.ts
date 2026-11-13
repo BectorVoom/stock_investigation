@@ -27,6 +27,8 @@ function route(overrides: Partial<Route>): Route {
 
 describe("router", () => {
 	it("parses every route", () => {
+		expect(parseHash("#/news")).toEqual(route({ view: "news" }));
+		expect(formatHash(route({ view: "news" }))).toBe("#/news");
 		expect(parseHash("#/home")).toEqual(route({ view: "home" }));
 		expect(parseHash("#/chat")).toEqual(route({ view: "chat" }));
 		expect(parseHash("#/chat/ws_1")).toEqual(route({ view: "chat", workspaceId: "ws_1" }));

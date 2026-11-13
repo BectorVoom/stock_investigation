@@ -5,7 +5,6 @@ import {
 	type CitationInteraction,
 	type CitationNumbering,
 	ClaimStatusBadge,
-	ClaimTypeBadge,
 	chipLabel,
 	citationGroupFocusOut,
 	citationMessages,
@@ -32,28 +31,85 @@ function ClaimItem(props: {
 	readonly evidence: ReadonlyMap<string, Evidence>;
 	readonly numbering: CitationNumbering;
 	readonly interaction: CitationInteraction;
+	readonly prose?: boolean;
+	readonly lead?: boolean;
 }): JSX.Element {
 	const m = useMessages(citationsMessages);
 	const cm = useMessages(citationMessages);
 	const claim = createMemo(() => props.claims.get(props.claimId));
+	const keyFor = (link: Claim["links"][number]) =>
+		cardKey(props.claimId, props.prose ? `${link.evidenceId}:${link.relation}` : link.evidenceId);
+	// One reference per source/relation, with every supporting passage retained in the card.
+	const links = createMemo(() => {
+		const original = claim()?.links ?? [];
+		if (!props.prose) return original;
+		const groups = new Map<string, Claim["links"][number]>();
+		for (const link of original) {
+			const key = `${link.evidenceId}:${link.relation}`;
+			const prior = groups.get(key);
+			groups.set(
+				key,
+				prior === undefined
+					? link
+					: {
+							...link,
+							quote:
+								[...new Set([prior.quote, link.quote].filter((quote) => quote !== null))].join(
+									"\n\n",
+								) || null,
+						},
+			);
+		}
+		return [...groups.values()];
+	});
 	const numbers = createMemo(() => {
 		const current = claim();
 		if (current === undefined) return [] as const;
-		return numbersForClaim({ claimId: current.claimId, links: current.links }, props.numbering);
+		return numbersForClaim({ claimId: current.claimId, links: links() }, props.numbering);
 	});
 	const openCard = createMemo(() => {
 		const key = props.interaction.openKey();
 		if (key === null) return null;
 		const current = claim();
 		if (current === undefined) return null;
-		const link = current.links.find((entry) => cardKey(current.claimId, entry.evidenceId) === key);
+		const link = links().find((entry) => keyFor(entry) === key);
 		if (link === undefined) return null;
 		const number = props.numbering.numberByEvidenceId.get(link.evidenceId);
 		if (number === undefined) return null;
 		return { key, link, number };
 	});
+	const referenceChips = () => (
+		<For each={links()}>
+			{(link, index) => {
+				const key = () => keyFor(link);
+				const number = () => numbers()[index()];
+				const item = () => props.evidence.get(link.evidenceId);
+				return (
+					<Show when={number() !== undefined}>
+						<CitationChip
+							chipKey={key()}
+							number={number() ?? 0}
+							label={
+								item() === undefined
+									? cm().chipUnavailable(number() ?? 0)
+									: chipLabel(number() ?? 0, item()?.title ?? "", item()?.sourceUrl ?? "", cm())
+							}
+							relation={link.relation}
+							subtle={props.prose === true}
+							open={props.interaction.openKey() === key()}
+							interaction={props.interaction}
+						/>
+					</Show>
+				);
+			}}
+		</For>
+	);
+
 	return (
-		<li data-claim-id={props.claimId} class="border-l-2 border-slate-300 pl-2">
+		<li
+			data-claim-id={props.claimId}
+			class={props.prose ? "list-none" : "border-l-2 border-slate-300 pl-2"}
+		>
 			<Show
 				when={claim()}
 				fallback={<span class="italic text-amber-900">{m().claimUnavailable(props.claimId)}</span>}
@@ -66,39 +122,26 @@ function ClaimItem(props: {
 						onFocusOut={(event) => citationGroupFocusOut(event, props.interaction.hoverEnd)}
 					>
 						{/* Plain text only: agent output is data, never markup (UI-005). */}
-						<p class="text-sm text-slate-900">{current().text}</p>
-						<p class="mt-0.5 flex flex-wrap items-center gap-1">
-							<ClaimTypeBadge claimType={current().claimType} />
-							<ClaimStatusBadge status={current().status} />
-							<For each={current().links}>
-								{(link, index) => {
-									const key = () => cardKey(current().claimId, link.evidenceId);
-									const number = () => numbers()[index()];
-									const item = () => props.evidence.get(link.evidenceId);
-									return (
-										<Show when={number() !== undefined}>
-											<CitationChip
-												chipKey={key()}
-												number={number() ?? 0}
-												label={
-													item() === undefined
-														? cm().chipUnavailable(number() ?? 0)
-														: chipLabel(
-																number() ?? 0,
-																item()?.title ?? "",
-																item()?.sourceUrl ?? "",
-																cm(),
-															)
-												}
-												relation={link.relation}
-												open={props.interaction.openKey() === key()}
-												interaction={props.interaction}
-											/>
-										</Show>
-									);
-								}}
-							</For>
+						<p
+							class={
+								props.lead
+									? "text-base font-medium leading-relaxed text-slate-900"
+									: "text-sm leading-relaxed text-slate-900"
+							}
+						>
+							{current().text}
+							<Show when={props.prose}>
+								<span class="ml-1 inline-flex flex-wrap gap-1 align-baseline">
+									{referenceChips()}
+								</span>
+							</Show>
 						</p>
+						<Show when={!props.prose || current().status !== "supported"}>
+							<p class="mt-0.5 flex flex-wrap items-center gap-1">
+								<ClaimStatusBadge status={current().status} />
+								<Show when={!props.prose}>{referenceChips()}</Show>
+							</p>
+						</Show>
 						<Show
 							when={current().links.length > 0}
 							fallback={<p class="text-xs italic text-amber-900">{m().noEvidenceLinked}</p>}
@@ -141,12 +184,18 @@ export function AnswerClaims(props: {
 	readonly claimIds: readonly string[];
 	readonly claims: ReadonlyMap<string, Claim>;
 	readonly evidence: ReadonlyMap<string, Evidence>;
+	readonly variant?: "news" | "investigation";
 }): JSX.Element {
 	const m = useMessages(citationsMessages);
 	const cm = useMessages(citationMessages);
+	const visibleClaimIds = createMemo(() =>
+		props.variant === undefined
+			? props.claimIds
+			: props.claimIds.filter((id) => props.claims.get(id)?.status !== "unsupported"),
+	);
 	const numbering = createMemo(() =>
 		numberEvidence(
-			props.claimIds.map((claimId) => ({
+			visibleClaimIds().map((claimId) => ({
 				claimId,
 				links: props.claims.get(claimId)?.links ?? [],
 			})),
@@ -155,22 +204,96 @@ export function AnswerClaims(props: {
 	const interaction = createCitationInteraction();
 
 	const sources = createMemo(() => numbering().evidenceIdsInOrder);
+	const supported = createMemo(() =>
+		props.claimIds.filter((id) => props.claims.get(id)?.status === "supported"),
+	);
+	const summary = createMemo(() => supported().slice(0, 1));
+	const conclusion = createMemo(() =>
+		supported()
+			.slice(1)
+			.filter((id) => props.claims.get(id)?.claimType === "inference")
+			.slice(-1),
+	);
+	const sections = createMemo(() =>
+		props.variant === "news"
+			? [{ heading: null, ids: supported() }]
+			: [
+					{ heading: m().summary, ids: summary() },
+					{
+						heading: m().findings,
+						ids: supported()
+							.slice(1)
+							.filter((id) => props.claims.get(id)?.claimType === "observation"),
+					},
+					{
+						heading: m().analysis,
+						ids: supported()
+							.slice(1)
+							.filter(
+								(id) =>
+									props.claims.get(id)?.claimType !== "observation" && !conclusion().includes(id),
+							),
+					},
+					{ heading: m().conclusion, ids: conclusion() },
+				],
+	);
+	const uncertain = createMemo(() =>
+		visibleClaimIds().filter((id) => props.claims.get(id)?.status !== "supported"),
+	);
+	const item = (claimId: string, lead = false) => (
+		<ClaimItem
+			claimId={claimId}
+			claims={props.claims}
+			evidence={props.evidence}
+			numbering={numbering()}
+			interaction={interaction}
+			prose={props.variant !== undefined}
+			lead={lead}
+		/>
+	);
 	return (
 		<>
-			<h4 class="mt-2 text-xs font-semibold text-slate-700">{m().claimsInAnswer}</h4>
-			<ul aria-label={m().claims} class="mt-0.5 space-y-1.5">
-				<For each={props.claimIds}>
-					{(claimId) => (
-						<ClaimItem
-							claimId={claimId}
-							claims={props.claims}
-							evidence={props.evidence}
-							numbering={numbering()}
-							interaction={interaction}
-						/>
-					)}
-				</For>
-			</ul>
+			<Show
+				when={props.variant !== undefined}
+				fallback={
+					<>
+						<h4 class="mt-2 text-xs font-semibold text-slate-700">{m().claimsInAnswer}</h4>
+						<ul aria-label={m().claims} class="mt-0.5 space-y-1.5">
+							<For each={props.claimIds}>{(claimId) => item(claimId)}</For>
+						</ul>
+					</>
+				}
+			>
+				<div class="max-w-prose space-y-5" data-report-format={props.variant}>
+					<Show when={visibleClaimIds().length === 0}>
+						<p class="text-sm text-slate-700">{m().noPublishableFindings}</p>
+					</Show>
+					<For each={sections().filter((section) => section.ids.length > 0)}>
+						{(section) => (
+							<section>
+								<Show when={section.heading}>
+									{(heading) => (
+										<h4 class="mb-2 text-sm font-semibold text-slate-900">{heading()}</h4>
+									)}
+								</Show>
+								<ul class="space-y-4" aria-label={section.heading ?? m().findings}>
+									<For each={section.ids}>
+										{(id, index) => item(id, props.variant === "news" && index() === 0)}
+									</For>
+								</ul>
+							</section>
+						)}
+					</For>
+					<Show when={uncertain().length > 0}>
+						<section>
+							<h4 class="mb-2 text-sm font-semibold text-amber-900">{m().limitations}</h4>
+							<ul class="space-y-3">
+								<For each={uncertain()}>{(id) => item(id)}</For>
+							</ul>
+						</section>
+					</Show>
+				</div>
+			</Show>
 			<Show when={sources().length > 0}>
 				<details class="group mt-2 text-xs">
 					<DisclosureSummary class="text-slate-700">

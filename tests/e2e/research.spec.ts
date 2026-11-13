@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
-import { E2E_ORIGIN, FEED_URL, HEADLINE } from "./fixtures.ts";
+import { researchReportPropsSchema, workspaceViewSchema } from "@research/contracts";
+import { E2E_ORIGIN, FEED_URL, HEADLINE, HOSTILE_MARKUP } from "./fixtures.ts";
 
 /**
  * Representative end-to-end journey (rules section 10, "E2E"):
@@ -302,27 +303,49 @@ test("a question runs to a sourced report, table and chart (FR-004, FR-005, FR-0
 	// Research output lives in the thread: each component renders directly
 	// after the assistant answer of the run that produced it.
 	const results = page.getByRole("region", { name: "Conversation" });
-	for (const type of ["research-report", "source-list", "data-table", "bar-chart"]) {
+	for (const type of ["source-list", "data-table", "bar-chart"]) {
 		await expect(results.locator(`[data-component-type="${type}"]`).first()).toBeVisible();
 	}
 	// No component fell back to an error placeholder.
 	await expect(results.locator("[data-fallback]")).toHaveCount(0);
-	// Exactly one report exists: the model's own attempt to author one was refused.
-	await expect(results.locator('[data-component-type="research-report"]')).toHaveCount(1);
+	// The supported report is prose in the answer; the duplicate preview is omitted.
+	await expect(results.locator('[data-component-type="research-report"]')).toHaveCount(0);
 	await expect(results).not.toContainText("Trust me");
-	// The supplier's listing was proposed by the model, so it is shown as unverified.
 	await expect(results).toContainText("not verified against an exchange listing");
-
-	// The report separates the supported finding from the fabricated one.
-	const report = results.locator('[data-component-type="research-report"]');
-	await expect(report).toContainText("Supported findings");
+	const report = conversation
+		.getByRole("article", { name: "Assistant message" })
+		.locator('[data-report-format="investigation"]');
+	await expect(report.getByRole("heading", { name: "Summary" })).toBeVisible();
 	await expect(report).toContainText("Grid storage orders reached 100 GWh in 2026.");
-	await expect(report).toContainText("Unsupported statements (not verified)");
-	await expect(report).toContainText("Orders will certainly triple next year.");
-	await expect(report).toContainText("not investment advice");
-	// The real finding carries a "supported" badge and the fabricated one an "unsupported" one.
-	await expect(report.locator('[data-claim-id$="_cl1"]')).toContainText(/supported/i);
-	await expect(report.locator('[data-claim-id$="_cl2"]')).toContainText(/unsupported/i);
+	await expect(report).not.toContainText("Orders will certainly triple next year.");
+	await expect(report.locator('[data-claim-id$="_cl1"]')).toBeVisible();
+	await expect(report.locator('[data-claim-id$="_cl2"]')).toHaveCount(0);
+	// The stored audit report still separates both verdicts and cannot be forged
+	// by the model, even though it is not duplicated as a thread preview.
+	const workspaceId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];
+	if (workspaceId === undefined) throw new Error("no workspace id");
+	const storedResponse = await page.request.get(`${E2E_ORIGIN}/api/v1/workspaces/${workspaceId}`);
+	expect(storedResponse.ok()).toBe(true);
+	const stored = workspaceViewSchema.parse(await storedResponse.json());
+	const reports = stored.state.components.filter(
+		(component) => component.componentType === "research-report",
+	);
+	expect(reports).toHaveLength(1);
+	const audit = researchReportPropsSchema.parse(reports[0]?.props);
+	expect(audit.disclaimer).toContain("not investment advice");
+	const statements = audit.sections.flatMap((section) => section.statements);
+	expect(statements).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				text: "Grid storage orders reached 100 GWh in 2026.",
+				status: "supported",
+			}),
+			expect.objectContaining({
+				text: `Orders will certainly triple next year. ${HOSTILE_MARKUP}`,
+				status: "unsupported",
+			}),
+		]),
+	);
 	// The model's narrative ("999%") is never published anywhere on the page.
 	await expect(page.locator("body")).not.toContainText("999%");
 
@@ -439,7 +462,10 @@ test("the chat page stays usable on narrow screens and keeps its desktop layout 
 });
 
 test("hostile model text is rendered as inert text, never as markup (SEC-003, UI-005)", async () => {
-	const report = page.locator('[data-component-type="research-report"]');
+	// Unsupported claims are withheld from the prose but remain inspectable in
+	// the evidence drawer. Verify its literal text never becomes active markup.
+	await page.getByRole("button", { name: "Evidence", exact: true }).first().click();
+	const report = page.getByRole("dialog");
 	// The literal markup is visible as text...
 	await expect(report).toContainText('<img src=x onerror="window.__xss=1">');
 	// ...and created no element and ran no script.
@@ -447,15 +473,17 @@ test("hostile model text is rendered as inert text, never as markup (SEC-003, UI
 	await expect(page.locator("script:not([src])")).toHaveCount(0);
 	expect(await xssFlag(page)).toBeUndefined();
 	expect(dialogs).toEqual([]);
+	await page.keyboard.press("Escape");
+	await expect(report).toHaveCount(0);
 });
 
 test("the conversation, results and run survive a reload without re-running research (FR-010)", async () => {
 	const before = await page
 		.locator("[data-component-id]")
 		.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-component-id")));
-	expect(before.length).toBeGreaterThanOrEqual(5);
+	expect(before.length).toBeGreaterThanOrEqual(4);
 	const countBefore = await page.locator("[data-component-id]").count();
-	expect(countBefore).toBeGreaterThanOrEqual(5);
+	expect(countBefore).toBeGreaterThanOrEqual(4);
 
 	await page.reload();
 

@@ -277,7 +277,10 @@ test("the Company tab lists the stock's listing, then its company profile or bus
 	await expect(profile.locator('[data-field="company-profile-none"]')).toHaveText(
 		"No company profile is stored for this stock yet. The server stores the profiles of Japanese stocks from J-Quants with the Japanese stock list; it appears here once stored.",
 	);
-	await expect(panel.locator("section")).toHaveCount(2);
+	await expect(
+		panel.getByRole("heading", { name: "Business overview", exact: true }),
+	).toBeVisible();
+	await expect(panel.locator("section")).toHaveCount(3);
 	await expect(panel.locator('[data-field="company-business"]')).toHaveCount(0);
 
 	// A US stock outside the stored stock lists says where descriptions come from, with no control.

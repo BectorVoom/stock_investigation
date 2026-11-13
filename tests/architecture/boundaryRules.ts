@@ -207,6 +207,10 @@ export const PACKAGE_RULES: readonly PackageRule[] = [
 			pkg("prosemirror-history"),
 			pkg("prosemirror-inputrules"),
 			pkg("prosemirror-schema-list"),
+			// The chart viewer's own chunk URL (ADR-0025 fix round 6), supplied by
+			// the build plugin apps/web/build/chartViewerChunk.ts: the viewer stays
+			// out of the main chunk, and a failed download retries that asset.
+			exact("virtual:chart-viewer-url"),
 		],
 		forbidden: [
 			pkg("hono"),
@@ -215,6 +219,9 @@ export const PACKAGE_RULES: readonly PackageRule[] = [
 			pkg("@research/adapters"),
 			pkg("@research/agent-core"),
 		],
+		// The retry URL carries the attempt number, so it is computed at run
+		// time; the file checks the asset's origin before importing it.
+		computedDynamicImports: ["apps/web/src/chartViewer/viewerImport.ts"],
 		zones: [],
 	},
 	{

@@ -532,55 +532,62 @@ export function WysiwygEditor(props: {
 			class="relative"
 			onFocusOut={onFocusOut}
 		>
-			<Show when={hasSelection() && !linkOpen()}>
-				<div role="toolbar" aria-label={m().formatting} class="mb-1 flex flex-wrap gap-1">
-					<button
-						type="button"
-						class="rounded border border-slate-300 px-2 py-0.5 text-xs font-semibold text-slate-800"
-						aria-label={m().bold}
-						onMouseDown={(event) => event.preventDefault()}
-						onClick={() => applyMark("strong")}
-					>
-						B
-					</button>
-					<button
-						type="button"
-						class="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-800"
-						aria-label={m().italic}
-						onMouseDown={(event) => event.preventDefault()}
-						onClick={() => applyMark("em")}
-					>
-						<em>I</em>
-					</button>
-					<button
-						type="button"
-						class="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-800"
-						aria-label={m().strikethrough}
-						onMouseDown={(event) => event.preventDefault()}
-						onClick={() => applyMark("strike")}
-					>
-						<s>S</s>
-					</button>
-					<button
-						type="button"
-						class="rounded border border-slate-300 px-2 py-0.5 font-mono text-xs text-slate-800"
-						aria-label={m().code}
-						onMouseDown={(event) => event.preventDefault()}
-						onClick={() => applyMark("code")}
-					>
-						{"</>"}
-					</button>
-					<button
-						type="button"
-						class="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-800"
-						aria-label={m().link}
-						onMouseDown={(event) => event.preventDefault()}
-						onClick={openLinkPopover}
-					>
-						{m().link}
-					</button>
-				</div>
-			</Show>
+			{/* Keep the toolbar's space while editing: inserting it during a word
+			    selection moves the text under the pointer and can collapse the selection. */}
+			<div
+				role="toolbar"
+				aria-label={m().formatting}
+				class="mb-1 flex flex-wrap gap-1"
+				classList={{ invisible: !hasSelection() || linkOpen() }}
+				inert={!hasSelection() || linkOpen()}
+				aria-hidden={!hasSelection() || linkOpen()}
+			>
+				<button
+					type="button"
+					class="rounded border border-slate-300 px-2 py-0.5 text-xs font-semibold text-slate-800"
+					aria-label={m().bold}
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={() => applyMark("strong")}
+				>
+					B
+				</button>
+				<button
+					type="button"
+					class="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-800"
+					aria-label={m().italic}
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={() => applyMark("em")}
+				>
+					<em>I</em>
+				</button>
+				<button
+					type="button"
+					class="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-800"
+					aria-label={m().strikethrough}
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={() => applyMark("strike")}
+				>
+					<s>S</s>
+				</button>
+				<button
+					type="button"
+					class="rounded border border-slate-300 px-2 py-0.5 font-mono text-xs text-slate-800"
+					aria-label={m().code}
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={() => applyMark("code")}
+				>
+					{"</>"}
+				</button>
+				<button
+					type="button"
+					class="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-800"
+					aria-label={m().link}
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={openLinkPopover}
+				>
+					{m().link}
+				</button>
+			</div>
 			<div
 				ref={(element) => {
 					mount = element;

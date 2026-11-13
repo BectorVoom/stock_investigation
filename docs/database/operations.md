@@ -299,3 +299,20 @@ Persistence sits behind two seams, so the database can be switched without touch
 
 
 Migration `0035_sec_primary_listing_and_report_layouts.sql` changes no schema. It advances scheduled SEC identity conflicts and failed 10-K descriptions to now and deletes only those `not-found` 10-K descriptions. Restart with updated runners after applying pending migrations; the next main-listing completion atomically takes the CIK from a secondary, retaining each listing's stored history. It does not rewrite identities during migration. Rollback needs no schema reversal: an older runner can read the database, but cannot perform the primary-listing repair. Upgrade tests use isolated SQLite databases; applying this to the owner's database is a separate operation.
+
+### 0036 — screening support for the synced annual metrics
+
+Migration `0036_equity_metric_value_screening.sql` adds
+[`equity_metric_value.value_real`](tables/equity_metric_value.md) (the stored
+value as an IEEE-754 double) and
+`idx_equity_metric_value__owner_id_metric_code_fiscal_year_value_real`
+(partial, covering) so a screening can filter and sort one metric of one
+fiscal year across every listed company (40.31 ms → 0.05 ms at 750,400 rows,
+node:sqlite). The backfill rewrites every row with a value once (~0.5 s at
+that size); afterwards the `financial-synced` completion writes `value_real`
+with the row. Nothing reads the new column or index yet — the Stocks pages
+read the primary key unchanged. Rollback: `DROP INDEX
+idx_equity_metric_value__owner_id_metric_code_fiscal_year_value_real`, then
+`ALTER TABLE equity_metric_value DROP COLUMN value_real` (SQLite 3.35+; an
+older release never names the column). Applying this to the owner's database
+is a separate operation.

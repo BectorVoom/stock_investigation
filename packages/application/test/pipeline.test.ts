@@ -120,7 +120,7 @@ describe("research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)", () =>
 		]);
 		expect(bundle.provenance).toMatchObject({
 			agentId: "scripted",
-			promptVersion: "research-v5",
+			promptVersion: "research-v8",
 			toolVersions: { "news.fetch_feed": "1" },
 		});
 		expect(bundle.evidence.map((item) => item.evidenceId)).toEqual([EV1]);
@@ -244,14 +244,23 @@ describe("research pipeline: generated claims are checked against retrieved evid
 		],
 		["offers no supporting quote at all", claim({ evidence: [] }), "NO_SUPPORTING_EVIDENCE"],
 	])("marks a claim that %s as unsupported and keeps it visible", async (_name, badClaim, issue) => {
-		const { run, agent } = setup([PLAN, analysis({ claims: [badClaim] })]);
+		const badAnalysis = analysis({ claims: [badClaim] });
+		const repairsQuotes = [
+			"QUOTE_NOT_FOUND",
+			"UNKNOWN_EVIDENCE",
+			"NO_SUPPORTING_EVIDENCE",
+			"NUMBER_NOT_IN_EVIDENCE",
+		].includes(issue);
+		const { run, agent } = setup(
+			repairsQuotes ? [PLAN, badAnalysis, badAnalysis] : [PLAN, badAnalysis],
+		);
 		const outcome = expectBundle(await run());
 		expect(outcome.bundle.claims).toHaveLength(1);
 		expect(outcome.bundle.claims[0]?.status).toBe("unsupported");
 		expect(outcome.bundle.claims[0]?.issues.map((entry) => entry.code)).toContain(issue);
 		expect(outcome.bundle.verificationStatus).toBe("unverified");
 		// With nothing supported there is nothing for the independent verifier to judge.
-		expect(agent.requests).toHaveLength(2);
+		expect(agent.requests).toHaveLength(repairsQuotes ? 3 : 2);
 		expect(outcome.bundle.answerText).toContain("0 of 1 claim(s) are supported");
 		expect(checkBundleIntegrity(RUN_ID, outcome.bundle)).toEqual([]);
 	});
@@ -1085,6 +1094,100 @@ describe("research pipeline: the collection allowance leaves room for repair and
 	const planningPrompts = (agent: { readonly requests: readonly { readonly prompt: string }[] }) =>
 		agent.requests.filter((sent) => sent.prompt.includes("planning step"));
 
+	it("repairs paraphrased supporting quotes before independent verification", async () => {
+		const bad = analysis({
+			claims: [
+				{
+					text: "Grid storage orders reached 100 GWh in 2026.",
+					claimType: "observation",
+					evidence: [
+						{
+							evidenceId: EV1,
+							relation: "supports",
+							quote: "Grid storage orders were 100 GWh in 2026",
+						},
+					],
+				},
+			],
+		});
+		const { run, agent } = setup([PLAN, bad, analysis(), VERDICT_SUPPORTED]);
+		const outcome = expectBundle(await run());
+		expect(outcome.kind).toBe("completed");
+		expect(outcome.bundle.claims).toMatchObject([{ status: "supported" }]);
+		expect(agent.requests[2]?.prompt).toContain("none of the claims has usable quoted support");
+		expect(agent.requests).toHaveLength(4);
+	});
+
+	it("repairs invented evidence ids without accepting them as aliases", async () => {
+		const bad = analysis({
+			claims: [
+				{
+					text: "Grid storage orders reached 100 GWh in 2026.",
+					claimType: "observation",
+					evidence: [
+						{
+							evidenceId: "invented-uuid",
+							relation: "supports",
+							quote: "Orders for grid storage reached 100 GWh in 2026",
+						},
+					],
+				},
+			],
+		});
+		const { run, agent } = setup([PLAN, bad, analysis(), VERDICT_SUPPORTED]);
+		const outcome = expectBundle(await run());
+		expect(outcome.bundle.claims).toMatchObject([
+			{ status: "supported", links: [{ evidenceId: EV1 }] },
+		]);
+		expect(agent.requests[2]?.prompt).toContain("never invent ids or use an article id");
+		expect(agent.requests).toHaveLength(4);
+	});
+
+	it("repairs Japanese monetary scaling as a sourced arithmetic inference", async () => {
+		const quote = "U.S. training expenditures to $108.5 billion in 2026.";
+		const make = (claimType: "observation" | "inference") =>
+			analysis({
+				claims: [
+					{
+						text: "2026年の米国企業研修支出は1085億ドル（108.5 billion米ドルを換算）だった。",
+						claimType,
+						evidence: [{ evidenceId: EV1, relation: "supports", quote }],
+					},
+				],
+			});
+		const { run, agent } = setup(
+			[PLAN, make("observation"), make("inference"), VERDICT_SUPPORTED],
+			{ articleText: quote },
+		);
+		const outcome = expectBundle(await run());
+		expect(outcome.bundle.claims).toMatchObject([{ status: "supported", claimType: "inference" }]);
+		expect(agent.requests[2]?.prompt).toContain("A unit conversion is a calculation");
+		expect(agent.requests).toHaveLength(4);
+	});
+
+	it("recovers a truncated analysis with a compact repair and verifies it", async () => {
+		const { run, agent } = setup([
+			PLAN,
+			[{ type: "failed", code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false }],
+			analysis(),
+			VERDICT_SUPPORTED,
+		]);
+		const outcome = expectBundle(await run());
+		expect(outcome.kind).toBe("completed");
+		expect(outcome.bundle.claims).toMatchObject([{ status: "supported" }]);
+		expect(agent.requests).toHaveLength(4);
+		expect(agent.requests[2]?.prompt).toContain("at most 6 short atomic claims");
+	});
+
+	it("stops after the compact repair is also truncated", async () => {
+		const failure = [
+			{ type: "failed" as const, code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false },
+		];
+		const { run, agent } = setup([PLAN, failure, failure]);
+		expect(await run()).toMatchObject({ kind: "failed", failureCode: "PROVIDER_OUTPUT_TRUNCATED" });
+		expect(agent.requests).toHaveLength(3);
+	});
+
 	it("reaches the verifier on the repair turn with a 6-step budget", async () => {
 		const { run, agent } = setup([
 			collecting(false),
@@ -1757,6 +1860,55 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 		});
 	}
 
+	it("opens an original page before analysis and excludes the search snippet", async () => {
+		const opened: string[] = [];
+		const search = defineTool({
+			toolId: "web.search",
+			version: "1",
+			description: "Find public pages.",
+			argsSchema: z.strictObject({ query: z.string() }),
+			argsHint: '{"query": string}',
+			timeoutMs: 1000,
+			permission: "research-read",
+			costCategory: "free",
+			sideEffect: "external-read",
+			networkAllowlist: { kind: "public-web" },
+			async execute(_args, context) {
+				return ok({
+					...EMPTY_TOOL_OUTPUT,
+					modelText: "Search lead https://example.org/study",
+					evidence: [evidenceItem(context.nextId("ev"), "Unverified snippet", ARTICLE_TEXT)],
+				});
+			},
+		});
+		const searchPlan = JSON.stringify({
+			toolCalls: [{ toolId: "web.search", args: { query: "training survey" } }],
+			done: true,
+		});
+		const pagePlan = JSON.stringify({
+			toolCalls: [{ toolId: "web.fetch_page", args: { url: "https://example.org/study" } }],
+			done: true,
+		});
+		const { run, agent, reporter } = setup(
+			[searchPlan, pagePlan, analysis().replaceAll(EV1, `${RUN_ID}_ev2`), VERDICT_SUPPORTED],
+			{
+				tools: newsTools(ARTICLE_TEXT, [search, webFetchTool(opened)]),
+				input: { request: request({ webAccess: "public-web" }) },
+			},
+		);
+		const outcome = expectBundle(await run());
+		expect(outcome.bundle.evidence.map((item) => item.title)).toEqual(["A public page"]);
+		expect(opened).toEqual(["web.fetch_page"]);
+		expect(reporter.recorded.tools).toContainEqual({
+			toolId: "web.search",
+			outcome: "executed",
+			detail: "1 search lead(s)",
+		});
+		expect(agent.requests[1]?.prompt).toContain("Search lead https://example.org/study");
+		expect(agent.requests[2]?.prompt).toContain("A public page");
+		expect(agent.requests[2]?.prompt).not.toContain("Unverified snippet");
+	});
+
 	async function gatedRun(webAccess: "off" | "public-web", plan: string) {
 		const webExecuted: string[] = [];
 		const tools = newsTools(ARTICLE_TEXT, [webFetchTool(webExecuted)]);
@@ -1860,7 +2012,7 @@ describe("research pipeline: collection latency", () => {
 });
 
 it("does not re-run an unavailable tool, even with different arguments", async () => {
-	for (const code of ["NOT_CONFIGURED", "SEARCH_COOLDOWN"]) {
+	for (const code of ["NOT_CONFIGURED", "SEARCH_COOLDOWN", "SEARCH_FAILED"]) {
 		let attempts = 0;
 		const unavailable = defineTool({
 			toolId: "web.search",
@@ -1875,7 +2027,12 @@ it("does not re-run an unavailable tool, even with different arguments", async (
 			networkAllowlist: { kind: "none" },
 			async execute() {
 				attempts += 1;
-				return err({ code, detail: "unavailable", retryable: true });
+				return err({
+					code,
+					detail: "unavailable",
+					retryable: true,
+					...(code === "SEARCH_FAILED" ? { upstreamStatus: 432 } : {}),
+				});
 			},
 		});
 		const plan = JSON.stringify({
@@ -1886,11 +2043,174 @@ it("does not re-run an unavailable tool, even with different arguments", async (
 			],
 			done: true,
 		});
-		const { run } = setup([plan, analysis(), VERDICT_SUPPORTED], {
+		const { run, reporter } = setup([plan, analysis(), VERDICT_SUPPORTED], {
 			tools: newsTools(ARTICLE_TEXT, [unavailable]),
 		});
 		const outcome = expectBundle(await run());
 		expect(attempts).toBe(1);
+		if (code === "SEARCH_FAILED") {
+			expect(
+				reporter.recorded.tools.some(
+					(entry) => entry.toolId === "web.search" && entry.outcome === "failed",
+				),
+			).toBe(false);
+		}
 		expect(outcome.usage.toolCalls).toBe(2);
+	}
+});
+
+function coolingSearch() {
+	let attempts = 0;
+	const tool = defineTool({
+		toolId: "web.search",
+		version: "1",
+		description: "Paused search provider.",
+		argsSchema: z.strictObject({ query: z.string() }),
+		argsHint: "{}",
+		timeoutMs: 1000,
+		permission: "research-read",
+		costCategory: "free",
+		sideEffect: "none",
+		networkAllowlist: { kind: "none" },
+		async execute() {
+			attempts += 1;
+			return err({ code: "SEARCH_COOLDOWN", detail: "Temporarily paused", retryable: true });
+		},
+	});
+	return { tool, attempts: () => attempts };
+}
+
+for (const done of [true, false]) {
+	it(`continues after search cooldown with done=${done} and completes using another source`, async () => {
+		const search = coolingSearch();
+		const plan = JSON.stringify({
+			toolCalls: [{ toolId: "web.search", args: { query: "storage" } }],
+			done,
+		});
+		const { run, agent, reporter } = setup([plan, PLAN, analysis(), VERDICT_SUPPORTED], {
+			tools: newsTools(ARTICLE_TEXT, [search.tool]),
+		});
+		const outcome = expectBundle(await run());
+		expect(outcome.kind).toBe("completed");
+		expect(search.attempts()).toBe(1);
+		expect(agent.requests[1]?.prompt).toContain(
+			"Continue collecting evidence with another listed tool",
+		);
+		// Earlier failure text still names web.search, but its catalogue entry is gone.
+		expect(agent.requests[1]?.prompt).not.toContain("Paused search provider.");
+		expect(reporter.recorded.notes).toContain(
+			"Search is temporarily unavailable; continuing with other sources.",
+		);
+		expect(outcome.usage.toolCalls).toBe(2);
+	});
+}
+
+it("bounds cooldown recovery without repeated provider calls or unsupported answers", async () => {
+	const search = coolingSearch();
+	const plan = JSON.stringify({
+		toolCalls: [{ toolId: "web.search", args: { query: "storage" } }],
+		done: true,
+	});
+	const { run, agent } = setup([plan, plan, plan], {
+		tools: newsTools(ARTICLE_TEXT, [search.tool]),
+	});
+	const outcome = await run();
+	expect(outcome).toMatchObject({
+		kind: "failed",
+		failureCode: "ALL_TOOL_CALLS_FAILED",
+		failureDetail: "SEARCH_COOLDOWN",
+	});
+	expect(search.attempts()).toBe(1);
+	expect(agent.requests).toHaveLength(3);
+	expect(outcome.usage.toolCalls).toBe(1);
+});
+
+it("uses evidence already collected when search is cooling down without an extra planning turn", async () => {
+	const search = coolingSearch();
+	const plan = JSON.stringify({
+		toolCalls: [
+			{ toolId: "news.fetch_feed", args: { sourceId: "src_news" } },
+			{ toolId: "web.search", args: { query: "storage" } },
+		],
+		done: true,
+	});
+	const { run, agent } = setup([plan, analysis(), VERDICT_SUPPORTED], {
+		tools: newsTools(ARTICLE_TEXT, [search.tool]),
+	});
+	expect(expectBundle(await run()).kind).toBe("completed");
+	expect(agent.requests).toHaveLength(3);
+});
+
+it("repairs an empty analysis instead of publishing a successful No findings report", async () => {
+	const { run, agent } = setup([PLAN, '{"claims":[]}', analysis(), VERDICT_SUPPORTED]);
+	const outcome = expectBundle(await run());
+	expect(outcome.bundle.claims).toHaveLength(1);
+	expect(outcome.bundle.answerText).not.toContain("No claim could be established");
+	expect(agent.requests[2]?.prompt).toContain("claims is empty despite retrieved evidence");
+	expect(outcome.usage.agentSteps).toBe(4);
+});
+
+it("does not silently complete when both analysis attempts return no cited findings", async () => {
+	const { run } = setup([PLAN, '{"claims":[]}', '{"claims":[]}']);
+	expect(await run()).toMatchObject({
+		kind: "failed",
+		failureCode: "ANALYSIS_OUTPUT_INVALID",
+		retryable: false,
+	});
+});
+
+it("resolves a shortened current-run claim citation only against shown evidence", async () => {
+	const draft = analysis({
+		claims: [
+			{
+				text: "Grid storage orders reached 100 GWh in 2026.",
+				claimType: "observation",
+				evidence: [
+					{
+						evidenceId: "ev1",
+						relation: "supports",
+						quote: "Orders for grid storage reached 100 GWh in 2026",
+					},
+				],
+			},
+		],
+	});
+	const { run } = setup([PLAN, draft, VERDICT_SUPPORTED]);
+	const outcome = expectBundle(await run());
+	expect(outcome.bundle.claims[0]).toMatchObject({
+		status: "supported",
+		links: [{ evidenceId: EV1 }],
+	});
+	expect(checkBundleIntegrity(RUN_ID, outcome.bundle)).toEqual([]);
+});
+
+it("keeps invented, unshown, noncanonical and other-run claim references unsupported", async () => {
+	for (const evidenceId of ["ev999", "ev01", "run_other_ev1", "invented-uuid"]) {
+		const draft = analysis({
+			claims: [
+				{
+					text: "Grid storage orders reached 100 GWh in 2026.",
+					claimType: "observation",
+					evidence: [
+						{
+							evidenceId,
+							relation: "supports",
+							quote: "Orders for grid storage reached 100 GWh in 2026",
+						},
+					],
+				},
+			],
+		});
+		const { run } = setup([PLAN, draft, draft]);
+		const outcome = expectBundle(await run());
+		expect(outcome.bundle.claims[0]).toMatchObject({
+			status: "unsupported",
+			issues: [
+				{ code: "UNKNOWN_EVIDENCE", evidenceId },
+				{ code: "NUMBER_NOT_IN_EVIDENCE", numberText: "100" },
+				{ code: "NUMBER_NOT_IN_EVIDENCE", numberText: "2026" },
+				{ code: "NO_SUPPORTING_EVIDENCE" },
+			],
+		});
 	}
 });

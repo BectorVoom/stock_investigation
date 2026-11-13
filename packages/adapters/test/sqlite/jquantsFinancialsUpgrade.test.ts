@@ -23,7 +23,9 @@ const US_TABLES = {
 	filings: "SELECT * FROM equity_report_filing WHERE provider = 'sec' ORDER BY owner_id, filing_id",
 	facts: `SELECT * FROM equity_reported_fact WHERE company_id LIKE 'eqc_us%'
 		ORDER BY owner_id, filing_id, concept, period_end`,
-	values: `SELECT * FROM equity_metric_value WHERE company_id LIKE 'eqc_us%'
+	values: `SELECT owner_id, company_id, metric_code, fiscal_year, value_decimal, currency,
+		unavailable_reason, filing_id, concept, scope, period_start, period_end, derived,
+		reported_value_count, updated_at FROM equity_metric_value WHERE company_id LIKE 'eqc_us%'
 		ORDER BY owner_id, company_id, fiscal_year, metric_code`,
 	descriptions: `SELECT * FROM equity_business_description WHERE company_id LIKE 'eqc_us%'
 		ORDER BY owner_id, company_id`,

@@ -63,6 +63,10 @@ const DAILY_LIMIT_PROBLEM: &str =
 /// Validated runner configuration.
 #[derive(Clone, PartialEq, Eq)]
 pub struct RunnerConfig {
+	/// Configured literal loopback Agent Web Search origin.
+	pub agent_web_search_url: String,
+	/// Private service bearer credential, redacted in Debug output.
+	pub agent_web_search_api_key: Option<String>,
 	/// Base URL of the deployed Worker, e.g. `https://research.example.workers.dev`.
 	pub api_url: String,
 	/// The runner's bearer token.
@@ -118,6 +122,11 @@ impl fmt::Debug for RunnerConfig {
 		let secret = |value: &Option<String>| value.as_ref().map(|_| "[REDACTED]");
 		formatter
 			.debug_struct("RunnerConfig")
+			.field("agent_web_search_url", &self.agent_web_search_url)
+			.field(
+				"agent_web_search_api_key",
+				&secret(&self.agent_web_search_api_key),
+			)
 			.field("api_url", &self.api_url)
 			.field("runner_token", &"[REDACTED]")
 			.field("access_client_id", &secret(&self.access_client_id))
@@ -295,6 +304,21 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 			problems.push(USER_AGENT_TOO_BIG.to_owned());
 		}
 	}
+	let agent_web_search_url = blank_to_null(env, "AGENT_WEB_SEARCH_URL")
+		.unwrap_or_else(|| research_tools::agent_search::DEFAULT_AGENT_SEARCH_URL.into());
+	if let Err(problem) = research_tools::agent_search::agent_search_endpoint(&agent_web_search_url)
+	{
+		problems.push(problem.into());
+	}
+	let agent_web_search_api_key = blank_to_null(env, "AGENT_WEB_SEARCH_API_KEY");
+	if agent_web_search_api_key
+		.as_deref()
+		.is_some_and(|k| !is_printable_key(k, 16, 256))
+	{
+		problems.push(
+			"AGENT_WEB_SEARCH_API_KEY must be 16–256 printable characters without spaces".into(),
+		);
+	}
 	let tavily_api_key = blank_to_null(env, "TAVILY_API_KEY");
 	// It travels as `Authorization: Bearer <key>`: printable ASCII, no spaces.
 	if tavily_api_key
@@ -380,6 +404,8 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 		return Err(problems);
 	}
 	Ok(RunnerConfig {
+		agent_web_search_url,
+		agent_web_search_api_key,
 		api_url,
 		runner_token,
 		access_client_id,
@@ -602,6 +628,53 @@ mod tests {
 			"http://[::2]",
 		] {
 			assert!(!is_acceptable_api_url(url), "{url}");
+		}
+	}
+}
+
+#[cfg(test)]
+mod agent_search_config_tests {
+	use super::*;
+	fn base() -> Env {
+		[
+			("RESEARCH_API_URL".into(), "http://127.0.0.1:8788".into()),
+			(
+				"RUNNER_TOKEN".into(),
+				"runner_token_for_testing_123456789".into(),
+			),
+		]
+		.into()
+	}
+	#[test]
+	fn local_service_defaults_and_debug_redaction() {
+		let mut env = base();
+		env.insert(
+			"AGENT_WEB_SEARCH_API_KEY".into(),
+			"agent-search-test-key".into(),
+		);
+		let c = load(&env).unwrap();
+		assert_eq!(c.agent_web_search_url, "http://127.0.0.1:8090");
+		assert_eq!(
+			c.agent_web_search_api_key.as_deref(),
+			Some("agent-search-test-key")
+		);
+		assert!(!format!("{c:?}").contains("agent-search-test-key"));
+	}
+	#[test]
+	fn only_explicit_loopback_service_urls_and_valid_keys() {
+		for (key, value) in [
+			("AGENT_WEB_SEARCH_URL", "http://192.168.1.1/"),
+			("AGENT_WEB_SEARCH_URL", "http://127.0.0.1:8090/?"),
+			("AGENT_WEB_SEARCH_API_KEY", "private secret with spaces"),
+		] {
+			let mut env = base();
+			env.insert(key.into(), value.into());
+			let problems = load(&env).unwrap_err();
+			assert!(
+				!problems
+					.iter()
+					.any(|p| p.contains("private secret with spaces"))
+			);
 		}
 	}
 }

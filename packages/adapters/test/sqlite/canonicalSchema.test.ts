@@ -259,7 +259,10 @@ describe("migration 0020_index_conventions.sql", () => {
 		});
 		const before = await snapshot();
 		applySqlMigrations(db, MIGRATIONS);
-		expect(await snapshot()).toEqual(before);
+		expect(await snapshot()).toEqual({
+			...before,
+			tasks: before.tasks.map((row) => ({ ...row, output_type: "chat" })),
+		});
 		expect(await describeSchema(db)).toEqual(await describeSchema(initialized()));
 	});
 });
@@ -412,6 +415,24 @@ describe("query plans of the indexed access paths", () => {
 			LIMIT ?`,
 		);
 		expect(detail).toContain("USING PRIMARY KEY (owner_id=? AND company_id=?)");
+		expect(detail).not.toContain("TEMP B-TREE");
+	});
+
+	// Migration 0036: the screening read — one metric of one fiscal year
+	// across the companies, range on value_real, ordered by it without a
+	// temporary sort. The tie-breaker matches the backwards index scan.
+	it("screens one metric of one fiscal year off the screening index (no temporary sort)", async () => {
+		const detail = await plan(
+			`SELECT emv.company_id
+			FROM equity_metric_value AS emv
+			WHERE emv.owner_id = ? AND emv.metric_code = ? AND emv.fiscal_year = ?
+				AND emv.value_real BETWEEN ? AND ?
+			ORDER BY emv.value_real DESC, emv.company_id DESC
+			LIMIT ?`,
+		);
+		expect(detail).toContain(
+			"SEARCH emv USING COVERING INDEX idx_equity_metric_value__owner_id_metric_code_fiscal_year_value_real (owner_id=? AND metric_code=? AND fiscal_year=? AND value_real>? AND value_real<?)",
+		);
 		expect(detail).not.toContain("TEMP B-TREE");
 	});
 

@@ -17,6 +17,7 @@
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::Arc;
+use std::time::Duration;
 
 use rustls::ClientConfig;
 #[cfg(any(test, feature = "test-seams"))]
@@ -88,12 +89,22 @@ pub struct PinnedTlsOverrides {
 	/// `loopbackConnect`). The peer check then expects 127.0.0.1, while the
 	/// pool and every caller keep seeing the validated address.
 	pub dial_loopback: bool,
+	/// The connection deadline instead of [`CONNECT_ATTEMPT_TIMEOUT`].
+	pub connect_timeout: Option<Duration>,
 }
+
+/// How long one address may take to connect and finish its TLS handshake
+/// before the next validated address is tried (the TypeScript's
+/// `CONNECT_ATTEMPT_TIMEOUT_MS`). A network that drops IPv6 silently made
+/// every dual-stack host wait for the whole request deadline on its first,
+/// IPv6, address (2026-11-05: sec.gov, edinetdb.jp, stockanalysis.com).
+pub const CONNECT_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// Opens verified TLS connections to validated addresses.
 #[derive(Clone)]
 pub struct PinnedTls {
 	connector: TlsConnector,
+	connect_timeout: Duration,
 	#[cfg(any(test, feature = "test-seams"))]
 	port: u16,
 	#[cfg(any(test, feature = "test-seams"))]
@@ -134,6 +145,7 @@ impl PinnedTls {
 	pub fn new() -> Result<Self, TlsSetupError> {
 		Ok(Self {
 			connector: client_config(None)?,
+			connect_timeout: CONNECT_ATTEMPT_TIMEOUT,
 			#[cfg(any(test, feature = "test-seams"))]
 			port: 443,
 			#[cfg(any(test, feature = "test-seams"))]
@@ -156,6 +168,7 @@ impl PinnedTls {
 		};
 		Ok(Self {
 			connector: client_config(extra_root)?,
+			connect_timeout: overrides.connect_timeout.unwrap_or(CONNECT_ATTEMPT_TIMEOUT),
 			port: overrides.port.unwrap_or(443),
 			dial_loopback: overrides.dial_loopback,
 		})
@@ -178,11 +191,22 @@ impl PinnedTls {
 	}
 
 	/// TCP to the validated address, peer check, then TLS with SNI and
-	/// certificate identity = the host name it was resolved for.
+	/// certificate identity = the host name it was resolved for, all within
+	/// the connection deadline.
 	///
 	/// # Errors
-	/// Connection, peer-mismatch or TLS failure, as a Node error code.
+	/// Connection, peer-mismatch or TLS failure, as a Node error code;
+	/// `ETIMEDOUT` past the deadline.
 	pub async fn connect(
+		&self,
+		address: &ValidatedAddress,
+	) -> Result<TlsStream<TcpStream>, ConnectError> {
+		tokio::time::timeout(self.connect_timeout, self.connect_now(address))
+			.await
+			.unwrap_or_else(|_| Err(ConnectError::code("ETIMEDOUT")))
+	}
+
+	async fn connect_now(
 		&self,
 		address: &ValidatedAddress,
 	) -> Result<TlsStream<TcpStream>, ConnectError> {
@@ -269,6 +293,30 @@ mod tests {
 			),
 			Err(ConnectError::code("PINNED_ADDRESS_MISMATCH"))
 		);
+	}
+
+	#[tokio::test]
+	async fn gives_up_on_an_address_that_never_finishes_the_handshake() {
+		// A TCP listener that never answers: like a network that drops the packets.
+		let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+		let port = listener.local_addr().unwrap().port();
+		let tls = PinnedTls::with_overrides(&PinnedTlsOverrides {
+			port: Some(port),
+			dial_loopback: true,
+			connect_timeout: Some(Duration::from_millis(100)),
+			..PinnedTlsOverrides::default()
+		})
+		.unwrap();
+		let address = ValidatedAddress::assume_validated(
+			"silent.synthetic-wire.org",
+			"93.184.216.34".parse().unwrap(),
+		);
+		let started = std::time::Instant::now();
+		let error = tls.connect(&address).await.unwrap_err();
+		assert_eq!(error.detail, "ETIMEDOUT");
+		assert!(started.elapsed() < Duration::from_secs(2));
+		assert_eq!(CONNECT_ATTEMPT_TIMEOUT, Duration::from_secs(3));
+		drop(listener);
 	}
 
 	#[test]

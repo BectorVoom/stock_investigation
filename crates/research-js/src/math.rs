@@ -244,8 +244,7 @@ fn fdlibm_pow(x: f64, y: f64) -> f64 {
 	}
 
 	let t1: f64;
-	let t2: f64;
-	if iy > 0x41e0_0000 {
+	let t2: f64 = if iy > 0x41e0_0000 {
 		// |y| > 2^31.
 		if iy > 0x43f0_0000 {
 			if ix <= 0x3fef_ffff {
@@ -275,7 +274,7 @@ fn fdlibm_pow(x: f64, y: f64) -> f64 {
 		let u = IVLN2_H * t;
 		let v = t.mul_add(IVLN2_L, -(w * IVLN2));
 		t1 = with_low_word(u + v, 0);
-		t2 = v - (t1 - u);
+		v - (t1 - u)
 	} else {
 		let mut n = 0;
 		if ix < 0x0010_0000 {
@@ -334,8 +333,8 @@ fn fdlibm_pow(x: f64, y: f64) -> f64 {
 		// log2(ax) = (ss + …)·2/(3·log2) = n + dp_h + z_h + z_l.
 		let t = f64::from(n);
 		t1 = with_low_word(((z_h + z_l) + dp_h) + t, 0);
-		t2 = z_l - (((t1 - t) - dp_h) - z_h);
-	}
+		z_l - (((t1 - t) - dp_h) - z_h)
+	};
 
 	// Split y into y1 + y2 and compute (y1 + y2)·(t1 + t2).
 	let y1 = with_low_word(y, 0);

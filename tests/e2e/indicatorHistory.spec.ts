@@ -200,8 +200,8 @@ test("a wide Indicator table draws each row's Trend over the same year", async (
 	const monthlyLine = monthly.locator("svg[data-sparkline-direction]");
 	await expect(monthlyLine).toBeVisible();
 	const box = await monthlyLine.boundingBox();
-	expect(box?.width).toBe(72);
-	expect(box?.height).toBe(24);
+	expect(box?.width).toBeCloseTo(72, 3);
+	expect(box?.height).toBeCloseTo(24, 3);
 	const cobalt = wide.getByRole("row", { name: /Synthetic cobalt metal/ });
 	const daily = cobalt.locator("[data-field='indicator-trend']");
 	await expect(daily.locator(".sr-only")).toHaveText("down over 1 year");
@@ -244,7 +244,9 @@ test("a Medium Indicator table hides the Trend column and keeps Source in view",
 	expect(layout.trend).toEqual(["none", "none", "none"]);
 	expect(layout.table).toBeLessThanOrEqual(layout.visible);
 	const source = medium.getByRole("columnheader", { name: "Source", exact: true });
-	await expect(source).toBeInViewport({ ratio: 1 });
+	// WebKit rounds the intersection edge by a fraction of a CSS pixel. The
+	// exact table/scroller width assertion above still forbids horizontal overflow.
+	await expect(source).toBeInViewport({ ratio: 0.999 });
 	await medium.screenshot({ path: "test-results/indicator-history-medium-en.png" });
 });
 

@@ -384,6 +384,20 @@ describe("firing at claim time (ADR-0033 §2)", () => {
 		expect(w.researchJobs()).toEqual([]);
 	});
 
+	it("asks News tasks for dated reporting with source links", async () => {
+		const w = world();
+		const task = await createTask(w, { outputType: "news" });
+		w.time.advance(6 * HOUR_MS + 1_000);
+		expect((await w.service.materializeDue(OWNER)).fired).toBe(1);
+		const [run] = w.researchJobs();
+		expect(run?.request).toMatchObject({ workspaceId: task.workspaceId });
+		expect(run?.request).toMatchObject({
+			question: task.question,
+			outputType: "news",
+		});
+		expect(run?.request).toMatchObject({ question: expect.stringContaining(task.question) });
+	});
+
 	it("queues the task's question in its conversation on the saved agent, once per slot", async () => {
 		const w = world();
 		const task = await createTask(w);
@@ -685,6 +699,33 @@ describe("pause, resume and edit (ADR-0033 §5)", () => {
 });
 
 describe("run now (ADR-0033 §5)", () => {
+	it("uses the same editorial format for News runs started manually or by schedule", async () => {
+		const manual = world();
+		const automatic = world();
+		const request = { outputType: "news" as const, question: "a".repeat(2000) };
+		const manualTask = await createTask(manual, request);
+		await createTask(automatic, request);
+		expect((await manual.service.runNow(OWNER, manualTask.taskId, freshKey())).ok).toBe(true);
+		automatic.time.advance(6 * HOUR_MS + 1_000);
+		expect((await automatic.service.materializeDue(OWNER)).fired).toBe(1);
+		const manualRequest = manual.researchJobs()[0]?.request;
+		const automaticRequest = automatic.researchJobs()[0]?.request;
+		expect(manualRequest).toBeDefined();
+		if (
+			manualRequest === undefined ||
+			manualRequest === null ||
+			automaticRequest === undefined ||
+			automaticRequest === null ||
+			!("question" in manualRequest) ||
+			!("question" in automaticRequest)
+		) {
+			throw new Error("Expected both News runs to carry research questions");
+		}
+		expect(manualRequest?.question).toBe(automaticRequest?.question);
+		expect(manualRequest).toMatchObject({ question: manualTask.question, outputType: "news" });
+		expect(manualRequest.question).toHaveLength(2000);
+	});
+
 	it("queues one run without moving the schedule and answers it while unfinished", async () => {
 		const w = world();
 		const task = await createTask(w);

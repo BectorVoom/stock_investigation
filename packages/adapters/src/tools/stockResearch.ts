@@ -7,7 +7,24 @@ import {
 	stockResearchResponseSchema,
 } from "@research/contracts";
 import { err, ok, type Result } from "@research/domain";
+import { z } from "zod";
 import { boundModelText, collectEvidence } from "./shared.ts";
+
+/** Native CLI calls may encode a numeric field as a canonical decimal string.
+ * Normalize this count only; ticker/query text and the HTTP schema stay strict.
+ */
+const toolQuerySchema = stockResearchQuerySchema.extend({
+	limit: z
+		.union([
+			stockResearchQuerySchema.shape.limit,
+			z
+				.string()
+				.regex(/^[1-9]\d?$/)
+				.transform(Number)
+				.pipe(stockResearchQuerySchema.shape.limit.unwrap()),
+		])
+		.default(6),
+});
 
 export function createStockResearchTool(deps: {
 	readonly hasher: Hasher;
@@ -23,12 +40,12 @@ export function createStockResearchTool(deps: {
 }): ToolDefinition {
 	return defineTool({
 		toolId: "stocks.search",
-		version: "1.0.2",
+		version: "1.0.3",
 		description:
 			"Search stored company descriptions, financial statements and news. Use company names/tickers and metric keywords; all terms must match. AI-written context is not primary evidence. No live fetch.",
 		argsHint:
 			'{"query": string (1–128 chars, at most 8 terms), "kind"?: "company" | "financials" | "news", "limit"?: 1..12 (default 6)}',
-		argsSchema: stockResearchQuerySchema,
+		argsSchema: toolQuerySchema,
 		timeoutMs: 20_000,
 		permission: "research-read",
 		costCategory: "free",

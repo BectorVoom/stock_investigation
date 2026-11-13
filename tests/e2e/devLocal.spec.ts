@@ -121,13 +121,43 @@ test("development serves the SPA from Vite and reports the development environme
 	}
 });
 
-test("the header shows the Development badge", async ({ page }) => {
+test("the header shows the Development badge and gates non-administrators behind Administrator login", async ({
+	page,
+}) => {
 	await page.goto(VITE_ORIGIN);
 	await expect(page.getByRole("heading", { level: 1, name: "Research workspace" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Administrator login" })).toHaveCount(0);
 	await expect(page.locator('[data-field="session-summary"]')).toContainText("owner@localhost");
 	const badge = page.locator('[data-field="environment-badge"]');
 	await expect(badge).toBeVisible();
 	await expect(badge).toContainText("Development");
+
+	// On the live Vite dev server, a non-administrator (403 FORBIDDEN) or unauthenticated (401)
+	// response gates the workspace behind Administrator login and makes no workspace data requests.
+	const apiPaths: string[] = [];
+	page.on("request", (req) => {
+		const url = new URL(req.url());
+		if (url.pathname.startsWith("/api/")) apiPaths.push(url.pathname);
+	});
+	await page.route("**/api/v1/session", (route) =>
+		route.fulfill({
+			status: 403,
+			contentType: "application/json",
+			body: JSON.stringify({
+				error: { code: "FORBIDDEN", message: "Administrator sign-in required." },
+			}),
+		}),
+	);
+	await page.reload();
+	await expect(page.getByRole("heading", { name: "Administrator login" })).toBeVisible();
+	await expect(page.getByRole("alert")).toContainText("not the administrator");
+	await expect(page.getByRole("link", { name: "Sign out of Cloudflare Access" })).toHaveAttribute(
+		"href",
+		"/cdn-cgi/access/logout",
+	);
+	await expect(page.getByRole("navigation")).toHaveCount(0);
+	expect(apiPaths).toEqual(["/api/v1/session"]);
+	await page.unroute("**/api/v1/session");
 });
 
 test(`the runner runs as ${RUNNER} and restarts when its ${RUNNER === "rust" ? "binary" : "bundle"} is rebuilt`, async () => {

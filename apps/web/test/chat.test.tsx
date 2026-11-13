@@ -841,21 +841,21 @@ describe("chat thread", () => {
 		expect(
 			within(conversation).getByRole("article", { name: "Your message" }).textContent,
 		).toContain("Where will storage demand grow?");
-		const claims = within(conversation).getByRole("list", { name: "Claims" });
-		expect(claims.querySelector('[data-claim-id="claim_1"] [data-claim-type]')?.textContent).toBe(
-			"Observation",
-		);
+		const claims = conversation.querySelector<HTMLElement>('[data-report-format="investigation"]');
+		if (claims === null) throw new Error("Investigation report was not rendered");
+		expect(within(claims).getByRole("heading", { name: "Summary" })).toBeTruthy();
+		expect(claims.querySelector('[data-claim-id="claim_1"] [data-claim-type]')).toBeNull();
 		expect(
 			claims
 				.querySelector('[data-claim-id="claim_2"] [data-claim-status]')
 				?.getAttribute("data-claim-status"),
-		).toBe("unsupported");
+		).toBeUndefined();
 		// One numbered chip for the single evidence of claim_1, named like NotebookLM.
 		const chip = within(claims).getByRole("button", {
 			name: "Source 1: Grid storage outlook 2026",
 		});
 		expect(chip.textContent).toBe("1");
-		expect(claims.textContent).toContain("No evidence linked to this claim.");
+		expect(claims.textContent).not.toContain("Demand will triple by 2030.");
 		// The compact sources row lists the same source with its host.
 		const answer = within(conversation).getByRole("article", { name: "Assistant message" });
 		const sources = within(answer).getByRole("list", { name: "Sources" });
@@ -1493,7 +1493,9 @@ describe("chat thread layout (CopilotChat)", () => {
 		fireEvent.click(copy);
 		await screen.findByRole("button", { name: "Copied" });
 		expect(writeText).toHaveBeenCalledTimes(1);
-		expect(writeText.mock.calls[0]?.[0]).toContain("Utility tenders are rising.");
+		expect(writeText.mock.calls[0]?.[0]).toContain("Utility tenders rose year over year.");
+		expect(writeText.mock.calls[0]?.[0]).not.toContain("Demand will triple by 2030.");
+		expect(writeText.mock.calls[0]?.[0]).not.toContain("Uncertainties and unverified findings");
 	});
 
 	it("reports Copy failed when the clipboard rejects or is unavailable", async () => {

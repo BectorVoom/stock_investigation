@@ -1735,7 +1735,10 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 	{
 		name: "researchRequest",
 		schema: contracts.researchRequestSchema,
-		baselines: [json(fx.researchRequest)],
+		baselines: [
+			json(fx.researchRequest),
+			{ ...(json(fx.researchRequest) as Record<string, Json>), outputType: "news" },
+		],
 		extra: [
 			JSON.stringify({
 				...(json(fx.researchRequest) as Record<string, Json>),

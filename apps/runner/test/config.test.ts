@@ -239,3 +239,31 @@ describe("stock price configuration (ADR-0058 §7)", () => {
 		}
 	});
 });
+
+describe("Agent Web Search configuration", () => {
+	const base = {
+		RESEARCH_API_URL: "http://127.0.0.1:8788",
+		RUNNER_TOKEN: "runner_token_for_testing_123456789",
+	};
+	it("defaults the endpoint and accepts a private service key", () => {
+		const r = loadConfig({ ...base, AGENT_WEB_SEARCH_API_KEY: "agent-search-test-key" });
+		expect(r.ok).toBe(true);
+		if (r.ok) {
+			expect(r.value.agentWebSearchUrl).toBe("http://127.0.0.1:8090");
+			expect(r.value.agentWebSearchApiKey).toBe("agent-search-test-key");
+		}
+	});
+	it("rejects non-loopback service URLs and malformed keys without echoing credentials", () => {
+		for (const patch of [
+			{ AGENT_WEB_SEARCH_URL: "http://192.168.1.1/" },
+			{ AGENT_WEB_SEARCH_URL: "http://127.0.0.1:8090/?" },
+			{ AGENT_WEB_SEARCH_API_KEY: "private secret with spaces" },
+		]) {
+			const r = loadConfig({ ...base, ...patch });
+			expect(r.ok).toBe(false);
+			if (!r.ok) {
+				expect(r.problems.join(" ")).not.toContain("private secret with spaces");
+			}
+		}
+	});
+});

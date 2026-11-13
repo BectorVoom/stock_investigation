@@ -37,6 +37,7 @@ function renderAnswer(options: {
 	readonly claimIds?: readonly string[];
 	readonly claims?: readonly Claim[];
 	readonly evidence?: readonly Evidence[];
+	readonly variant?: "news" | "investigation";
 }) {
 	const claims = new Map((options.claims ?? []).map((entry) => [entry.claimId, entry] as const));
 	const sources = new Map(
@@ -44,6 +45,7 @@ function renderAnswer(options: {
 	);
 	render(() => (
 		<AnswerClaims
+			variant={options.variant}
 			claimIds={options.claimIds ?? [...claims.keys()]}
 			claims={claims}
 			evidence={sources}
@@ -52,6 +54,118 @@ function renderAnswer(options: {
 }
 
 describe("citation chips and source cards", () => {
+	it("omits forecast and hypothesis badges in news while keeping the statements and sources", () => {
+		renderAnswer({
+			variant: "news",
+			claims: [
+				claim("forecast", {
+					claimType: "forecast",
+					links: [{ evidenceId: "ev_a", relation: "supports", quote: "Source passage." }],
+				}),
+				claim("hypothesis", { claimType: "hypothesis" }),
+			],
+			evidence: [evidence("ev_a")],
+		});
+		expect(screen.getByText("Claim forecast.")).toBeTruthy();
+		expect(screen.getByText("Claim hypothesis.")).toBeTruthy();
+		expect(document.querySelector("[data-claim-type]")).toBeNull();
+		expect(screen.getByRole("button", { name: "Source 1: Report ev_a" })).toBeTruthy();
+	});
+
+	it.each([
+		"news",
+		"investigation",
+	] as const)("omits observation/inference labels in %s while retaining warnings and references", (variant) => {
+		renderAnswer({
+			variant,
+			claims: [
+				claim("observed", {
+					status: "unsupported",
+					links: [{ evidenceId: "ev_a", relation: "supports", quote: "Source passage." }],
+				}),
+				claim("inferred", {
+					claimType: "inference",
+					status: "conflicting",
+					links: [
+						{ evidenceId: "ev_b", relation: "supports", quote: "A conflicting source passage." },
+					],
+				}),
+			],
+			evidence: [evidence("ev_a"), evidence("ev_b")],
+		});
+		expect(document.querySelector("[data-claim-type]")).toBeNull();
+		expect(screen.queryByText("Unsupported")).toBeNull();
+		expect(screen.queryByText("Claim observed.")).toBeNull();
+		expect(screen.getByText("Conflicting evidence")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Source 1: Report ev_b" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: /Report ev_a/ })).toBeNull();
+	});
+
+	it("presents News as prose and combines a source's date and fact quotations", async () => {
+		renderAnswer({
+			variant: "news",
+			claims: [
+				claim("lead", {
+					text: "EIA reported a production change.",
+					links: [
+						{ evidenceId: "ev_a", relation: "supports", quote: "November 5, 2026" },
+						{
+							evidenceId: "ev_a",
+							relation: "supports",
+							quote: "Refineries changed their production mix.",
+						},
+					],
+				}),
+				claim("detail"),
+			],
+			evidence: [evidence("ev_a")],
+		});
+		expect(screen.queryByRole("heading", { name: "Claims in this answer" })).toBeNull();
+		expect(screen.queryByText("Observation")).toBeNull();
+		expect(screen.queryByRole("heading", { name: "Summary" })).toBeNull();
+		const chip = screen.getByRole("button", { name: "Source 1: Report ev_a" });
+		expect(screen.getAllByRole("button", { name: "Source 1: Report ev_a" })).toHaveLength(1);
+		fireEvent.click(chip);
+		await waitFor(() =>
+			expect(document.querySelector("[data-citation-card]")?.textContent).toContain(
+				"November 5, 2026",
+			),
+		);
+		expect(document.querySelector("[data-citation-card]")?.textContent).toContain(
+			"Refineries changed their production mix.",
+		);
+	});
+
+	it("organises an investigation and keeps unverified claims out of its findings", () => {
+		renderAnswer({
+			variant: "investigation",
+			claims: [
+				claim("summary"),
+				claim("finding"),
+				claim("analysis", { claimType: "hypothesis" }),
+				claim("outlook", { claimType: "forecast" }),
+				claim("conclusion", { claimType: "inference" }),
+				claim("uncertain", { status: "unsupported" }),
+			],
+		});
+		for (const heading of ["Summary", "Findings", "Analysis and outlook", "Conclusion"]) {
+			expect(screen.getByRole("heading", { name: heading })).toBeTruthy();
+		}
+		expect(screen.getByText("Claim analysis.")).toBeTruthy();
+		expect(screen.getByText("Claim outlook.")).toBeTruthy();
+		expect(document.querySelector("[data-claim-type]")).toBeNull();
+		const findings = screen.getByRole("list", { name: "Findings" });
+		expect(findings.textContent).toContain("Claim finding.");
+		expect(findings.textContent).not.toContain("Claim uncertain.");
+		expect(screen.queryByText("Claim uncertain.")).toBeNull();
+	});
+
+	it("shows an honest empty report when no statements pass verification", () => {
+		renderAnswer({ variant: "news", claims: [claim("unsupported", { status: "unsupported" })] });
+		expect(screen.getByText("No verified findings are available for this report.")).toBeTruthy();
+		expect(screen.queryByText("Claim unsupported.")).toBeNull();
+	});
+
 	it("shares one number for shared evidence and lists every source once", async () => {
 		renderAnswer({
 			claims: [

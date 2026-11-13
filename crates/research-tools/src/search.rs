@@ -1,5 +1,6 @@
-//! Search tools (`searchTools.ts`, ADR-0025): `web.search` over Tavily (needs
-//! the owner's key) and `news.search` over GDELT. A provider outage pauses
+//! Search tools: `web.search` uses the configured Agent Web Search service in
+//! normal runners; the Tavily branch remains for replay compatibility. GDELT
+//! supplies `news.search`. A provider outage pauses
 //! that provider, the pause doubling per consecutive outage up to a ceiling.
 //! GDELT's rate-limit notice arrives with HTTP 429 (live 2026-10-31) and is
 //! handled as any 429; the same plain-text notice under HTTP 200 counts as
@@ -85,6 +86,8 @@ impl Sleep for TokioSleep {
 /// limiter and each provider's pause.
 #[derive(Clone)]
 pub struct SearchToolDeps {
+	/// Configured local service takes precedence over the legacy replay provider.
+	pub agent_web_search: Option<crate::agent_search::AgentWebSearch>,
 	/// SSRF-safe fetcher.
 	pub fetcher: Arc<dyn SafeFetcher>,
 	/// Evidence hasher.
@@ -103,6 +106,7 @@ struct PauseState {
 	paused_until: Option<i64>,
 	/// The current window's length, for the message.
 	window: i64,
+	plan_limit: bool,
 	/// The last escalating window; the next outage without a provider wait
 	/// doubles it, until a well-formed answer clears everything.
 	escalation: i64,
@@ -118,18 +122,19 @@ impl OutagePause {
 		self.state.lock().unwrap_or_else(PoisonError::into_inner)
 	}
 	/// The current window's length while paused.
-	fn paused(&self, clock: &dyn Clock) -> Option<i64> {
+	fn paused(&self, clock: &dyn Clock) -> Option<(i64, bool)> {
 		let state = *self.lock();
 		state
 			.paused_until
 			.is_some_and(|deadline| clock.now_ms() < deadline)
-			.then_some(state.window)
+			.then_some((state.window, state.plan_limit))
 	}
 	/// Opens a window: the provider's own wait (`Retry-After`) when it gave
 	/// one, else the escalating pause. A provider wait is rounded up to whole
 	/// seconds and capped at the ceiling, and leaves the escalation as it was.
-	fn outage(&self, clock: &dyn Clock, provider_wait_ms: Option<f64>) {
+	fn outage(&self, clock: &dyn Clock, provider_wait_ms: Option<f64>, plan_limit: bool) {
 		let mut state = self.lock();
+		state.plan_limit = plan_limit;
 		state.window = match provider_wait_ms {
 			None => {
 				state.escalation = if state.escalation == 0 {
@@ -168,11 +173,12 @@ enum Search {
 	/// The cause, and the provider's answer status unchanged (`None` when it
 	/// did not answer with one, §4a).
 	Failed(String, Option<u16>),
-	CoolingDown(i64),
+	CoolingDown(i64, bool),
 	Aborted,
 }
 
 enum Provider {
+	AgentWebSearch(crate::agent_search::AgentWebSearch),
 	Tavily { api_key: String },
 	Gdelt { ledger: Ledger },
 }
@@ -181,6 +187,7 @@ impl Provider {
 	const fn cache_name(&self) -> &'static str {
 		match self {
 			Self::Tavily { .. } => "tavily",
+			Self::AgentWebSearch(_) => "agent-web-search",
 			Self::Gdelt { .. } => "gdelt",
 		}
 	}
@@ -255,7 +262,12 @@ fn cache_key(provider: &str, query: &str) -> String {
 pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 	let mut tools: Vec<Arc<dyn Tool>> = Vec::new();
 	let cache = Arc::new(SearchCache::default());
-	if let Some(api_key) = deps.tavily_api_key.clone() {
+	if let Some(api_key) = deps
+		.agent_web_search
+		.as_ref()
+		.map(|s| s.api_key.clone())
+		.or_else(|| deps.tavily_api_key.clone())
+	{
 		let mut web = meta(
 			"web.search",
 			"Searches the whole web (Tavily) for short keywords and returns result titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page.",
@@ -266,10 +278,19 @@ pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 			ToolNetworkAllowlist::PublicWeb,
 		);
 		web.version = "2.0.0";
+		if deps.agent_web_search.is_some() {
+			web.version = "3.0.0";
+			web.description = "Searches the configured Agent Web Search index for short keywords and returns titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page.";
+			web.timeout_ms = 40_000;
+			web.cost_category = ToolCostCategory::RateLimited;
+		}
 		tools.push(Arc::new(SearchTool {
 			deps: deps.clone(),
 			meta: web,
-			provider: Provider::Tavily { api_key },
+			provider: deps
+				.agent_web_search
+				.clone()
+				.map_or(Provider::Tavily { api_key }, Provider::AgentWebSearch),
 			pause: OutagePause::default(),
 			cache: Arc::clone(&cache),
 		}));
@@ -472,11 +493,11 @@ fn parsed_hits(text: &str, shape: fn(&Value) -> Option<Vec<Hit>>) -> Result<Vec<
 }
 impl SearchTool {
 	fn paused(&self, context: &ToolContext) -> Option<Search> {
-		let window = self.pause.paused(self.deps.clock.as_ref())?;
+		let (window, plan_limit) = self.pause.paused(self.deps.clock.as_ref())?;
 		Some(if context.cancel.is_cancelled() {
 			Search::Aborted
 		} else {
-			Search::CoolingDown(window)
+			Search::CoolingDown(window, plan_limit)
 		})
 	}
 	async fn gdelt(&self, ledger: &Ledger, query: &str, context: &ToolContext) -> Search {
@@ -516,7 +537,7 @@ impl SearchTool {
 					.http_error_status()
 					.is_some_and(|status| status == 429 || (500..600).contains(&status));
 				if outage && !context.cancel.is_cancelled() {
-					self.pause.outage(self.deps.clock.as_ref(), None);
+					self.pause.outage(self.deps.clock.as_ref(), None, false);
 				}
 				return Search::Failed(fetch_cause(&e), upstream_status_of(&e));
 			}
@@ -531,7 +552,7 @@ impl SearchTool {
 					&& is_gdelt_throttle_notice(&fetched.text)
 					&& !context.cancel.is_cancelled()
 				{
-					self.pause.outage(self.deps.clock.as_ref(), None);
+					self.pause.outage(self.deps.clock.as_ref(), None, false);
 				}
 				Search::Failed(unusable.cause(&fetched.text), None)
 			}
@@ -541,15 +562,33 @@ impl SearchTool {
 			}
 		}
 	}
-	async fn tavily(&self, api_key: &str, query: &str, context: &ToolContext) -> Search {
+	async fn web_search(&self, api_key: &str, query: &str, context: &ToolContext) -> Search {
 		if let Some(paused) = self.paused(context) {
 			return paused;
 		}
 		if context.cancel.is_cancelled() {
 			return Search::Aborted;
 		}
-		let mut opts = options(1_000_000, SEARCH_TIMEOUT_MS, "application/json", context);
-		opts.allowed_hosts = Some([TAVILY_HOST.into()].into());
+		let service = match &self.provider {
+			Provider::AgentWebSearch(s) => Some(s),
+			_ => None,
+		};
+		let endpoint = service.map_or_else(
+			|| format!("https://{TAVILY_HOST}/search"),
+			|s| s.endpoint.clone(),
+		);
+		let fetcher = service.map_or(&self.deps.fetcher, |s| &s.fetcher);
+		let mut opts = options(
+			1_000_000,
+			if service.is_some() {
+				30_000
+			} else {
+				SEARCH_TIMEOUT_MS
+			},
+			"application/json",
+			context,
+		);
+		opts.allowed_hosts = service.map_or_else(|| Some([TAVILY_HOST.into()].into()), |_| None);
 		opts.user_agent = Some(SEARCH_USER_AGENT.into());
 		opts.authorization = Some(format!("Bearer {api_key}"));
 		// Basic depth costs one credit; dates are asked for so results can be dated.
@@ -559,12 +598,7 @@ impl SearchTool {
 			("max_results".to_owned(), TAVILY_MAX_RESULTS.into()),
 			("include_published_date".to_owned(), true.into()),
 		]))));
-		let fetched = match self
-			.deps
-			.fetcher
-			.fetch_text(&format!("https://{TAVILY_HOST}/search"), &opts)
-			.await
-		{
+		let fetched = match fetcher.fetch_text(&endpoint, &opts).await {
 			Ok(v) => v,
 			Err(e) => {
 				// Only a rejected query (400, 422) says nothing about the
@@ -584,7 +618,8 @@ impl SearchTool {
 						.as_deref()
 						.filter(|_| e.code == SafeFetchErrorCode::HttpError)
 						.and_then(|value| parse_retry_after_ms(Some(value), clock.now_ms() as f64));
-					self.pause.outage(clock, wait);
+					self.pause
+						.outage(clock, wait, e.http_error_status() == Some(432));
 				}
 				return Search::Failed(fetch_cause(&e), upstream_status_of(&e));
 			}
@@ -601,11 +636,17 @@ impl SearchTool {
 	/// The provider's answer, or the failure the model sees.
 	async fn request(&self, query: &str, context: &ToolContext) -> Result<Vec<Hit>, ToolFailure> {
 		let outcome = match &self.provider {
-			Provider::Tavily { api_key } => self.tavily(api_key, query, context).await,
+			Provider::Tavily { api_key } => self.web_search(api_key, query, context).await,
+			Provider::AgentWebSearch(s) => self.web_search(&s.api_key, query, context).await,
 			Provider::Gdelt { ledger } => self.gdelt(ledger, query, context).await,
 		};
 		match outcome {
-			Search::CoolingDown(window) => Err(tool_failure(
+			Search::CoolingDown(_, true) => Err(tool_failure(
+				"SEARCH_PLAN_LIMIT",
+				"Search plan limit cooldown",
+				true,
+			)),
+			Search::CoolingDown(window, false) => Err(tool_failure(
 				"SEARCH_COOLDOWN",
 				&format!(
 					"The search service is rate limited or unavailable. Use another search tool, subscribed feeds or known page URLs instead; this search is paused for {} seconds.",
@@ -649,7 +690,7 @@ impl Tool for SearchTool {
 			}
 		}
 		let source_class = match self.provider {
-			Provider::Tavily { .. } => SourceClass::Other,
+			Provider::Tavily { .. } | Provider::AgentWebSearch(_) => SourceClass::Other,
 			Provider::Gdelt { .. } => SourceClass::News,
 		};
 		let clock = self.deps.clock.as_ref();

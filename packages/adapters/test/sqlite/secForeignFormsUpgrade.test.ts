@@ -16,7 +16,10 @@ const TABLES = {
 	filings: "SELECT * FROM equity_report_filing ORDER BY owner_id, filing_id",
 	facts: "SELECT * FROM equity_reported_fact ORDER BY owner_id, filing_id, concept, period_end",
 	descriptions: "SELECT * FROM equity_business_description ORDER BY owner_id, company_id",
-	values: "SELECT * FROM equity_metric_value ORDER BY owner_id, company_id, metric_code",
+	values: `SELECT owner_id, company_id, metric_code, fiscal_year, value_decimal, currency,
+		unavailable_reason, filing_id, concept, scope, period_start, period_end, derived,
+		reported_value_count, updated_at FROM equity_metric_value
+		ORDER BY owner_id, company_id, metric_code`,
 } as const;
 
 const FILING = `INSERT INTO equity_report_filing (owner_id, filing_id, company_id, provider,

@@ -15,6 +15,7 @@ import {
 } from "solid-js";
 import type { ApiClient } from "./api/client.ts";
 import { appMessages } from "./app.messages.ts";
+import { LoginPage } from "./auth/LoginPage.tsx";
 import { ChatView } from "./chat/ChatView.tsx";
 import { BUTTON, Loading, PageHeader } from "./components/ui.tsx";
 
@@ -24,6 +25,7 @@ import { widgetGridMessages } from "./i18n/widgetGrid.messages.ts";
 import { browserLocalStorage } from "./lib/browserStorage.ts";
 import type { VisibilitySource } from "./lib/polling.ts";
 import { createRemote } from "./lib/remote.ts";
+import { NewsView } from "./news/NewsView.tsx";
 import { pageMessages } from "./pages.messages.ts";
 import { NAVIGATION_PAGES } from "./pages.ts";
 import { createHashRouter, formatHash, type StockRoute } from "./router.ts";
@@ -92,192 +94,206 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 	});
 
 	return (
-		<div
-			class="bg-slate-100 text-slate-900"
-			classList={{
-				"flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden": view() === "chat",
-				"min-h-screen": view() !== "chat",
-			}}
+		<Show
+			when={session.state().status === "ready"}
+			fallback={
+				<LoginPage
+					state={session.state()}
+					retry={session.reload}
+					signIn={() => props.window.location.reload()}
+				/>
+			}
 		>
-			<header class="border-b border-slate-300 bg-white">
-				<div class="mx-auto flex max-w-[110rem] flex-wrap items-center gap-4 px-4 py-2">
-					<h1 class="text-base font-semibold">{m().appName}</h1>
-					{/* ADR-0011: visible "Development" badge in development only. Colour is
+			<div
+				class="bg-slate-100 text-slate-900"
+				classList={{
+					"flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden": view() === "chat",
+					"min-h-screen": view() !== "chat",
+				}}
+			>
+				<header class="border-b border-slate-300 bg-white">
+					<div class="mx-auto flex max-w-[110rem] flex-wrap items-center gap-4 px-4 py-2">
+						<h1 class="text-base font-semibold">{m().appName}</h1>
+						{/* ADR-0011: visible "Development" badge in development only. Colour is
 					    never the only signal: the badge carries the word itself. An unknown
 					    or missing environment is treated as production (no badge). */}
-					<Show when={session.value()?.environment === "development"}>
-						<span
-							data-field="environment-badge"
-							class="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-900"
-						>
-							{m().developmentBadge}
-						</span>
-					</Show>
-					<nav aria-label={m().viewsNavigation}>
-						<ul class="flex flex-wrap gap-1">
-							<For each={NAVIGATION_PAGES}>
-								{(page) => (
-									<li>
-										<a
-											href={formatHash({
-												view: page.view,
-												workspaceId: page.view === "chat" ? router.route().workspaceId : null,
-												section: null,
-												stock: page.view === "stocks" ? lastStock() : null,
-												theme: null,
-											})}
-											aria-current={view() === page.view ? "page" : undefined}
-											class="rounded px-2 py-1 text-sm font-medium"
-											classList={{
-												"bg-blue-700 text-white": view() === page.view,
-												"text-slate-800 hover:bg-slate-200": view() !== page.view,
-											}}
-										>
-											{pages().title(page.view)}
-										</a>
-									</li>
+						<Show when={session.value()?.environment === "development"}>
+							<span
+								data-field="environment-badge"
+								class="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-900"
+							>
+								{m().developmentBadge}
+							</span>
+						</Show>
+						<nav aria-label={m().viewsNavigation}>
+							<ul class="flex flex-wrap gap-1">
+								<For each={NAVIGATION_PAGES}>
+									{(page) => (
+										<li>
+											<a
+												href={formatHash({
+													view: page.view,
+													workspaceId: page.view === "chat" ? router.route().workspaceId : null,
+													section: null,
+													stock: page.view === "stocks" ? lastStock() : null,
+													theme: null,
+												})}
+												aria-current={view() === page.view ? "page" : undefined}
+												class="rounded px-2 py-1 text-sm font-medium"
+												classList={{
+													"bg-blue-700 text-white": view() === page.view,
+													"text-slate-800 hover:bg-slate-200": view() !== page.view,
+												}}
+											>
+												{pages().title(page.view)}
+											</a>
+										</li>
+									)}
+								</For>
+							</ul>
+						</nav>
+						<p class="ml-auto text-xs text-slate-700" data-field="session-summary">
+							<Show when={session.value()} fallback={m().checkingSession}>
+								{(current) => (
+									// The owner ID is the account, and the account's settings live on
+									// Settings, so the ID opens that page.
+									<a
+										href={formatHash({
+											view: "settings",
+											workspaceId: null,
+											section: null,
+											stock: null,
+											theme: null,
+										})}
+										data-field="session-owner-link"
+										class="rounded px-1 py-0.5 hover:bg-slate-200 hover:underline"
+									>
+										{/* The label is for screen readers only; sighted users see just the owner ID. */}
+										<span class="sr-only">{m().signedInAs} </span>
+										<span class="font-mono">{current().ownerId}</span>
+									</a>
 								)}
-							</For>
-						</ul>
-					</nav>
-					<p class="ml-auto text-xs text-slate-700" data-field="session-summary">
-						<Show when={session.value()} fallback={m().checkingSession}>
-							{(current) => (
-								// The owner ID is the account, and the account's settings live on
-								// Settings, so the ID opens that page.
-								<a
-									href={formatHash({
-										view: "settings",
-										workspaceId: null,
+							</Show>
+						</p>
+					</div>
+				</header>
+				<main
+					class="mx-auto w-full max-w-[110rem] px-4 py-3"
+					classList={{
+						"flex min-h-0 flex-1 flex-col lg:overflow-hidden": view() === "chat",
+					}}
+				>
+					<PageHeader view={view()} />
+					<Switch>
+						<Match when={view() === "home"}>
+							{/* V10: the lazy chunk has a designed loading state and an
+						    error state with "Try again" — a failed chunk load must
+						    not leave the default page blank. */}
+							<ErrorBoundary
+								fallback={(error, reset) => (
+									<div
+										role="alert"
+										class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
+									>
+										<p>
+											<span class="font-semibold">{m().homeLoadFailed} </span>
+											{error instanceof Error ? error.message : common().unknownError}
+										</p>
+										<button type="button" class={`${BUTTON} mt-1`} onClick={reset}>
+											{common().tryAgain}
+										</button>
+									</div>
+								)}
+							>
+								<Suspense fallback={<Loading label={pages().title("home")} />}>
+									<HomeView api={props.api} visibility={props.visibility} />
+								</Suspense>
+							</ErrorBoundary>
+						</Match>
+						<Match when={view() === "tasks"}>
+							<TasksView api={props.api} visibility={props.visibility} />
+						</Match>
+						<Match when={view() === "chat"}>
+							<ChatView
+								api={props.api}
+								registry={props.registry}
+								visibility={props.visibility}
+								workspaceId={router.route().workspaceId}
+								onSelectConversation={(workspaceId) =>
+									router.navigate({
+										view: "chat",
+										workspaceId,
 										section: null,
 										stock: null,
 										theme: null,
-									})}
-									data-field="session-owner-link"
-									class="rounded px-1 py-0.5 hover:bg-slate-200 hover:underline"
-								>
-									{/* The label is for screen readers only; sighted users see just the owner ID. */}
-									<span class="sr-only">{m().signedInAs} </span>
-									<span class="font-mono">{current().ownerId}</span>
-								</a>
-							)}
-						</Show>
-					</p>
-				</div>
-			</header>
-			<main
-				class="mx-auto w-full max-w-[110rem] px-4 py-3"
-				classList={{
-					"flex min-h-0 flex-1 flex-col lg:overflow-hidden": view() === "chat",
-				}}
-			>
-				<PageHeader view={view()} />
-				<Switch>
-					<Match when={view() === "home"}>
-						{/* V10: the lazy chunk has a designed loading state and an
-						    error state with "Try again" — a failed chunk load must
-						    not leave the default page blank. */}
-						<ErrorBoundary
-							fallback={(error, reset) => (
-								<div
-									role="alert"
-									class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
-								>
-									<p>
-										<span class="font-semibold">{m().homeLoadFailed} </span>
-										{error instanceof Error ? error.message : common().unknownError}
-									</p>
-									<button type="button" class={`${BUTTON} mt-1`} onClick={reset}>
-										{common().tryAgain}
-									</button>
-								</div>
-							)}
-						>
-							<Suspense fallback={<Loading label={pages().title("home")} />}>
-								<HomeView api={props.api} visibility={props.visibility} />
-							</Suspense>
-						</ErrorBoundary>
-					</Match>
-					<Match when={view() === "tasks"}>
-						<TasksView api={props.api} visibility={props.visibility} />
-					</Match>
-					<Match when={view() === "chat"}>
-						<ChatView
-							api={props.api}
-							registry={props.registry}
-							visibility={props.visibility}
-							workspaceId={router.route().workspaceId}
-							onSelectConversation={(workspaceId) =>
-								router.navigate({
-									view: "chat",
-									workspaceId,
-									section: null,
-									stock: null,
-									theme: null,
-								})
-							}
-						/>
-					</Match>
-					<Match when={view() === "sources"}>
-						<SourcesView api={props.api} />
-					</Match>
-					<Match when={view() === "registered"}>
-						<Suspense fallback={<Loading label={pages().title("registered")} />}>
-							<RegisteredStocksView api={props.api} visibility={props.visibility} />
-						</Suspense>
-					</Match>
-					<Match when={view() === "stocks"}>
-						<Suspense fallback={<Loading label={pages().title("stocks")} />}>
-							<StocksView
-								api={props.api}
-								visibility={props.visibility}
-								stock={router.route().stock}
-								theme={router.route().theme}
-								onNavigate={(stock, options) =>
-									router.navigate(
-										{ view: "stocks", workspaceId: null, section: null, stock, theme: null },
-										options,
-									)
-								}
-								onThemeSearch={(theme) =>
-									router.navigate({
-										view: "stocks",
-										workspaceId: null,
-										section: null,
-										stock: null,
-										theme,
 									})
 								}
 							/>
-						</Suspense>
-					</Match>
-					<Match when={view() === "settings"}>
-						<SettingsView
-							api={props.api}
-							section={router.route().section}
-							// A category switch replaces the history entry: Back leaves
-							// Settings instead of walking its categories (as Stocks tabs do).
-							onSelectSection={(section) =>
-								router.navigate(
-									{ view: "settings", workspaceId: null, section, stock: null, theme: null },
-									{ replace: true },
-								)
-							}
-							visibility={props.visibility}
-							localeState={props.localeState}
-							onOpenWorkspace={(workspaceId) =>
-								router.navigate({
-									view: "chat",
-									workspaceId,
-									section: null,
-									stock: null,
-									theme: null,
-								})
-							}
-						/>
-					</Match>
-				</Switch>
-			</main>
-		</div>
+						</Match>
+						<Match when={view() === "news"}>
+							<NewsView api={props.api} />
+						</Match>
+						<Match when={view() === "sources"}>
+							<SourcesView api={props.api} />
+						</Match>
+						<Match when={view() === "registered"}>
+							<Suspense fallback={<Loading label={pages().title("registered")} />}>
+								<RegisteredStocksView api={props.api} visibility={props.visibility} />
+							</Suspense>
+						</Match>
+						<Match when={view() === "stocks"}>
+							<Suspense fallback={<Loading label={pages().title("stocks")} />}>
+								<StocksView
+									api={props.api}
+									visibility={props.visibility}
+									stock={router.route().stock}
+									theme={router.route().theme}
+									onNavigate={(stock, options) =>
+										router.navigate(
+											{ view: "stocks", workspaceId: null, section: null, stock, theme: null },
+											options,
+										)
+									}
+									onThemeSearch={(theme) =>
+										router.navigate({
+											view: "stocks",
+											workspaceId: null,
+											section: null,
+											stock: null,
+											theme,
+										})
+									}
+								/>
+							</Suspense>
+						</Match>
+						<Match when={view() === "settings"}>
+							<SettingsView
+								api={props.api}
+								section={router.route().section}
+								// A category switch replaces the history entry: Back leaves
+								// Settings instead of walking its categories (as Stocks tabs do).
+								onSelectSection={(section) =>
+									router.navigate(
+										{ view: "settings", workspaceId: null, section, stock: null, theme: null },
+										{ replace: true },
+									)
+								}
+								visibility={props.visibility}
+								localeState={props.localeState}
+								onOpenWorkspace={(workspaceId) =>
+									router.navigate({
+										view: "chat",
+										workspaceId,
+										section: null,
+										stock: null,
+										theme: null,
+									})
+								}
+							/>
+						</Match>
+					</Switch>
+				</main>
+			</div>
+		</Show>
 	);
 }

@@ -34,6 +34,10 @@ pub const OPENROUTER_FREE_AGENT_ID: &str = "openrouter-free";
 /// Messages API over HTTPS, metered; distinct from the `claude-code` CLI.
 pub const CLAUDE_API_AGENT_ID: &str = "claude-api";
 
+/// Agent id of the Sarashina API backend (`SARASHINA_API_AGENT_ID`): SB
+/// Intuitions' OpenAI-compatible chat completions, plan-limited (ADR-0074).
+pub const SARASHINA_API_AGENT_ID: &str = "sarashina-api";
+
 /// Router id that selects a free model on the owner's behalf.
 pub const OPENROUTER_FREE_ROUTER_MODEL_ID: &str = "openrouter/free";
 

@@ -2086,11 +2086,1136 @@
 			"backend": "opencode",
 			"script": {
 				"lines": [
-					"{\"type\":\"error\",\"timestamp\":1792211229461,\"sessionID\":\"ses_eb7e2e9b7ffecFWui2LLLOnvPH\",\"error\":{\"type\":\"provider.no-route\",\"message\":\"Variant unavailable for opencode/glm-5.3-flash-free: bogus\"}}"
+					"{\"type\":\"step_start\",\"timestamp\":1793964004695,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965557001d9BdEdfbahYky6\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1793964006593,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965b23002nMTsddKEwqOtpy\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"text\",\"text\":\"I'll start by exploring the current directory structure to understand what's available.\\n\",\"time\":{\"start\":1793964006179,\"end\":1793964006593}}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964006605,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0965c8e001NW8XZ9PHpoKFkI\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"tool\",\"id\":\"call-219d1b01-cc65-4752-8964-4fd45dc14c4e\",\"tool\":\"read\",\"state\":{\"status\":\"error\",\"input\":{\"path\":\"/private/tmp/research-opencode-225-tvu7Bn/free\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"path\\\":\\\"/private/tmp/research-opencode-225-tvu7Bn/free\\\"}\"},\"time\":{\"start\":1793964006542,\"end\":1793964006605}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964006607,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965ccf0010H0I9VgJa99hZ4\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":7020,\"output\":57,\"reasoning\":202,\"cache\":{\"read\":0,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964007067,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965e9b001tRh7mDyiAttayo\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0965cd3001e6y047grV8Ohj7\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964007629,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0966098001DTnkVK4RKdo850\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0965cd3001e6y047grV8Ohj7\",\"type\":\"tool\",\"id\":\"call-e56c143d-67af-4444-ba55-be0719fc5650\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"ls -la /private/tmp/research-opencode-225-tvu7Bn/free\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"ls -la /private/tmp/research-opencode-225-tvu7Bn/free\\\"}\"},\"time\":{\"start\":1793964007576,\"end\":1793964007629}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964007631,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b09660cf001hhkS03FbK4wkYy\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0965cd3001e6y047grV8Ohj7\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":1047,\"output\":46,\"reasoning\":17,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964008111,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b09662af0018w6TVjr2xU03dr\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09660d7001Y1hD3IzIaiINsc\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964008917,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0966597001vWjHDjwq0P46rK\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09660d7001Y1hD3IzIaiINsc\",\"type\":\"tool\",\"id\":\"call-43333a8e-01f5-4301-a5c4-856d47d00de8\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"touch /private/tmp/research-opencode-225-tvu7Bn/free/forbidden.txt\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"touch /private/tmp/research-opencode-225-tvu7Bn/free/forbidden.txt\\\"}\"},\"time\":{\"start\":1793964008855,\"end\":1793964008917}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964008919,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b09665d700161f5dm5beZL9Lb\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09660d7001Y1hD3IzIaiINsc\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":1166,\"output\":48,\"reasoning\":58,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964009369,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966799001CHXzdtgeJ8d92p\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09665e1001yUY0E0nyhaVKTp\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964010307,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0966b0b0018AvqiBhHhVvhCd\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09665e1001yUY0E0nyhaVKTp\",\"type\":\"tool\",\"id\":\"call-7e4866e9-7757-4bd2-be31-99125b30a87c\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"cat /private/tmp/research-opencode-225-tvu7Bn/free/canary.txt 2>/dev/null || echo \\\"File not found or access denied\\\"\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"cat /private/tmp/research-opencode-225-tvu7Bn/free/canary.txt 2>/dev/null || echo \\\\\\\"File not found or access denied\\\\\\\"\\\"}\"},\"time\":{\"start\":1793964010252,\"end\":1793964010307}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964010309,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966b45001o6KfT9G8vyOWmz\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09665e1001yUY0E0nyhaVKTp\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":1328,\"output\":62,\"reasoning\":28,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964010772,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966d14001nlJumHzddntlqg\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0966b4e001CrUTLDCt18S5fL\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1793964011779,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966b4e001CrUTLDCt18S5fL_text-0\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0966b4e001CrUTLDCt18S5fL\",\"type\":\"text\",\"text\":\"ISOLATED\",\"time\":{\"start\":1793964010322,\"end\":1793964011779}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964011779,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966b4e001CrUTLDCt18S5fL_step-finish\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0966b4e001CrUTLDCt18S5fL\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":1474,\"output\":5,\"reasoning\":133,\"cache\":{\"read\":6288,\"write\":0}}}}"
 				],
 				"exit": {
 					"code": null,
 					"signal": "SIGKILL",
+					"stderrTail": ""
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "low"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#low"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "I'll start by exploring the current directory structure to understand what's available.\n"
+				},
+				{
+					"type": "text.delta",
+					"text": "ISOLATED"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"{\"type\":\"step_start\",\"timestamp\":1793964004695,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965557001d9BdEdfbahYky6\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1793964006593,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965b23002nMTsddKEwqOtpy\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"text\",\"text\":\"I'll start by exploring the current directory structure to understand what's available.\\n\",\"time\":{\"start\":1793964006179,\"end\":1793964006593}}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964006605,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0965c8e001NW8XZ9PHpoKFkI\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"tool\",\"id\":\"call-219d1b01-cc65-4752-8964-4fd45dc14c4e\",\"tool\":\"read\",\"state\":{\"status\":\"error\",\"input\":{\"path\":\"/private/tmp/research-opencode-225-tvu7Bn/free\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"path\\\":\\\"/private/tmp/research-opencode-225-tvu7Bn/free\\\"}\"},\"time\":{\"start\":1793964006542,\"end\":1793964006605}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964006607,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965ccf0010H0I9VgJa99hZ4\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":7020,\"output\":57,\"reasoning\":202,\"cache\":{\"read\":0,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964007067,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965e9b001tRh7mDyiAttayo\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0965cd3001e6y047grV8Ohj7\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964007629,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0966098001DTnkVK4RKdo850\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0965cd3001e6y047grV8Ohj7\",\"type\":\"tool\",\"id\":\"call-e56c143d-67af-4444-ba55-be0719fc5650\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"ls -la /private/tmp/research-opencode-225-tvu7Bn/free\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"ls -la /private/tmp/research-opencode-225-tvu7Bn/free\\\"}\"},\"time\":{\"start\":1793964007576,\"end\":1793964007629}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964007631,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b09660cf001hhkS03FbK4wkYy\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0965cd3001e6y047grV8Ohj7\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":1047,\"output\":46,\"reasoning\":17,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964008111,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b09662af0018w6TVjr2xU03dr\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09660d7001Y1hD3IzIaiINsc\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964008917,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0966597001vWjHDjwq0P46rK\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09660d7001Y1hD3IzIaiINsc\",\"type\":\"tool\",\"id\":\"call-43333a8e-01f5-4301-a5c4-856d47d00de8\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"touch /private/tmp/research-opencode-225-tvu7Bn/free/forbidden.txt\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"touch /private/tmp/research-opencode-225-tvu7Bn/free/forbidden.txt\\\"}\"},\"time\":{\"start\":1793964008855,\"end\":1793964008917}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964008919,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b09665d700161f5dm5beZL9Lb\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09660d7001Y1hD3IzIaiINsc\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":1166,\"output\":48,\"reasoning\":58,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964009369,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966799001CHXzdtgeJ8d92p\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09665e1001yUY0E0nyhaVKTp\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964010307,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0966b0b0018AvqiBhHhVvhCd\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09665e1001yUY0E0nyhaVKTp\",\"type\":\"tool\",\"id\":\"call-7e4866e9-7757-4bd2-be31-99125b30a87c\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"cat /private/tmp/research-opencode-225-tvu7Bn/free/canary.txt 2>/dev/null || echo \\\"File not found or access denied\\\"\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"cat /private/tmp/research-opencode-225-tvu7Bn/free/canary.txt 2>/dev/null || echo \\\\\\\"File not found or access denied\\\\\\\"\\\"}\"},\"time\":{\"start\":1793964010252,\"end\":1793964010307}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964010309,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966b45001o6KfT9G8vyOWmz\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09665e1001yUY0E0nyhaVKTp\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":1328,\"output\":62,\"reasoning\":28,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964010772,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966d14001nlJumHzddntlqg\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0966b4e001CrUTLDCt18S5fL\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1793964011779,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966b4e001CrUTLDCt18S5fL_text-0\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0966b4e001CrUTLDCt18S5fL\",\"type\":\"text\",\"text\":\"ISOLATED\",\"time\":{\"start\":1793964010322,\"end\":1793964011779}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964011779,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966b4e001CrUTLDCt18S5fL_step-finish\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0966b4e001CrUTLDCt18S5fL\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":1474,\"output\":5,\"reasoning\":133,\"cache\":{\"read\":6288,\"write\":0}}}}"
+				],
+				"exit": {
+					"code": null,
+					"signal": "SIGKILL",
+					"stderrTail": ""
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "medium"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#medium"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "I'll start by exploring the current directory structure to understand what's available.\n"
+				},
+				{
+					"type": "text.delta",
+					"text": "ISOLATED"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"{\"type\":\"step_start\",\"timestamp\":1793964004695,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965557001d9BdEdfbahYky6\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1793964006593,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965b23002nMTsddKEwqOtpy\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"text\",\"text\":\"I'll start by exploring the current directory structure to understand what's available.\\n\",\"time\":{\"start\":1793964006179,\"end\":1793964006593}}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964006605,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0965c8e001NW8XZ9PHpoKFkI\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"tool\",\"id\":\"call-219d1b01-cc65-4752-8964-4fd45dc14c4e\",\"tool\":\"read\",\"state\":{\"status\":\"error\",\"input\":{\"path\":\"/private/tmp/research-opencode-225-tvu7Bn/free\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"path\\\":\\\"/private/tmp/research-opencode-225-tvu7Bn/free\\\"}\"},\"time\":{\"start\":1793964006542,\"end\":1793964006605}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964006607,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965ccf0010H0I9VgJa99hZ4\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b096518c001KhgIO0xL159FTd\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":7020,\"output\":57,\"reasoning\":202,\"cache\":{\"read\":0,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964007067,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0965e9b001tRh7mDyiAttayo\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0965cd3001e6y047grV8Ohj7\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964007629,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0966098001DTnkVK4RKdo850\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0965cd3001e6y047grV8Ohj7\",\"type\":\"tool\",\"id\":\"call-e56c143d-67af-4444-ba55-be0719fc5650\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"ls -la /private/tmp/research-opencode-225-tvu7Bn/free\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"ls -la /private/tmp/research-opencode-225-tvu7Bn/free\\\"}\"},\"time\":{\"start\":1793964007576,\"end\":1793964007629}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964007631,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b09660cf001hhkS03FbK4wkYy\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0965cd3001e6y047grV8Ohj7\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":1047,\"output\":46,\"reasoning\":17,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964008111,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b09662af0018w6TVjr2xU03dr\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09660d7001Y1hD3IzIaiINsc\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964008917,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0966597001vWjHDjwq0P46rK\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09660d7001Y1hD3IzIaiINsc\",\"type\":\"tool\",\"id\":\"call-43333a8e-01f5-4301-a5c4-856d47d00de8\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"touch /private/tmp/research-opencode-225-tvu7Bn/free/forbidden.txt\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"touch /private/tmp/research-opencode-225-tvu7Bn/free/forbidden.txt\\\"}\"},\"time\":{\"start\":1793964008855,\"end\":1793964008917}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964008919,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b09665d700161f5dm5beZL9Lb\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09660d7001Y1hD3IzIaiINsc\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":1166,\"output\":48,\"reasoning\":58,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964009369,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966799001CHXzdtgeJ8d92p\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09665e1001yUY0E0nyhaVKTp\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1793964010307,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"partID\":\"prt_1b0966b0b0018AvqiBhHhVvhCd\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09665e1001yUY0E0nyhaVKTp\",\"type\":\"tool\",\"id\":\"call-7e4866e9-7757-4bd2-be31-99125b30a87c\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"cat /private/tmp/research-opencode-225-tvu7Bn/free/canary.txt 2>/dev/null || echo \\\"File not found or access denied\\\"\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"cat /private/tmp/research-opencode-225-tvu7Bn/free/canary.txt 2>/dev/null || echo \\\\\\\"File not found or access denied\\\\\\\"\\\"}\"},\"time\":{\"start\":1793964010252,\"end\":1793964010307}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964010309,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966b45001o6KfT9G8vyOWmz\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b09665e1001yUY0E0nyhaVKTp\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":1328,\"output\":62,\"reasoning\":28,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1793964010772,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966d14001nlJumHzddntlqg\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0966b4e001CrUTLDCt18S5fL\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1793964011779,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966b4e001CrUTLDCt18S5fL_text-0\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0966b4e001CrUTLDCt18S5fL\",\"type\":\"text\",\"text\":\"ISOLATED\",\"time\":{\"start\":1793964010322,\"end\":1793964011779}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1793964011779,\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"part\":{\"id\":\"prt_1b0966b4e001CrUTLDCt18S5fL_step-finish\",\"sessionID\":\"ses_e4f69b515ffefp0MPekF5yGmY9\",\"messageID\":\"msg_1b0966b4e001CrUTLDCt18S5fL\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":1474,\"output\":5,\"reasoning\":133,\"cache\":{\"read\":6288,\"write\":0}}}}"
+				],
+				"exit": {
+					"code": null,
+					"signal": "SIGKILL",
+					"stderrTail": ""
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "high"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#high"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "I'll start by exploring the current directory structure to understand what's available.\n"
+				},
+				{
+					"type": "text.delta",
+					"text": "ISOLATED"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"{\"type\":\"step_start\",\"timestamp\":1794226221630,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c037723e001Aju8XZxQdDj8hl\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0376ec6001sUNor5t81HsQ4K\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1794226223183,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"partID\":\"prt_1c0377816001XtDsNDG9Il2F5V\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0376ec6001sUNor5t81HsQ4K\",\"type\":\"tool\",\"id\":\"call-bebc2ee1-f89f-4456-b7f7-25f18fe83483\",\"tool\":\"read\",\"state\":{\"status\":\"error\",\"input\":{\"path\":\"/private/tmp/opencode-226-review/free/canary.txt\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"path\\\":\\\"/private/tmp/opencode-226-review/free/canary.txt\\\"}\"},\"time\":{\"start\":1794226223126,\"end\":1794226223183}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226223186,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0377852001snFgZFyucJHcop\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0376ec6001sUNor5t81HsQ4K\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":7014,\"output\":42,\"reasoning\":100,\"cache\":{\"read\":0,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1794226223661,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0377a2d001ttlQ7nyJmQg2hT\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0377859001EWuYI9C36Z0h7B\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1794226225533,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0378147001N9H3qIqWmt2DOS\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0377859001EWuYI9C36Z0h7B\",\"type\":\"text\",\"text\":\"ISOLATED\",\"time\":{\"start\":1794226225479,\"end\":1794226225533}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226225538,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0378182001DoXGwEQaxQluws\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0377859001EWuYI9C36Z0h7B\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":924,\"output\":5,\"reasoning\":150,\"cache\":{\"read\":6288,\"write\":0}}}}"
+				],
+				"exit": {
+					"code": 1,
+					"signal": null,
+					"stderrTail": "quota reached"
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "low"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#low"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "ISOLATED"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_RATE_LIMITED",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"{\"type\":\"step_start\",\"timestamp\":1794226221630,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c037723e001Aju8XZxQdDj8hl\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0376ec6001sUNor5t81HsQ4K\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1794226223183,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"partID\":\"prt_1c0377816001XtDsNDG9Il2F5V\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0376ec6001sUNor5t81HsQ4K\",\"type\":\"tool\",\"id\":\"call-bebc2ee1-f89f-4456-b7f7-25f18fe83483\",\"tool\":\"read\",\"state\":{\"status\":\"error\",\"input\":{\"path\":\"/private/tmp/opencode-226-review/free/canary.txt\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"path\\\":\\\"/private/tmp/opencode-226-review/free/canary.txt\\\"}\"},\"time\":{\"start\":1794226223126,\"end\":1794226223183}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226223186,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0377852001snFgZFyucJHcop\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0376ec6001sUNor5t81HsQ4K\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":7014,\"output\":42,\"reasoning\":100,\"cache\":{\"read\":0,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1794226223661,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0377a2d001ttlQ7nyJmQg2hT\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0377859001EWuYI9C36Z0h7B\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1794226225533,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0378147001N9H3qIqWmt2DOS\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0377859001EWuYI9C36Z0h7B\",\"type\":\"text\",\"text\":\"ISOLATED\",\"time\":{\"start\":1794226225479,\"end\":1794226225533}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226225538,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0378182001DoXGwEQaxQluws\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0377859001EWuYI9C36Z0h7B\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":924,\"output\":5,\"reasoning\":150,\"cache\":{\"read\":6288,\"write\":0}}}}"
+				],
+				"exit": {
+					"code": 1,
+					"signal": null,
+					"stderrTail": "quota reached"
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "medium"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#medium"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "ISOLATED"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_RATE_LIMITED",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"{\"type\":\"step_start\",\"timestamp\":1794226221630,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c037723e001Aju8XZxQdDj8hl\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0376ec6001sUNor5t81HsQ4K\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1794226223183,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"partID\":\"prt_1c0377816001XtDsNDG9Il2F5V\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0376ec6001sUNor5t81HsQ4K\",\"type\":\"tool\",\"id\":\"call-bebc2ee1-f89f-4456-b7f7-25f18fe83483\",\"tool\":\"read\",\"state\":{\"status\":\"error\",\"input\":{\"path\":\"/private/tmp/opencode-226-review/free/canary.txt\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"path\\\":\\\"/private/tmp/opencode-226-review/free/canary.txt\\\"}\"},\"time\":{\"start\":1794226223126,\"end\":1794226223183}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226223186,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0377852001snFgZFyucJHcop\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0376ec6001sUNor5t81HsQ4K\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":7014,\"output\":42,\"reasoning\":100,\"cache\":{\"read\":0,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1794226223661,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0377a2d001ttlQ7nyJmQg2hT\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0377859001EWuYI9C36Z0h7B\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1794226225533,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0378147001N9H3qIqWmt2DOS\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0377859001EWuYI9C36Z0h7B\",\"type\":\"text\",\"text\":\"ISOLATED\",\"time\":{\"start\":1794226225479,\"end\":1794226225533}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226225538,\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"part\":{\"id\":\"prt_1c0378182001DoXGwEQaxQluws\",\"sessionID\":\"ses_e3fc89738ffeR3v2nelyAXshnw\",\"messageID\":\"msg_1c0377859001EWuYI9C36Z0h7B\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":924,\"output\":5,\"reasoning\":150,\"cache\":{\"read\":6288,\"write\":0}}}}"
+				],
+				"exit": {
+					"code": 1,
+					"signal": null,
+					"stderrTail": "quota reached"
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "high"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#high"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "ISOLATED"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_RATE_LIMITED",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"{\"type\":\"step_start\",\"timestamp\":1794226269016,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c0382b580016LhleWrQAFqyWL\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0382477001GoRpFBkkREXmaB\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1794226274212,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"partID\":\"prt_1c0383f6600106a3CVt34CuYij\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0382477001GoRpFBkkREXmaB\",\"type\":\"tool\",\"id\":\"call-e86b58c0-a44b-48d6-8361-96075d5b1be3\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"echo \\\"TEST\\\" > blocked-write.txt\",\"workdir\":\"/private/tmp/opencode-226-review/free\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"echo \\\\\\\"TEST\\\\\\\" > blocked-write.txt\\\",\\\"workdir\\\":\\\"/private/tmp/opencode-226-review/free\\\"}\"},\"time\":{\"start\":1794226274150,\"end\":1794226274212}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226274214,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c0383fa60011fbS5I1JBPCQqk\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0382477001GoRpFBkkREXmaB\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":714,\"output\":56,\"reasoning\":193,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1794226274737,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c03841b1001EOROiMoJAcYDab\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0383fac0014CIDBeNB0px3Qf\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1794226275743,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c0384570002kJS0SAYTaYWMDj\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0383fac0014CIDBeNB0px3Qf\",\"type\":\"text\",\"text\":\"ISOLATED\",\"time\":{\"start\":1794226275696,\"end\":1794226275743}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226275745,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c03845a10019bkH5ATrADkQtk\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0383fac0014CIDBeNB0px3Qf\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":1019,\"output\":5,\"reasoning\":71,\"cache\":{\"read\":6288,\"write\":0}}}}"
+				],
+				"exit": {
+					"code": 0,
+					"signal": null,
+					"stderrTail": ""
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "low"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#low"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "ISOLATED"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"{\"type\":\"step_start\",\"timestamp\":1794226269016,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c0382b580016LhleWrQAFqyWL\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0382477001GoRpFBkkREXmaB\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1794226274212,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"partID\":\"prt_1c0383f6600106a3CVt34CuYij\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0382477001GoRpFBkkREXmaB\",\"type\":\"tool\",\"id\":\"call-e86b58c0-a44b-48d6-8361-96075d5b1be3\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"echo \\\"TEST\\\" > blocked-write.txt\",\"workdir\":\"/private/tmp/opencode-226-review/free\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"echo \\\\\\\"TEST\\\\\\\" > blocked-write.txt\\\",\\\"workdir\\\":\\\"/private/tmp/opencode-226-review/free\\\"}\"},\"time\":{\"start\":1794226274150,\"end\":1794226274212}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226274214,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c0383fa60011fbS5I1JBPCQqk\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0382477001GoRpFBkkREXmaB\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":714,\"output\":56,\"reasoning\":193,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1794226274737,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c03841b1001EOROiMoJAcYDab\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0383fac0014CIDBeNB0px3Qf\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1794226275743,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c0384570002kJS0SAYTaYWMDj\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0383fac0014CIDBeNB0px3Qf\",\"type\":\"text\",\"text\":\"ISOLATED\",\"time\":{\"start\":1794226275696,\"end\":1794226275743}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226275745,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c03845a10019bkH5ATrADkQtk\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0383fac0014CIDBeNB0px3Qf\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":1019,\"output\":5,\"reasoning\":71,\"cache\":{\"read\":6288,\"write\":0}}}}"
+				],
+				"exit": {
+					"code": 0,
+					"signal": null,
+					"stderrTail": ""
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "medium"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#medium"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "ISOLATED"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"{\"type\":\"step_start\",\"timestamp\":1794226269016,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c0382b580016LhleWrQAFqyWL\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0382477001GoRpFBkkREXmaB\",\"type\":\"step-start\"}}",
+					"{\"type\":\"tool_use\",\"timestamp\":1794226274212,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"partID\":\"prt_1c0383f6600106a3CVt34CuYij\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0382477001GoRpFBkkREXmaB\",\"type\":\"tool\",\"id\":\"call-e86b58c0-a44b-48d6-8361-96075d5b1be3\",\"tool\":\"shell\",\"state\":{\"status\":\"error\",\"input\":{\"command\":\"echo \\\"TEST\\\" > blocked-write.txt\",\"workdir\":\"/private/tmp/opencode-226-review/free\"},\"error\":\"This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\",\"metadata\":{\"providerCall\":{\"executed\":false},\"providerResult\":{\"executed\":false},\"rawInput\":\"{\\\"command\\\":\\\"echo \\\\\\\"TEST\\\\\\\" > blocked-write.txt\\\",\\\"workdir\\\":\\\"/private/tmp/opencode-226-review/free\\\"}\"},\"time\":{\"start\":1794226274150,\"end\":1794226274212}}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226274214,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c0383fa60011fbS5I1JBPCQqk\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0382477001GoRpFBkkREXmaB\",\"type\":\"step-finish\",\"reason\":\"tool-calls\",\"cost\":0,\"tokens\":{\"input\":714,\"output\":56,\"reasoning\":193,\"cache\":{\"read\":6288,\"write\":0}}}}",
+					"{\"type\":\"step_start\",\"timestamp\":1794226274737,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c03841b1001EOROiMoJAcYDab\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0383fac0014CIDBeNB0px3Qf\",\"type\":\"step-start\"}}",
+					"{\"type\":\"text\",\"timestamp\":1794226275743,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c0384570002kJS0SAYTaYWMDj\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0383fac0014CIDBeNB0px3Qf\",\"type\":\"text\",\"text\":\"ISOLATED\",\"time\":{\"start\":1794226275696,\"end\":1794226275743}}}",
+					"{\"type\":\"step_finish\",\"timestamp\":1794226275745,\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"part\":{\"id\":\"prt_1c03845a10019bkH5ATrADkQtk\",\"sessionID\":\"ses_e3fc7e443ffe3BjunTVCjMuK8y\",\"messageID\":\"msg_1c0383fac0014CIDBeNB0px3Qf\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":1019,\"output\":5,\"reasoning\":71,\"cache\":{\"read\":6288,\"write\":0}}}}"
+				],
+				"exit": {
+					"code": 0,
+					"signal": null,
+					"stderrTail": ""
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "high"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#high"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "ISOLATED"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"{\"type\":\"error\",\"timestamp\":1792211229461,\"sessionID\":\"ses_eb7e2e9b7ffecFWui2LLLOnvPH\",\"error\":{\"type\":\"provider.no-route\",\"message\":\"Variant unavailable for opencode/glm-5.3-flash-free: bogus\"}}"
+				],
+				"exit": {
+					"code": 1,
+					"signal": null,
 					"stderrTail": ""
 				}
 			},
@@ -2251,8 +3376,8 @@
 					"{\"type\":\"error\",\"timestamp\":1792211229461,\"sessionID\":\"ses_eb7e2e9b7ffecFWui2LLLOnvPH\",\"error\":{\"type\":\"provider.no-route\",\"message\":\"Variant unavailable for opencode/glm-5.3-flash-free: bogus\"}}"
 				],
 				"exit": {
-					"code": null,
-					"signal": "SIGKILL",
+					"code": 1,
+					"signal": null,
 					"stderrTail": ""
 				}
 			},
@@ -2413,8 +3538,8 @@
 					"{\"type\":\"error\",\"timestamp\":1792211229461,\"sessionID\":\"ses_eb7e2e9b7ffecFWui2LLLOnvPH\",\"error\":{\"type\":\"provider.no-route\",\"message\":\"Variant unavailable for opencode/glm-5.3-flash-free: bogus\"}}"
 				],
 				"exit": {
-					"code": null,
-					"signal": "SIGKILL",
+					"code": 1,
+					"signal": null,
 					"stderrTail": ""
 				}
 			},
@@ -2573,6 +3698,338 @@
 			"script": {
 				"lines": [],
 				"exit": {
+					"code": null,
+					"signal": "SIGKILL",
+					"stderrTail": ""
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "low"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#low"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [],
+				"exit": {
+					"code": null,
+					"signal": "SIGKILL",
+					"stderrTail": ""
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "medium"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#medium"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [],
+				"exit": {
+					"code": null,
+					"signal": "SIGKILL",
+					"stderrTail": ""
+				}
+			},
+			"env": {
+				"PATH": "/usr/bin:/bin",
+				"HOME": "/home/owner",
+				"USER": "owner",
+				"LANG": "en_US.UTF-8",
+				"LC_ALL": "en_US.UTF-8",
+				"TMPDIR": "/tmp/owner",
+				"TERM": "dumb",
+				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
+				"RUNNER_SHARED_SECRET": "secret-runner-shared",
+				"WORKER_API_SECRET": "secret-worker",
+				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
+				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
+				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
+				"OPENROUTER_MODEL": "example/model",
+				"OPENROUTER_FREE_MODEL": "example/model:free",
+				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
+				"D1_DATABASE_TOKEN": "secret-d1",
+				"ANTHROPIC_API_KEY": "sk-ant-secret",
+				"ANTHROPIC_BASE_URL": "https://attacker.example",
+				"OPENAI_API_KEY": "sk-openai-secret",
+				"CODEX_API_KEY": "sk-codex-secret",
+				"GEMINI_API_KEY": "secret-gemini",
+				"OPENCODE_API_KEY": "secret-opencode",
+				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
+				"OPENCODE_CONFIG": "/home/owner/permissive.json",
+				"GITHUB_TOKEN": "secret-github",
+				"AWS_SECRET_ACCESS_KEY": "secret-aws",
+				"NODE_OPTIONS": "--require /tmp/evil.js",
+				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
+				"XDG_CONFIG_HOME": "/owner/config",
+				"CODEX_HOME": "/owner/codex",
+				"CLAUDE_CONFIG_DIR": "/owner/claude",
+				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
+			},
+			"request": {
+				"runId": "run_1",
+				"conversationId": "conv_1",
+				"prompt": "PROMPT-MARKER: reply with the single word OK.",
+				"permittedToolIds": [
+					"web.search",
+					"web.fetch_page"
+				],
+				"maxToolCalls": 2,
+				"deadline": "2999-01-01T00:00:00.000Z"
+			},
+			"context": {
+				"scratchDirectory": "/scratch/job_1",
+				"model": "opencode/model-free",
+				"effort": "high"
+			}
+		},
+		"output": {
+			"spawns": [
+				{
+					"command": "opencode",
+					"args": [
+						"run",
+						"--standalone",
+						"--format",
+						"json",
+						"--agent",
+						"research-text",
+						"--model",
+						"opencode/model-free#high"
+					],
+					"cwd": "/scratch/job_1",
+					"env": {
+						"PATH": "/usr/bin:/bin",
+						"HOME": "/home/owner",
+						"USER": "owner",
+						"LANG": "en_US.UTF-8",
+						"LC_ALL": "en_US.UTF-8",
+						"TMPDIR": "/tmp/owner",
+						"TERM": "dumb",
+						"XDG_CONFIG_HOME": "/owner/config"
+					},
+					"stdin": "PROMPT-MARKER: reply with the single word OK."
+				}
+			],
+			"files": [
+				{
+					"path": "/scratch/job_1/opencode.jsonc",
+					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"backend": "opencode",
+			"script": {
+				"lines": [
+					"garbage"
+				],
+				"exit": {
 					"code": 1,
 					"signal": null,
 					"stderrTail": "quota reached"
@@ -2681,7 +4138,9 @@
 		"input": {
 			"backend": "opencode",
 			"script": {
-				"lines": [],
+				"lines": [
+					"garbage"
+				],
 				"exit": {
 					"code": 1,
 					"signal": null,
@@ -2791,7 +4250,9 @@
 		"input": {
 			"backend": "opencode",
 			"script": {
-				"lines": [],
+				"lines": [
+					"garbage"
+				],
 				"exit": {
 					"code": 1,
 					"signal": null,
@@ -2902,354 +4363,18 @@
 			"backend": "opencode",
 			"script": {
 				"lines": [
+					"garbage",
+					"garbage",
+					"garbage",
+					"garbage",
+					"garbage",
+					"garbage",
+					"garbage",
+					"garbage",
 					"garbage"
 				],
 				"exit": {
 					"code": 0,
-					"signal": null,
-					"stderrTail": ""
-				}
-			},
-			"env": {
-				"PATH": "/usr/bin:/bin",
-				"HOME": "/home/owner",
-				"USER": "owner",
-				"LANG": "en_US.UTF-8",
-				"LC_ALL": "en_US.UTF-8",
-				"TMPDIR": "/tmp/owner",
-				"TERM": "dumb",
-				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
-				"RUNNER_SHARED_SECRET": "secret-runner-shared",
-				"WORKER_API_SECRET": "secret-worker",
-				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
-				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
-				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
-				"OPENROUTER_MODEL": "example/model",
-				"OPENROUTER_FREE_MODEL": "example/model:free",
-				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
-				"D1_DATABASE_TOKEN": "secret-d1",
-				"ANTHROPIC_API_KEY": "sk-ant-secret",
-				"ANTHROPIC_BASE_URL": "https://attacker.example",
-				"OPENAI_API_KEY": "sk-openai-secret",
-				"CODEX_API_KEY": "sk-codex-secret",
-				"GEMINI_API_KEY": "secret-gemini",
-				"OPENCODE_API_KEY": "secret-opencode",
-				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
-				"OPENCODE_CONFIG": "/home/owner/permissive.json",
-				"GITHUB_TOKEN": "secret-github",
-				"AWS_SECRET_ACCESS_KEY": "secret-aws",
-				"NODE_OPTIONS": "--require /tmp/evil.js",
-				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
-				"XDG_CONFIG_HOME": "/owner/config",
-				"CODEX_HOME": "/owner/codex",
-				"CLAUDE_CONFIG_DIR": "/owner/claude",
-				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
-			},
-			"request": {
-				"runId": "run_1",
-				"conversationId": "conv_1",
-				"prompt": "PROMPT-MARKER: reply with the single word OK.",
-				"permittedToolIds": [
-					"web.search",
-					"web.fetch_page"
-				],
-				"maxToolCalls": 2,
-				"deadline": "2999-01-01T00:00:00.000Z"
-			},
-			"context": {
-				"scratchDirectory": "/scratch/job_1",
-				"model": "opencode/model-free",
-				"effort": "low"
-			}
-		},
-		"output": {
-			"spawns": [
-				{
-					"command": "opencode",
-					"args": [
-						"run",
-						"--standalone",
-						"--format",
-						"json",
-						"--agent",
-						"research-text",
-						"--model",
-						"opencode/model-free#low"
-					],
-					"cwd": "/scratch/job_1",
-					"env": {
-						"PATH": "/usr/bin:/bin",
-						"HOME": "/home/owner",
-						"USER": "owner",
-						"LANG": "en_US.UTF-8",
-						"LC_ALL": "en_US.UTF-8",
-						"TMPDIR": "/tmp/owner",
-						"TERM": "dumb",
-						"XDG_CONFIG_HOME": "/owner/config"
-					},
-					"stdin": "PROMPT-MARKER: reply with the single word OK."
-				}
-			],
-			"files": [
-				{
-					"path": "/scratch/job_1/opencode.jsonc",
-					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
-				}
-			],
-			"events": [
-				{
-					"type": "usage",
-					"knownCostUsd": null
-				},
-				{
-					"type": "failed",
-					"code": "PROVIDER_OUTPUT_EMPTY",
-					"retryable": true
-				}
-			]
-		}
-	},
-	{
-		"input": {
-			"backend": "opencode",
-			"script": {
-				"lines": [
-					"garbage"
-				],
-				"exit": {
-					"code": 0,
-					"signal": null,
-					"stderrTail": ""
-				}
-			},
-			"env": {
-				"PATH": "/usr/bin:/bin",
-				"HOME": "/home/owner",
-				"USER": "owner",
-				"LANG": "en_US.UTF-8",
-				"LC_ALL": "en_US.UTF-8",
-				"TMPDIR": "/tmp/owner",
-				"TERM": "dumb",
-				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
-				"RUNNER_SHARED_SECRET": "secret-runner-shared",
-				"WORKER_API_SECRET": "secret-worker",
-				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
-				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
-				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
-				"OPENROUTER_MODEL": "example/model",
-				"OPENROUTER_FREE_MODEL": "example/model:free",
-				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
-				"D1_DATABASE_TOKEN": "secret-d1",
-				"ANTHROPIC_API_KEY": "sk-ant-secret",
-				"ANTHROPIC_BASE_URL": "https://attacker.example",
-				"OPENAI_API_KEY": "sk-openai-secret",
-				"CODEX_API_KEY": "sk-codex-secret",
-				"GEMINI_API_KEY": "secret-gemini",
-				"OPENCODE_API_KEY": "secret-opencode",
-				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
-				"OPENCODE_CONFIG": "/home/owner/permissive.json",
-				"GITHUB_TOKEN": "secret-github",
-				"AWS_SECRET_ACCESS_KEY": "secret-aws",
-				"NODE_OPTIONS": "--require /tmp/evil.js",
-				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
-				"XDG_CONFIG_HOME": "/owner/config",
-				"CODEX_HOME": "/owner/codex",
-				"CLAUDE_CONFIG_DIR": "/owner/claude",
-				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
-			},
-			"request": {
-				"runId": "run_1",
-				"conversationId": "conv_1",
-				"prompt": "PROMPT-MARKER: reply with the single word OK.",
-				"permittedToolIds": [
-					"web.search",
-					"web.fetch_page"
-				],
-				"maxToolCalls": 2,
-				"deadline": "2999-01-01T00:00:00.000Z"
-			},
-			"context": {
-				"scratchDirectory": "/scratch/job_1",
-				"model": "opencode/model-free",
-				"effort": "medium"
-			}
-		},
-		"output": {
-			"spawns": [
-				{
-					"command": "opencode",
-					"args": [
-						"run",
-						"--standalone",
-						"--format",
-						"json",
-						"--agent",
-						"research-text",
-						"--model",
-						"opencode/model-free#medium"
-					],
-					"cwd": "/scratch/job_1",
-					"env": {
-						"PATH": "/usr/bin:/bin",
-						"HOME": "/home/owner",
-						"USER": "owner",
-						"LANG": "en_US.UTF-8",
-						"LC_ALL": "en_US.UTF-8",
-						"TMPDIR": "/tmp/owner",
-						"TERM": "dumb",
-						"XDG_CONFIG_HOME": "/owner/config"
-					},
-					"stdin": "PROMPT-MARKER: reply with the single word OK."
-				}
-			],
-			"files": [
-				{
-					"path": "/scratch/job_1/opencode.jsonc",
-					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
-				}
-			],
-			"events": [
-				{
-					"type": "usage",
-					"knownCostUsd": null
-				},
-				{
-					"type": "failed",
-					"code": "PROVIDER_OUTPUT_EMPTY",
-					"retryable": true
-				}
-			]
-		}
-	},
-	{
-		"input": {
-			"backend": "opencode",
-			"script": {
-				"lines": [
-					"garbage"
-				],
-				"exit": {
-					"code": 0,
-					"signal": null,
-					"stderrTail": ""
-				}
-			},
-			"env": {
-				"PATH": "/usr/bin:/bin",
-				"HOME": "/home/owner",
-				"USER": "owner",
-				"LANG": "en_US.UTF-8",
-				"LC_ALL": "en_US.UTF-8",
-				"TMPDIR": "/tmp/owner",
-				"TERM": "dumb",
-				"RESEARCH_RUNNER_TOKEN": "secret-runner-token",
-				"RUNNER_SHARED_SECRET": "secret-runner-shared",
-				"WORKER_API_SECRET": "secret-worker",
-				"CLOUDFLARE_API_TOKEN": "secret-cloudflare",
-				"CLOUDFLARE_ACCOUNT_ID": "secret-cloudflare-account",
-				"OPENROUTER_API_KEY": "sk-or-v1-secret-openrouter-key",
-				"OPENROUTER_MODEL": "example/model",
-				"OPENROUTER_FREE_MODEL": "example/model:free",
-				"DATABASE_URL": "postgres://user:secret-db-password@host/db",
-				"D1_DATABASE_TOKEN": "secret-d1",
-				"ANTHROPIC_API_KEY": "sk-ant-secret",
-				"ANTHROPIC_BASE_URL": "https://attacker.example",
-				"OPENAI_API_KEY": "sk-openai-secret",
-				"CODEX_API_KEY": "sk-codex-secret",
-				"GEMINI_API_KEY": "secret-gemini",
-				"OPENCODE_API_KEY": "secret-opencode",
-				"OPENCODE_CONFIG_CONTENT": "{\"permissions\":[{\"action\":\"*\",\"resource\":\"*\",\"effect\":\"allow\"}]}",
-				"OPENCODE_CONFIG": "/home/owner/permissive.json",
-				"GITHUB_TOKEN": "secret-github",
-				"AWS_SECRET_ACCESS_KEY": "secret-aws",
-				"NODE_OPTIONS": "--require /tmp/evil.js",
-				"SSH_AUTH_SOCK": "/tmp/ssh.sock",
-				"XDG_CONFIG_HOME": "/owner/config",
-				"CODEX_HOME": "/owner/codex",
-				"CLAUDE_CONFIG_DIR": "/owner/claude",
-				"CLAUDE_CODE_OAUTH_TOKEN": "test-oauth"
-			},
-			"request": {
-				"runId": "run_1",
-				"conversationId": "conv_1",
-				"prompt": "PROMPT-MARKER: reply with the single word OK.",
-				"permittedToolIds": [
-					"web.search",
-					"web.fetch_page"
-				],
-				"maxToolCalls": 2,
-				"deadline": "2999-01-01T00:00:00.000Z"
-			},
-			"context": {
-				"scratchDirectory": "/scratch/job_1",
-				"model": "opencode/model-free",
-				"effort": "high"
-			}
-		},
-		"output": {
-			"spawns": [
-				{
-					"command": "opencode",
-					"args": [
-						"run",
-						"--standalone",
-						"--format",
-						"json",
-						"--agent",
-						"research-text",
-						"--model",
-						"opencode/model-free#high"
-					],
-					"cwd": "/scratch/job_1",
-					"env": {
-						"PATH": "/usr/bin:/bin",
-						"HOME": "/home/owner",
-						"USER": "owner",
-						"LANG": "en_US.UTF-8",
-						"LC_ALL": "en_US.UTF-8",
-						"TMPDIR": "/tmp/owner",
-						"TERM": "dumb",
-						"XDG_CONFIG_HOME": "/owner/config"
-					},
-					"stdin": "PROMPT-MARKER: reply with the single word OK."
-				}
-			],
-			"files": [
-				{
-					"path": "/scratch/job_1/opencode.jsonc",
-					"content": "{\n\t\"$schema\": \"https://opencode.ai/config.json\",\n\t\"permissions\": [\n\t\t{\n\t\t\t\"action\": \"*\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"deny\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"edit\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"glob\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"grep\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"question\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"read\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"shell\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"skill\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"subagent\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"webfetch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t},\n\t\t{\n\t\t\t\"action\": \"websearch\",\n\t\t\t\"resource\": \"*\",\n\t\t\t\"effect\": \"ask\"\n\t\t}\n\t],\n\t\"default_agent\": \"research-text\",\n\t\"agents\": {\n\t\t\"research-text\": {\n\t\t\t\"description\": \"Text-only generation backend with every tool call rejected\",\n\t\t\t\"mode\": \"primary\",\n\t\t\t\"system\": \"You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.\",\n\t\t\t\"permissions\": [\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"*\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"deny\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"edit\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"glob\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"grep\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"question\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"read\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"shell\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"skill\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"subagent\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"webfetch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\t\"action\": \"websearch\",\n\t\t\t\t\t\"resource\": \"*\",\n\t\t\t\t\t\"effect\": \"ask\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t}\n}\n"
-				}
-			],
-			"events": [
-				{
-					"type": "usage",
-					"knownCostUsd": null
-				},
-				{
-					"type": "failed",
-					"code": "PROVIDER_OUTPUT_EMPTY",
-					"retryable": true
-				}
-			]
-		}
-	},
-	{
-		"input": {
-			"backend": "opencode",
-			"script": {
-				"lines": [
-					"garbage",
-					"garbage",
-					"garbage",
-					"garbage",
-					"garbage",
-					"garbage",
-					"garbage",
-					"garbage",
-					"garbage"
-				],
-				"exit": {
-					"code": 1,
 					"signal": null,
 					"stderrTail": ""
 				}
@@ -3369,7 +4494,7 @@
 					"garbage"
 				],
 				"exit": {
-					"code": 1,
+					"code": 0,
 					"signal": null,
 					"stderrTail": ""
 				}
@@ -3489,7 +4614,7 @@
 					"garbage"
 				],
 				"exit": {
-					"code": 1,
+					"code": 0,
 					"signal": null,
 					"stderrTail": ""
 				}

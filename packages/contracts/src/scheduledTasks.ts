@@ -138,6 +138,7 @@ export type TaskLastRun = z.infer<typeof taskLastRunSchema>;
 
 /** The editable fields of a task: what the editor dialog sends. */
 export const TASK_FIELDS_SHAPE = {
+	outputType: z.enum(["news", "chat"]).optional(),
 	title: taskTitleSchema,
 	question: taskQuestionSchema,
 	horizonYears: z.union([z.literal(3), z.literal(4), z.literal(5)]),
@@ -185,6 +186,7 @@ export type CreateScheduledTaskRequest = z.infer<typeof createScheduledTaskReque
 export const updateScheduledTaskRequestSchema = z
 	.strictObject({
 		expectedVersion: z.number().int().nonnegative(),
+		outputType: TASK_FIELDS_SHAPE.outputType,
 		title: TASK_FIELDS_SHAPE.title.optional(),
 		question: TASK_FIELDS_SHAPE.question.optional(),
 		horizonYears: TASK_FIELDS_SHAPE.horizonYears.optional(),

@@ -12,6 +12,7 @@ import type { TasksStore } from "./tasksStore.ts";
 export interface OutcomeSubject {
 	readonly taskId: string;
 	readonly stamp: string;
+	readonly outputType?: ScheduledTask["outputType"];
 }
 
 /** What one action on a task ended with, for the view's notice. */
@@ -47,6 +48,7 @@ export function subjectOf(task: ScheduledTask): OutcomeSubject {
 	const run = task.lastRun === null ? "" : `${task.lastRun.runId}:${task.lastRun.state}`;
 	return {
 		taskId: task.taskId,
+		outputType: task.outputType,
 		stamp: `${task.version}|${task.status}|${run}|${task.lastSkip?.at ?? ""}`,
 	};
 }

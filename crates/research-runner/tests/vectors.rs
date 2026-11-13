@@ -41,6 +41,11 @@ fn config_matches_the_typescript_loader() {
 				valid += 1;
 				assert_eq!(result["ok"], true, "{env:?}");
 				let expected = &result["value"];
+				assert_eq!(expected["agentWebSearchUrl"], loaded.agent_web_search_url);
+				assert_eq!(
+					optional(&expected["agentWebSearchApiKey"]),
+					loaded.agent_web_search_api_key
+				);
 				let context = format!("{env:?}");
 				assert_eq!(expected["apiUrl"], loaded.api_url, "{context}");
 				assert_eq!(expected["runnerToken"], loaded.runner_token, "{context}");

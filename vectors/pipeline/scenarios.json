@@ -149,6 +149,26 @@
 			"runs": 1
 		},
 		{
+			"name": "/research pipeline: the collection allowance leaves room for repair and verification/repairs paraphrased supporting quotes before independent verification",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: the collection allowance leaves room for repair and verification/repairs invented evidence ids without accepting them as aliases",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: the collection allowance leaves room for repair and verification/repairs Japanese monetary scaling as a sourced arithmetic inference",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: the collection allowance leaves room for repair and verification/recovers a truncated analysis with a compact repair and verifies it",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: the collection allowance leaves room for repair and verification/stops after the compact repair is also truncated",
+			"runs": 1
+		},
+		{
 			"name": "/research pipeline: the collection allowance leaves room for repair and verification/reaches the verifier on the repair turn with a 6-step budget",
 			"runs": 1
 		},
@@ -249,6 +269,10 @@
 			"runs": 1
 		},
 		{
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/opens an original page before analysis and excludes the search snippet",
+			"runs": 1
+		},
+		{
 			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/webAccess \"off\": the tool is absent from the planning prompt, and a plan that requests it anyway is denied and never executes",
 			"runs": 1
 		},
@@ -266,8 +290,40 @@
 		},
 		{
 			"name": "/does not re-run an unavailable tool, even with different arguments",
-			"runs": 2
+			"runs": 3
+		},
+		{
+			"name": "/continues after search cooldown with done=true and completes using another source",
+			"runs": 1
+		},
+		{
+			"name": "/continues after search cooldown with done=false and completes using another source",
+			"runs": 1
+		},
+		{
+			"name": "/bounds cooldown recovery without repeated provider calls or unsupported answers",
+			"runs": 1
+		},
+		{
+			"name": "/uses evidence already collected when search is cooling down without an extra planning turn",
+			"runs": 1
+		},
+		{
+			"name": "/repairs an empty analysis instead of publishing a successful No findings report",
+			"runs": 1
+		},
+		{
+			"name": "/does not silently complete when both analysis attempts return no cited findings",
+			"runs": 1
+		},
+		{
+			"name": "/resolves a shortened current-run claim citation only against shown evidence",
+			"runs": 1
+		},
+		{
+			"name": "/keeps invented, unshown, noncanonical and other-run claim references unsupported",
+			"runs": 4
 		}
 	],
-	"handWrittenRuns": 74
+	"handWrittenRuns": 92
 }

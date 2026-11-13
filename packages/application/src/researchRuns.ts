@@ -147,7 +147,10 @@ function savedAgentChoice(
 export interface TaskRunInput {
 	readonly taskId: string;
 	/** The task's question, in its own conversation. */
-	readonly question: Pick<ResearchRequest, "workspaceId" | "question" | "horizonYears" | "markets">;
+	readonly question: Pick<
+		ResearchRequest,
+		"workspaceId" | "question" | "horizonYears" | "markets" | "outputType"
+	>;
 	readonly spendConsent: TaskSpendConsent | null;
 	readonly idempotencyKey: string;
 	/**
@@ -398,6 +401,9 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 			const request: ResearchRequest = {
 				workspaceId: input.question.workspaceId,
 				question: input.question.question,
+				...(input.question.outputType === undefined
+					? {}
+					: { outputType: input.question.outputType }),
 				horizonYears: input.question.horizonYears,
 				markets: [...input.question.markets],
 				...savedAgentChoice(saved.settings, saved.settings.defaultAgentId, models.of),

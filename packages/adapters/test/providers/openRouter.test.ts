@@ -69,6 +69,25 @@ describe("openrouter runtime metadata", () => {
 });
 
 describe("openrouter request", () => {
+	it.each([
+		["nvidia/nemotron-3.5-lightning:free", 32768],
+		["dots-studio/dots-3-note-preview:free", 32768],
+		["dots-studio/dots-3-note-preview", 8192],
+		["dots-studio/dots-3-note-preview:free-extra", 8192],
+		["nvidia/nemotron-3.5-lightning", 8192],
+		["nvidia/nemotron-3.5-lightning:free-extra", 8192],
+		["other/model:free", 8192],
+	])("reserves the model-specific completion allowance for %s without changing effort", async (model, cap) => {
+		for (const effort of ["low", "medium", "high"] as const) {
+			const fake = recordingFetch(() => sseResponse(fixtureText("openrouter/ok.sse")));
+			await collect(runtimeWith(fake).run(makeRequest(), makeContext({ model, effort })));
+			const body = requestBodySchema.parse(JSON.parse(String(itemAt(fake.calls, 0).init.body)));
+			expect(body.max_completion_tokens).toBe(cap);
+			expect(body.reasoning).toEqual({ effort });
+			expect(body.model).toBe(model);
+		}
+	});
+
 	it("posts one streaming chat completion with the prompt, no tools and no fallback models", async () => {
 		const fake = recordingFetch(() => sseResponse(fixtureText("openrouter/ok.sse")));
 		const runtime = runtimeWith(fake);

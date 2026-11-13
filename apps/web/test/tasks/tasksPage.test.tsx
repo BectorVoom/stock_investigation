@@ -56,6 +56,26 @@ async function saveEnabled(dialog: HTMLElement, name: string): Promise<void> {
 }
 
 describe("Tasks page (ADR-0033 §8)", () => {
+	it("opens News reports on News and Chat reports in their conversation", async () => {
+		renderPage(
+			createTasksServer({
+				tasks: [
+					makeTask({ taskId: "task_news", title: "News brief", outputType: "news" }),
+					makeTask({ taskId: "task_chat", title: "Chat brief", outputType: "chat" }),
+				],
+			}),
+		);
+		const news = await rowOf("News brief");
+		expect(
+			within(news).getByRole("link", { name: "Read News brief in News" }).getAttribute("href"),
+		).toBe("#/news");
+		expect(within(news).queryByRole("link", { name: /Open the chat/ })).toBeNull();
+		const chat = await rowOf("Chat brief");
+		expect(
+			within(chat).getByRole("link", { name: "Open the chat of Chat brief" }).getAttribute("href"),
+		).toContain("#/chat/");
+	});
+
 	it("explains what a task is when there is none, with the limits", async () => {
 		renderPage(createTasksServer());
 		expect(
@@ -140,6 +160,7 @@ describe("Tasks page (ADR-0033 §8)", () => {
 		const [create] = server.backend.requestsTo("POST", /^\/api\/v1\/scheduled-tasks$/);
 		expect(create?.headers["idempotency-key"]).toMatch(/^idem-/);
 		expect(create?.body).toEqual({
+			outputType: "chat",
 			title: "Weekday open",
 			question: "How did Tokyo open?",
 			horizonYears: 5,

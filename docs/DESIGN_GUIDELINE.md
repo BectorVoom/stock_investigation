@@ -225,6 +225,12 @@ under the page's `h2`; nested headings step down without skipping (`h4`,
 then `h5` for doubly-nested headings such as the source-preview sample list).
 No skipped levels on any page.
 
+One screen renders outside the app shell: the administrator login gate
+(`apps/web/src/auth/LoginPage.tsx`), which stands instead of the workspace
+until the session is confirmed. It is the whole document, so its title is
+that document's `h1` and no `h2` page header exists there; the conformance
+test allowlists that one file.
+
 Registry renderers (`packages/ui-registry/src/renderers/`, `charts/ChartFrame`,
 `parts/`) are exempt from the page outline: a component is rendered inside an
 `article` with no knowledge of its host page, so its title is `h3` and its

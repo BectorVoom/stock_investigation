@@ -24,6 +24,7 @@ import { createWebTools } from "./webTools.ts";
 export { createStockResearchTool } from "./stockResearch.ts";
 
 export interface ResearchToolDeps {
+	agentWebSearch?: import("./searchTools.ts").AgentWebSearch;
 	fetcher: SafeFetcher;
 	feedParser: FeedParser;
 	hasher: Hasher;
@@ -62,6 +63,7 @@ export function createResearchTools(deps: ResearchToolDeps): readonly ToolDefini
 			clock: deps.clock,
 			sleep: deps.sleep,
 			tavilyApiKey: deps.tavilyApiKey,
+			...(deps.agentWebSearch === undefined ? {} : { agentWebSearch: deps.agentWebSearch }),
 		}),
 		...createSecTools({
 			financials: createSecFinancialsSource({
@@ -92,3 +94,5 @@ export function createResearchTools(deps: ResearchToolDeps): readonly ToolDefini
 				)),
 	];
 }
+
+export { agentSearchEndpoint, DEFAULT_AGENT_WEB_SEARCH_URL } from "./agentSearchEndpoint.ts";

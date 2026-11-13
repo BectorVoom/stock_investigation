@@ -101,7 +101,7 @@ hour, 500 at a time; the newest job of each kind and state is kept).
 | `equity_company` | Tracked companies: market, symbol, and once resolved the issuer identity (SEC CIK / J-Quants issue code), name, fiscal year end. |
 | `equity_report_filing` | Every annual filing seen: form (10-K, 20-F, 40-F and their `/A` amendments; `earnings-report`, `amended-earnings-report`), filing date, fiscal period, accounting standard, the filing it amends, link, whether its facts were extracted, and its primary scope (consolidated, or separate for a filer without subsidiaries). |
 | `equity_reported_fact` | **As-filed history.** Every annual fact of every filing exactly as reported: concept, scope (consolidated / separate), period, unit, exact value. A filing that reports one item twice with different values keeps both. Never updated or deleted by a sync. |
-| `equity_metric_value` | **Current values.** One row per company, metric and fiscal year: the authoritative value with its filing, or the reason it is unavailable. This is what the widgets read. |
+| `equity_metric_value` | **Current values.** One row per company, metric and fiscal year: the authoritative value with its filing, or the reason it is unavailable. This is what the widgets read. `value_real` (migration 0036) carries the value as an IEEE-754 double so a screening can range-filter and sort one metric of one fiscal year across the companies (exact decimal text stays the stored value; ratios such as ROE are computed from same-currency pairs, never stored). |
 | `equity_sync_state` | Schedule (never-checked companies first), last check and success, last failure (code and the provider's HTTP status). |
 | `equity_business_description` | A US company's business section of its newest annual report (ADR-0053). |
 | `stock_company_profile` | A Japanese stock's J-Quants company profile: English name, 17- and 33-sector, scale category, market segment (ADR-0059 §3). |
@@ -128,8 +128,12 @@ adds the never-checked probe's
 ([DATABASE_CONVENTIONS.md](../conventions.md) §8, "Index review of migration
 0021"); migration `infra/migrations/0027_jquants_financials.sql` (ADR-0059)
 moves Japan to J-Quants, drops the EDINET index tables and adds
-`stock_company_profile`. `equity_metric_value` is keyed (owner, company,
-fiscal year, metric) and has no secondary index.
+`stock_company_profile`; migration `0036_equity_metric_value_screening.sql`
+adds `equity_metric_value.value_real` (the value as an IEEE-754 double) and
+`idx_equity_metric_value__owner_id_metric_code_fiscal_year_value_real`
+(partial, covering) for screening every listed company on one metric of one
+fiscal year (40.31 ms → 0.05 ms at 750,400 rows). `equity_metric_value` is
+keyed (owner, company, fiscal year, metric).
 
 Historical data is kept permanently. A listing that leaves the directory
 stops its company's syncs and keeps its data (listed again, it shows at

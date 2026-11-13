@@ -682,17 +682,16 @@ describe("research-report", () => {
 		expect(texts(container, "[data-claim-type]")).toEqual(["Observation", "Forecast", "Inference"]);
 		const statuses = [...container.querySelectorAll("[data-claim-status]")];
 		expect(statuses.map((badge) => badge.getAttribute("data-claim-status"))).toEqual([
-			"supported",
 			"unsupported",
 			"conflicting",
 		]);
 		expect(statuses.map((badge) => badge.textContent)).toEqual([
-			"✓Supported",
 			"✕Unsupported",
 			"≠Conflicting evidence",
 		]);
 		const classNames = new Set(statuses.map((badge) => badge.getAttribute("class")));
-		expect(classNames.size).toBe(3);
+		expect(classNames.size).toBe(2);
+		expect(container.querySelector('[data-claim-status="supported"]')).toBeNull();
 		// Unsupported and conflicting statements stay in the document.
 		expect(container.textContent).toContain("Demand will triple by 2030.");
 		expect(container.textContent).toContain("Pricing is stabilising.");

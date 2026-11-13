@@ -1,7 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { gzipSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createNodeSafeFetcher, type ResolvedAddress } from "../../src/node/index.ts";
+import {
+	createNodeSafeFetcher,
+	interleaveAddressFamilies,
+	type ResolvedAddress,
+} from "../../src/node/index.ts";
 import { DEFAULT_USER_AGENT } from "../../src/worker/safeFetchCore.ts";
 import {
 	createFakeNetwork,
@@ -301,6 +305,52 @@ describe("node SafeFetcher over a real TLS connection", () => {
 });
 
 describe("node SafeFetcher: resolution failures and address fallback", () => {
+	it("alternates the address families, starting with the resolver's first (RFC 8305)", () => {
+		const v6 = (n: number) => ({ address: `2606:2800:220:1::${n}`, family: 6 as const });
+		const v4 = (n: number) => ({ address: `93.184.216.${n}`, family: 4 as const });
+		expect(interleaveAddressFamilies([v6(1), v6(2), v4(1), v4(2)])).toEqual([
+			v6(1),
+			v4(1),
+			v6(2),
+			v4(2),
+		]);
+		expect(interleaveAddressFamilies([v4(1), v6(1), v6(2), v6(3)])).toEqual([
+			v4(1),
+			v6(1),
+			v6(2),
+			v6(3),
+		]);
+		expect(interleaveAddressFamilies([v4(1), v4(2)])).toEqual([v4(1), v4(2)]);
+		expect(interleaveAddressFamilies([])).toEqual([]);
+	});
+
+	it("tries the other family second when the first family's addresses do not answer", async () => {
+		const network = createFakeNetwork({
+			dns: {
+				"dual.synthetic-wire.org": [
+					PUBLIC_V6,
+					{ address: "2606:2800:220:1::7", family: 6 },
+					PUBLIC_V4,
+				],
+			},
+			pages: { "https://dual.synthetic-wire.org/": { body: "reached" } },
+		});
+		const attempted: string[] = [];
+		const fetcher = createNodeSafeFetcher({
+			lookup: network.lookup,
+			connect: async (request) => {
+				attempted.push(request.address.address);
+				if (request.address.family === 6) {
+					throw Object.assign(new Error("ETIMEDOUT"), { code: "ETIMEDOUT" });
+				}
+				return network.connect(request);
+			},
+		});
+		const result = await fetcher.fetchText("https://dual.synthetic-wire.org/", FETCH_LIMITS);
+		expect(result).toMatchObject({ ok: true, value: { text: "reached" } });
+		expect(attempted).toEqual([PUBLIC_V6.address, PUBLIC_V4.address]);
+	});
+
 	it("reports a DNS failure without connecting", async () => {
 		const network = createFakeNetwork({});
 		const fetcher = createNodeSafeFetcher({

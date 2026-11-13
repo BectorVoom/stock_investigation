@@ -11,7 +11,8 @@
  *  2. the caller's `authorizeRedirect` callback before each redirect hop is
  *     contacted (shared core; a refusal ends the fetch with
  *     `REDIRECT_NOT_AUTHORIZED` before the hop is requested);
- *  3. resolve the host name ONCE, taking every A/AAAA answer;
+ *  3. resolve the host name ONCE, taking every A/AAAA answer (tried with the
+ *     families alternating, each address within CONNECT_ATTEMPT_TIMEOUT_MS);
  *  4. refuse the hop unless EVERY answer is a public address. A single
  *     non-public answer rejects the name, so a mixed answer cannot be used to
  *     win a race for the private one;
@@ -85,6 +86,29 @@ export interface NodeSafeFetcherOverrides {
 /** Validated addresses tried in order before giving up on a hop. */
 const MAX_CONNECT_ATTEMPTS = 3;
 
+/**
+ * The resolver's answers with the two address families alternating, starting
+ * with the first answer's family and keeping each family's order (RFC 8305
+ * §4), so the second attempt uses the other family when the first one's
+ * network drops packets (Rust `interleave_address_families`).
+ */
+export function interleaveAddressFamilies(
+	addresses: readonly ResolvedAddress[],
+): ResolvedAddress[] {
+	const first = addresses[0];
+	if (first === undefined) return [];
+	const leading = addresses.filter((address) => address.family === first.family);
+	const other = addresses.filter((address) => address.family !== first.family);
+	const interleaved: ResolvedAddress[] = [];
+	for (let index = 0; index < Math.max(leading.length, other.length); index += 1) {
+		const fromLeading = leading[index];
+		const fromOther = other[index];
+		if (fromLeading !== undefined) interleaved.push(fromLeading);
+		if (fromOther !== undefined) interleaved.push(fromOther);
+	}
+	return interleaved;
+}
+
 const systemLookup: DnsLookup = async (hostname) => {
 	const answers = await dnsLookup(hostname, { all: true, verbatim: true });
 	return answers.map((answer) => ({
@@ -155,7 +179,7 @@ function createNodeHopTransport(overrides: NodeSafeFetcherOverrides): HopTranspo
 		}
 
 		let lastFailure = "no connection attempted";
-		for (const address of addresses.slice(0, MAX_CONNECT_ATTEMPTS)) {
+		for (const address of interleaveAddressFamilies(addresses).slice(0, MAX_CONNECT_ATTEMPTS)) {
 			if (request.signal.aborted) break;
 			try {
 				const response = await connect({
@@ -181,3 +205,5 @@ function createNodeHopTransport(overrides: NodeSafeFetcherOverrides): HopTranspo
 		return { kind: "network-error", detail: lastFailure };
 	};
 }
+
+export { createLoopbackSearchFetcher } from "./agentSearch.ts";

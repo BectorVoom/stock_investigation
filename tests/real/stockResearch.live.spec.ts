@@ -13,7 +13,10 @@ import {
 	workspaceSummarySchema,
 } from "@research/contracts";
 import { openNodeSqlite } from "../../packages/adapters/src/sqlite/index.ts";
-import { seedStockResearch } from "../../packages/adapters/test/sql/stockResearchFixtures.ts";
+import {
+	seedStockResearch,
+	seedStockScreening,
+} from "../../packages/adapters/test/sql/stockResearchFixtures.ts";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
 import {
 	type LaunchedService,
@@ -29,6 +32,8 @@ import {
  * no SEC/J-Quants/news-provider correctness is claimed. No scripted agent or tool is used. */
 test.describe.configure({ mode: "default" });
 const AGENT = process.env.RUN_LIVE_AGENT ?? "";
+const MODEL = process.env.RUN_LIVE_MODEL ?? "";
+const EFFORT = process.env.RUN_LIVE_EFFORT ?? "low";
 const WEB_PORT = process.env.RESEARCH_RUNNER === "node" ? 8930 : 8926;
 const API_PORT = WEB_PORT + 1;
 const ORIGIN = `http://localhost:${WEB_PORT}`;
@@ -200,19 +205,31 @@ async function askAndVerify(page: Page): Promise<void> {
 
 test.beforeAll(async () => {
 	test.skip(
-		!["claude-code", "codex"].includes(AGENT),
-		"Opt in with RUN_LIVE_AGENT=claude-code or codex (real subscription quota).",
+		!["claude-code", "codex", "opencode", "openrouter-free"].includes(AGENT),
+		"Opt in with RUN_LIVE_AGENT=claude-code, codex, opencode or openrouter-free (real model quota).",
 	);
+	if (AGENT === "openrouter-free" && (!process.env.OPENROUTER_API_KEY || MODEL === "")) {
+		throw new Error(
+			"OpenRouter live verification requires OPENROUTER_API_KEY and RUN_LIVE_MODEL in the test process environment.",
+		);
+	}
 	test.setTimeout(300_000);
 	pristine = makePristineCopy(fileURLToPath(new URL("../..", import.meta.url)));
 	root = mkdtempSync(join(tmpdir(), "research-stock-rag-live-"));
 	data = join(root, "dev-data");
-	runnerEnv = writeTestRunnerEnvFile(root, { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" });
+	runnerEnv = writeTestRunnerEnvFile(root, {
+		ALLOW_UNVERIFIED_TOOL_ISOLATION: "1",
+		...(AGENT === "opencode" ? { OPENCODE_MODEL: MODEL } : {}),
+		...(AGENT === "openrouter-free"
+			? { OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY ?? "", OPENROUTER_FREE_MODEL: MODEL }
+			: {}),
+	});
 	await start();
 	await service?.stop();
 	const db = openNodeSqlite(databasePath());
 	try {
 		await seedStockResearch(db, "owner@localhost");
+		await seedStockScreening(db, "owner@localhost");
 		await db
 			.prepare("UPDATE news_sources SET feed_status = 'paused' WHERE owner_id = ?")
 			.bind("owner@localhost")
@@ -222,7 +239,9 @@ test.beforeAll(async () => {
 			.bind("owner@localhost")
 			.run();
 		await db
-			.prepare("UPDATE equity_metric_value SET value_decimal = '123456789.12' WHERE owner_id = ?")
+			.prepare(
+				"UPDATE equity_metric_value SET value_decimal = '123456789.12' WHERE owner_id = ? AND company_id = 'eqc_retrieval'",
+			)
 			.bind("owner@localhost")
 			.run();
 	} finally {
@@ -234,7 +253,12 @@ test.afterEach(() => {
 	if (["failed", "timedOut", "interrupted"].includes(test.info().status ?? "")) failed = true;
 });
 test.afterAll(async () => {
-	await resources.close();
+	try {
+		await resources.close();
+	} finally {
+		// Failed-run diagnostics may be kept, but provider credentials must not be.
+		if (runnerEnv !== "") rmSync(runnerEnv, { force: true });
+	}
 	if (failed) {
 		console.log(`Keeping isolated failure evidence: ${root}`);
 		const path = join(data, "logs", "runner.log");
@@ -259,7 +283,14 @@ test("fresh settings: real agent searches company, financials and news and publi
 	await page.locator('[data-field="session-owner-link"]').click();
 	const settings = page.getByRole("region", { name: "AI agent" });
 	await settings.getByLabel("Default backend").selectOption(AGENT);
-	await settings.getByLabel("Effort").selectOption("low");
+	if (MODEL !== "") {
+		const selector = settings.getByLabel("Model for this backend");
+		await expect(selector.locator("option").filter({ hasText: MODEL })).toHaveCount(1, {
+			timeout: 120_000,
+		});
+		await selector.selectOption(MODEL);
+	}
+	await settings.getByLabel("Effort").selectOption(EFFORT);
 	const access = settings.getByRole("switch", { name: "Allow the agent to open public web pages" });
 	if (await access.isChecked()) await access.uncheck();
 	const save = settings.getByRole("button", { name: "Save" });
@@ -285,8 +316,8 @@ test("upgraded settings: restart with stored results and no saved settings, send
 				workspaceId: workspace.workspaceId,
 				question: "Historical request for carried-over backend settings.",
 				agentId: AGENT,
-				model: null,
-				effort: "low",
+				model: MODEL || null,
+				effort: EFFORT,
 				horizonYears: 4,
 				markets: ["US"],
 				budget: DEFAULT_AGENT_SETTINGS.budget,
@@ -308,4 +339,114 @@ test("upgraded settings: restart with stored results and no saved settings, send
 		"Choose a default agent backend",
 	);
 	await askAndVerify(page);
+});
+
+async function verifyDroneScreening(page: Page, question: string): Promise<void> {
+	test.setTimeout(720_000);
+	await page.goto(`${ORIGIN}/#/settings/agent`);
+	const settings = page.getByRole("region", { name: "AI agent" });
+	await settings.getByLabel("Default backend").selectOption(AGENT);
+	if (MODEL !== "") {
+		const selector = settings.getByLabel("Model for this backend");
+		await expect(selector.locator("option").filter({ hasText: MODEL })).toHaveCount(1, {
+			timeout: 120_000,
+		});
+		await selector.selectOption(MODEL);
+	}
+	await settings.getByLabel("Effort").selectOption(EFFORT);
+	const access = settings.getByRole("switch", { name: "Allow the agent to open public web pages" });
+	if (await access.isChecked()) await access.uncheck();
+	const save = settings.getByRole("button", { name: "Save" });
+	if (await save.isEnabled()) await save.click();
+	await expect(settings).toContainText(/Saved /);
+
+	await newChat(page);
+	const workspaceId = page.url().split("/chat/")[1];
+	if (workspaceId === undefined) throw new Error("Chat URL missing workspace id");
+	const composer = page.getByRole("form", { name: "Research composer" });
+	await composer.getByRole("textbox", { name: "Question" }).fill(question);
+	await composer.getByRole("button", { name: "Send question" }).click();
+	let runId = "";
+	await expect
+		.poll(
+			async () => {
+				const listed = researchRunListResponseSchema.parse(
+					await api(`/research-runs?workspaceId=${workspaceId}`),
+				);
+				const run = listed.runs.find((entry) => entry.kind === "research");
+				if (run === undefined) return "pending";
+				runId = run.runId;
+				if (["failed", "partial", "cancelled", "waiting_approval"].includes(run.state))
+					throw new Error(
+						`Screening ended ${run.state}: ${run.failureCode}/${run.failureDetail}; ${JSON.stringify(run.progress)}`,
+					);
+				return run.state;
+			},
+			{ timeout: 600_000, intervals: [1000, 2000, 3000] },
+		)
+		.toBe("completed");
+	const conversation = conversationResponseSchema.parse(
+		await api(`/workspaces/${workspaceId}/messages`),
+	);
+	const result = researchRunResponseSchema.parse(await api(`/research-runs/${runId}`)).run;
+	if (MODEL !== "") {
+		expect(result.providerModel).toBe(MODEL);
+	}
+	const supported = conversation.claims.filter((claim) => claim.status === "supported");
+	const text = supported.map((claim) => claim.text).join("\n");
+	expect(text).toContain("DRONE25");
+	expect(text).toMatch(/25(?:\.0+)?\s*[%％]/u);
+	expect(text).toContain("2024");
+	expect(text).toContain("2025");
+	expect(text).toContain("DRONE10");
+	expect(text).toMatch(/10(?:\.0+)?\s*[%％]/u);
+	expect(
+		supported.some(
+			(claim) =>
+				claim.text.includes("DRONE10") &&
+				/除外|未達|下回|満たさ|未満|該当しな|達していな|達しな|対象外/u.test(claim.text),
+		),
+	).toBe(true);
+	await test.info().attach("screening-claims", {
+		body: JSON.stringify(supported, null, 2),
+		contentType: "application/json",
+	});
+	const cited = new Set(supported.flatMap((claim) => claim.links.map((link) => link.evidenceId)));
+	for (const url of ["https://filings.example.org/drone25", "https://filings.example.org/drone10"])
+		expect(
+			conversation.evidence.some((item) => item.sourceUrl === url && cited.has(item.evidenceId)),
+		).toBe(true);
+	await expect(page.getByRole("list", { name: "Messages" })).not.toContainText(
+		"No claim could be established",
+	);
+	console.log(
+		JSON.stringify({
+			runner: process.env.RESEARCH_RUNNER ?? "rust",
+			runId,
+			screening: "drone annual profit >=20%",
+			model: result.providerModel,
+			effort: EFFORT,
+			supportedClaims: supported.length,
+		}),
+	);
+	await page.reload();
+	await expect(page.getByRole("list", { name: "Messages" })).toContainText("DRONE25");
+}
+
+test("Japanese drone screening compares annual net income and publishes cited matches and exclusions", async ({
+	page,
+}) => {
+	await verifyDroneScreening(
+		page,
+		"ドローン系の銘柄で純利益が20%以上上がっている銘柄を調査してください。保存済みの架空テストデータだけを使い、直近の通期とその前年度を比較し、合致する銘柄と除外する銘柄、計算、出典を示してください。実在企業の数値ではありません。",
+	);
+});
+
+test("explicit retrieval comparison completes with cited calculations on the selected model", async ({
+	page,
+}) => {
+	await verifyDroneScreening(
+		page,
+		'These are synthetic test records, not real companies. Use stocks.search exactly four times: query "DRONE25" kind "company" limit 12; query "DRONE10" kind "company" limit 12; query "DRONE25" kind "financials" limit 12; query "DRONE10" kind "financials" limit 12. Do not repeat these calls. After retrieval, answer in Japanese: compare each company’s annual net profit attributable to owners in fiscal 2025 against 2024, compute growth, and state inclusion or exclusion for the inclusive 20% growth threshold. Cite the exact evidence ids returned by the tools, never record ids or invented UUIDs. Quote both input values and the business evidence, and keep factual and arithmetic claims atomic. Report only these two inspected candidates, with sources; do not claim market-wide coverage.',
+	);
 });

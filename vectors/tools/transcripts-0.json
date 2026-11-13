@@ -8190,8 +8190,8 @@
 				"output": {
 					"ok": false,
 					"error": {
-						"code": "SEARCH_COOLDOWN",
-						"detail": "The search service is rate limited or unavailable. Use another search tool, subscribed feeds or known page URLs instead; this search is paused for 60 seconds.",
+						"code": "SEARCH_PLAN_LIMIT",
+						"detail": "Search plan limit cooldown",
 						"retryable": true
 					}
 				}
@@ -86544,8 +86544,8 @@
 				"output": {
 					"ok": false,
 					"error": {
-						"code": "SEARCH_COOLDOWN",
-						"detail": "The search service is rate limited or unavailable. Use another search tool, subscribed feeds or known page URLs instead; this search is paused for 60 seconds.",
+						"code": "SEARCH_PLAN_LIMIT",
+						"detail": "Search plan limit cooldown",
 						"retryable": true
 					}
 				}
@@ -89803,8 +89803,8 @@
 				"output": {
 					"ok": false,
 					"error": {
-						"code": "SEARCH_COOLDOWN",
-						"detail": "The search service is rate limited or unavailable. Use another search tool, subscribed feeds or known page URLs instead; this search is paused for 60 seconds.",
+						"code": "SEARCH_PLAN_LIMIT",
+						"detail": "Search plan limit cooldown",
 						"retryable": true
 					}
 				}
@@ -89821,8 +89821,8 @@
 				"output": {
 					"ok": false,
 					"error": {
-						"code": "SEARCH_COOLDOWN",
-						"detail": "The search service is rate limited or unavailable. Use another search tool, subscribed feeds or known page URLs instead; this search is paused for 60 seconds.",
+						"code": "SEARCH_PLAN_LIMIT",
+						"detail": "Search plan limit cooldown",
 						"retryable": true
 					}
 				}

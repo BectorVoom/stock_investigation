@@ -1,4 +1,4 @@
-//! Byte-identical research-v5 prompt builders (SEC-001, AGT-007).
+//! Byte-identical research-v8 prompt builders (SEC-001, AGT-007).
 use research_agent_core::{
 	model_text::{EmptyFenceToken, fence_untrusted_text},
 	tools::ToolMeta,
@@ -10,7 +10,7 @@ use research_contracts::jobs::{
 use research_js::{number::to_js_string, utf16};
 
 /// Prompt provenance version.
-pub const PROMPT_VERSION: &str = "research-v5";
+pub const PROMPT_VERSION: &str = "research-v8";
 /// Maximum planning prompt bytes, including all fences and fixed sections.
 pub const PLANNING_PROMPT_BUDGET_BYTES: usize = 76_000;
 /// Reminder after an empty plan, copied verbatim from the TypeScript builder.
@@ -294,6 +294,19 @@ pub fn analysis_prompt(input: AnalysisPromptInput<'_>) -> Result<String, EmptyFe
 		include_str!("templates/analysis.txt"),
 		&[
 			("ground", GROUND),
+			(
+				"news_format",
+				&if input.request.output_type
+					== Some(research_contracts::jobs::ResearchOutputType::News)
+				{
+					format!(
+						"{}\n",
+						include_str!("templates/news-sentence-format.txt").trim_end()
+					)
+				} else {
+					String::new()
+				},
+			),
 			("request", &describe_request(input.request, input.now_iso)),
 			(
 				"conversation",

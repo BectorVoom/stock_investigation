@@ -1,11 +1,13 @@
 # External API: Tavily Search
 
+Legacy compatibility reference: normal Rust/Node runners now use [Agent Web Search](agent-web-search.md). This adapter is retained for golden-vector replay and explicitly constructed legacy test callers; it is never an automatic runtime fallback.
+
 ## 1. Overview
 
 | Property | Value |
 |---|---|
 | Provider | Tavily |
-| Purpose | The `web.search` research tool: the agent searches the whole web for short keywords and gets result titles, URLs and snippets as evidence, then reads promising results with `web.fetch_page` ([ADR-0025](../../adr/0025-web-search-research-tool.md)). Answers are reused for 15 minutes ([ADR-0039](../../adr/0039-fewer-external-requests.md)). |
+| Purpose | The `web.search` research tool: the agent searches the whole web for short keywords and gets result titles, URLs and snippets as discovery leads, then reads promising results with `web.fetch_page` ([ADR-0025](../../adr/0025-web-search-research-tool.md)). Answers are reused for 15 minutes ([ADR-0039](../../adr/0039-fewer-external-requests.md)). |
 | Hosts | `api.tavily.com` |
 | Endpoints | `POST /search` — ranked web results for one query |
 | Authentication | Bearer token in the `Authorization` header (`Bearer <TAVILY_API_KEY>`); env variable `TAVILY_API_KEY` in `apps/runner/.env`, 8–280 printable characters without spaces (runner config check). Without it `web.search` is not registered and only `news.search` is offered. The key never appears in a URL, a log line or a failure detail. |
@@ -168,18 +170,18 @@ Verified: live, 2026-10-31, `curl` of the request above with a deliberately inva
 
 ## 6. Data Mapping
 
-Each kept result becomes one `Evidence` (`packages/contracts/src/records.ts`, Rust `crates/research-contracts/src/records.rs`) built by `collectEvidence` / `collect_evidence`; the run's evidence is stored with its bundle in [`evidence.body_json`](../../database/tables/evidence.md).
+Each kept result uses the in-memory `Evidence` shape for tool output. Research jobs use those results for planning only. They open original pages, assess publisher, date, scope and methodology, and cite the fetched evidence in the bundle. When Tavily returns HTTP 432, Research skips web search for the rest of the run and continues with available sources. Subsequent calls within the same provider cooldown return the local code `SEARCH_PLAN_LIMIT` and are handled the same way.
 
 | External field | Transformation | Internal field | Stored in |
 |---|---|---|---|
-| `$.results[].url` | Must pass `validateFetchUrl`; its normalised `href` | `Evidence.sourceUrl` | [`evidence.body_json`](../../database/tables/evidence.md) |
-| `$.results[].url` | Host name (lower case), else `unknown publisher`; ≤ 300 characters | `Evidence.publisher` | [`evidence.body_json`](../../database/tables/evidence.md) |
-| `$.results[].title` | Whitespace runs collapsed, trimmed; ≤ 300 characters | `Evidence.title` | [`evidence.body_json`](../../database/tables/evidence.md) |
-| `$.results[].published_date` | `zonedDateToIso`: read only when it is a bare `YYYY-MM-DD` (UTC) or ends in `Z`, `GMT`, `UTC` or `±hh:mm` / `±hhmm`; else `null` (never guessed in the machine's zone) | `Evidence.publishedAt` (ISO 8601 UTC) | [`evidence.body_json`](../../database/tables/evidence.md) |
-| `$.results[].title` + `$.results[].content` | `title`, or `title` + newline + snippet (whitespace collapsed, ≤ 1,000 characters); the whole ≤ 20,000 characters; hashed with SHA-256 | Retrieved text (in memory, for verification) and `Evidence.checksum` | Checksum in [`evidence.body_json`](../../database/tables/evidence.md); the text is not stored |
-| (none) | `excerpt` always `null`, `retainQuotes` false (DATA-010) | `Evidence.excerpt` | [`evidence.body_json`](../../database/tables/evidence.md) |
-| (none) | `other` | `Evidence.sourceClass` | [`evidence.body_json`](../../database/tables/evidence.md) |
-| (none) | The run clock when the answer arrived; a cached reuse keeps that time | `Evidence.retrievedAt` | [`evidence.body_json`](../../database/tables/evidence.md) |
+| `$.results[].url` | Must pass `validateFetchUrl`; its normalised `href` | `Evidence.sourceUrl` | In-memory search lead in Research jobs |
+| `$.results[].url` | Host name (lower case), else `unknown publisher`; ≤ 300 characters | `Evidence.publisher` | In-memory search lead in Research jobs |
+| `$.results[].title` | Whitespace runs collapsed, trimmed; ≤ 300 characters | `Evidence.title` | In-memory search lead in Research jobs |
+| `$.results[].published_date` | `zonedDateToIso`: read only when it is a bare `YYYY-MM-DD` (UTC) or ends in `Z`, `GMT`, `UTC` or `±hh:mm` / `±hhmm`; else `null` (never guessed in the machine's zone) | `Evidence.publishedAt` (ISO 8601 UTC) | In-memory search lead in Research jobs |
+| `$.results[].title` + `$.results[].content` | `title`, or `title` + newline + snippet (whitespace collapsed, ≤ 1,000 characters); the whole ≤ 20,000 characters; hashed with SHA-256 | Retrieved text (in memory, for discovery) and `Evidence.checksum` | In-memory search lead in Research jobs |
+| (none) | `excerpt` always `null`, `retainQuotes` false (DATA-010) | `Evidence.excerpt` | In-memory search lead in Research jobs |
+| (none) | `other` | `Evidence.sourceClass` | In-memory search lead in Research jobs |
+| (none) | The run clock when the answer arrived; a cached reuse keeps that time | `Evidence.retrievedAt` | In-memory search lead in Research jobs |
 | `$.results[].content` | First 300 characters (whitespace collapsed) | Model text preview line | Not stored |
 | HTTP status | Unchanged | `ToolFailure.upstreamStatus` | Not stored by this tool |
 

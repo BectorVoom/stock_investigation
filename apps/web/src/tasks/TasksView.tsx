@@ -14,11 +14,10 @@ import {
 } from "../components/ui.tsx";
 import { runStateMessages } from "../i18n/runState.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
-import { chatHash } from "../router.ts";
 import { createClock } from "./clock.ts";
 import { showTaskResultOnHome } from "./showOnHome.ts";
 import { TaskEditorDialog } from "./TaskEditorDialog.tsx";
-import { SkipLine, TASK_LINK, TaskOutcomeNotice } from "./TaskParts.tsx";
+import { SkipLine, TaskOutcomeNotice, TaskReportLink } from "./TaskParts.tsx";
 import {
 	createTaskActions,
 	outcomeStillCurrent,
@@ -285,13 +284,7 @@ export function TasksView(props: {
 							<span data-field="task-last-run">
 								{lastRunText(row.task, (state) => runState().name(state), text())}
 							</span>
-							<a
-								href={chatHash(row.task.workspaceId)}
-								class={TASK_LINK}
-								aria-label={m().openChatNamed(row.task.title)}
-							>
-								{m().openChat}
-							</a>
+							<TaskReportLink task={row.task} />
 						</p>
 						<Show when={skip()}>{(current) => <SkipLine skip={current()} />}</Show>
 					</div>

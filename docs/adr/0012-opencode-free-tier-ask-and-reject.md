@@ -105,3 +105,8 @@ Evidence established by hand (not re-derived here):
 - Whether running free-tier models as an application backend fits the
   provider's terms is for the owner to check (`docs/AGENT_BACKENDS.md` "Known
   limitations" already says provider terms apply).
+
+
+## 2026-11-06 amendment: exact OpenCode 2.2.5 support
+
+Reverified the existing permission configurations and private-server invocation on 2.2.5; resolved rules and an actual rejected read/write probe are recorded in [agent backends](../AGENT_BACKENDS.md#opencode-225-re-verification-2026-11-06). Both runners accept this exact release alongside the prior verified 2.0.x line, while adjacent unverified releases remain blocked. The configurations, per-turn rejected-call limit and fail-closed handling of executed tool events are unchanged. No new model/provider is selected automatically.

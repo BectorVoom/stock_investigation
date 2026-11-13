@@ -34,6 +34,7 @@ const TABLE = "scheduled_tasks";
 const nullableText = z.string().nullable();
 
 const taskRowSchema = z.object({
+	output_type: z.enum(["news", "chat"]),
 	owner_id: z.string(),
 	task_id: z.string(),
 	workspace_id: z.string(),
@@ -90,6 +91,7 @@ export function toStoredScheduledTask(row: unknown): StoredScheduledTask {
 			? null
 			: { code: r.last_skip_code, slotAt: r.last_skip_slot_at, at: r.last_skip_at };
 	return decode(TABLE, storedTaskSchema, {
+		outputType: r.output_type,
 		ownerId: r.owner_id,
 		taskId: r.task_id,
 		workspaceId: r.workspace_id,
@@ -181,8 +183,8 @@ export function insertScheduledTaskStatement(
 			`INSERT INTO scheduled_tasks
 				(owner_id, task_id, workspace_id, title, question, horizon_years, markets_json, schedule_json,
 				time_zone, spend_consent_json, status, next_run_at, last_run_id, last_slot_at, last_queued_at,
-				last_skip_code, last_skip_slot_at, last_skip_at, version, created_at, updated_at)
-			SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+				last_skip_code, last_skip_slot_at, last_skip_at, version, created_at, updated_at, output_type)
+			SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 			WHERE ${guard.sql}`,
 		)
 		.bind(
@@ -207,6 +209,7 @@ export function insertScheduledTaskStatement(
 			checked.version,
 			checked.createdAt,
 			checked.updatedAt,
+			checked.outputType ?? "chat",
 			...guard.values,
 		);
 }
@@ -218,6 +221,7 @@ export const ACTIVE_TASK_COUNT_BELOW_SQL =
 	"(SELECT count(*) FROM scheduled_tasks AS st_active WHERE st_active.owner_id = ? AND st_active.status = 'active') < ?";
 
 const patchFieldSchema = z.strictObject({
+	outputType: TASK_FIELDS_SHAPE.outputType,
 	title: TASK_FIELDS_SHAPE.title.optional(),
 	question: TASK_FIELDS_SHAPE.question.optional(),
 	horizonYears: TASK_FIELDS_SHAPE.horizonYears.optional(),
@@ -243,6 +247,7 @@ function patchAssignments(patch: ScheduledTaskPatch): { sql: string[]; values: S
 		sql.push(`${column} = ?`);
 		values.push(value);
 	};
+	if (checked.outputType !== undefined) set("output_type", checked.outputType);
 	if (checked.title !== undefined) set("title", checked.title);
 	if (checked.question !== undefined) set("question", checked.question);
 	if (checked.horizonYears !== undefined) set("horizon_years", checked.horizonYears);

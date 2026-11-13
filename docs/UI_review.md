@@ -562,3 +562,177 @@ The owner asked to "include the business description in the company information 
 ## Status
 
 The scripted review and screenshots of these pages are recorded with the change's verification in [REQUIREMENTS_STATUS.md](REQUIREMENTS_STATUS.md#every-sync-is-the-servers--2026-11-01). The specs that looked for the removed controls (`tests/ui-review/watchlistListsReview.spec.ts` with "All stocks", `watchlistReview.spec.ts` W8 with the browser's automatic Google sync) were updated with the change.
+
+## 2026-11-07 — News page
+
+- Added `#/news` to navigation in English and Japanese; recent articles moved
+  from Sources, which retains subscription management. The existing stored
+  article API supplies publishers, dates, permitted excerpts and pagination.
+- Scripted review: `REVIEW_BROWSER=chrome bun run review:ui newsReview.spec.ts`
+  and the same command with `REVIEW_BROWSER=webkit` passed. Desktop 1440×900
+  and phone 390×844 screenshots were inspected: no horizontal overflow or
+  clipped empty-state text. Screenshots: `test-results/ui-review/<engine>/news/`.
+- `REVIEW_BROWSER=firefox bun run review:ui newsReview.spec.ts` could not
+  launch Firefox: its headless build reported `Could not find profile folder`.
+  Firefox visual coverage remains unverified. These were targeted News reviews,
+  not reruns of the complete scripted review suite.
+- Browser coverage uses the isolated local Worker/D1 E2E stack and synthetic
+  fixtures, with no model calls. It verifies navigation, the empty state and
+  the Sources link. Populated lists, pagination, failure retention/retry and
+  Japanese labels are covered by DOM tests. No live-network real-environment
+  run was made: this change adds no provider integration or ingestion behavior.
+
+## 2026-11-09 — AI news output display verification
+
+Scoped scripted review: `REVIEW_BROWSER=chrome bun run review:ui newsReview.spec.ts`
+and the same command with `REVIEW_BROWSER=webkit`. Empty News uses the real
+isolated E2E Worker API; populated AI reports use explicitly synthetic HTTP
+responses. Checks cover desktop 1440×900 and phone 390×844, latest/older reports,
+reload, page errors, long source URL wrapping, navigation to Sources, and the
+News/Chat task dropdown. Screenshots under
+`test-results/ui-review/<engine>/news/` were inspected. Fixed missing AI-news
+empty/loading messages, raw ISO timestamp presentation and long-text overflow.
+Chrome and WebKit: all 3 checks passed in each engine.
+
+Firefox could not launch: `Could not find profile folder`, both with the default
+temporary directory and `TMPDIR=/private/tmp`. No Firefox application behavior
+was verified. Web typecheck and scoped Biome checks passed. No live AI model or
+real-network development positive path was exercised: this review checks display
+with synthetic reports, not report generation or upgraded-install persistence.
+The owner's operational database was not seeded or migrated.
+
+### Live AI News follow-up — 2026-11-09
+
+Real Codex `gpt-6.1-sol`, real EIA feed, real Node runner and pristine-copy
+`bun run dev`: `RUN_LIVE_AGENT=codex RUN_LIVE_MODEL=gpt-6.1-sol RESEARCH_RUNNER=node bunx playwright test --config tests/real/playwright.config.ts news.live.spec.ts`
+passed (1 test, 4.0 min). The generated 2,503-character database answer matched
+News before and after browser reload; desktop and 390px phone screenshots in
+`test-results-real/news-live-{desktop,phone}.png` inspected. Report marked partially
+verified (1 supported, 2 conflicting, 4 unsupported claims); its quality and absent
+inline citation links remain recorded limitations. Claude Haiku first failed
+actual generation with authentication HTTP 403. Fresh database and Chrome only;
+no upgrade or server-restart persistence claim. Full record in REQUIREMENTS_STATUS.
+
+### OpenCode live AI News follow-up — 2026-11-09
+
+The real News live test passed with temporary verified OpenCode 2.2.5 and
+`opencode/nemotron-3.5-lightning-free`: 1 test, 12.2 minutes, actual isolated
+`bun run dev`, Node runner, EIA network and Chrome. The generated 2,072-character
+answer matched the database-backed News text before and after reload. Inspected
+`test-results-real/news-live-desktop.png` and `news-live-phone.png` (390px);
+no horizontal overflow. Pipeline result: partially verified, 9 supported claims,
+0 conflicting, 1 unsupported. Search failure and three-round collection limit
+remain disclosed. Full command, version selection and scope in REQUIREMENTS_STATUS.
+
+### Settings — installed OpenCode 2.2.6, 2026-11-09
+
+Real isolated development checks with both Node and default Rust runner passed:
+OpenCode available, real model selected and saved, both values retained after
+reload. Chrome screenshot `test-results-real/opencode-settings-live.png` inspected.
+Settings-only test mode; no claim of a second full News generation run on 2.2.6.
+Commands, version permission evidence and validation in REQUIREMENTS_STATUS.
+
+### 2026-11-09 — News claim citations
+
+`bun run review:ui newsReview.spec.ts`: Chrome 3/3;
+`REVIEW_BROWSER=webkit bun run review:ui newsReview.spec.ts`: WebKit 3/3.
+Fixture reports carry a stored claim, quote and original source URL. Loading
+older reports preserves that citation; reload and desktop/phone overflow checks
+pass. Chrome desktop/phone and WebKit phone screenshots were inspected: citation
+chip and original link visible; long source text wraps within the card.
+Firefox attempted with the same spec: browser startup fails with
+`Could not find profile folder`, so no Firefox visual acceptance is claimed.
+These are fixture UI checks; the isolated real development News run failed at
+Claude Code authentication (PROVIDER_AUTH, HTTP 403), before article generation.
+
+## News destination separation — 2026-11-10
+
+`bun run review:ui newsReview.spec.ts`: Chrome, four passed. The same command
+with `REVIEW_BROWSER=webkit`: four passed. The added scenario creates a News
+task through the real test API, verifies its Open News link and absence of an
+Open chat link, opens News, and checks the Chat list excludes the task.
+Chrome/WebKit Tasks screenshots and the WebKit empty Chat screenshot were
+inspected. Existing report citations, history, reload and phone checks pass.
+Firefox was attempted: all four scenarios blocked at browser launch by
+`Could not find profile folder`. No Firefox acceptance is claimed.
+
+## Conventional News and investigation formats — 2026-11-10
+
+News now has a headline, lead and body paragraphs with inline references.
+Investigation answers have report sections and a distinct uncertainty section;
+the mechanical summary is collapsed. Source cards group multiple passages from
+one source/relation. The duplicate report-widget preview is omitted when the
+answer already contains its report.
+
+Chrome: `bun run review:ui newsReview.spec.ts chatReview.spec.ts`, five passed.
+The final Chat pass after omitting the duplicate preview also passed. WebKit:
+four News checks and the Chat review passed separately. The first combined run
+found shared test-owner state and an exact-text locator that no longer matched
+an inline citation; the harness was corrected, and those News checks passed.
+Firefox attempted both specs; all five blocked at startup with
+`Could not find profile folder`.
+
+Inspected actual live News desktop, Investigation desktop/phone, the
+investigation-centered Chrome screenshot and WebKit News phone. The layout
+keeps uncertainty labels and source links visible, uses no agent HTML, and
+wraps on a narrow screen. Existing heuristic findings (covered/offscreen
+elements, evidence drawer heading order, input position) remain in the review
+JSON; no blanket zero-findings claim is made.
+
+Live development: Codex `gpt-6.1-sol`, real Node runner/EIA retrieval, fresh
+isolated state. Scheduled News `run_e520e1e64c2a7377b10521dc`: six supported,
+none unsupported/conflicting. Investigation `run_e09f63e2bc937a88acf876ba`:
+nine supported, none unsupported/conflicting. Both report formats, citation
+links and reload passed. Details and commands: [Report formats](REPORT_FORMATS.md).
+
+## Hide Observation / Inference type labels — 2026-11-10
+
+News, Chat and the Chat evidence drawer omit 観察 / 推論 (Observation /
+Inference) type badges. Hypothesis/Forecast labels, verification warnings and
+source citations remain; classifications are still stored and used internally.
+107 targeted citation/chat/Japanese/News/records tests and the web typecheck
+passed. `bun run review:ui newsReview.spec.ts chatReview.spec.ts`: five passed
+in Chrome; five passed with `REVIEW_BROWSER=webkit`. Chrome investigation and
+WebKit News phone screenshots were inspected. Firefox's four News scenarios
+were blocked at browser launch (`Could not find profile folder`). No new live
+agent run was made: this change only affects rendering, not prompts, research,
+stored values or verification. Reviews use the isolated scripted environment.
+
+## Withhold unsupported sentences; omit success badges — 2026-11-10
+
+News and Chat report bodies and copied answers exclude unsupported sentences
+and references belonging only to them. All-unsupported reports show an empty
+state. Their stored evidence and the audit drawer remain intact. The shared
+status badge omits ✓ 裏付けあり / Supported, including in saved-report/audit
+views; supported report borders are neutral. Genuine conflict warnings remain.
+
+196 targeted English/Japanese UI, citation, clipboard, records and renderer
+tests passed, along with full typecheck and targeted Biome/diff checks.
+`bun run review:ui newsReview.spec.ts chatReview.spec.ts`: Chrome five passed;
+same with `REVIEW_BROWSER=webkit`: five passed. The News fixture includes a
+rejected sentence and asserts it is absent; both report checks assert no
+Supported badge. Chrome investigation screenshot was inspected. Firefox News
+review attempted: four blocked at browser launch (`Could not find profile folder`).
+No new live agent run: these changes concern presentation only; prompts,
+stored research, source retrieval and factual verification are unchanged.
+
+## Administrator login page — 2026-11-13
+
+`LoginPage` (`apps/web/src/auth/LoginPage.tsx`) gates the workspace until
+`GET /api/v1/session` confirms the configured administrator account (`status === "ready"`).
+During the initial check it renders `Loading…` (`読み込み中…`); `UNAUTHENTICATED`
+offers `Sign in with Cloudflare Access` (full-page reload so Cloudflare Access
+redirects to the identity provider); `FORBIDDEN` explains that the signed-in
+account is not the administrator and links to `/cdn-cgi/access/logout`;
+`AUTH_KEYS_UNAVAILABLE` and other verification failures explain that the
+session could not be verified and offer `Retry`. Zero workspace navigation or
+workspace API requests occur while the gate is shown.
+
+Scripted UI review (`tests/ui-review/loginReview.spec.ts`) passed in all three
+engines at 390 px and 1440 px (`REVIEW_BROWSER=chrome`, `REVIEW_BROWSER=webkit`,
+`REVIEW_BROWSER=firefox`, 2 passed per engine; 12 screenshots inspected:
+`login.png` and `forbidden.png` at 390 px and 1440 px across Chrome, WebKit and
+Firefox, with zero horizontal overflow and zero page errors). Browser E2E
+(`tests/e2e/administratorLogin.spec.ts`) passed 4/4 in Chrome, WebKit and
+Firefox, and `tests/e2e/devLocal.spec.ts` passed 4/4 against a live isolated
+`bun run dev` instance.

@@ -97,6 +97,10 @@ async function selectInEditor(word: string): Promise<void> {
 	const box = await textBox(word);
 	await page.mouse.dblclick(box.x, box.y);
 	await expect(page.getByRole("toolbar", { name: "Formatting" })).toBeVisible();
+	// Revealing formatting must not shift the text during a selection gesture.
+	const selectedBox = await textBox(word);
+	expect(Math.abs(selectedBox.y - box.y)).toBeLessThanOrEqual(1);
+	expect(Math.abs(selectedBox.x - box.x)).toBeLessThanOrEqual(1);
 	expect(await selectedText()).toBe(word);
 }
 

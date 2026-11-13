@@ -11,7 +11,7 @@ import type { VerifiedDescription } from "./template.ts";
  * search, and when web searches pause.
  */
 
-export type SearchProvider = "claude" | "tavily";
+export type SearchProvider = "claude" | "tavily" | "agent-web-search";
 
 export const NO_BUSINESS_SOURCE = "no business source (no stored business text, no web page)";
 export const NOTHING_VERIFIED = "no verified field describes the business";
@@ -48,9 +48,11 @@ export function describesBusiness(entry: VerifiedDescription, stock: StockSource
 	return fields.some((field) => field.evidence.some((item) => !recordIds.has(item.source)));
 }
 
-/** A web address or a pointer to the company's site. */
-const WEB_ADDRESS =
-	/https?:\/\/|www\.|[a-z0-9-]+\.(?:co\.jp|com|jp|net|org)\b|公式サイト|official (?:web)?site/i;
+/**
+ * A web address or a pointer to the company's site. A bare domain is not one:
+ * it is often a brand (Sports.com, Crypto.com, Booking.com).
+ */
+const WEB_ADDRESS = /https?:\/\/|www\.|公式サイト|official (?:web)?site/i;
 /** A sentence about how the business is divided into reportable segments. */
 const SEGMENT_STRUCTURE =
 	/報告セグメント|単一(?:の)?セグメント|[0-9０-９一二三四五六七八九]+(?:つの)?セグメント|\b(?:one|single|two|three|four|five|\d+) (?:reportable |operating )?segments?\b/i;
@@ -114,6 +116,11 @@ export function storeRefusal(entry: VerifiedDescription, stock: StockSources): s
 	return null;
 }
 
+/** Whether an outcome's error says the sources gave nothing to store (not a model or store failure). */
+export function isFruitless(error: string | null): boolean {
+	return error === NOTHING_VERIFIED || error === NO_SUMMARY || error === EMPTY_SUMMARY;
+}
+
 /** The rows an entry fills: 【特色】【事業内容】【連結事業】(segments that say more than a name)【海外】【テーマ】. */
 export function filledRows(entry: VerifiedDescription): number {
 	return [
@@ -149,7 +156,7 @@ const loggedOutcomeSchema = z.object({
 	error: z.string().nullable(),
 	searched: z.boolean().optional(),
 	// Entries written before the Haiku agent searched have none: Tavily searched them.
-	searchedWith: z.enum(["claude", "tavily"]).nullable().optional(),
+	searchedWith: z.enum(["claude", "tavily", "agent-web-search"]).nullable().optional(),
 });
 
 /** A log line as JSON, or null for a line cut off when a run was stopped mid-write. */
@@ -180,19 +187,14 @@ export function recentlyUnreadable(
 		const parsed = loggedOutcomeSchema.safeParse(parseJsonLine(line));
 		if (parsed.success && parsed.data.at >= since) latest.set(parsed.data.stock, parsed.data);
 	}
-	const fruitless = new Set<string | null>([
-		NO_BUSINESS_SOURCE,
-		NOTHING_VERIFIED,
-		NO_SUMMARY,
-		EMPTY_SUMMARY,
-	]);
+
 	return new Set(
 		[...latest.values()]
 			.filter(
 				(entry) =>
 					entry.searched === true &&
 					(entry.searchedWith ?? "tavily") === provider &&
-					fruitless.has(entry.error),
+					(isFruitless(entry.error) || entry.error === NO_BUSINESS_SOURCE),
 			)
 			.map((entry) => entry.stock),
 	);

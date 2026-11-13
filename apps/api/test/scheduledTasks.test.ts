@@ -9,6 +9,7 @@ import {
 	type AgentSettings,
 	agentSettingsResponseSchema,
 	type CreateScheduledTaskRequest,
+	conversationListResponseSchema,
 	conversationResponseSchema,
 	runBudget,
 	runScheduledTaskResponseSchema,
@@ -80,6 +81,53 @@ async function listTasks(harness: Harness) {
 }
 
 describe("scheduled task routes (ADR-0033 §6)", () => {
+	it("runs a maximum-length News question without expanding the persisted request", async () => {
+		const harness = createHarness();
+		await saveSettings(harness);
+		const task = await createTask(harness, { outputType: "news", question: "a".repeat(2000) });
+		const response = await harness.call(
+			"POST",
+			`/scheduled-tasks/${task.taskId}/run`,
+			{},
+			idempotencyKey(),
+		);
+		expect(response.status).toBe(202);
+		const result = await body(response, runScheduledTaskResponseSchema);
+		expect(result.run.request).toMatchObject({ outputType: "news", question: task.question });
+		expect((await harness.call("GET", `/research-runs/${result.run.runId}`)).status).toBe(200);
+	});
+
+	it("keeps News out of Chat without removing its stored reports and follows output changes", async () => {
+		const harness = createHarness();
+		const news = await createTask(harness, { outputType: "news" });
+		const chat = await createTask(harness, { outputType: "chat" });
+		const listed = async () =>
+			(
+				await body(await harness.call("GET", "/conversations"), conversationListResponseSchema)
+			).conversations.map((entry) => entry.workspaceId);
+		expect(await listed()).toEqual([chat.workspaceId]);
+		expect((await harness.call("GET", `/workspaces/${news.workspaceId}/messages`)).status).toBe(
+			200,
+		);
+		expect((await listTasks(harness)).tasks).toHaveLength(2);
+		const changed = await harness.call("PATCH", `/scheduled-tasks/${news.taskId}`, {
+			expectedVersion: news.version,
+			outputType: "chat",
+		});
+		expect(changed.status).toBe(200);
+		expect(await listed()).toContain(news.workspaceId);
+		const updated = (await body(changed, scheduledTaskResponseSchema)).task;
+		expect(
+			(
+				await harness.call("PATCH", `/scheduled-tasks/${news.taskId}`, {
+					expectedVersion: updated.version,
+					outputType: "news",
+				})
+			).status,
+		).toBe(200);
+		expect(await listed()).toEqual([chat.workspaceId]);
+	});
+
 	it("returns database readback when a committed task differs from the creation draft", async () => {
 		const persistence = createD1Adapters(env.DB);
 		const harness = createHarness({

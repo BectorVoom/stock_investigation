@@ -30,6 +30,13 @@ export const OPENROUTER_FREE_AGENT_ID = "openrouter-free" as const;
  */
 export const CLAUDE_API_AGENT_ID = "claude-api" as const;
 
+/**
+ * Agent id of the Sarashina API backend: SB Intuitions' OpenAI-compatible
+ * chat completions over HTTPS (SARASHINA_API_KEY). Plan-limited: the API is a
+ * free beta, publishes no prices and reports token counts only (ADR-0074).
+ */
+export const SARASHINA_API_AGENT_ID = "sarashina-api" as const;
+
 /** Router id that selects a free model on the owner's behalf. */
 export const OPENROUTER_FREE_ROUTER_MODEL_ID = "openrouter/free" as const;
 

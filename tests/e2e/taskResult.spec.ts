@@ -2,6 +2,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { type BrowserContext, expect, type Locator, type Page, test } from "@playwright/test";
 import { homeDashboardResponseSchema } from "../../packages/contracts/src/home.ts";
 import {
+	runScheduledTaskResponseSchema,
 	scheduledTaskListResponseSchema,
 	taskResultResponseSchema,
 } from "../../packages/contracts/src/scheduledTasks.ts";
@@ -167,8 +168,19 @@ test("Run now from the widget brings the run's answer and its status line into i
 	test.setTimeout(150_000);
 	const taskId = await taskIdOf(FIRST_TITLE);
 	const widget = resultWidget(taskId);
+	const queuedResponse = page.waitForResponse(
+		(response) =>
+			response.request().method() === "POST" &&
+			response.url().endsWith(`/scheduled-tasks/${taskId}/run`),
+	);
 	await widget.getByRole("button", { name: `Run ${FIRST_TITLE} now` }).click();
-	await expect(widget).toContainText(/Queued a run of/);
+	const queuedHttp = await queuedResponse;
+	expect(queuedHttp.status()).toBe(202);
+	const queued = runScheduledTaskResponseSchema.parse(await queuedHttp.json());
+	expect(queued.task.taskId).toBe(taskId);
+	expect(queued.replayed).toBe(false);
+	// The runner can claim the job before the next frame, replacing the brief
+	// queued notice. Require the accepted run and its eventual answer instead.
 
 	// The shared list polls every 5 s while the run is unfinished; once it
 	// shows the run ended, the widget reads the answer through the real route.
@@ -182,6 +194,7 @@ test("Run now from the widget brings the run's answer and its status line into i
 	const response = await page.request.get(`${E2E_ORIGIN}/api/v1/scheduled-tasks/${taskId}/result`);
 	expect(response.status()).toBe(200);
 	const { result } = taskResultResponseSchema.parse(await response.json());
+	expect(result?.runId).toBe(queued.run.runId);
 	expect(result?.text).toContain("claim(s) are supported");
 	// Plain text, as stored: the clamp only hides lines, it never cuts the text.
 	expect(await answer.textContent()).toBe(result?.text);

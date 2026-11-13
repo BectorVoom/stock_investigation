@@ -426,3 +426,403 @@ Additional checks after the tool change: targeted TypeScript tool/job tests (28 
 **Unresolved reliability findings (the final green batch does not erase these):** earlier real Codex runs on both runners also executed all three retrieval calls but published a completed report with zero claims; other runs downgraded a retrieved fact through `QUOTE_NOT_FOUND` or `NOT_INDEPENDENTLY_VERIFIED`. For example Rust `run_9c7cd85315368a7947005495` completed with zero claims, and restart run `run_e7d206c4ac6c6c321733108b` left its financial claim not independently verified. The assertions failed in those runs; no test retry setting or verification rule was relaxed. This remains a research generation/verification quality gap requiring a separate reproducible pipeline investigation/evaluation; it is not evidence of consistently reliable sourced answers. Claude Code also returned `PROVIDER_AUTH` on an actual turn despite its login probe reporting available; the successful batch used Codex, with no paid API fallback. The EIA-dependent broader live suite remains a separate unverified prerequisite from the prior record.
 
 The operational `data/`, `data-dev/` and port 8787 were not used as test targets. Successful test launchers and throwaway data were cleaned up; failed-run traces and logs remain under ignored test output/temporary paths.
+
+### 2026-11-06 — Search cooldown recovery
+
+Both research pipelines now continue collection when a search returns `SEARCH_COOLDOWN` before any evidence was collected, even when the original plan said `done`. Subsequent planning catalogues omit unavailable tools and carry an instruction to use other listed tools, subscribed feeds, stored records or known URLs. The existing collection-round, model-step, tool-call and wall-clock limits remain; an attempt that still collects no evidence reports failure. Provider pauses are respected and no unsupported answer is substituted. See the [ADR-0025 amendment](adr/0025-web-search-research-tool.md).
+
+Validation:
+
+- `bun run test`: 470 files passed, 5 skipped; 8,134 tests passed, 14 skipped. New deterministic cases cover recovery with `done` true/false, no repeated paused-provider calls, bounded exhaustion and proceeding with previously collected evidence.
+- `node scripts/vectors/index.ts pipeline` regenerated the shared transcripts. `cargo test --locked -p research-application` passed (28 passed, 2 ignored), including replay of the TypeScript cooldown scenarios through the Rust implementation. Rust Clippy, TypeScript typecheck, Biome and the runner bundle passed. `bun run formal:check` passed for the existing Lean models and vectors; no domain algorithm or Lean model changed.
+- Actual development smoke: `RUN_LIVE_AGENT=codex RESEARCH_RUNNER=rust bunx playwright test --config tests/real/playwright.config.ts tests/real/stockResearch.live.spec.ts --output=test-results-real/search-cooldown-rust`, Chrome, isolated real launcher/local D1, synthetic stored stock fixtures and real Codex subscription CLI, configured default model (`providerModel` was not reported). Fresh-settings run `run_a0fd5a1de00444687dcfa727` passed with three executed tools, three evidence items and three supported claims; source opening and reload passed.
+- **Live restart scenario failed:** run `run_d9a64e174a4e8c44b8df56fe` reached completed after three `stocks.search` calls reporting 2, 1 and 1 evidence items, but persisted no claims/evidence; the assertion requiring business-description evidence failed. The synthetic summary remained stored. This reproduces the previously recorded zero-claim generation/publication reliability gap; its root cause remains unverified. No assertion or verification policy was relaxed and the suite is not reported as green. Trace: `test-results-real/search-cooldown-rust/stockResearch.live-upgrade-5be7a-s-send-and-reload-citations/trace.zip`; isolated failed data retained at `/var/folders/wc/4h0g65w97b32s862x86qgbx80000gn/T/research-stock-rag-live-vX2iFV`.
+
+The live smoke used stored fixtures and did not induce a provider cooldown or verify live search/page fetching; cooldown recovery itself is covered by deterministic TypeScript/Rust pipeline transcripts. No paid API fallback was used. Operational databases and ports were not test targets. Restart server/runner to use the updated code; no database migration is required for this change.
+
+### 2026-11-06 — Agent screening and empty findings
+
+The reported Japanese question (“ドローン系の銘柄で純利益が20%以上を上がっている銘柄を調査してください。”) was investigated against development storage **read-only**. Run `run_7c47dbe270e024258b730d94` completed with zero claims: search providers failed/paused, unrelated feeds returned evidence and `stocks.search` returned zero citeable evidence. Storage contained 92 Japanese drone-context candidates, with 277 available annual profit records across 63 matching companies. These counts establish stored coverage, not qualified investments or primary-source verification of those AI theme labels; no operational data was migrated, seeded or retried.
+
+`research-v6` now tells the planner to discover thematic candidates first, then retrieve each candidate's comparable annual profit records by ticker and metric. It explains lexical search, separate Japanese/English variants, missing data and limited coverage. The analyst can compute a sourced screening comparison as an inference, uses the question's language, and separates atomic business/financial/calculation/decision claims. The independent verifier checks the quoted inputs and arithmetic. No new numeric-filter API is claimed: this is agent screening over retrieved records. See the [ADR-0071 amendment](adr/0071-stored-stock-retrieval-tool.md).
+
+Both pipelines reject an empty analysis with retrieved source evidence and no structured financial/position/filing tool records, request a corrected analysis using the existing repair allowance, and refuse to publish a second empty draft as a successful “No findings” report. Structured-record fallback and source verification are preserved. The TypeScript/Rust transcripts include repair success and persistent-empty failure. Budget-edge fixtures now use an explicitly unsupported nonempty probe statement so they still exercise packing/verification under the new analysis rule; those probes are not evidence-validity tests.
+
+Real development checks used main's working tree, Chrome, the actual launcher and local D1, throwaway directories/test ports, the real Codex subscription CLI with its configured default model (`providerModel` not reported), and **synthetic** stored statements/business passages. The fixtures contain two drone manufacturers: annual profit 1,000,000 → 1,250,000 USD (25%) and 1,000,000 → 1,100,000 USD (10%), fiscal 2024 → 2025. The test requires supported source-linked claims, both years and percentages, inclusion/exclusion, and persistence after browser reload. No external filing ingestion or real-stock financial result is claimed.
+
+- `RUN_LIVE_AGENT=codex RESEARCH_RUNNER=rust bunx playwright test --config tests/real/playwright.config.ts tests/real/stockResearch.live.spec.ts --output=test-results-real/stock-screening-rust`: all three scenarios passed: fresh settings (`run_38b80dc3b2dde4db3dc2a332`, three supported claims), upgraded settings with restart (`run_d3f3ae83d9ae1e563bf01c97`, three supported claims), and Japanese screening (`run_72e95197c5382433c4fa8ba6`, two supported claims).
+- A stricter standalone repeat requiring a Japanese exclusion statement passed with `RESEARCH_RUNNER=node` (`run_1ed0e9f5ab0682d6c7f78094`, two supported claims), but **failed with Rust** (`run_5f6e6f9606acd0642f90acc1`): both calculations/quotes passed deterministic checks, but the independent verifier did not confirm the two long compound claims. Those claims mixed calculations with dataset/coverage/provenance assertions; no verifier rationale was recorded, so this is an observed failure, not a proved causal diagnosis. The failed trace remains at `test-results-real/stock-screening-rust-strict/stockResearch.live-Japanes-71b92-ited-matches-and-exclusions/trace.zip`. The assertions were not relaxed. The final prompt refinement explicitly separates atomic claims to avoid mixing otherwise sourced financial comparisons with uncited meta assertions.
+- With that refinement, `RUN_LIVE_AGENT=codex RESEARCH_RUNNER=node bunx playwright test --config tests/real/playwright.config.ts tests/real/stockResearch.live.spec.ts -g 'Japanese drone screening' --output=test-results-real/stock-screening-node-atomic` passed: `run_aa60f991f25421df158b6f89`, eight supported claims, both primary-source links, explicit exclusion and reload. Claim JSON is attached to the test result.
+
+These live observations demonstrate the screening path, not consistently perfect model reasoning or full-market coverage. No paid API fallback was used. No domain arithmetic algorithm changed; existing Lean checks do not prove an AI-generated arithmetic inference. Server and runner must use the updated code together; this change adds no database migration.
+
+Final checks for the atomic-claim prompt:
+
+- The matching Rust command with `RESEARCH_RUNNER=rust` and `--output=test-results-real/stock-screening-rust-atomic` passed: `run_0e9ad950915c1b9839857dff`, eight supported claims, explicit exclusion, source links and reload. Both final atomic screening tests ran independently from fresh isolated installations. The preceding successful three-scenario Rust batch separately covered restart/carried-over settings.
+- Targeted TypeScript retrieval/pipeline/prompt tests passed (97); the runner logging and outgoing-payload contract tests passed (62) after updating expected prompt provenance to v6. Shared pipeline vectors and Rust outgoing goldens were regenerated for the prompt text/byte-accounting changes. `cargo test --locked -p research-application -p research-runner`, Rust Clippy, Biome, strict typecheck, the runner bundle and existing Lean proofs/conformance vectors passed.
+- The final `bun run test` batch reported 8,137 passed, 14 skipped and one timeout: `api-sqlite/test/marketHistory.test.ts` maximal-completion case exceeded its existing 5-second deadline while the two live suites and other checks were also running. No timeout or assertion was loosened; the unchanged market-history suite was then rerun independently. Earlier in the change, two full-suite failures were stale `research-v5` logging expectations; they were updated to v6 and passed their targeted rerun.
+- Independent market-history rerun: `bun run test apps/api/test/marketHistory.test.ts` passed all eight tests on both SQLite and Workers/local D1 with the original timeout (7.24 seconds for the whole run). The final batch has no remaining reproduced deterministic test failure; its timeout and the earlier live-verifier failure remain recorded above rather than erased by later passes.
+
+### 2026-11-06 — Nemotron free output truncation
+
+The owner's selected model was `openrouter-free` / `nvidia/nemotron-3.5-lightning:free` at **medium** effort. Both adapters previously sent a uniform 8,192 total completion tokens, including reasoning. The live catalogue now reports a 65,536-token maximum for this exact id, zero input/output pricing and optional reasoning. Both runners now send **32,768** for this id only, preserving effort; other ids, including the paid counterpart, retain 8,192. Truncation remains an explicit failure, with no automatic paid/model fallback or retry of an incomplete generated document. This is a bounded model profile, not a guarantee that arbitrarily long output can never truncate. See [OpenRouter integration](external-apis/apis/openrouter.md).
+
+Verification on main's working tree:
+
+- TypeScript OpenRouter/free/document-example suites: 95 tests passed. New request tests cover the exact free id, paid counterpart, prefix lookalike and another free id at all three efforts. Rust providers: six unit tests and nine vector tests passed, including the matching model/effort/body cases. External-API/document-link tests: 119 passed. Clippy, typecheck, Biome, runner build and existing Lean checks passed. No domain algorithm or Lean model changed.
+- The real test harness now supports `RUN_LIVE_AGENT=openrouter-free`, `RUN_LIVE_MODEL` and `RUN_LIVE_EFFORT`, passes only the required provider key/default model into its explicitly isolated runner env file, and checks that `providerModel` equals the selected model. A separate explicit-retrieval comparison test retains the same citation, growth, exclusion and reload assertions; it does not replace or weaken the original natural-language screening test. Direct `bunx` did not load the root dotenv key in the first launch, which failed the availability prerequisite before any research turn. Subsequent Playwright processes were spawned from Bun, which loaded the existing dotenv key; no secret was printed, copied into the pristine source or written into operational storage.
+- Actual development app, Chrome, Node runner, medium effort, exact selected free model, isolated synthetic two-stock fixture: `run_f8e883e3fbb2437486a5f1fd` **completed without PROVIDER_OUTPUT_TRUNCATED** (four agent steps, four tool calls). However, **the screening verification failed**: the answer asserted missing profits and cited an unknown UUID, so deterministic verification correctly kept both claims unsupported. This is not reported as a successful sourced-screening run. Trace: `test-results-real/nemotron-node/stockResearch.live-Japanes-71b92-ited-matches-and-exclusions/trace.zip`; retained isolated data: `/var/folders/wc/4h0g65w97b32s862x86qgbx80000gn/T/research-stock-rag-live-nYPGQv`.
+- Actual dev Rust run `run_81eb0b11e8044814a3d8c937` failed `PROVIDER_RATE_LIMITED`, and the serial explicit-retrieval Rust comparison also failed `PROVIDER_RATE_LIMITED` before a usable research result. Traces: `test-results-real/nemotron-rust-keyed/stockResearch.live-Japanes-71b92-ited-matches-and-exclusions/trace.zip` and `test-results-real/nemotron-rust-focused/stockResearch.live-explici-d5082-tions-on-the-selected-model/trace.zip`.
+- A single direct production-shaped diagnostic (same model, medium effort, 32,768 cap, prompt “Reply with the single word OK.”) then returned HTTP **429**, with no Retry-After; the bounded error body identified a **daily free-model quota**. No further generation retries were made after confirming that condition. Successful completion/citation verification on both runners with this model therefore remains blocked by provider quota, and the earlier Node citation-quality failure remains unresolved. No assertion was relaxed, model changed or paid API fallback used.
+
+Operational databases were not test targets. These live fixtures verify application behavior, not real-company figures or provider ingestion. Restart the runner to load the updated adapter; no schema migration is added by this change.
+
+The extended live harness deletes its temporary runner credential env file in a `finally` block even when failed-run diagnostics are retained. The three credential-bearing failed test directories from this verification had their generated `test-runner.env` files removed; traces and synthetic D1 evidence remain for diagnosis.
+
+### 2026-11-06 — OpenCode 2.2.5 support
+
+The locally installed OpenCode CLI had been refused since it upgraded to 2.2.5 — the adapter pinned the verified 2.0.x line (`TOOL_ISOLATION_UNVERIFIED`). Both adapters now accept **exact 2.2.5** alongside that line (`packages/adapters/src/providers/openCode.ts` `VERIFIED_ADDITIONAL_VERSION`; `crates/research-providers/src/opencode.rs` `verified_release`); 2.1.0, 2.2.4, 2.2.6 and 3.x remain refused, and below 2.0.27 remains `UNSUPPORTED_VERSION`. No permission rule, shared/global CLI configuration or auto-approval setting was relaxed; no new model or provider is selected.
+
+Evidence on main's working tree, 2026-11-06 (local CLI `opencode v2.2.5`):
+
+- The shipped permission configurations were rechecked with `opencode debug agents --standalone`: `research-text` kept the deny-all rule as the final general rule; the free-tier configuration kept deny-first plus only the ten known `ask` permissions. A live `opencode/nemotron-3.5-lightning-free` probe attempted a read and three shell calls (including a file write); all four were auto-rejected in non-interactive mode with `providerCall.executed=false`, no file was created, the canary text was not returned, and the model then answered `ISOLATED`. The real stream is replayed as `fixtures/opencode/v225-permission-rejected.jsonl` in TypeScript (adapter test) and in Rust (shared provider vectors).
+- Real-CLI probe (quota-free, installed 2.2.5): `cargo test -p research-runner --locked --test process the_real_opencode_probe -- --ignored --nocapture` → `availability: {"status":"available"}`; the stored-credential `auth list --format json` was accepted and the model catalogue was reported (including `opencode-go/muse-spark-1.3-contributor` and `opencode/nemotron-3.5-lightning-free`).
+- `bun run verify` passed end to end: Biome (1,268 files), strict typecheck, **471 files / 8,150 tests passed** (14 skipped), `vectors:check`, Rust check + tests (including the new `opencode::release_policy_tests`: 2.0.27, 2.0.32 and 2.2.5 accepted; 2.0.24, 2.1.0, 2.2.4, 2.2.6 and 3.0.0 refused), and the build (SPA, runner bundle, Worker dry-run).
+- `bun run formal:check` passed after `formal/vectors.json` was re-exported (`lake exe export-vectors`): the new `CitationReference` model (88 vectors) had never been exported into the committed file, which was also why `tests/formal/citationReference.conformance.test.ts` failed. The re-export added 90 lines and deleted none.
+- `node scripts/vectors/index.ts` regenerated the provider vectors, which a pipeline-only regeneration after the v225 test was added had left stale (the vector corpus collects the provider test files' constant strings; the new replay test's expected answer text was missing). `--check` passes now.
+- Fixed in passing to unblock typecheck: `packages/adapters/src/tools/stockResearch.ts` — the string-encoded `limit` branch pipe destination now uses `.unwrap()`ed inner schema (zod v4: `ZodDefault`'s input is `number | undefined` and cannot be a `pipe()` target). No other source changed for this fix.
+
+Not verified: an application-level live run (`bun run test:live:opencode`) on 2.2.5. The Go-plan model's stored API key had expired (a provider-side credential issue; not silently switched), and the free-tier model's daily quota was exhausted that day (a direct 429 diagnostic, see "Nemotron free output truncation"). The 2026-10-12 "OpenCode happy path" above was recorded on v2.0.27 and remains the last end-to-end application evidence; this entry covers the 2.2.5 version acceptance, the isolation probe and the deterministic gates. No application behaviour changed for already-accepted releases.
+
+Restart the runner to pick up the new guard; no database migration is added by this change.
+
+### Demand signals on News (2026-11-07)
+
+- Keyword-based reading candidates from loaded headlines/excerpts, expanding /
+  emerging demand, optional product/service filter, English and Japanese.
+  Economic significance is explicitly unverified; no provider or schema changes.
+- Validation: targeted News/Sources and design-conformance checks: 34 passed;
+  strict typecheck passed. Scripted News UI review passed in Chrome and WebKit,
+  desktop and phone screenshots inspected. Firefox review attempted twice
+  (including TMPDIR=/tmp), blocked at browser launch by a missing profile folder.
+- No real-network/model run covered this presentation-only change. Tests use
+  isolated scripted data; no live provider claims are made.
+
+### Demand signals verification follow-up (2026-11-07)
+
+- Reproduced and fixed a false negative: the literal phrase "Expanding demand"
+  was absent from the expanding-demand phrase list.
+- 38 targeted tests pass (Demand signals, Sources English/Japanese, design
+  conformance); web strict TypeScript check passes. Added coverage for excerpt
+  matching, whitespace/case filtering, reactive arrivals, Japanese controls,
+  pagination and absence of extra network requests while filtering.
+- Remaining product limitation: phrase matching is neither a demand assessment
+  nor a significant-emerging-demand detector. Negated/quoted phrases and "new
+  market" can be false positives; alternative wording can be missed. No
+  precision/recall benchmark or live-network/model validation was performed.
+- Added a populated browser review using a stubbed articles response, explicitly
+  distinct from live-feed evidence.
+- Follow-up browser result: `bun run review:ui newsReview.spec.ts` and
+  `REVIEW_BROWSER=webkit bun run review:ui newsReview.spec.ts` each passed
+  both empty/responsive and populated-candidate scenarios. Populated screenshots
+  inspected in both engines. Firefox remains unverified after the previously
+  recorded profile-folder launch failures.
+
+### Demand investigation across themes — 2026-11-07
+
+The original keyword filter was insufficient for investor/sales investigation.
+It now has 13 bilingual themes plus uncatalogued topics, expanding/emerging/
+weakening/uncertain views, exact matched passages, source metadata, product text
+filtering, investor/sales checklists and a copyable sourced brief (up to 20
+articles). Explicit older-article batches read up to 500 stored articles and
+support stop/resume, failure retry, cursor-loop rejection and URL deduplication.
+Initial rendering is bounded to 50 matching articles. No schema or provider API
+changed. See [the acceptance matrix and limits](DEMAND_INVESTIGATION.md).
+
+Iteration found and fixed nine natural-language misses (past-tense orders and
+adoption, Japanese percentage growth, negated demand and forecasts), as well as
+an ambiguous browser status locator. Forecast wording takes precedence over
+growth/weakening wording; contrary passages remain available for investigation.
+
+Validation:
+
+- Full repository tests rerun after fixes: 474 files passed, 5 skipped;
+  8,209 tests passed, 14 skipped. Domain/component cases cover both languages,
+  all themes, mixed evidence, empty/loading/error, batch bounds, stop/resume,
+  retry, duplicates, cursor loops, local filtering and rendering/brief bounds.
+- bun run check, bun run typecheck, bun run build: passed.
+- bun run formal:check: passed; Lean classification/selection proofs and
+  exhaustive Boolean conformance vectors. Linguistic/economic truth is outside
+  the proof and explicitly outside the feature's claims.
+- bun run bench: final run passed all budgets; 500-article analysis 14.849 ms
+  (20 ms budget), cached filtering 0.071 ms (2 ms budget). Preliminary concurrent
+  run exceeded some existing unrelated budgets; final run followed test completion.
+- Chrome and WebKit targeted News UI reviews: four scenarios per browser passed,
+  including all-theme traversal, older evidence, both audiences, Japanese
+  forecasts and a sales brief. Desktop/phone/Japanese screenshots inspected.
+  Firefox attempted, blocked at browser launch: "Could not find profile folder."
+- RESEARCH_RUNNER=node bun run test:real devReal.spec.ts: passed in an isolated
+  fresh development installation, actual launcher/Node runner/live public feed,
+  checking stored article coverage and the sales brief; no model used. This
+  proves real ingestion/read/UI integration, not real signal accuracy by theme.
+- Additional RUN_LIVE_AGENT=claude-code RESEARCH_RUNNER=node bun run
+  test:real:live: actual question failed with PROVIDER_AUTH. Captured the
+  terminal failure then interrupted the suite's completion-only wait (exit 130:
+  1 interrupted, 1 skipped, 15 not run). No successful model run is claimed;
+  actual fresh/upgraded AI completion remains blocked by authentication.
+
+Remaining scope: research leads from subscribed-feed headlines/permitted
+excerpts, not comprehensive market coverage, verified economic significance,
+entity attribution or quantified demand. Complex language can still be misread;
+no independently labelled real-news precision/recall benchmark exists. Source
+links and the research brief support further investigation rather than inventing
+buyers, budgets, market sizes or investment outcomes. Historical-database upgrade
+coverage was not run because no schema, migration or persisted writer changed.
+
+### Correction: cross-theme demand-information acceptance is unmet — 2026-11-07
+
+The earlier feature verification overstated what the tests established. Synthetic
+all-theme headlines checked controls and phrase recognition. The live development
+check used one energy feed. Neither established that investors or sales teams
+could obtain useful demand information across major themes. Previous test totals
+must not be read as evidence that this acceptance criterion passed.
+
+A read-only audit of every stored development article found 1,132 articles:
+59 had excerpts and 1,073 (about 95%) were headline-only. All thirteen themes had
+topical articles (15–88 each), but eleven themes had no phrase-matched candidates;
+only energy and mobility had one each (not necessarily independent reports).
+See the [audit snapshot](reviews/demand-coverage-2026-11-07.json) and run
+node scripts/poc/demandCoverageAudit.ts with the API origin to reproduce counts.
+No operational data was written and no upstream provider was called by the audit.
+
+Corrections made:
+
+- Default saved-news browsing includes unassessed topical reports; strict
+  demand-wording views remain optional. Missing phrase matches no longer hide
+  all topical coverage. This is visibility, not a verified demand assessment.
+- A theme/language/product form opens a normal Google News search in a new tab,
+  independent of subscriptions or AI authentication. The app does not fetch,
+  summarize or assess those results. CSP form-action remains self; explicit
+  user navigation opens the tab without an opener.
+- Tests are labelled UI-only where supplied fixtures or a controlled navigation
+  target are used. A browser regression exposed the external-form CSP block;
+  it was corrected without relaxing the policy.
+- A prototype RSS relay was investigated and removed: the provider's feed terms
+  restrict use to personal, non-commercial feed readers, making it unsuitable
+  for the sales-team feature. GDELT probes timed out or returned 429. Headless
+  Google News browsing encountered a human-verification challenge. None is a
+  successful integrated information-retrieval acceptance test.
+
+**Remaining product gap:** no verified in-app retrieval and relevance assessment
+across the major themes, and no independent real-news precision/recall corpus.
+The controls, broad stored-news browsing and external research path do not close
+that gap. Treat comprehensive demand-information coverage as NOT VERIFIED.
+
+Regression checks after that correction (not information-coverage acceptance):
+full suite 8,239 passed / 14 skipped (476 files passed / 5 skipped); strict type
+check, lint, build, Lean proofs/conformance and benchmark budgets passed. Chrome
+and WebKit each passed five targeted UI scenarios; external navigation used a
+controlled destination and is explicitly UI-only. Firefox again failed to launch
+with the missing-profile-folder error. The isolated Node development live-feed
+regression passed (one energy feed, no model); it does not establish cross-theme
+retrieval or relevance. A read-only production audit could not run because no
+service was listening on localhost:8787; the recorded counts are development only.
+
+## 2026-11-09 — Live AI News task generation
+
+- Branch: `main` working tree. Command: `RUN_LIVE_AGENT=codex RUN_LIVE_MODEL=gpt-6.1-sol RESEARCH_RUNNER=node bunx playwright test --config tests/real/playwright.config.ts news.live.spec.ts`.
+- **Passed** (1 test, 4.0 minutes): pristine-copy `bun run dev`, real Node runner, fresh isolated D1 database, real EIA Today in Energy subscription/network, real Codex CLI/model. No scripted model or synthetic reports. Created News output through the Tasks dialog; its Once schedule fired automatically at 2026-11-09T00:13:00Z. Run `run_d530c21e6f2d365dca47c3d0` completed; its 2,503-character saved report matched the News page text exactly, including after browser reload. Chrome desktop and 390px phone screenshots inspected; no horizontal overflow. Artifacts: `test-results-real/news-live-desktop.png`, `news-live-phone.png`; execution log `/private/tmp/news-live-codex.log`. Operational databases were not changed.
+- **Quality limitation:** the generated report was partially verified: 1/7 claims supported, 2 conflicting, 4 unsupported; collection stopped after three planning rounds. This establishes generation/storage/display, not satisfactory research accuracy or a fully sourced news article. The News display currently presents the pipeline's plain-text answer and lacks inline citation links.
+- Earlier attempt: Claude Code `haiku` was available at probe time but actual generation failed with `PROVIDER_AUTH`, upstream HTTP 403. Stopped the test's completion wait after this definitive failure; no successful Claude generation is claimed. Log `/private/tmp/news-live-claude-auth.log`. An initial sandboxed attempt failed during dependency download, before any model call.
+- Scope: fresh install plus browser reload verified; populated historical-schema upgrade, process-restart persistence and Rust runner not exercised in this run. Codex used the existing documented `ALLOW_UNVERIFIED_TOOL_ISOLATION=1` opt-in only in the disposable runner environment.
+
+## 2026-11-09 — OpenCode live AI News generation
+
+- **Passed:** `PATH=/private/tmp/news-opencode-225/node_modules/.bin:$PATH RUN_LIVE_AGENT=opencode RUN_LIVE_MODEL=opencode/nemotron-3.5-lightning-free RESEARCH_RUNNER=node bunx playwright test --config tests/real/playwright.config.ts news.live.spec.ts` — 1 test passed, 12.2 minutes total (test 11.0 minutes), Chrome, branch `main` working tree.
+- The installed OpenCode 2.2.6 remains outside the adapter's verified releases. Installed the already verified `@opencode/cli@2.2.5` only in `/private/tmp/news-opencode-225`, selected by this test's PATH; no adapter version guard or operational installation was changed. Runner probe reported OpenCode available with enforced tool isolation. No unverified-isolation override was used for OpenCode.
+- Real pristine-copy `bun run dev`, real Node runner, fresh isolated D1, actual EIA feed/network and actual OpenCode free-model generation. Created News output through the task editor. Task `task_8e2d18620ae4885ce33a186656fdec31` fired automatically at 2026-11-09T11:49:00Z; research run `run_3c82efd0567d932fd69ce024` completed and stored a 2,072-character answer. News displayed the exact stored text before and after browser reload. Desktop and 390px phone screenshots inspected; no horizontal overflow.
+- The application's verification result was partially verified: 9/10 claims supported, 0 conflicting, 1 unsupported. This is the pipeline's classification, not a separate human fact-check. Collection stopped after three planning rounds; `news.search` returned `SEARCH_FAILED` during collection. The report includes its unsupported finding and collection limitation. Plain-text News still lacks inline citation links.
+- Evidence: `/private/tmp/news-live-opencode.log`, `test-results-real/news-live-desktop.png`, `test-results-real/news-live-phone.png`. These screenshots replace the preceding live-run screenshots at the same paths. No operational database was seeded or migrated. Historical upgrade, server restart and Rust runner were not tested in this run.
+
+## 2026-11-09 — Installed OpenCode 2.2.6 in Settings
+
+Fixed the compatibility guard in both runners after re-verifying exact 2.2.6;
+Settings had correctly shown TOOL_ISOLATION_UNVERIFIED under the earlier policy.
+No UI filtering or permissions were bypassed. Unverified 2.2.7 remains refused.
+
+Real development verification (Chrome, main working tree, fresh throwaway D1,
+installed global OpenCode 2.2.6; no temporary 2.2.5 PATH):
+`RUN_LIVE_SETTINGS_ONLY=1 RUN_LIVE_AGENT=opencode RUN_LIVE_MODEL=opencode/nemotron-3.5-lightning-free RESEARCH_RUNNER=node bunx playwright test --config tests/real/playwright.config.ts news.live.spec.ts`
+passed (59.5 s); the same command with `RESEARCH_RUNNER=rust` passed (52.9 s).
+Both selected OpenCode and its real model from Settings, saved, and checked both
+values after reload. The settings-only path performs no scheduled research run.
+Inspected `test-results-real/opencode-settings-live.png` from the Rust run.
+
+Actual free-model 2.2.6 permission tests rejected a canary read and shell write,
+returned ISOLATED, and created no output file. Real streams are replay fixtures
+`v226-read-rejected.jsonl` / `v226-write-rejected.jsonl`. Resolved permission
+configurations also checked for deny-all and free models. Logs and configuration
+captures: `/private/tmp/opencode-226-review/`. 66 TypeScript provider tests,
+all Rust provider tests (7 unit + 9 vector tests), adapter typecheck, scoped Biome
+and diff checks pass. No domain algorithm changed; no new Lean model required.
+
+Scope: installed-version availability, real model discovery, saving and reload
+verified with both real launchers/runners; full News generation on 2.2.6 was not
+rerun (previous full News success used 2.2.5). No operational data or saved backend
+was changed. Existing running processes must load the updated runner code.
+
+### News citations, editorial guidance and demand sources — 2026-11-09
+
+News displays stored claim citations, publisher links and quoted evidence using
+Chat's citation component. Pagination retains the evidence for earlier and
+current reports. The analysis prompt asks for attributed journalistic sentences;
+the planning prompt prioritizes direct primary demand measures. Both TypeScript
+and Rust templates are updated, with regenerated pipeline parity vectors.
+The source investigation and access/interpretation limits are documented in
+[DEMAND_SOURCES.md](DEMAND_SOURCES.md); no new ingestion provider is claimed.
+Existing stored prose is unchanged. Replies without stored claims retain their
+text; missing historical evidence cannot be fabricated.
+
+Verification on main working tree (including pre-existing owner changes):
+- Targeted prompt, scheduling, News/source and citation tests: 73 passed.
+- `bun run typecheck`: final rerun passed.
+- `cargo test --locked -p research-application research::`: 11 passed, one
+  existing timing test ignored; prompt and pipeline transcript parity passed.
+- `node scripts/vectors/index.ts pipeline`: regenerated from TypeScript;
+  `node scripts/vectors/index.ts pipeline --check`: passed.
+- `bun run build`: SPA, Node runner bundle and Worker dry-run passed;
+  existing SPA chunk-size warning remains. Targeted Biome and diff checks passed.
+- `bun run review:ui newsReview.spec.ts`: Chrome, three passed; same command
+  with `REVIEW_BROWSER=webkit`: three passed. Citation fixture, older history,
+  reload, source URL, responsive overflow and task selector exercised. Chrome
+  desktop/phone and WebKit phone screenshots inspected.
+- Firefox: all three blocked at launch, `Could not find profile folder`.
+- `RUN_LIVE_AGENT=claude-code RESEARCH_RUNNER=node bun run test:real news.live.spec.ts`:
+  isolated fresh development launcher, real Node runner and Claude Code CLI;
+  scheduled News task fired, then failed `PROVIDER_AUTH`, upstream HTTP 403.
+  This attempt used the initial task-level editorial instruction; the final
+  guidance was moved to shared TypeScript/Rust prompts to avoid expanding the
+  stored question. Neither version's generated prose was validated live.
+  No successful generated news article or upgrade-state positive path is claimed.
+  The provider authentication failure blocks live quality acceptance.
+- No domain algorithm or schema changed; no new Lean proof or benchmark case
+  is required. Existing citation behavior is reused. Full verify was not run.
+
+### News sentence format and actual output check — 2026-11-10
+
+- Explicit sentence patterns are applied to automatic and manual News runs.
+- `RUN_LIVE_AGENT=codex RUN_LIVE_MODEL=gpt-6.1-sol RESEARCH_RUNNER=node bun run test:real news.live.spec.ts --output=test-results-real/news-sentence-recheck`:
+  passed, Chrome, isolated fresh development environment, real Node runner,
+  Codex CLI and EIA articles. Run `run_d16064b00fb84a0f402057fc` had two
+  supported and five unsupported claims, overall partially verified. This
+  establishes generation, citation interaction, persistence and phone layout,
+  not full article-quality acceptance. A preceding successful generation
+  failed a stale link assertion; its actual claims/evidence and manual source
+  comparison are in [the review](reviews/news-sentence-format.md).
+- News destination correction: conversations backing News tasks are omitted
+  from Chat before the list limit; task/widget links and notices point to
+  News. Stored report history stays intact. API regression covers changing
+  News to Chat and back. No schema or domain algorithm changes.
+- Targeted task, widget and conversation tests: 141 passed. Chrome and WebKit
+  UI reviews: four each passed; inspected destination screenshots. Firefox
+  blocked at browser launch (`Could not find profile folder`).
+- Upgraded-settings live coverage remains unverified. Full verify was not run.
+- Final live destination check:
+  `RUN_LIVE_AGENT=codex RUN_LIVE_MODEL=gpt-6.1-sol RESEARCH_RUNNER=node bun run test:real news.live.spec.ts --output=test-results-real/news-destination-live`:
+  passed, Chrome, one test in 4.2 minutes, isolated fresh development launcher.
+  Run `run_30c51b850af8b434ec640406` generated a report, rendered it on News,
+  opened its source link, survived reload and phone layout, linked Tasks to
+  News and excluded the report from Chat. The output remains partially
+  verified (two supported, two conflicting, three unsupported); no quality
+  acceptance is claimed. Full typecheck passed; performance budgets passed
+  before and after the navigation change. Final targeted Biome checks passed.
+
+### News evidence correction — 2026-11-10
+
+- `research-v7`: dated sentences quote both the publication heading and the
+  factual passage. News outlooks require explicit source support for the
+  product/service and horizon; recent production data no longer invites
+  invented multi-year maintenance/transport demand. Background caveats use
+  context links, while genuine disagreements keep their evidence. The
+  independent factual verifier and verification statuses are unchanged.
+- News mode travels as optional `outputType` on a research request; editorial
+  text is added in the analysis prompt rather than to the stored question.
+  HTTP regression queues and reads a maximum-length 2,000-character News
+  question on D1 and SQLite. Old requests without the field remain valid.
+  This fixes the stopped first isolated attempt, where expanded instructions
+  exceeded the request limit and caused `StoredDataError` before generation.
+- `RUN_LIVE_AGENT=codex RUN_LIVE_MODEL=gpt-6.1-sol RESEARCH_RUNNER=node bun run test:real news.live.spec.ts --output=test-results-real/news-evidence-fix-v2`:
+  **passed**, Chrome, isolated fresh development launcher, real Node runner,
+  Codex CLI and EIA pages; one test in 4.1 minutes. Run
+  `run_ea8089329c8e576d92d52e71`: **6 supported, 0 unsupported, 0 conflicting,
+  overall verified**. The test now requires all claims to pass. Actual
+  evidence and article were manually inspected against the source pages;
+  desktop/phone rendering, source link, reload and exclusion from Chat passed.
+  [Article and detailed review](reviews/news-sentence-format.md#correction-and-verified-article--2026-11-10).
+- Full typecheck, 99 pipeline/Node runner tests, targeted scheduling/prompt/API
+  tests, 38 outgoing-contract tests, Rust contract mutation vectors,
+  TypeScript/Rust News prompt/transcript parity and 73 Rust runner job tests
+  passed. Targeted Biome, Rust formatting and diff checks passed.
+- Existing stored reports were not rewritten. No domain algorithm, physical
+  schema or hot path changed; no Lean or benchmark changes are required.
+  Japanese and upgraded-installation live verification remain outstanding.
+
+### Conventional News and investigation reports — 2026-11-10
+
+- News: task-title headline, lead, body paragraphs and inline references.
+  Investigation: Summary, Findings, Analysis/outlook, a supported-inference
+  Conclusion when present, and explicitly labelled uncertainties. Technical
+  counters stay in the research-notes disclosure, and Copy answer uses the
+  prose and sources. The duplicate report widget is omitted from Chat when
+  the answer already renders its claims. Stored Notebook audit data is kept.
+- `research-v8` asks for report order and natural article transitions. Evidence
+  verification remains unchanged. Multiple passages from one source/relation
+  use one reference, with all quotations retained in its card.
+- Live News: `RUN_LIVE_AGENT=codex RUN_LIVE_MODEL=gpt-6.1-sol RESEARCH_RUNNER=node bun run test:real news.live.spec.ts --output=test-results-real/news-article-format`, passed, six of six claims supported.
+- Live investigation: `RUN_LIVE_INVESTIGATION=1 RUN_LIVE_AGENT=codex RUN_LIVE_MODEL=gpt-6.1-sol RESEARCH_RUNNER=node bun run test:real news.live.spec.ts -g 'live investigation report' --output=test-results-real/investigation-format`, passed, nine of nine claims supported. Both used fresh isolated development launchers, the real Node runner, Codex CLI and EIA retrieval; report sections/source links/reload checked. [Formats, artifacts and limits](REPORT_FORMATS.md).
+- Targeted English/Japanese UI tests passed, including narrative grouping,
+  uncertainty separation, merged quotes, copying and preview behavior.
+  Full typecheck, prompt/pipeline tests and Rust prompt/transcript parity
+  passed. Chrome/WebKit reviews completed and screenshots inspected; Firefox
+  blocked at launch (`Could not find profile folder`). No algorithm/schema
+  change or new Lean model is involved. Upgraded-installation and Japanese
+  live generation remain unverified. Full verify was not run.
+
+### Report presentation preferences — 2026-11-10
+
+Observation/Inference labels are omitted from News, Chat and its evidence
+drawer. Unsupported sentences and their exclusive references are withheld
+from News/Chat report bodies and copied answers, with an empty state when no
+statements remain. Supported (✓ 裏付けあり) status badges are omitted by the
+shared renderer, including audit/saved reports. Genuine conflict warnings and
+sources remain; no record is deleted or upgraded. 196 targeted UI/renderer
+tests, full typecheck and Chrome/WebKit reviews (five each) passed. Firefox
+News review was blocked at launch by its profile-folder error. No live model
+rerun was made for these display-only changes. [UI review](UI_review.md).
+
+## Analysis truncation and citation repair — 2026-11-12
+
+Analysis uses its existing bounded repair allowance after provider output truncation or when every claim lacks usable quoted support from a shown evidence ID. Repair never accepts a truncated answer, invents evidence-ID mappings, or relaxes source/independent verification. Prompts distinguish evidence-entry IDs from fence tokens and the citation repair lists allowed IDs. The runner's expired OpenRouter credential was synchronized from the valid root environment entry without printing it.
+
+Live OpenRouter verification on `main`, `openai/gpt-4.1-mini`, Chrome, real isolated `bun run dev` and Rust runner: fresh Settings/research/source card, stored-news citation, public-page archive, Agent Web Search and chat rename/delete passed together; the strengthened carried-over-settings check passed separately on the final code after disk cleanup. That last check requires the new question to complete with a verified claim and citation without visiting Settings. The complete-file run's sixth check was interrupted by `ENOSPC`; it is not recorded as a green full-batch run. This is current-schema/no-saved-settings coverage, not historical schema-migration coverage. Earlier generation failures and corrections, commands, costs, artifacts and remaining scope limits are in the [verification record](reviews/2026-11-12-analysis-truncation.md).
+
+Deterministic checks: 455 application tests passed; full Rust suite passed (715 tests, 13 existing ignored cases); typecheck, workspace Rust linting, repository-wide vectors, benchmark budgets and Lean proofs/formal vectors passed. Real provider truncation was not forced; recovery itself is covered by deterministic provider events and Rust conformance. The original saved failed response was not rewritten.
+
+## Japanese report with no verified findings — 2026-11-12
+
+The actual Japanese corporate-training report failed because billion/million amounts were localized to 億/万 while still classified as observations. Valid quotes therefore passed the previous quote-only repair preflight even though every claim failed numeric verification. Preflight now reuses the full existing verifier, and prompts keep observation digits/units in source form or require a sourced arithmetic inference for unit conversion. Conflicting evidence and final verification remain unchanged.
+
+The same free model also reproduced output truncation at 8,192 tokens, including compact repair. Dots Note free now has an exact-ID 32,768 cap in both adapters (below its live catalogue maximum); paid/near-match caps are unchanged and exhausted truncation repair no longer starts a redundant whole-run retry.
+
+Regression/application/provider/documentation checks passed. Live completion of this Japanese case is **not verified**: the selected free model is blocked by HTTP 429 `openrouter_free_tier_daily`; an isolated paid OpenRouter check was refused with `PROVIDER_PAYMENT_REQUIRED`. The original chat's repair attempt did not produce a verified replacement. Provider limits/credits must be resolved before repeating it. [Diagnosis, changes, exact live scope and artifacts](reviews/2026-11-12-japanese-training-verification.md).
+
+## Administrator login page — 2026-11-13
+
+`AppShell` (`apps/web/src/App.tsx`) gates the workspace behind `LoginPage` (`apps/web/src/auth/LoginPage.tsx`, `apps/web/src/auth/login.messages.ts`) until `GET /api/v1/session` confirms the administrator session (`status === "ready"`). Fixed a doubled `Loading Loading……` string in `LoginPage` during the in-flight session check so it renders `common().loading` (`Loading…` / `読み込み中…`) directly.
+
+Verification:
+- Web unit tests: `apps/web/test/login.test.tsx` (6 passed: in-flight `Loading…` state, `UNAUTHENTICATED` sign-in gate with zero workspace requests, `signIn` action, `FORBIDDEN` non-administrator refusal and `/cdn-cgi/access/logout` link, `AUTH_KEYS_UNAVAILABLE` retry to ready workspace, and Japanese `ja` localization) and `apps/web/test/home.test.tsx` (77 passed).
+- API security tests: `apps/api/test/security.test.ts` passed 38/38 on both `api-sqlite` (`node:sqlite`) and `workers` (Cloudflare Workers runtime `workerd` + D1), covering case-insensitive `OWNER_EMAIL` administrator matching, `401 UNAUTHENTICATED`, `403 FORBIDDEN` for non-administrator identities and service tokens without an email, fail-closed `503 AUTH_KEYS_UNAVAILABLE`, and `local-dev` loopback restriction.
+- Browser E2E: `tests/e2e/administratorLogin.spec.ts` passed 4/4 on Chrome, WebKit and Firefox (`bun run test:e2e:chrome`, `bun run test:e2e:webkit`, `bun run test:e2e:firefox`).
+- Live development environment (`bun run dev`): `tests/e2e/devLocal.spec.ts` passed 4/4 against an isolated `bun run dev` instance (Vite HMR + API + runner on throwaway ports and directories), verifying automatic administrator session on localhost (`owner@localhost`, `Development` badge) and `403 FORBIDDEN` non-administrator gating on the live Vite dev server with zero workspace data requests.
+- Scripted UI review: `tests/ui-review/loginReview.spec.ts` passed 2/2 (390 px and 1440 px) in Chrome, WebKit and Firefox; all 12 screenshots (`login.png`, `forbidden.png`) were inspected ([UI review](UI_review.md)).

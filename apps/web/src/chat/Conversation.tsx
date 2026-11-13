@@ -11,16 +11,22 @@ import type {
 } from "@research/contracts";
 import { isLeasedJobState, isTerminalJobState } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
-import type { RenderContext, UiRegistry, WorkspaceComponent } from "@research/ui-registry";
+import {
+	citationMessages,
+	type RenderContext,
+	safeHttpsUrl,
+	type UiRegistry,
+	type WorkspaceComponent,
+} from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
-import { BUTTON, ErrorNotice, Loading } from "../components/ui.tsx";
+import { BUTTON, DisclosureSummary, ErrorNotice, Loading } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { withUpstreamStatus } from "../i18n/upstreamStatus.ts";
 import { formatInstant } from "../lib/format.ts";
 import { AnswerClaims } from "./Citations.tsx";
-import { conversationMessages } from "./conversation.messages.ts";
+import { citationsMessages, conversationMessages } from "./conversation.messages.ts";
 import { NotebookTurnCard } from "./NotebookTurnCard.tsx";
 import { RunCard } from "./RunCard.tsx";
 import { runMessages } from "./run.messages.ts";
@@ -143,6 +149,32 @@ function AssistantMessage(props: {
 	readonly inNotebook: boolean;
 }): JSX.Element {
 	const m = useMessages(conversationMessages);
+	const reportText = useMessages(citationsMessages);
+	const citationText = useMessages(citationMessages);
+	const copyText = createMemo(() => {
+		if (!props.withCitations || props.message.claimIds.length === 0) return props.message.text;
+		const claims = props.message.claimIds.flatMap((id) => {
+			const claim = props.claims.get(id);
+			return claim === undefined || claim.status === "unsupported" ? [] : [claim];
+		});
+		const confirmed = claims.filter((claim) => claim.status === "supported");
+		const uncertain = claims.filter((claim) => claim.status !== "supported");
+		const sources = [
+			...new Set(claims.flatMap((claim) => claim.links.map((link) => link.evidenceId))),
+		].flatMap((id) => {
+			const source = props.evidence.get(id);
+			const href = source === undefined ? null : safeHttpsUrl(source.sourceUrl);
+			return source === undefined || href === null ? [] : [`${source.title}: ${href}`];
+		});
+		return [
+			...(claims.length === 0 ? [reportText().noPublishableFindings] : []),
+			...confirmed.map((claim) => claim.text),
+			...(uncertain.length === 0
+				? []
+				: [reportText().limitations, ...uncertain.map((claim) => claim.text)]),
+			...(sources.length === 0 ? [] : [citationText().sources, ...sources]),
+		].join("\n\n");
+	});
 	return (
 		<div>
 			<p class="text-2xs text-slate-600">
@@ -151,18 +183,25 @@ function AssistantMessage(props: {
 				<time datetime={props.message.createdAt}>{formatInstant(props.message.createdAt)}</time>
 			</p>
 			{/* Plain text only: agent output is data, never markup (UI-005). */}
-			<p class="mt-0.5 whitespace-pre-wrap wrap-anywhere text-sm text-slate-900">
-				{props.message.text}
-			</p>
+			<Show when={!props.withCitations || props.message.claimIds.length === 0}>
+				<p class="mt-0.5 whitespace-pre-wrap wrap-anywhere text-sm text-slate-900">
+					{props.message.text}
+				</p>
+			</Show>
 			<Show when={props.withCitations && props.message.claimIds.length > 0}>
 				<AnswerClaims
+					variant="investigation"
 					claimIds={props.message.claimIds}
 					claims={props.claims}
 					evidence={props.evidence}
 				/>
+				<details class="mt-3 text-xs text-slate-700">
+					<DisclosureSummary>{reportText().researchNotes}</DisclosureSummary>
+					<p class="mt-2 whitespace-pre-wrap wrap-anywhere">{props.message.text}</p>
+				</details>
 			</Show>
 			<p class="mt-1 flex flex-wrap gap-2">
-				<CopyButton text={props.message.text} clipboard={props.clipboard} />
+				<CopyButton text={copyText()} clipboard={props.clipboard} />
 				<Show when={props.showEvidence && props.message.runId}>
 					{(runId) => (
 						<button
@@ -735,7 +774,14 @@ export function Conversation(props: {
 																>
 																	<ThreadPreviewsForRun
 																		runId={current().runId ?? ""}
-																		components={runPreviews()}
+																		components={
+																			current().claimIds.length > 0
+																				? runPreviews().filter(
+																						(component) =>
+																							component.componentType !== "research-report",
+																					)
+																				: runPreviews()
+																		}
 																		context={previewContext()}
 																		registry={ready.registry}
 																		view={ready.view}

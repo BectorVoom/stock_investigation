@@ -74,7 +74,14 @@ import {
 	truncateText,
 } from "./shared.ts";
 
+export interface AgentWebSearch {
+	readonly endpoint: string;
+	readonly apiKey: string;
+	readonly fetcher: SafeFetcher;
+}
 export interface SearchToolDeps {
+	/** Local service takes precedence; legacy provider remains for replay compatibility. */
+	readonly agentWebSearch?: AgentWebSearch;
 	readonly fetcher: SafeFetcher;
 	readonly hasher: Hasher;
 	readonly clock: Clock;
@@ -213,7 +220,7 @@ type SearchOutcome =
 			/** The provider's answer status, unchanged; null when it did not answer with one (§4a). */
 			readonly upstreamStatus: number | null;
 	  }
-	| { readonly status: "cooldown"; readonly pausedMs: number }
+	| { readonly status: "cooldown"; readonly pausedMs: number; readonly planLimit: boolean }
 	| { readonly status: "aborted" };
 
 /**
@@ -294,19 +301,23 @@ function createOutagePause(clock: Clock) {
 	let pausedUntilMs: number | null = null;
 	/** The current window's length, for the message. */
 	let windowMs = 0;
+	let planLimit = false;
 	/** The last escalating window; the next outage without a provider wait doubles it. */
 	let escalationMs = 0;
 	return {
 		/** The current window's length while paused, else null. */
-		paused(): number | null {
-			return pausedUntilMs !== null && clock.nowMs() < pausedUntilMs ? windowMs : null;
+		paused(): { pausedMs: number; planLimit: boolean } | null {
+			return pausedUntilMs !== null && clock.nowMs() < pausedUntilMs
+				? { pausedMs: windowMs, planLimit }
+				: null;
 		},
 		/**
 		 * Opens a window: the provider's own wait (`Retry-After`) when it gave
 		 * one, else the escalating pause. A provider wait is rounded up to whole
 		 * seconds and capped at the ceiling, and leaves the escalation as it was.
 		 */
-		outage(providerWaitMs: number | null = null): void {
+		outage(providerWaitMs: number | null = null, exceededPlanLimit = false): void {
+			planLimit = exceededPlanLimit;
 			if (providerWaitMs === null) {
 				escalationMs =
 					escalationMs === 0
@@ -326,7 +337,7 @@ function createOutagePause(clock: Clock) {
 	};
 }
 
-type SearchProvider = "gdelt" | "tavily";
+type SearchProvider = "gdelt" | "tavily" | "agent-web-search";
 
 interface CachedSearch {
 	readonly results: readonly SearchHit[];
@@ -465,7 +476,12 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 			return searchOutput(deps, cached.results, cached.retrievedAt, query, sourceClass, context);
 		}
 		const outcome = await request();
-		if (outcome.status === "cooldown") return err(cooldownFailure(outcome.pausedMs));
+		if (outcome.status === "cooldown")
+			return err(
+				outcome.planLimit
+					? toolFailure("SEARCH_PLAN_LIMIT", "Search plan limit cooldown", true)
+					: cooldownFailure(outcome.pausedMs),
+			);
 		if (outcome.status === "aborted") return err(toolFailure("TOOL_ABORTED", "run was cancelled"));
 		if (outcome.status === "failed") {
 			return err(toolFailure("SEARCH_FAILED", outcome.cause, true, outcome.upstreamStatus));
@@ -503,9 +519,9 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 	}
 
 	async function fetchGdelt(query: string, signal: AbortSignal): Promise<SearchOutcome> {
-		const pausedMs = gdeltPause.paused();
-		if (pausedMs !== null)
-			return signal.aborted ? { status: "aborted" } : { status: "cooldown", pausedMs };
+		const pause = gdeltPause.paused();
+		if (pause !== null)
+			return signal.aborted ? { status: "aborted" } : { status: "cooldown", ...pause };
 		if (!(await waitGdeltSpacing(signal))) return { status: "aborted" };
 		const url =
 			`https://api.gdeltproject.org/api/v2/doc/doc` +
@@ -567,31 +583,35 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 		return { status: "ok", results };
 	}
 
-	async function fetchTavily(
+	async function fetchWebSearch(
 		apiKey: string,
 		query: string,
 		signal: AbortSignal,
 	): Promise<SearchOutcome> {
-		const pausedMs = tavilyPause.paused();
-		if (pausedMs !== null)
-			return signal.aborted ? { status: "aborted" } : { status: "cooldown", pausedMs };
+		const pause = tavilyPause.paused();
+		if (pause !== null)
+			return signal.aborted ? { status: "aborted" } : { status: "cooldown", ...pause };
 		if (signal.aborted) return { status: "aborted" };
-		const fetched = await deps.fetcher.fetchText(`https://${TAVILY_HOST}/search`, {
-			maxBytes: SEARCH_MAX_BYTES,
-			timeoutMs: SEARCH_TIMEOUT_MS,
-			accept: SEARCH_ACCEPT,
-			signal,
-			allowedHosts: new Set([TAVILY_HOST]),
-			userAgent: SEARCH_USER_AGENT,
-			authorization: `Bearer ${apiKey}`,
-			// Basic depth costs one credit; dates are asked for so results can be dated.
-			jsonBody: JSON.stringify({
-				query,
-				search_depth: "basic",
-				max_results: TAVILY_MAX_RESULTS,
-				include_published_date: true,
-			}),
-		});
+		const service = deps.agentWebSearch;
+		const fetched = await (service?.fetcher ?? deps.fetcher).fetchText(
+			service?.endpoint ?? `https://${TAVILY_HOST}/search`,
+			{
+				maxBytes: SEARCH_MAX_BYTES,
+				timeoutMs: service === undefined ? SEARCH_TIMEOUT_MS : 30_000,
+				accept: SEARCH_ACCEPT,
+				signal,
+				...(service === undefined ? { allowedHosts: new Set([TAVILY_HOST]) } : {}),
+				userAgent: SEARCH_USER_AGENT,
+				authorization: `Bearer ${apiKey}`,
+				// Basic depth costs one credit; dates are asked for so results can be dated.
+				jsonBody: JSON.stringify({
+					query,
+					search_depth: "basic",
+					max_results: TAVILY_MAX_RESULTS,
+					include_published_date: true,
+				}),
+			},
+		);
 		if (!fetched.ok) {
 			const error = fetched.error;
 			const status = error.code === "HTTP_ERROR" ? error.status : null;
@@ -608,6 +628,7 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 					error.code === "HTTP_ERROR" && error.retryAfter !== undefined ? error.retryAfter : null;
 				tavilyPause.outage(
 					retryAfter === null ? null : parseRetryAfterMs(retryAfter, deps.clock.nowMs()),
+					status === 432,
 				);
 			}
 			return {
@@ -645,26 +666,33 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 	}
 
 	const tools: ToolDefinition[] = [];
-	const tavilyApiKey = deps.tavilyApiKey;
+	const service = deps.agentWebSearch;
+	const tavilyApiKey = service?.apiKey ?? deps.tavilyApiKey;
 	if (tavilyApiKey !== null) {
 		tools.push(
 			defineTool({
 				toolId: "web.search",
-				version: "2.0.0",
+				version: service === undefined ? "2.0.0" : "3.0.0",
 				description:
-					"Searches the whole web (Tavily) for short keywords and returns result titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page.",
+					service === undefined
+						? "Searches the whole web (Tavily) for short keywords and returns result titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page."
+						: "Searches the configured Agent Web Search index for short keywords and returns titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page.",
 				argsSchema: queryArgs,
 				argsHint:
 					'{ "query": "<2–200 characters of keywords, e.g. Apple quarterly revenue 2026>" }',
 				// Covers the 15 s request with margin (AGT-008).
-				timeoutMs: 20_000,
+				timeoutMs: service === undefined ? 20_000 : 40_000,
 				permission: "research-read",
-				costCategory: "metered",
+				costCategory: service === undefined ? "metered" : "rate-limited",
 				sideEffect: "external-read",
 				networkAllowlist: { kind: "public-web" },
 				execute({ query }, context: ToolContext) {
-					return search("tavily", query, "other", context, () =>
-						fetchTavily(tavilyApiKey, query, context.signal),
+					return search(
+						service === undefined ? "tavily" : "agent-web-search",
+						query,
+						"other",
+						context,
+						() => fetchWebSearch(tavilyApiKey, query, context.signal),
 					);
 				},
 			}),

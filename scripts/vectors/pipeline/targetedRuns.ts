@@ -49,7 +49,7 @@ function evidence(
 	return {
 		evidenceId: id,
 		sourceUrl: `https://news.example.org/articles/${id}`,
-		title,
+		title: `Budget probe statement. ${title}`,
 		publisher,
 		publishedAt,
 		retrievedAt: "2026-10-11T00:00:00.000Z",
@@ -112,7 +112,19 @@ const planOf = (...ids: string[]): string =>
 	JSON.stringify({ toolCalls: ids.map((toolId) => ({ toolId, args: {} })), done: false });
 const doneOf = (...ids: string[]): string =>
 	JSON.stringify({ toolCalls: ids.map((toolId) => ({ toolId, args: {} })), done: true });
-const EMPTY_ANALYSIS = JSON.stringify({ claims: [] });
+// A shared verbatim title passage keeps packing probes out of citation repair.
+// These scenarios test byte/step accounting; verification verdicts are separate cases.
+const PROBE_ANALYSIS = JSON.stringify({
+	claims: [
+		{
+			text: "Budget probe statement.",
+			claimType: "inference",
+			evidence: [
+				{ evidenceId: `${RUN_ID}_ev1`, relation: "supports", quote: "Budget probe statement." },
+			],
+		},
+	],
+});
 
 function replyFor(spec: Spec): (prompt: string, index: number) => TurnScript | string {
 	const counts = { planning: 0, analysis: 0, verification: 0 };
@@ -279,7 +291,7 @@ async function packEdges(): Promise<void> {
 		if (a === undefined || b === undefined || c === undefined) throw new Error("items");
 		const spec: Spec = {
 			name: `pack-${kind}`,
-			reply: (k) => (k === "planning" ? doneOf("feed.read") : EMPTY_ANALYSIS),
+			reply: (k) => (k === "planning" ? doneOf("feed.read") : PROBE_ANALYSIS),
 			tools: feed(items),
 			expect: () => null,
 		};
@@ -327,7 +339,7 @@ async function freshTextEdges(): Promise<void> {
 				name: `fresh-${kind}${delta >= 0 ? "+" : ""}${delta}`,
 				reply: (k, index) => {
 					if (k === "planning") return index === 0 ? planOf("feed.read") : doneOf();
-					return EMPTY_ANALYSIS;
+					return PROBE_ANALYSIS;
 				},
 				tools: feed(
 					(nextId) => [
@@ -378,7 +390,7 @@ async function digestEdges(): Promise<void> {
 				budget: { maxToolCalls: 10 },
 				reply: (k, index) => {
 					if (k === "planning") return index === 0 ? planOf("feed.read") : doneOf();
-					return EMPTY_ANALYSIS;
+					return PROBE_ANALYSIS;
 				},
 				tools: feed((nextId) =>
 					titles.map((title, i) => ({
@@ -415,7 +427,7 @@ async function recordSummaryEdges(): Promise<void> {
 				names.push(repeatPoints(filler, Math.min(250, 8000 + delta - lines(names).length - 25)));
 			await run({
 				name: `summary-${kind}${delta >= 0 ? "+" : ""}${delta}`,
-				reply: (k) => (k === "planning" ? doneOf("feed.read") : EMPTY_ANALYSIS),
+				reply: (k) => (k === "planning" ? doneOf("feed.read") : PROBE_ANALYSIS),
 				tools: feed(
 					(nextId) => [
 						{ evidence: evidence(nextId("ev"), "records", "Wire", 7), text: "records text" },
@@ -532,6 +544,33 @@ const failed = (code: string, detail?: string) => (outcome: PipelineOutcome) =>
 		: `expected failed ${code}, got ${outcome.kind} ${JSON.stringify(outcome).slice(0, 160)}`;
 
 async function limitsAndFaults(): Promise<void> {
+	for (const recover of [true, false]) {
+		await run({
+			name: `analysis-truncated-${recover ? "recovered" : "exhausted"}`,
+			reply: (kind, index, prompt) => {
+				if (kind === "planning") return doneOf("feed.read");
+				if (kind === "verification")
+					return JSON.stringify({ verdicts: [{ claimIndex: 0, verdict: "supported" }] });
+				if (kind === "analysis" && (index === 0 || !recover)) {
+					return {
+						events: [{ type: "failed", code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false }],
+					};
+				}
+				if (!prompt.includes("at most 6 short atomic claims"))
+					throw new Error("missing compact repair");
+				return PROBE_ANALYSIS;
+			},
+			tools: feed(
+				(nextId) => [article(nextId)],
+				(_w, nextId) => securityRecord(nextId),
+			),
+			expect: recover
+				? (outcome) =>
+						outcome.kind === "completed" ? null : `expected recovery, got ${outcome.kind}`
+				: partial("PROVIDER_OUTPUT_TRUNCATED"),
+		});
+	}
+
 	const hang = () => tool("hang.read", () => new Promise(() => {}), 15);
 	// MAX_WALL_CLOCK: the run deadline ends a hanging second call (real 1 ms timer).
 	await run({
@@ -542,7 +581,7 @@ async function limitsAndFaults(): Promise<void> {
 				? index === 0
 					? planOf("feed.read", "hang.read")
 					: doneOf()
-				: EMPTY_ANALYSIS,
+				: PROBE_ANALYSIS,
 		tools: (world) => [
 			...feed(
 				(nextId) => [article(nextId)],
@@ -559,7 +598,7 @@ async function limitsAndFaults(): Promise<void> {
 	await run({
 		name: "partial-wall-clock-spent",
 		budget: { maxWallClockMs: 30_000 },
-		reply: (k) => (k === "planning" ? planOf("feed.read", "feed.read") : EMPTY_ANALYSIS),
+		reply: (k) => (k === "planning" ? planOf("feed.read", "feed.read") : PROBE_ANALYSIS),
 		tools: feed(
 			(nextId) => [article(nextId)],
 			(w, nextId) => {
@@ -586,7 +625,7 @@ async function limitsAndFaults(): Promise<void> {
 		name: "partial-input-bytes",
 		budget: { maxInputBytes: 24_000 },
 		reply: (k, index) =>
-			k === "planning" ? (index === 0 ? planOf("feed.read") : doneOf()) : EMPTY_ANALYSIS,
+			k === "planning" ? (index === 0 ? planOf("feed.read") : doneOf()) : PROBE_ANALYSIS,
 		tools: feed(
 			(nextId) => [article(nextId)],
 			(_w, nextId) => securityRecord(nextId),
@@ -643,7 +682,7 @@ async function limitsAndFaults(): Promise<void> {
 	await run({
 		name: "cancel-mid-plan",
 		reply: (k) =>
-			k === "planning" ? planOf("abort.read", "feed.read", "feed.read") : EMPTY_ANALYSIS,
+			k === "planning" ? planOf("abort.read", "feed.read", "feed.read") : PROBE_ANALYSIS,
 		tools: (world) => [
 			tool("abort.read", async (_args, context) => {
 				markRunAbortedByTool();
@@ -657,7 +696,7 @@ async function limitsAndFaults(): Promise<void> {
 	// A tool that throws, one that times out, one that returns a typed failure.
 	await run({
 		name: "tool-throws",
-		reply: (k) => (k === "planning" ? doneOf("throw.read") : EMPTY_ANALYSIS),
+		reply: (k) => (k === "planning" ? doneOf("throw.read") : PROBE_ANALYSIS),
 		tools: () => [
 			tool("throw.read", async () => {
 				throw new ToolPanic("boom");
@@ -667,7 +706,7 @@ async function limitsAndFaults(): Promise<void> {
 	});
 	await run({
 		name: "tool-times-out",
-		reply: (k) => (k === "planning" ? doneOf("hang.read") : EMPTY_ANALYSIS),
+		reply: (k) => (k === "planning" ? doneOf("hang.read") : PROBE_ANALYSIS),
 		tools: () => [hang()],
 		expect: failed("ALL_TOOL_CALLS_FAILED", "TOOL_TIMEOUT"),
 	});
@@ -677,7 +716,7 @@ async function limitsAndFaults(): Promise<void> {
 		reply: (k) =>
 			k === "planning"
 				? { events: textTurn(doneOf("feed.read")).events.slice(0, -1), throws: true }
-				: EMPTY_ANALYSIS,
+				: PROBE_ANALYSIS,
 		tools: feed((nextId) => [article(nextId)]),
 		expect: failed("AGENT_THREW_Panic"),
 	});
@@ -689,7 +728,7 @@ async function limitsAndFaults(): Promise<void> {
 						...textTurn(doneOf("feed.read"), [{ type: "usage", knownCostUsd: 0.5 }]),
 						abortAfter: 2,
 					}
-				: EMPTY_ANALYSIS,
+				: PROBE_ANALYSIS,
 		tools: feed((nextId) => [article(nextId)]),
 		expect: (o) => (o.kind === "cancelled" ? null : `got ${o.kind}`),
 	});
@@ -703,7 +742,7 @@ async function limitsAndFaults(): Promise<void> {
 							JSON.parse('{"type":"exec","command":"rm -rf /"}') as AgentEvent,
 						],
 					}
-				: EMPTY_ANALYSIS,
+				: PROBE_ANALYSIS,
 		tools: feed((nextId) => [article(nextId)]),
 		expect: failed("AGENT_EVENT_INVALID"),
 	});

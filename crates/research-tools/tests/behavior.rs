@@ -134,6 +134,7 @@ fn unavailable_search(
 		cancel_first,
 	});
 	let tool = create_search_tools(SearchToolDeps {
+		agent_web_search: None,
 		fetcher: fetcher.clone(),
 		clock: Arc::new(Time::new()),
 		hasher: Arc::new(Hash),
@@ -234,6 +235,7 @@ async fn concurrent_gdelt_calls_keep_five_second_start_spacing() {
 		starts: Mutex::new(Vec::new()),
 	});
 	let tool = create_search_tools(SearchToolDeps {
+		agent_web_search: None,
 		fetcher: fetcher.clone(),
 		clock: time.clone(),
 		hasher: Arc::new(Hash),
@@ -308,6 +310,7 @@ fn gdelt_search() -> (Arc<dyn Tool>, Arc<Fetch>) {
 		starts: Mutex::new(Vec::new()),
 	});
 	let tool = create_search_tools(SearchToolDeps {
+		agent_web_search: None,
 		fetcher: fetcher.clone(),
 		clock: time,
 		hasher: Arc::new(Hash),
@@ -564,6 +567,7 @@ async fn measure_real_network_tools() {
 	let sleep = Arc::new(TokioSleep);
 	let directory = tempfile::tempdir().unwrap();
 	let search = create_search_tools(SearchToolDeps {
+		agent_web_search: None,
 		fetcher: fetcher.clone(),
 		clock: clock.clone(),
 		hasher: hash.clone(),
@@ -634,6 +638,7 @@ async fn real_tavily_search_reaches_the_api() {
 		.filter(|key| !key.trim().is_empty());
 	let real_key = key.is_some();
 	let tools = create_search_tools(SearchToolDeps {
+		agent_web_search: None,
 		fetcher: Arc::new(research_net::create_node_safe_fetcher().unwrap()),
 		clock: Arc::new(RealTime),
 		hasher: Arc::new(Hash),
@@ -710,6 +715,7 @@ fn queued_search(
 		requests: Mutex::new(Vec::new()),
 	});
 	let tools = create_search_tools(SearchToolDeps {
+		agent_web_search: None,
 		fetcher: fetcher.clone(),
 		clock: time,
 		hasher: Arc::new(Hash),
@@ -1085,4 +1091,47 @@ async fn news_article_and_web_page_share_robots_and_spacing() {
 		]
 	);
 	assert!(starts[2].1 - starts[1].1 >= 1_000, "{starts:?}");
+}
+
+/// Verify the production loopback transport and evidence conversion against the real service.
+#[tokio::test]
+#[ignore = "requires a running Agent Web Search service and AGENT_WEB_SEARCH_API_KEY"]
+async fn real_agent_web_search_reaches_the_configured_service() {
+	use research_tools::agent_search::{
+		AgentWebSearch, LoopbackSearchFetcher, agent_search_endpoint,
+	};
+	let base =
+		std::env::var("AGENT_WEB_SEARCH_URL").unwrap_or_else(|_| "http://127.0.0.1:8090".into());
+	let key = std::env::var("AGENT_WEB_SEARCH_API_KEY").expect("service key required");
+	let tools = create_search_tools(SearchToolDeps {
+		agent_web_search: Some(AgentWebSearch {
+			endpoint: agent_search_endpoint(&base).unwrap().to_string(),
+			api_key: key,
+			fetcher: Arc::new(LoopbackSearchFetcher::new(&base).unwrap()),
+		}),
+		fetcher: Arc::new(research_net::create_node_safe_fetcher().unwrap()),
+		clock: Arc::new(RealTime),
+		hasher: Arc::new(Hash),
+		sleep: Arc::new(TokioSleep),
+		tavily_api_key: None,
+	});
+	let web = tools
+		.iter()
+		.find(|t| t.meta().tool_id == "web.search")
+		.unwrap();
+	assert_eq!(web.meta().version, "3.0.0");
+	let started = Instant::now();
+	let output = web
+		.execute(
+			json::parse(r#"{"query":"corporate training market demand"}"#).unwrap(),
+			context(),
+		)
+		.await
+		.expect("Agent Web Search failed");
+	assert!(!output.evidence.is_empty());
+	println!(
+		"Agent Web Search: {} evidence items, {} ms",
+		output.evidence.len(),
+		started.elapsed().as_millis()
+	);
 }

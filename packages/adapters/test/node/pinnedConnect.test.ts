@@ -1,8 +1,10 @@
 import { createServer, type Server } from "node:https";
+import { createServer as createNetServer } from "node:net";
 import { gzipSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	buildPinnedRequestOptions,
+	CONNECT_ATTEMPT_TIMEOUT_MS,
 	createPinnedHttpsConnect,
 	isSameIpAddress,
 	type PinnedRequest,
@@ -283,5 +285,24 @@ describe("pinned HTTPS connection against a local TLS server", () => {
 		await expect(connect(pinnedRequest({ signal: AbortSignal.abort() }))).rejects.toMatchObject({
 			name: "AbortError",
 		});
+	});
+});
+
+describe("pinned connect deadline", () => {
+	it("gives up on an address that accepts but never finishes the TLS handshake", async () => {
+		// A TCP listener that never answers: like a network that drops the packets.
+		const silent = createNetServer(() => {});
+		await new Promise<void>((resolve) => silent.listen(0, "127.0.0.1", resolve));
+		const address = silent.address();
+		const silentPort = typeof address === "object" && address !== null ? address.port : 0;
+		try {
+			const connect = createPinnedHttpsConnect({ port: silentPort, connectTimeoutMs: 100 });
+			const started = Date.now();
+			await expect(connect(pinnedRequest())).rejects.toMatchObject({ code: "ETIMEDOUT" });
+			expect(Date.now() - started).toBeLessThan(2_000);
+		} finally {
+			silent.close();
+		}
+		expect(CONNECT_ATTEMPT_TIMEOUT_MS).toBe(3_000);
 	});
 });

@@ -573,6 +573,7 @@ fn harness_with(server: &Server, ca: Option<&str>, limits: PoolLimits) -> Harnes
 		port: Some(server.port),
 		extra_root_pem: ca.map(str::to_owned),
 		dial_loopback: true,
+		connect_timeout: None,
 	})
 	.unwrap();
 	let recording = Arc::new(Recording {
@@ -1003,6 +1004,7 @@ async fn reports_a_refused_connection_by_its_code() {
 		port: Some(port),
 		extra_root_pem: Some(CA_PEM.to_owned()),
 		dial_loopback: true,
+		connect_timeout: None,
 	})
 	.unwrap();
 	let connect = PinnedHttpsConnect::new(tls);
@@ -1093,6 +1095,7 @@ fn connector(server: &Server) -> PinnedHttpsConnect {
 			port: Some(server.port),
 			extra_root_pem: Some(CA_PEM.to_owned()),
 			dial_loopback: true,
+			connect_timeout: None,
 		})
 		.unwrap(),
 	)

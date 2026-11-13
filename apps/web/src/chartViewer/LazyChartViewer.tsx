@@ -15,6 +15,7 @@ import type * as ViewerModule from "./ChartViewer.tsx";
 import type { ChartViewerProps, InlineChartViewerProps } from "./ChartViewer.tsx";
 import { chartViewerMessages } from "./chartViewer.messages.tsx";
 import { captureFocusReturn, focusReturnTarget } from "./openChart.ts";
+import { importViewerModule, type ViewerExports } from "./viewerImport.ts";
 
 /**
  * The chart viewer as its own lazy chunk (ADR-0025, fix round 6): the
@@ -24,16 +25,20 @@ import { captureFocusReturn, focusReturnTarget } from "./openChart.ts";
  * `preloadChartViewer`), so the main chunk carries only the openers.
  *
  * The download is one module-level promise, cleared when it rejects: an
- * offline press, or a chunk hash gone after a new release, leaves the next
- * attempt free to import again instead of replaying the failure. The
+ * offline press leaves the next attempt free to fetch the root viewer asset
+ * again. Some engines cache failed imports by URL, so retries use a fresh
+ * same-origin query on the build-emitted asset URL. A removed release asset
+ * or a failed static dependency still requires a page reload. The
  * inline viewer (`LazyInlineChartViewer`) is in the same chunk and shares
  * the promise, so whichever loads first serves both.
  */
-let viewerChunk: Promise<typeof ViewerModule> | null = null;
+let viewerChunk: Promise<ViewerExports> | null = null;
+let failedAttempts = 0;
 
-function loadViewerModule(): Promise<typeof ViewerModule> {
+function loadViewerModule(): Promise<ViewerExports> {
 	if (viewerChunk === null) {
-		viewerChunk = import("./ChartViewer.tsx").catch((error: unknown) => {
+		viewerChunk = importViewerModule(failedAttempts).catch((error: unknown) => {
+			failedAttempts += 1;
 			viewerChunk = null;
 			throw error;
 		});

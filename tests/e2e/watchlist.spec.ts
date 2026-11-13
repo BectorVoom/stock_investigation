@@ -137,6 +137,7 @@ test("the Watchlist lives on the Registered stocks page; old Watchlist and Equit
 		"Stocks",
 		"Tasks",
 		"Chat",
+		"News",
 		"Sources",
 	]);
 	await expect(nav.getByRole("link", { name: "Watchlist" })).toHaveCount(0);

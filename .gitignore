@@ -27,3 +27,5 @@ google-token.json.*.tmp
 
 # PoC output (scripts/poc/companyDescription/run.ts): regenerated per run, spends API tokens
 scripts/poc/companyDescription/output/
+
+/data-search/

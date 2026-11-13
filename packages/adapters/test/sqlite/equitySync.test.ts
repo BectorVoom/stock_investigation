@@ -248,7 +248,11 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		expect(await rows("equity_report_filing")).toHaveLength(1);
 		expect(await rows("equity_reported_fact")).toHaveLength(1);
 		expect(await rows("equity_metric_value")).toEqual([
-			expect.objectContaining({ value_decimal: "391035000000", updated_at: AT }),
+			expect.objectContaining({
+				value_decimal: "391035000000",
+				updated_at: AT,
+				value_real: 391035000000,
+			}),
 		]);
 		const [summary] = await persistence.equitySync.listSummaries(OWNER, { companyId: COMPANY });
 		expect(summary?.company.sourceCompanyId).toBe("0000320193");

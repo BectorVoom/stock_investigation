@@ -50,7 +50,7 @@ test("material database feeds chart and indicator widgets and survives reload", 
 	const table = page.locator('article[data-widget-id="material-table"]');
 	await expect(chart.locator("svg path").first()).toBeVisible();
 	await expect(table).toContainText("72.5");
-	await expect(table).toContainText("USD/kg product");
+	await expect(table).toContainText("$/kg product");
 	await expect(table.getByRole("link").first()).toHaveAttribute(
 		"href",
 		"https://example.com/materials/neodymium",

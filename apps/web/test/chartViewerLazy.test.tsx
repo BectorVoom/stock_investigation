@@ -9,19 +9,21 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 
 /**
  * The viewer chunk's download can fail (offline, or an old chunk hash after
- * a new release). The mock below stands in for that network: while
+ * a new release). The import boundary mock below stands in for that network: while
  * `chunk.fail` is set, importing the viewer module rejects the way a
- * failed dynamic import does; cleared, the real module loads.
+ * failed asset fetch does; cleared, the real module loads.
  */
 const chunk = vi.hoisted(() => ({ fail: true, attempts: 0 }));
 
-vi.mock("../src/chartViewer/ChartViewer.tsx", async (importOriginal) => {
-	chunk.attempts += 1;
-	if (chunk.fail) {
-		throw new TypeError("Failed to fetch dynamically imported module: ChartViewer-x.js");
-	}
-	return importOriginal();
-});
+vi.mock("../src/chartViewer/viewerImport.ts", () => ({
+	importViewerModule: async () => {
+		chunk.attempts += 1;
+		if (chunk.fail) {
+			throw new TypeError("Failed to fetch dynamically imported module: ChartViewer-x.js");
+		}
+		return import("../src/chartViewer/ChartViewer.tsx");
+	},
+}));
 
 const VIX: MarketSeries = {
 	seriesId: "fred:VIXCLS",

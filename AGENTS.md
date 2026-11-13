@@ -29,6 +29,7 @@ bun run prod:build     # build a new release generation (safe while production r
 bun run prod:start     # serve the pointed-to generation (production)
 bun run prod:rollback  # move the pointer to the previous activation (then restart)
 bun run start          # same as bun run prod
+bun run search:service # start the separate local Rust Agent Web Search service (SearXNG runs separately)
 bun run mcp:home       # Home-widget MCP server against production (or RESEARCH_API_URL)
 bun run mcp:home:dev   # Home-widget MCP server against development
 bun run build          # SPA, runner bundle, dry-run of the Cloudflare bundle
@@ -61,3 +62,5 @@ bun run deploy         # optional, postponed: deploy env.production to Cloudflar
 
 ## Widget design guidline
 Apple Human Interface Guidelines(ios,macos)
+
+Web search now uses the separately built Agent Web Search service: [ADR-0073](docs/adr/0073-agent-web-search.md) and [API reference](docs/external-apis/apis/agent-web-search.md). Normal runner composition does not use Tavily.

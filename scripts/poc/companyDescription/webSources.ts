@@ -1,9 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { createFeedParser } from "@research/adapters/feed";
-import { createFilePageArchive, createNodeSafeFetcher } from "@research/adapters/node";
+import {
+	createFilePageArchive,
+	createLoopbackSearchFetcher,
+	createNodeSafeFetcher,
+} from "@research/adapters/node";
 import { systemClock, webCryptoHasher } from "@research/adapters/runtime";
-import { createResearchTools } from "@research/adapters/tools";
+import {
+	agentSearchEndpoint,
+	createResearchTools,
+	DEFAULT_AGENT_WEB_SEARCH_URL,
+} from "@research/adapters/tools";
 import type { CollectedEvidence, ToolContext, ToolDefinition } from "@research/agent-core";
 import type { StockSources } from "./sources.ts";
 import type { CompanySource, SourceId } from "./template.ts";
@@ -13,7 +21,7 @@ import type { CompanySource, SourceId } from "./template.ts";
  * left many companies without a cited business description (a Japanese
  * company has no business text at all), so each stock also gets up to
  * three pages, found by a `PageSearch` — the Haiku agent
- * (claudePageFinder.ts, the default) or Tavily's `web.search` — and read
+ * (claudePageFinder.ts, the default) or Agent Web Search — and read
  * with the runner's own `web.fetch_page` (the pinned safe fetcher,
  * robots.txt, per-host spacing, 2 MiB / 15 s per page). Their text is
  * quoted and checked word for word like any other source.
@@ -37,29 +45,48 @@ export const MAX_WEB_PAGES = 3;
 export const MAX_WEB_PAGE_ATTEMPTS = 6;
 /** Page text the model may quote, per page. */
 export const MAX_WEB_TEXT_CHARS = 10_000;
-/** Of a longer page: its start, and an excerpt at its sales-by-region table (【海外】). */
+/** Of a longer page: its start, an excerpt at its business section and one at its sales-by-region table (【海外】). */
 const PAGE_HEAD_CHARS = 8_000;
+const BUSINESS_EXCERPT_CHARS = 4_000;
 const REGION_EXCERPT_CHARS = 2_000;
 const REGION_EXCERPT_LEAD_CHARS = 200;
 /** Headings of a table of sales by country or region. */
 const REGION_SALES_HEADING =
 	/地域ごとの情報|所在地別|地域別(?:の)?売上|仕向地別|海外売上高|geographic(?:al)? (?:area|information|region)|revenues? by (?:geograph|region|country)/i;
+/** The heading of an annual report's business section: 「３【事業の内容】」, "## 事業の内容". */
+const BUSINESS_SECTION_HEADING = /【事業の内容】|^#{1,4}\s*事業の内容\s*$/m;
 
 /**
  * The text a page contributes: all of it up to MAX_WEB_TEXT_CHARS, else its
- * start and an excerpt at its first sales-by-region table after the start.
- * Cutting at 10,000 characters dropped the region tables of long pages
- * (有価証券報告書 texts), so 【海外】 could not name the countries
- * (ADR-0064 §5f). A quote cannot span the "…" between the two parts.
+ * start, an excerpt at its business section when that starts past the
+ * start (an 有価証券報告書 text opens with 沿革, the company's history, so
+ * 「事業の内容」 came after the cut), and an excerpt at its first
+ * sales-by-region table after those. Cutting at 10,000 characters dropped
+ * the region tables of long pages, so 【海外】 could not name the
+ * countries (ADR-0064 §5f). A quote cannot span the "…" between parts.
  */
 export function pageTextForModel(text: string): string {
 	if (text.length <= MAX_WEB_TEXT_CHARS) return text;
-	const head = text.slice(0, PAGE_HEAD_CHARS);
-	const rest = text.slice(PAGE_HEAD_CHARS);
-	const match = REGION_SALES_HEADING.exec(rest);
-	if (match === null) return text.slice(0, MAX_WEB_TEXT_CHARS);
-	const start = Math.max(0, match.index - REGION_EXCERPT_LEAD_CHARS);
-	return `${head}\n…\n${rest.slice(start, start + REGION_EXCERPT_CHARS)}`;
+	const parts: string[] = [];
+	let headChars = PAGE_HEAD_CHARS;
+	let searchFrom = PAGE_HEAD_CHARS;
+	const business = BUSINESS_SECTION_HEADING.exec(text);
+	// From the start of the heading's line (「### ３【事業の内容】」).
+	const businessStart = business === null ? -1 : text.lastIndexOf("\n", business.index) + 1;
+	if (business !== null && businessStart > PAGE_HEAD_CHARS - BUSINESS_EXCERPT_CHARS) {
+		headChars = PAGE_HEAD_CHARS - BUSINESS_EXCERPT_CHARS;
+		const start = Math.max(businessStart, headChars);
+		parts.push(text.slice(start, start + BUSINESS_EXCERPT_CHARS));
+		searchFrom = start + BUSINESS_EXCERPT_CHARS;
+	}
+	const rest = text.slice(searchFrom);
+	const region = REGION_SALES_HEADING.exec(rest);
+	if (region !== null) {
+		const start = Math.max(0, region.index - REGION_EXCERPT_LEAD_CHARS);
+		parts.push(rest.slice(start, start + REGION_EXCERPT_CHARS));
+	}
+	if (parts.length === 0) return text.slice(0, MAX_WEB_TEXT_CHARS);
+	return [text.slice(0, headChars), ...parts].join("\n…\n");
 }
 
 export const EXCLUDED_HOST_SUFFIXES = [
@@ -185,6 +212,19 @@ export function isJobSiteHost(host: string): boolean {
  * 「証券コード | 1992」). The review of 2026-11-05 found entries quoting an
  * unlisted namesake (JP:6555 a 有限会社エムエス・コンサルティング, JP:4055).
  */
+/**
+ * A Japanese company's 有価証券報告書 text on EDINET DB, by its EDINET code:
+ * every listed company files one, and its 「事業の内容」 describes the
+ * business when the search finds only aggregator pages (review of
+ * 2026-11-05: 109 Japanese stocks had no entry and 95 an empty 【事業内容】).
+ * EDINET DB mirrors the filings on EDINET; its robots.txt allows these
+ * pages, and it is read only for stocks run.ts is given an EDINET code
+ * list for (`--edinet-codes`).
+ */
+export function edinetFilingTextUrl(edinetCode: string): string | null {
+	return /^E\d{5}$/.test(edinetCode) ? `https://edinetdb.jp/company/${edinetCode}/text` : null;
+}
+
 const COMPANY_REGISTER_HOST_SUFFIXES = [
 	"compalyze.co.jp",
 	"atsoho.com",
@@ -425,7 +465,7 @@ export function choosePages(
 		seen.add(result.url);
 		ranked.push({ url: result.url, kind, rank });
 	});
-	// The Haiku agent already ranked its picks (company site first); Tavily's results are ranked here.
+	// The Haiku agent already ranked its picks (company site first); Agent Web Search results are ranked here.
 	if (order === "by-kind") {
 		ranked.sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || a.rank - b.rank);
 	}
@@ -433,7 +473,7 @@ export function choosePages(
 }
 
 export interface WebTools {
-	/** Tavily's `web.search`; null without TAVILY_API_KEY (the Haiku agent searches then). */
+	/** Agent Web Search; null without AGENT_WEB_SEARCH_API_KEY (the Haiku agent searches then). */
 	readonly search: ToolDefinition | null;
 	readonly fetchPage: ToolDefinition;
 }
@@ -447,7 +487,11 @@ export function createWebTools(pagesDirectory: string): WebTools {
 			"web sources need Node: node --env-file=.env scripts/poc/companyDescription/run.ts (or pass --no-web)",
 		);
 	}
-	const tavilyApiKey = process.env.TAVILY_API_KEY?.trim() || null;
+	const agentKey = process.env.AGENT_WEB_SEARCH_API_KEY?.trim() || null;
+	const agentUrl = process.env.AGENT_WEB_SEARCH_URL?.trim() || DEFAULT_AGENT_WEB_SEARCH_URL;
+	const endpoint = agentSearchEndpoint(agentUrl);
+	if (endpoint === null)
+		throw new Error("AGENT_WEB_SEARCH_URL must be a literal loopback HTTP origin");
 	mkdirSync(pagesDirectory, { recursive: true });
 	const tools = createResearchTools({
 		fetcher: createNodeSafeFetcher(),
@@ -455,7 +499,16 @@ export function createWebTools(pagesDirectory: string): WebTools {
 		hasher: webCryptoHasher,
 		clock: systemClock,
 		secUserAgent: null,
-		tavilyApiKey,
+		tavilyApiKey: null,
+		...(agentKey === null
+			? {}
+			: {
+					agentWebSearch: {
+						endpoint,
+						apiKey: agentKey,
+						fetcher: createLoopbackSearchFetcher(agentUrl),
+					},
+				}),
 		pageArchive: createFilePageArchive({ directory: pagesDirectory, hasher: webCryptoHasher }),
 		sleep: (ms, signal) =>
 			new Promise((resolve) => {
@@ -472,7 +525,7 @@ export function createWebTools(pagesDirectory: string): WebTools {
 		return tool;
 	};
 	return {
-		search: tavilyApiKey === null ? null : find("web.search"),
+		search: agentKey === null ? null : find("web.search"),
 		fetchPage: find("web.fetch_page"),
 	};
 }
@@ -605,8 +658,8 @@ export type PageSearch = (
 	| { readonly ok: false; readonly code: string; readonly detail: string; readonly costUsd: number }
 >;
 
-/** Tavily through the runner's own `web.search`, one query per stock. */
-export function tavilyPageSearch(search: ToolDefinition): PageSearch {
+/** Agent Web Search through the runner's own `web.search`, one query per stock. */
+export function agentPageSearch(search: ToolDefinition): PageSearch {
 	return async (stock, log) => {
 		const context = toolContext(`poc_search_${randomUUID().slice(0, 8)}`);
 		const query = searchQuery(stock);
@@ -668,28 +721,39 @@ export async function withWebSources(
 	findPages: PageSearch,
 	fetchPage: ToolDefinition,
 	fallbackRead: FallbackRead | null = null,
+	/** Pages read besides the search's: the annual report's text, pages named with `--pages`. */
+	extraUrls: readonly string[] = [],
 ): Promise<WebSourcesResult> {
 	const context = toolContext(`poc_web_${randomUUID().slice(0, 8)}`);
 	const log: string[] = [];
 	const found = await findPages(stock, log);
-	if (!found.ok) {
-		log.push(`search failed (${found.code}): ${found.detail}`);
-		return {
-			stock,
-			log,
-			searchFailure: { code: found.code, detail: found.detail },
-			costUsd: found.costUsd,
-		};
-	}
+	let searchFailure: WebSourcesResult["searchFailure"] = null;
 	// Every acceptable result in order; a page that fails gives its place to the next one.
-	const candidates = choosePages(
-		found.urls.map((url) => ({ url })),
-		stock.name.en,
-		MAX_WEB_PAGE_ATTEMPTS,
-		found.order,
-		stock.name.ja,
-	);
-	log.push(`${found.urls.length} pages found, ${candidates.length} acceptable`);
+	const candidates: { url: string; kind: PageKind }[] = [];
+	if (found.ok) {
+		candidates.push(
+			...choosePages(
+				found.urls.map((url) => ({ url })),
+				stock.name.en,
+				MAX_WEB_PAGE_ATTEMPTS,
+				found.order,
+				stock.name.ja,
+			),
+		);
+		log.push(`${found.urls.length} pages found, ${candidates.length} acceptable`);
+	} else {
+		log.push(`search failed (${found.code}): ${found.detail}`);
+		searchFailure = { code: found.code, detail: found.detail };
+	}
+	// The extra pages, after the company's own pages and before whatever else the search found.
+	const official = candidates.filter((page) => page.kind === "official").length;
+	const extra = extraUrls
+		.filter((url) => !candidates.some((page) => page.url === url))
+		.flatMap((url) => {
+			const kind = pageKind(url, stock.name.en, stock.name.ja);
+			return kind === null ? [] : [{ url, kind }];
+		});
+	candidates.splice(official, 0, ...extra);
 	const sources = [...stock.sources];
 	let read = 0;
 	let costUsd = found.costUsd;
@@ -741,5 +805,5 @@ export async function withWebSources(
 		read += 1;
 		log.push(`${id} ${page.kind} ${readPage.url}${via}`);
 	}
-	return { stock: { ...stock, sources }, log, searchFailure: null, costUsd };
+	return { stock: { ...stock, sources }, log, searchFailure, costUsd };
 }

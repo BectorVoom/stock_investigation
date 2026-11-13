@@ -448,6 +448,68 @@ The stocks these touch were written again with `--force`, as were the
 US entries written before their annual report's business section was
 read again (migration 0033).
 
+### 5h. Closing the gaps (2026-11-05)
+
+After §5g, 179 listed stocks had no entry (109 Japanese, 70 US) and 95
+Japanese entries an empty 【事業内容】. Their causes, and what changed:
+
+- **Japanese stocks with no usable page.** The page search found only
+  aggregators (@SOHO, j-lic, finboard) or nothing for small companies. Every
+  listed company files a 有価証券報告書, and its 「事業の内容」 describes
+  the business: with `--edinet-codes <EdinetcodeDlInfo.csv>` (EDINET's
+  public code list, Edinetcode.zip) a Japanese stock also reads its filing
+  text on EDINET DB (`https://edinetdb.jp/company/<EDINET code>/text`, a
+  mirror of the EDINET filings whose robots.txt allows these pages), after
+  the company's own pages, also when the search fails. Such a text opens
+  with 沿革 (history), so a long page now contributes an excerpt at its
+  「事業の内容」 heading as well as its start and its sales-by-region table
+  (`pageTextForModel`). These pages are read only in runs given the list,
+  at low concurrency: EDINET DB's terms forbid aggressive scraping, and the
+  long-term source is the EDINET API itself, which needs a key.
+- **A main ticker without its CIK.** The financial sync gives an SEC CIK to
+  one listing only, and a secondary one can hold it (AMJB JPMorgan's, EP-PC
+  Kinder Morgan's; the sync bug is recorded in the SEC EDGAR document's
+  open issues). With `--sec-tickers <company_tickers.json>` a filer's main
+  ticker (the first SEC lists) reads the business section stored under the
+  listing that holds its CIK (`secMainTickers`, `readStockSources`).
+- **A cross-reference for a business section.** A stored section under
+  1,500 characters ("See also 'Additional Information' of this Annual
+  Report.") stays a source, but the stock is searched on the web as if it
+  had none (`MIN_BUSINESS_TEXT_CHARS`).
+- **A renamed company's 10-K.** When the annual report alone gives nothing
+  to store (the model rightly refuses a 10-K that names the old company), the
+  stock is searched on the web and written once more (`isFruitless`).
+- **A renamed Japanese company.** The stock list may still carry the old
+  name (JP:6072 "Jibannet Holdings", now 株式会社ＥＲＴＨ Ｇｒｏｕｐ): the
+  stock list source also names the EDINET filer of the same securities
+  code, so its filings are recognised as the company's.
+- **Other tickers of one filer.** A listing whose SEC filer's main ticker
+  (the first in company_tickers.json) is listed under the same name copies
+  that entry (MBNKO → MFIN, MHNC → MHLA), unless the name is shared like an
+  ETN bank's (§5g); preferred series whose base symbol is not listed at all
+  copy their first series (Triton International's TRTN-PB … PG copy
+  TRTN-PA).
+- **Pages the search cannot find or read.** Fund managers' pages are
+  script-only or refuse the runner, and a new SPAC or a new listing has
+  none the search finds. `--pages <file>` names pages for given stocks
+  ("MARKET:SYMBOL=https://…" lines), read after the company's own pages:
+  the closed-end funds' and the SPAC's SEC filings (an N-2, a prospectus
+  supplement, an 8-K), the ETNs' pricing supplements, and Techno Craft's
+  own site for JP:622A (listed 2026-09-18, no 有価証券報告書 yet). The
+  evidence check is the same: a named page only supplies text to quote. The
+  list used is kept in `output/reference/pages-2026-11-05.txt`.
+- **The network.** On 2026-11-05 this machine's network dropped IPv6
+  silently, and every dual-stack host (sec.gov, EDINET DB,
+  stockanalysis.com) timed out: the fetcher waited out the whole deadline on
+  the first, IPv6, address, and a failed robots.txt read counts as
+  disallowed. Both runners' fetchers now give each address 3 seconds to
+  connect and alternate the address families (the Web feeds and pages
+  document).
+
+Result (2026-11-05): every one of the 11,382 listed stocks has an entry
+(3,700 Japanese, 7,682 US), and no stored 【事業内容】 says nothing by the
+`hasEmptySummary` rule.
+
 ### 6. Who writes it, for now
 
 The writer is the proof of concept: `node --env-file=.env

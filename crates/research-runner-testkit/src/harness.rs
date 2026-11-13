@@ -151,6 +151,7 @@ pub async fn compose(
 	let feed_fetcher: Arc<dyn SafeFetcher> = Arc::new(FeedFixtureFetcher::new(&fixtures));
 	let feed_parser = Arc::new(FastXmlFeedParser);
 	let tools = ToolRegistry::new(create_research_tools(ResearchToolDeps {
+		agent_web_search: None,
 		fetcher: Arc::clone(&feed_fetcher),
 		feed_parser: feed_parser.clone(),
 		hasher: Arc::clone(&hasher),

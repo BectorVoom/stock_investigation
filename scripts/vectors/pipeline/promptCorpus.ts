@@ -202,7 +202,7 @@ export function generatePromptCases(): void {
 		const token = fenceToken(random, ++counter);
 		const guide = datasetGuide(`run_${index}`);
 		capturedAnalysisPrompt({
-			request: request(random),
+			request: { ...request(random), ...(index % 2 === 0 ? { outputType: "news" as const } : {}) },
 			nowIso: "2026-10-11T00:00:00.000Z",
 			evidencePack:
 				text(random, pick(random, [0, 10, 800, 3000]), "mixed") + (random() < 0.3 ? token : ""),

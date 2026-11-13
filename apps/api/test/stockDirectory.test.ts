@@ -538,6 +538,8 @@ describe("stock directory completion (ADR-0034)", () => {
 			name_key: "toyota motor corporation",
 			local_name_key: "トヨタ自動車",
 			search_key: "7203\ntoyota motor corporation\nトヨタ自動車",
+			margin_buying_balance: null,
+			margin_selling_balance: null,
 		});
 		const audit = await env.DB.prepare(
 			"SELECT reason FROM job_transitions WHERE owner_id = ? AND to_state = 'completed'",
@@ -565,6 +567,29 @@ describe("stock directory completion (ADR-0034)", () => {
 		);
 		// JP is untouched.
 		expect((await search(harness, "q=7203")).map(hitKey)).toEqual(["JP:7203"]);
+	});
+
+	it("preserves margin balances when a retained stock's directory details change", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await storeDirectory(harness, token, "JP", jpList());
+		await env.DB.prepare(`UPDATE stock_directory
+            SET margin_buying_balance = 12345600, margin_selling_balance = 0
+            WHERE owner_id = ? AND market = 'JP' AND symbol = '7203'`)
+			.bind(harness.ownerId)
+			.run();
+		const entries = jpList().map((entry) =>
+			entry.symbol === "7203" ? { ...entry, name: "Toyota Updated" } : entry,
+		);
+		await storeDirectory(harness, token, "JP", entries);
+		const stored = await env.DB.prepare(`SELECT name, margin_buying_balance, margin_selling_balance
+            FROM stock_directory WHERE owner_id = ? AND market = 'JP' AND symbol = '7203'`)
+			.bind(harness.ownerId)
+			.all();
+		expect(stored.results).toEqual([
+			{ name: "Toyota Updated", margin_buying_balance: 12345600, margin_selling_balance: 0 },
+		]);
+		expect((await search(harness, "q=Toyota Updated")).map(hitKey)).toEqual(["JP:7203"]);
 	});
 
 	it("stores a list at the per-market maximum through several insert chunks", {

@@ -2,6 +2,7 @@ import { type NewsSource, newsSourceSchema } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
+import { NewsView } from "../src/news/NewsView.tsx";
 import { SourcesView } from "../src/sources/SourcesView.tsx";
 import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 
@@ -72,6 +73,9 @@ let subscribed: NewsSource[];
 
 beforeEach(() => {
 	backend = createFakeBackend();
+	backend.on("GET", /^\/api\/v1\/scheduled-tasks$/, () =>
+		jsonResponse({ tasks: [], limits: { maxActive: 10, maxTasks: 30 } }),
+	);
 	subscribed = [SOURCE];
 	backend.on("GET", /^\/api\/v1\/sources$/, () => jsonResponse({ sources: subscribed }));
 	backend.on("GET", /^\/api\/v1\/sources\/recommended$/, () =>
@@ -320,8 +324,46 @@ describe("Sources view", () => {
 		expect(backend.requestsTo("POST", /refresh$/)).toHaveLength(0);
 	});
 
-	it("pages through recent articles", async () => {
+	it("keeps article browsing on News rather than Sources", async () => {
 		mount();
+		await screen.findByRole("table");
+		expect(screen.queryByRole("list", { name: "Articles" })).toBeNull();
+		expect(backend.requestsTo("GET", /articles/)).toHaveLength(0);
+	});
+
+	it("shows the News empty state and a link to manage sources", async () => {
+		backend.on("GET", /^\/api\/v1\/articles$/, () =>
+			jsonResponse({ articles: [], nextCursor: null }),
+		);
+		render(() => <NewsView api={createApiClient({ fetch: backend.fetch })} />);
+		await screen.findByText(/No articles ingested yet/);
+		expect(screen.getByRole("link", { name: "Manage news sources" }).getAttribute("href")).toBe(
+			"#/sources",
+		);
+	});
+
+	it("keeps loaded articles when the next page fails and retries that page", async () => {
+		let failed = true;
+		backend.on("GET", /^\/api\/v1\/articles\?cursor=page-2$/, () =>
+			failed
+				? errorResponse(503, "INTERNAL", "Please try again")
+				: jsonResponse({ articles: [article(3)], nextCursor: null }),
+		);
+		render(() => <NewsView api={createApiClient({ fetch: backend.fetch })} />);
+		await screen.findByRole("list", { name: "Articles" });
+		fireEvent.click(screen.getByRole("button", { name: "Load more articles" }));
+		await screen.findByRole("alert");
+		expect(
+			within(screen.getByRole("list", { name: "Articles" })).getByText("Article number 1"),
+		).toBeTruthy();
+		failed = false;
+		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+		await within(screen.getByRole("list", { name: "Articles" })).findByText("Article number 3");
+		expect(screen.queryByRole("alert")).toBeNull();
+	});
+
+	it("pages through recent articles on News", async () => {
+		render(() => <NewsView api={createApiClient({ fetch: backend.fetch })} />);
 		const articles = await screen.findByRole("list", { name: "Articles" });
 		expect(within(articles).getAllByRole("listitem")).toHaveLength(2);
 		expect(articles.textContent).toContain("published date not stated");

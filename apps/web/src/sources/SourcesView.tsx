@@ -1,5 +1,4 @@
 import {
-	type Article,
 	licensePolicySchema,
 	type NewsSource,
 	type RecommendedSource,
@@ -22,7 +21,6 @@ import {
 	HEADING,
 	INPUT,
 	LABEL,
-	Loading,
 	Notice,
 	RemoteView,
 	Section,
@@ -255,100 +253,9 @@ function SourceRow(props: {
 	);
 }
 
-function ArticleList(props: { readonly api: ApiClient }): JSX.Element {
-	const m = useMessages(sourcesMessages);
-	const [articles, setArticles] = createSignal<readonly Article[]>([]);
-	const [nextCursor, setNextCursor] = createSignal<string | null>(null);
-	const [loading, setLoading] = createSignal(true);
-	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
-
-	// Only the most recently requested page may be applied, so an earlier answer can never
-	// be appended after (or replace) a later one.
-	let latestRequest = 0;
-	const loadPage = async (cursor: string | undefined) => {
-		latestRequest += 1;
-		const request = latestRequest;
-		setLoading(true);
-		setFailure(null);
-		const result = await props.api.listArticles(cursor === undefined ? {} : { cursor });
-		if (request !== latestRequest) return;
-		setLoading(false);
-		if (!result.ok) {
-			setFailure(result.error);
-			return;
-		}
-		setArticles((current) =>
-			cursor === undefined ? result.value.articles : [...current, ...result.value.articles],
-		);
-		setNextCursor(result.value.nextCursor);
-	};
-	void loadPage(undefined);
-
-	return (
-		<Section
-			title={m().recentArticles}
-			actions={
-				<button
-					type="button"
-					class={BUTTON}
-					disabled={loading()}
-					onClick={() => void loadPage(undefined)}
-				>
-					{m().reloadArticles}
-				</button>
-			}
-		>
-			<Show when={failure()}>
-				{(error) => <ErrorNotice failure={error()} title={m().articlesLoadFailed} />}
-			</Show>
-			<Show
-				when={articles().length > 0}
-				fallback={
-					<Show when={!loading() && failure() === null}>
-						<Empty>{m().noArticles}</Empty>
-					</Show>
-				}
-			>
-				<ul aria-label={m().articles} class="mt-1 space-y-1.5 text-sm">
-					<For each={articles()}>
-						{(article) => (
-							<li data-article-id={article.articleId}>
-								<SafeLink url={article.canonicalUrl}>{article.title}</SafeLink>
-								<span class="block text-xs text-slate-700">
-									{article.publisher}; {m().published}{" "}
-									<DateText iso={article.publishedAt} missing={m().dateNotStated} />;{" "}
-									{m().retrieved} <DateText iso={article.retrievedAt} missing={m().dateNotStated} />
-								</span>
-								<Show when={article.excerpt}>
-									{(excerpt) => <span class="block text-xs text-slate-800">{excerpt()}</span>}
-								</Show>
-							</li>
-						)}
-					</For>
-				</ul>
-			</Show>
-			<Show when={loading()}>
-				<Loading label={m().articlesThing} />
-			</Show>
-			<Show when={nextCursor()}>
-				{(cursor) => (
-					<button
-						type="button"
-						class={`${BUTTON} mt-2`}
-						disabled={loading()}
-						onClick={() => void loadPage(cursor())}
-					>
-						{m().loadMoreArticles}
-					</button>
-				)}
-			</Show>
-		</Section>
-	);
-}
-
 /**
  * Sources: preview-then-subscribe, the recommended catalog, the subscribed
- * feeds and recent articles. The server refreshes the feeds on its own
+ * feeds. The server refreshes the feeds on its own
  * schedule (ADR-0054): the page queues no refresh.
  */
 export function SourcesView(props: { readonly api: ApiClient }): JSX.Element {
@@ -600,8 +507,6 @@ export function SourcesView(props: { readonly api: ApiClient }): JSX.Element {
 					)}
 				</RemoteView>
 			</Section>
-
-			<ArticleList api={props.api} />
 		</div>
 	);
 }

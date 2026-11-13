@@ -25,6 +25,8 @@ use crate::web::{PageAccess, WebToolDeps, create_web_tools_sharing};
 
 /// What the catalogue is built from.
 pub struct ResearchToolDeps {
+	/// Operator-configured Agent Web Search, preferred over the legacy replay adapter.
+	pub agent_web_search: Option<crate::agent_search::AgentWebSearch>,
 	/// The SSRF-safe fetcher every network tool uses.
 	pub fetcher: Arc<dyn SafeFetcher>,
 	/// RSS/Atom parser.
@@ -78,6 +80,7 @@ pub fn create_research_tools(deps: ResearchToolDeps) -> Vec<Arc<dyn Tool>> {
 	// The search tools write nothing to disk: unlike the page tool they do
 	// not need the archive; web.search needs a Tavily key (ADR-0025).
 	tools.extend(create_search_tools(SearchToolDeps {
+		agent_web_search: deps.agent_web_search.clone(),
 		fetcher: Arc::clone(&deps.fetcher),
 		hasher: Arc::clone(&deps.hasher),
 		clock: Arc::clone(&deps.clock),
@@ -177,6 +180,7 @@ mod tests {
 	fn tools_with_key(with_archive: bool, tavily_api_key: Option<&str>) -> Vec<Arc<dyn Tool>> {
 		let never = Arc::new(Never);
 		create_research_tools(ResearchToolDeps {
+			agent_web_search: None,
 			fetcher: never.clone(),
 			feed_parser: never.clone(),
 			hasher: never.clone(),

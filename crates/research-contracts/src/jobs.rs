@@ -195,6 +195,14 @@ js_enum! {
 const QUESTION: &[StrCheck] = &[StrCheck::Trim, StrCheck::Min(3), StrCheck::Max(2000)];
 const MODEL: &[StrCheck] = &[StrCheck::Min(1), StrCheck::Max(100)];
 
+js_enum! {
+	/// Optional editorial destination on research requests.
+	pub enum ResearchOutputType {
+		News = "news",
+		Chat = "chat",
+	}
+}
+
 /// `researchRequestSchema`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -203,6 +211,9 @@ pub struct ResearchRequest {
 	pub workspace_id: String,
 	/// Question (trimmed, 3..2000).
 	pub question: String,
+	/// Absent on legacy requests and ordinary Chat research.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub output_type: Option<ResearchOutputType>,
 	/// Agent id.
 	pub agent_id: String,
 	/// Model (1..100), or null for the backend default.
@@ -233,6 +244,7 @@ impl ResearchRequest {
 		decode_object!(cx, input, strict, [], Self {
 			workspace_id: "workspaceId" => id,
 			question: "question" => string(QUESTION),
+			output_type: "outputType" => optional(ResearchOutputType::decode),
 			agent_id: "agentId" => agent_id,
 			model: "model" => nullable(string(MODEL)),
 			effort: "effort" => Effort::decode,

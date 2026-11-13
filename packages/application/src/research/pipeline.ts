@@ -46,12 +46,14 @@ import {
 	type ResourceUsage,
 	type Result,
 	recentCountWithinBudget,
+	resolveClaimEvidenceId,
 	type UiOperation,
 	verifyClaims,
 } from "@research/domain";
 import { agentThrewCode } from "../errors.ts";
 import type { Clock } from "../ports.ts";
 import {
+	type AnalysisDraft,
 	analysisDraftSchema,
 	type DraftScenario,
 	draftPricingPowerSchema,
@@ -607,8 +609,10 @@ export async function runResearchPipeline(
 	const completedRequests = new Set<string>();
 	const unavailableTools = new Set<string>();
 	let collectionLimitReached = false;
+	let searchCooldownEncountered = false;
 
 	collection: for (let step = 0; step < collectionSteps; step += 1) {
+		let foundSearchLeads = false;
 		// Spend the remaining model turns on analysis and verification instead
 		// of an open-ended search for more sources.
 		if (step >= 3) {
@@ -621,7 +625,7 @@ export async function runResearchPipeline(
 		const prompt = planningPrompt({
 			request,
 			nowIso: deps.clock.nowIso(),
-			tools: permittedTools,
+			tools: permittedTools.filter((tool) => !unavailableTools.has(tool.toolId)),
 			sources: input.sources,
 			collectedSoFar: collectedSoFarText(collected.entries, step),
 			remainingToolCalls,
@@ -751,9 +755,20 @@ export async function runResearchPipeline(
 			}
 			executedToolCalls += 1;
 			if (!result.ok) {
+				if (
+					call.toolId === "web.search" &&
+					(result.error.upstreamStatus === 432 || result.error.code === "SEARCH_PLAN_LIMIT")
+				) {
+					unavailableTools.add(call.toolId);
+					searchCooldownEncountered = true;
+					const note = "General web search is unavailable for this run.";
+					collected.entries.push({ step, fullText: note, digestLines: [note] });
+					continue;
+				}
 				if (result.error.code === "NOT_CONFIGURED" || result.error.code === "SEARCH_COOLDOWN") {
 					unavailableTools.add(call.toolId);
 				}
+				if (result.error.code === "SEARCH_COOLDOWN") searchCooldownEncountered = true;
 				const code = sanitizeToolErrorCode(result.error.code.slice(0, 80));
 				toolErrorCounts.set(code, (toolErrorCounts.get(code) ?? 0) + 1);
 				const upstreamStatus = result.error.upstreamStatus;
@@ -767,15 +782,19 @@ export async function runResearchPipeline(
 					});
 					toolErrorStatuses.set(code, statuses);
 				}
-				await deps.reporter.tool(label, "failed", result.error.code.slice(0, 300));
-				const note = `Tool ${label} failed: ${result.error.code}.`;
+				const detail = result.error.code.slice(0, 300);
+				await deps.reporter.tool(label, "failed", detail);
+				const note = `Tool ${label} failed: ${detail}.`;
 				collected.entries.push({ step, fullText: note, digestLines: [note] });
 				continue;
 			}
 			succeededToolCalls += 1;
 			completedRequests.add(requestKey);
 			const output = result.value;
-			collected.evidence.push(...output.evidence);
+			// Search snippets are planning leads. Only the fetched original can support a claim.
+			const discovery = call.toolId === "web.search" || call.toolId === "news.search";
+			if (discovery) foundSearchLeads ||= output.evidence.length > 0;
+			else collected.evidence.push(...output.evidence);
 			collected.securities.push(...output.securities);
 			collected.financialObservations.push(...output.financialObservations);
 			collected.positionObservations.push(...output.positionObservations);
@@ -786,9 +805,34 @@ export async function runResearchPipeline(
 				fullText: `Result of ${label}:\n${output.modelText}`,
 				digestLines: digestLinesFor(call.toolId, output),
 			});
-			await deps.reporter.tool(label, "executed", `${output.evidence.length} evidence item(s)`);
+			await deps.reporter.tool(
+				label,
+				"executed",
+				`${output.evidence.length} ${discovery ? "search lead(s)" : "evidence item(s)"}`,
+			);
 		}
 		await deps.reporter.usage(usage);
+		// A plan's done flag predates its tool results. A paused search with
+		// no evidence needs another plan, rather than immediate failure.
+		if (searchCooldownEncountered && collected.evidence.length === 0) {
+			reminderPending =
+				"Search is temporarily unavailable. Continue collecting evidence with another listed tool, subscribed feeds, stored records or known source URLs. Do not repeat a paused search or invent URLs.";
+			if (step + 1 < Math.min(collectionSteps, 3)) {
+				await deps.reporter.note(
+					"Search is temporarily unavailable; continuing with other sources.",
+				);
+			}
+			continue;
+		}
+		if (
+			foundSearchLeads &&
+			collected.evidence.length === 0 &&
+			permittedTools.some((tool) => tool.toolId === "web.fetch_page")
+		) {
+			reminderPending =
+				"Open relevant original pages from the search leads and assess the sources before ending collection.";
+			continue;
+		}
 		if (plan.done || calls.length === 0) break;
 	}
 	if (!reachedCollecting) await deps.reporter.state("collecting");
@@ -797,7 +841,7 @@ export async function runResearchPipeline(
 		...new Map(collected.articles.map((article) => [article.canonicalUrl, article])).values(),
 	].slice(0, BUNDLE_LIMITS.articles);
 	if (collected.evidence.length === 0) {
-		if (executedToolCalls > 0 && succeededToolCalls === 0) {
+		if (toolErrorCounts.size > 0 && succeededToolCalls === 0) {
 			const detail = mostFrequentToolError(toolErrorCounts);
 			return failed("ALL_TOOL_CALLS_FAILED", false, detail, toolErrorStatus(detail));
 		}
@@ -839,7 +883,7 @@ export async function runResearchPipeline(
 			continue;
 		}
 		const e = item.evidence;
-		const entry = `[${e.evidenceId}] ${e.title} — ${e.publisher}; published ${e.publishedAt ?? "undated"}; retrieved ${e.retrievedAt}\n${item.retrievedText.slice(0, EVIDENCE_ITEM_MAX)}\n\n`;
+		const entry = `[${e.evidenceId}] ${e.title} — ${e.publisher}; ${e.sourceUrl}; published ${e.publishedAt ?? "undated"}; retrieved ${e.retrievedAt}\n${item.retrievedText.slice(0, EVIDENCE_ITEM_MAX)}\n\n`;
 		if (byteLength(evidencePack) + byteLength(entry) > packBudget) break;
 		evidencePack += entry;
 		packedChecksums.add(item.evidence.checksum);
@@ -864,8 +908,29 @@ export async function runResearchPipeline(
 			.join("\n")
 			.slice(0, 8_000) || "(none)";
 
+	const shownEvidenceIds = new Set(evidenceById.keys());
+	const evidenceTexts = shown.map((item) => ({
+		evidenceId: item.evidence.evidenceId,
+		retrievedText: `${item.evidence.title}\n${item.retrievedText.slice(0, EVIDENCE_ITEM_MAX)}`,
+	}));
+	const claimDrafts = (claims: AnalysisDraft["claims"]) =>
+		claims.map((claim, index) => ({
+			claimId: `draft_${index}`,
+			text: claim.text,
+			claimType: claim.claimType,
+			links: claim.evidence.map((link) => ({
+				evidenceId: resolveClaimEvidenceId(runId, link.evidenceId, shownEvidenceIds),
+				relation: link.relation,
+				quote: link.quote === "" ? null : link.quote,
+			})),
+		}));
 	const now = deps.clock.nowIso();
 	const dataCutoffAt = now;
+	const hasToolRecords =
+		collected.financialObservations.length +
+			collected.positionObservations.length +
+			collected.investorFilings.length >
+		0;
 	let repairNote: string | null = null;
 	let draft: ReturnType<typeof analysisDraftSchema.safeParse> | null = null;
 	let analysisFailure: string | null = null;
@@ -891,6 +956,12 @@ export async function runResearchPipeline(
 			if (pause !== null) return pause;
 			analysisFailure = failureCode(analysed.error);
 			analysisFailureStatus = failureStatus(analysed.error);
+			// A smaller answer can recover within the existing repair allowance and budgets.
+			if (analysisFailure === "PROVIDER_OUTPUT_TRUNCATED" && attempt === 0) {
+				repairNote =
+					"the provider truncated the previous reply at its output limit. Return a smaller complete JSON object: at most 6 short atomic claims with only the shortest sufficient verbatim supporting quotes; omit optional uiOperations and leave unrelated scenarios, suppliers and pricingPower empty. Prioritize the direct answer and state coverage limitations; do not repeat structured records.";
+				continue;
+			}
 			break;
 		}
 		uiProposals.push(...analysed.value.uiProposals);
@@ -909,6 +980,25 @@ export async function runResearchPipeline(
 				.join(", ")}`;
 			analysisFailure = "ANALYSIS_OUTPUT_INVALID";
 			analysisFailureStatus = null;
+		} else if (draft.data.claims.length === 0 && !hasToolRecords) {
+			repairNote =
+				"claims is empty despite retrieved evidence. Answer the question with cited findings or cited exclusions/data limitations for the inspected candidates; use inference for calculations and quote the source inputs. Do not fabricate a match or claim exhaustive coverage.";
+			draft = null;
+			analysisFailure = "ANALYSIS_OUTPUT_INVALID";
+			analysisFailureStatus = null;
+		} else if (
+			attempt === 0 &&
+			draft.data.claims.length > 0 &&
+			verifyClaims(claimDrafts(draft.data.claims), evidenceTexts).every(
+				(claim) => claim.status === "unsupported",
+			)
+		) {
+			repairNote =
+				"none of the claims has usable quoted support from a shown evidence id. Return at most 6 short atomic claims. Use only the exact ids printed in square brackets in the Evidence section; never invent ids or use an article id. Copy each supporting quote word-for-word from that evidence, including original dates and numbers, and use a passage at least 12 characters long. Never paraphrase a quote, change a year, or join nonadjacent passages. Omit claims you cannot quote. Observation numbers must retain the source digits and units (for example $108.5 billion, not 1085億ドル). A unit conversion is a calculation: use inference and quote the original inputs. Never change source years. Leave unrelated scenarios, suppliers and pricingPower empty. Valid evidence ids: " +
+				JSON.stringify([...shownEvidenceIds].slice(0, 12));
+			draft = null;
+			analysisFailure = "ANALYSIS_OUTPUT_INVALID";
+			analysisFailureStatus = null;
 		} else {
 			analysisFailure = null;
 			analysisFailureStatus = null;
@@ -923,19 +1013,15 @@ export async function runResearchPipeline(
 	if (omittedEvidence > 0) {
 		notes.push(
 			duplicateEvidence > 0
-				? `${omittedEvidence} retrieved item(s) were not analysed: ${duplicateEvidence} exact duplicate(s) skipped and the rest did not fit the input-size budget.`
+				? `${omittedEvidence} retrieved item(s) were not analysed: ${duplicateEvidence} exact duplicate(s) skipped; ${omittedEvidence - duplicateEvidence} item(s) did not fit the input-size budget.`
 				: `${omittedEvidence} retrieved item(s) did not fit the input-size budget and were not analysed.`,
 		);
 	}
-	const hasToolRecords =
-		collected.financialObservations.length +
-			collected.positionObservations.length +
-			collected.investorFilings.length >
-		0;
 	if (analysis === null && !hasToolRecords) {
 		return failed(
 			analysisFailure ?? "ANALYSIS_FAILED",
-			analysisFailure !== "ANALYSIS_OUTPUT_INVALID",
+			analysisFailure !== "ANALYSIS_OUTPUT_INVALID" &&
+				analysisFailure !== "PROVIDER_OUTPUT_TRUNCATED",
 			null,
 			analysisFailureStatus,
 		);
@@ -946,22 +1032,10 @@ export async function runResearchPipeline(
 	const knownEvidence = (ids: readonly string[]) => [
 		...new Set(ids.filter((id) => evidenceById.has(id))),
 	];
+
 	const verified = verifyClaims(
-		(analysis?.claims ?? []).map((claim) => ({
-			claimId: nextId("cl"),
-			text: claim.text,
-			claimType: claim.claimType,
-			links: claim.evidence.map((link) => ({
-				evidenceId: link.evidenceId,
-				relation: link.relation,
-				quote: link.quote === "" ? null : link.quote,
-			})),
-		})),
-		shown.map((item) => ({
-			evidenceId: item.evidence.evidenceId,
-			// Match against exactly what the model was shown, not text it never saw.
-			retrievedText: `${item.evidence.title}\n${item.retrievedText.slice(0, EVIDENCE_ITEM_MAX)}`,
-		})),
+		claimDrafts(analysis?.claims ?? []).map((claim) => ({ ...claim, claimId: nextId("cl") })),
+		evidenceTexts,
 	);
 	let claims: Claim[] = verified.map((claim) => ({
 		claimId: claim.claimId,

@@ -1,9 +1,9 @@
-import { MARKET_LIMITS, WIDGET_LIMITS } from "@research/contracts";
+import { MARKET_LIMITS, type ScheduledTask, WIDGET_LIMITS } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
 import { type JSX, Match, Show, Switch } from "solid-js";
 import type { ApiFailure } from "../api/http.ts";
 import { ErrorNotice, Notice } from "../components/ui.tsx";
-import { SETTINGS_AGENT_HASH } from "../router.ts";
+import { chatHash, SETTINGS_AGENT_HASH } from "../router.ts";
 import type { TaskActionOutcome } from "./taskActions.ts";
 import { tasksMessages } from "./tasks.messages.ts";
 import { tasksModelMessages } from "./tasksModel.messages.ts";
@@ -12,6 +12,26 @@ import { type SkipView, taskFailureHint } from "./tasksModel.ts";
 /** The app's inline link look (the earnings widget's), with the 24 / 44 px target floor. */
 export const TASK_LINK =
 	"inline-flex min-h-6 items-center text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800 pointer-coarse:min-h-11";
+
+/** News reports have one destination; their backing conversation is storage only. */
+export function TaskReportLink(props: {
+	readonly task: ScheduledTask;
+	readonly compact?: boolean;
+}): JSX.Element {
+	const m = useMessages(tasksMessages);
+	const news = () => props.task.outputType === "news";
+	return (
+		<a
+			href={news() ? "#/news" : chatHash(props.task.workspaceId)}
+			class={`${TASK_LINK} whitespace-nowrap${props.compact ? " text-xs" : ""}`}
+			aria-label={
+				news() ? m().openNewsNamed(props.task.title) : m().openChatNamed(props.task.title)
+			}
+		>
+			{news() ? m().openNews : m().openChat}
+		</a>
+	);
+}
 
 /** A refused task write: its stable code and message, plus the sentence that says what to do. */
 export function TaskFailure(props: {
@@ -51,7 +71,9 @@ export function TaskOutcomeNotice(props: {
 		if (outcome === null) return null;
 		switch (outcome.kind) {
 			case "created":
-				return m().created(outcome.title);
+				return outcome.subject.outputType === "news"
+					? m().createdNews(outcome.title)
+					: m().created(outcome.title);
 			case "saved":
 				return m().saved(outcome.title);
 			case "paused":
@@ -61,7 +83,11 @@ export function TaskOutcomeNotice(props: {
 			case "deleted":
 				return m().deleted(outcome.title);
 			case "run":
-				return outcome.replayed ? m().runReplayed(outcome.title) : m().runQueued(outcome.title);
+				return outcome.replayed
+					? m().runReplayed(outcome.title)
+					: outcome.subject.outputType === "news"
+						? m().runQueuedNews(outcome.title)
+						: m().runQueued(outcome.title);
 			case "on-home":
 				return outcome.already ? m().alreadyOnHome(outcome.title) : m().shownOnHome(outcome.title);
 			case "home-full":

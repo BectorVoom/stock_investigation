@@ -1,0 +1,77 @@
+{
+	"note": "Observed metadata coverage, not verified demand or evidence that demand is absent. No writes or provider calls performed.",
+	"articles": 1132,
+	"articlesWithExcerpts": 59,
+	"articlesWithoutExcerpts": 1073,
+	"complete": true,
+	"themes": [
+		{
+			"theme": "ai",
+			"topicalArticles": 88,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "semiconductors",
+			"topicalArticles": 22,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "energy",
+			"topicalArticles": 51,
+			"phraseMatchedArticles": 1
+		},
+		{
+			"theme": "mobility",
+			"topicalArticles": 33,
+			"phraseMatchedArticles": 1
+		},
+		{
+			"theme": "automation",
+			"topicalArticles": 24,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "security",
+			"topicalArticles": 28,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "healthcare",
+			"topicalArticles": 15,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "infrastructure",
+			"topicalArticles": 19,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "consumer",
+			"topicalArticles": 29,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "finance",
+			"topicalArticles": 18,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "materials",
+			"topicalArticles": 30,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "agriculture",
+			"topicalArticles": 17,
+			"phraseMatchedArticles": 0
+		},
+		{
+			"theme": "telecom",
+			"topicalArticles": 19,
+			"phraseMatchedArticles": 0
+		}
+	],
+	"capturedAt": "2026-11-07",
+	"environment": "development, read-only audit; no data writes or outbound provider calls",
+	"interpretation": "The previous expanding-demand default hid nearly all topical coverage. These counts do not verify demand or imply demand is absent."
+}

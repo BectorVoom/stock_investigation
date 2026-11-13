@@ -7,6 +7,7 @@ import {
 	agentsResponseSchema,
 	articleListResponseSchema,
 	researchRunListResponseSchema,
+	researchRunResponseSchema,
 } from "@research/contracts";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
 import {
@@ -114,8 +115,9 @@ const API_ORIGIN = `http://localhost:${API_PORT}`;
  * the real runner/backend/feed/page network path, not a filing parser.
  */
 const QUESTION_1 =
+	process.env.RESEARCH_LIVE_QUESTION_1 ??
 	"What did EIA Today in Energy report about US energy supply or demand this week, " +
-	"and which products or services could see demand growth over the next 3 to 5 years as a result?";
+		"and which products or services could see demand growth over the next 3 to 5 years as a result?";
 const QUESTION_2 =
 	"Use the web.fetch_page tool to open the public web page at " +
 	PAGE_URL +
@@ -126,10 +128,9 @@ const QUESTION_2 =
  * nothing to ask for, so it must now search. ("Please create gold chart."
  * itself goes to the notebook assistant, see `composerTarget.ts`.)
  */
-const QUESTION_SEARCH = "How has the gold price moved this year, and what is driving it?";
-const QUESTION_3 =
-	"Which products or services could see demand growth over the next 3 to 5 years " +
-	"based on recent US energy news?";
+const QUESTION_SEARCH =
+	"Use web.search to investigate how the gold price has moved this year and what is driving it. " +
+	"Open relevant original pages with web.fetch_page and cite their passages. Do not substitute news.search or unrelated energy feeds.";
 
 let pristine: PristineCopy | null = null;
 let service: LaunchedService | null = null;
@@ -235,7 +236,11 @@ async function waitForRunnerWithModel(): Promise<void> {
 				if (agent.availability.status !== "available") {
 					return `backend unavailable: ${agent.availability.reasonCode} ${agent.availability.detail}`;
 				}
-				if (MODEL !== "" && !(agent.capabilities.models ?? []).includes(MODEL)) {
+				if (
+					MODEL !== "" &&
+					agent.capabilities.model !== MODEL &&
+					!(agent.capabilities.models ?? []).includes(MODEL)
+				) {
 					return "model not listed";
 				}
 				return "ready";
@@ -307,9 +312,15 @@ test.describe("live positive path through the real backend (spends real quota)",
 		if (METERED && !(MAX_SPEND_USD > 0)) {
 			throw new Error("RUN_LIVE_MAX_SPEND must be a positive number of USD");
 		}
+		const searchKey = (process.env.RESEARCH_LIVE_SEARCH_API_KEY ?? "").trim();
+		const searchUrl = (process.env.RESEARCH_LIVE_SEARCH_URL ?? "http://127.0.0.1:8090").trim();
 		runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
+			...(searchKey === ""
+				? {}
+				: { AGENT_WEB_SEARCH_API_KEY: searchKey, AGENT_WEB_SEARCH_URL: searchUrl }),
 			...(AGENT_ID === "opencode" ? {} : { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" }),
 			...(METERED_KEY === null ? {} : { [METERED_KEY]: meteredKey }),
+			...(AGENT_ID === "openrouter" && MODEL !== "" ? { OPENROUTER_MODEL: MODEL } : {}),
 		});
 		service = await startDev(dataDirA);
 		livePage = await browser.newPage();
@@ -359,18 +370,24 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await backend.selectOption(AGENT_ID);
 		if (MODEL !== "") {
 			const modelSelect = agentSection.getByLabel("Model for this backend");
-			await expect
-				.poll(
-					async () =>
-						modelSelect
-							.locator("option")
-							.evaluateAll((nodes) =>
-								nodes.map((node) => (node instanceof HTMLOptionElement ? node.value : "")),
-							),
-					{ timeout: 60_000 },
-				)
-				.toContain(MODEL);
-			await modelSelect.selectOption(MODEL);
+			if (AGENT_ID === "openrouter") {
+				// Paid OpenRouter models use the explicit model-id control.
+				await modelSelect.selectOption("__other__");
+				await agentSection.getByRole("textbox", { name: "Model id", exact: true }).fill(MODEL);
+			} else {
+				await expect
+					.poll(
+						async () =>
+							modelSelect
+								.locator("option")
+								.evaluateAll((nodes) =>
+									nodes.map((node) => (node instanceof HTMLOptionElement ? node.value : "")),
+								),
+						{ timeout: 60_000 },
+					)
+					.toContain(MODEL);
+				await modelSelect.selectOption(MODEL);
+			}
 		}
 		await agentSection.getByLabel("Effort").selectOption("low");
 		// A metered backend asks for the per-question spend ceiling here.
@@ -429,21 +446,22 @@ test.describe("live positive path through the real backend (spends real quota)",
 		const conversation = page.getByRole("region", { name: "Conversation" });
 		const assistant = conversation.getByRole("article", { name: "Assistant message" });
 		await expect(assistant).toBeVisible();
-		expect(
-			await assistant.locator('ul[aria-label="Claims"] > li[data-claim-id]').count(),
-		).toBeGreaterThan(0);
+		// The answer groups claims under Summary/Findings; each rendered claim
+		// retains its stable ID regardless of the section title.
+		await expect(assistant.locator("li[data-claim-id]").first()).toBeVisible();
+		expect(await assistant.locator("li[data-claim-id]").count()).toBeGreaterThan(0);
 		expect(await assistant.locator("a").count()).toBeGreaterThan(0);
 
 		// The first question named the chat: it started as "New chat".
 		const openChat = page
 			.getByRole("navigation", { name: "Chats" })
 			.locator('li[data-conversation-id] a[aria-current="page"]');
-		await expect(openChat).toContainText("What did EIA Today in Energy report", {
+		await expect(openChat).toContainText(QUESTION_1.slice(0, 32), {
 			timeout: 30_000,
 		});
 		await expect(
 			page.getByRole("region", { name: "Chat", exact: true }).getByRole("heading").first(),
-		).toContainText("What did EIA Today in Energy report");
+		).toContainText(QUESTION_1.slice(0, 32));
 		// A citation chip opens its source card with a link to the source.
 		const chip = assistant.locator("[data-citation-chip]").first();
 		await chip.click();
@@ -498,7 +516,11 @@ test.describe("live positive path through the real backend (spends real quota)",
 		const detail = await apiJson("GET", `/api/v1/research-runs/${stringField(searched, "runId")}`);
 		expect(JSON.stringify(detail)).toContain("stocks.search: executed");
 		await expect(
-			thread.locator('[data-run-state="completed"]').last().locator("[data-citation-chip]").first(),
+			thread
+				.getByRole("article", { name: "Assistant message" })
+				.last()
+				.locator("[data-citation-chip]")
+				.first(),
 		).toBeVisible();
 	});
 
@@ -630,6 +652,66 @@ test.describe("live positive path through the real backend (spends real quota)",
 		expect(JSON.stringify(runs)).not.toContain('"runId"');
 	});
 
+	test("Japanese corporate training news produces verified findings", async () => {
+		test.skip(
+			process.env.RUN_LIVE_JAPANESE_TRAINING !== "1",
+			"opt-in Japanese numeric-representation reproduction",
+		);
+		test.setTimeout(900_000);
+		await waitForRunnerWithModel();
+		const workspace = await apiJson("POST", "/api/v1/workspaces", {
+			title: "Japanese training report verification",
+		});
+		const workspaceId = stringField(workspace, "workspaceId");
+		const created = researchRunResponseSchema.parse(
+			await apiJson("POST", "/api/v1/research-runs", {
+				workspaceId,
+				question: "日米の企業研修の需要が拡大しているか調査してください。",
+				outputType: "news",
+				agentId: AGENT_ID,
+				model: MODEL === "" ? null : MODEL,
+				effort: "medium",
+				horizonYears: 3,
+				markets: ["JP", "US"],
+				budget: {
+					maxAgentSteps: 12,
+					maxToolCalls: 60,
+					maxWallClockMs: 1_800_000,
+					maxInputBytes: 2_000_000,
+					maxSpendUsd: METERED ? MAX_SPEND_USD : null,
+				},
+				webAccess: "public-web",
+			}),
+		);
+		const path = `/api/v1/research-runs/${created.run.runId}`;
+		try {
+			await expect
+				.poll(async () => researchRunResponseSchema.parse(await apiJson("GET", path)).run.state, {
+					timeout: 720_000,
+					intervals: [1000, 2000, 5000],
+				})
+				.toMatch(/^(completed|partial|failed|cancelled|waiting_approval)$/);
+			const { run } = researchRunResponseSchema.parse(await apiJson("GET", path));
+			expect(run.state, `${run.failureCode}: ${run.failureDetail}`).toBe("completed");
+			expect(run.verificationStatus).toMatch(/^(verified|partially-verified)$/);
+			const page = activePage();
+			await page.goto(`${VITE_ORIGIN}/#/chat/${workspaceId}`);
+			const assistant = page.getByRole("article", { name: "Assistant message" });
+			await expect(assistant.locator("li[data-claim-id]").first()).toBeVisible();
+			await expect(assistant.locator("[data-citation-chip]").first()).toBeVisible();
+			await expect(assistant).toContainText(/研修|トレーニング/);
+			await expect(assistant).not.toContainText("No verified findings");
+			await expect(assistant).not.toContainText("このレポートには検証済みの調査結果がありません");
+			await page.screenshot({
+				path: test.info().outputPath("japanese-training.png"),
+				fullPage: true,
+			});
+		} catch (error) {
+			await dumpDiagnostics("Japanese corporate training", dataDirA);
+			throw error;
+		}
+	});
+
 	test("upgraded state: a run without saved settings can send without visiting Settings", async () => {
 		test.setTimeout(900_000);
 		const page = activePage();
@@ -659,7 +741,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 			},
 			webAccess: "off",
 		});
-		const runId = nestedField(created, "run", "runId");
+		expect(nestedField(created, "run", "runId")).not.toBe("");
 		// The settings were never saved: the API says they are carried over
 		// from the most recent question, not defaults.
 		const settings = await apiJson("GET", "/api/v1/settings/agent");
@@ -678,38 +760,24 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await expect(page).toHaveURL(/#\/chat\/ws_/);
 		const composer = page.getByRole("form", { name: "Research composer" });
 		await expect(composer).not.toContainText("Choose a default agent backend");
-		await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_3);
+		await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_2);
 		const send = composer.getByRole("button", { name: "Send question" });
-		if (METERED) {
-			// A carried-over spend amount is never consent (AGT-012,
-			// `carriedOverSettings`): on a metered backend the composer
-			// refuses to send and points at the control that fixes it.
-			await expect(composer).toContainText(
-				"A metered backend needs a maximum spend greater than 0 USD",
-			);
-			await expect(composer.getByRole("link", { name: "Open Settings → AI agent" })).toBeVisible();
-			await expect(send).toBeDisabled();
-			return;
-		}
+		// ADR-0035: an absent cap is allowed, including carried-over settings.
 		await expect(send).toBeEnabled();
 		try {
 			await send.click();
-			// The question sends and the backend picks it up (it leaves pending).
+			// Verify the newly sent question, not the seed run that supplied preferences.
 			const thread = page.getByRole("list", { name: "Messages" });
-			await expect(thread.locator("[data-run-state]")).not.toHaveCount(0, { timeout: 60_000 });
-			await expect
-				.poll(
-					async () => {
-						const state = await apiJson("GET", `/api/v1/research-runs/${runId}`);
-						if (typeof state !== "object" || state === null) return "unknown";
-						const run = (state as { run: unknown }).run;
-						if (typeof run !== "object" || run === null) return "unknown";
-						const runState: unknown = (run as { state: unknown }).state;
-						return typeof runState === "string" ? runState : "unknown";
-					},
-					{ timeout: 600_000 },
-				)
-				.not.toBe("pending");
+			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(1, {
+				timeout: 720_000,
+			});
+			const assistant = thread.getByRole("article", { name: "Assistant message" });
+			await expect(assistant.locator("li[data-claim-id]").first()).toBeVisible();
+			await expect(assistant.locator("[data-citation-chip]").first()).toBeVisible();
+			const carried = await apiJson("GET", "/api/v1/settings/agent");
+			if (typeof carried !== "object" || carried === null)
+				throw new Error("settings response has no body");
+			expect((carried as { origin: unknown }).origin).toBe("carried-over");
 		} catch (error) {
 			await dumpDiagnostics("upgraded-state send", dataDirB);
 			throw error;

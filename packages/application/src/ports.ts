@@ -959,6 +959,7 @@ export interface ResearchUnitOfWork {
 
 /** A stored scheduled task: the contract's fields without the joined last-run view. */
 export interface StoredScheduledTask {
+	readonly outputType?: "news" | "chat";
 	readonly ownerId: string;
 	readonly taskId: string;
 	readonly workspaceId: string;

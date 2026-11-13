@@ -6,10 +6,10 @@ import { BUTTON, ErrorNotice, IconButton } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { runStateMessages } from "../i18n/runState.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
-import { chatHash, TASKS_HASH } from "../router.ts";
+import { TASKS_HASH } from "../router.ts";
 import { createClock } from "./clock.ts";
 import { TaskEditorDialog } from "./TaskEditorDialog.tsx";
-import { SkipLine, TASK_LINK, TaskOutcomeNotice } from "./TaskParts.tsx";
+import { SkipLine, TASK_LINK, TaskOutcomeNotice, TaskReportLink } from "./TaskParts.tsx";
 import {
 	createTaskActions,
 	outcomeStillCurrent,
@@ -210,13 +210,7 @@ export function ScheduledTasksWidget(props: {
 						<span data-field="task-last-run">
 							{lastRunText(row.task, (state) => runState().name(state), text())}
 						</span>
-						<a
-							href={chatHash(row.task.workspaceId)}
-							class={`${TASK_LINK} whitespace-nowrap`}
-							aria-label={m().openChatNamed(row.task.title)}
-						>
-							{m().openChat}
-						</a>
+						<TaskReportLink task={row.task} />
 					</p>
 					<Show when={skip()}>{(current) => <SkipLine skip={current()} compact />}</Show>
 				</div>

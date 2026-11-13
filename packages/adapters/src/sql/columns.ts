@@ -149,6 +149,7 @@ export const TABLE_COLUMNS = {
 		"derived",
 		"reported_value_count",
 		"updated_at",
+		"value_real",
 	],
 	equity_price_bar: [
 		"owner_id",
@@ -395,6 +396,7 @@ export const TABLE_COLUMNS = {
 		"version",
 		"created_at",
 		"updated_at",
+		"output_type",
 	],
 	stock_company_profile: [
 		"owner_id",
@@ -441,6 +443,8 @@ export const TABLE_COLUMNS = {
 		"name_key",
 		"local_name_key",
 		"search_key",
+		"margin_buying_balance",
+		"margin_selling_balance",
 	],
 	stock_directory_meta: [
 		"owner_id",

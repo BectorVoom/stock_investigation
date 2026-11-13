@@ -160,3 +160,14 @@ schema; the missing historical-layout upgrade scenario was the testing gap.
   and SEC EDGAR / OpenRouter / remote-backup paths are unverified live.
 - Every user-facing change MUST name in its summary which real-environment
   run covered it (command, model, outcome), or state that none did and why.
+
+### Firefox on macOS 27
+
+The shared Playwright `browserUse` helper gives Firefox a test-only app-data
+home under `.wrangler/playwright-firefox-home` on macOS. Firefox still uses
+Playwright's temporary profile for each launch. This avoids macOS privacy
+protection on the user's real Firefox app-data directory; the cache is retained
+and the user's profile and permissions are never changed. See
+[Playwright issue 42768](https://github.com/microsoft/playwright/issues/42768).
+Recheck whether the workaround is needed when moving to Firefox 158 /
+Playwright 1.65 or later. Chrome, WebKit and other operating systems are unchanged.

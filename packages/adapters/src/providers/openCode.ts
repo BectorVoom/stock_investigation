@@ -34,7 +34,7 @@
  *   `Agent not found: "research-text"` (verified). Any tool event in the
  *   stream still fails the turn closed. Because there is no per-run tool
  *   listing to re-check, the claim is pinned to the verified release line:
- *   outside 2.0.x (>= 2.0.27, < 2.1.0) `probe()` reports
+ *   outside 2.0.x (>= 2.0.27, < 2.1.0) and exact 2.2.5/2.2.6 `probe()` reports
  *   UNSUPPORTED_VERSION / TOOL_ISOLATION_UNVERIFIED instead of "available".
  * - Tool isolation, free-tier models (`-free` suffix, ask-and-reject): the
  *   provider refuses a free-tier request that does not carry OpenCode's tool
@@ -136,6 +136,11 @@ const DISPLAY_NAME = "OpenCode";
 const MINIMUM_VERSION: Version = [2, 0, 27];
 /** First version whose permission semantics have NOT been verified. */
 const UNVERIFIED_FROM_VERSION: Version = [2, 1, 0];
+/** Exact additional releases verified with resolved permissions and rejected live calls. */
+const VERIFIED_ADDITIONAL_VERSIONS: readonly Version[] = [
+	[2, 2, 5],
+	[2, 2, 6],
+];
 
 /** Where OpenCode keeps its config, credentials and cache (XDG base directories). */
 const OPENCODE_ENV_KEYS = [
@@ -534,12 +539,17 @@ export function createOpenCodeRuntime(
 			MINIMUM_VERSION,
 		);
 		if (!version.ok) return { capabilities: capabilities(), availability: version.availability };
-		if (compareVersions(version.version, UNVERIFIED_FROM_VERSION) >= 0) {
+		if (
+			compareVersions(version.version, UNVERIFIED_FROM_VERSION) >= 0 &&
+			!VERIFIED_ADDITIONAL_VERSIONS.some(
+				(verified) => compareVersions(version.version, verified) === 0,
+			)
+		) {
 			return {
 				capabilities: capabilities(),
 				availability: unavailable(
 					"TOOL_ISOLATION_UNVERIFIED",
-					`OpenCode ${formatVersion(version.version)} is newer than the 2.0.x line on which the permission configs were verified`,
+					`OpenCode ${formatVersion(version.version)} is outside the verified 2.0.x line and exact 2.2.5/2.2.6 releases`,
 				),
 			};
 		}

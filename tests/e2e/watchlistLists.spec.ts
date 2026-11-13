@@ -210,7 +210,7 @@ test("Show on Home adds the widget once, and it shows each stock's change from t
 		await expect(row.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}$/, {
 			timeout: 180_000,
 		});
-		await expect(row).toContainText("USD");
+		await expect(row).toContainText("$");
 		await expect(row).toContainText(/[+−-]?\d[\d,.]*%/);
 	}
 	await expect(widget.locator('[data-field="widget-footer"]')).toContainText("Twelve Data");

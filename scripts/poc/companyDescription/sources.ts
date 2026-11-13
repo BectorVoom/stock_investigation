@@ -150,6 +150,14 @@ export function isIssuerSymbol(issuer: string, security: string): boolean {
  * (EP), and copied the wrong entry (review of 2026-11-05). Such a listing
  * takes a same-name listing without a hyphen instead (KMI), else is
  * written on its own (CMS-PB, a Consumers Energy preferred).
+ *
+ * When the symbol before the hyphen is not listed at all (Triton
+ * International's TRTN-PA … TRTN-PG), the first series of that base and
+ * name is written and the others copy it.
+ *
+ * `secMainTickerOf` (from SEC's company_tickers.json, `secMainTickerOf`)
+ * names the main ticker of each other ticker of a filer: such a listing
+ * takes its main ticker's entry when no symbol rule finds an issuer.
  */
 /** A company name without case, punctuation or spaces ("Kinder Morgan, Inc." = "KINDER MORGAN INC"). */
 function comparableName(name: string): string {
@@ -158,6 +166,7 @@ function comparableName(name: string): string {
 
 export function issuerFinder(
 	directory: readonly DirectoryListing[],
+	secMainTickerOf: ReadonlyMap<string, string> = new Map(),
 ): (stock: StockKey) => StockKey | null {
 	const listed = new Set(directory.map((key) => `${key.market}:${key.symbol}`));
 	const nameOf = new Map<string, string>();
@@ -180,10 +189,39 @@ export function issuerFinder(
 		}
 		const isIssuer = (symbol: string) =>
 			base === undefined ? isIssuerSymbol(symbol, stock.symbol) : !symbol.includes("-");
-		const issuer = (name === undefined ? [] : (symbolsOf.get(name) ?? []))
+		const sameNamed = name === undefined ? [] : (symbolsOf.get(name) ?? []);
+		const byLength = (a: string, b: string) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0);
+		const issuer = sameNamed
 			.filter((symbol) => symbol !== stock.symbol && isIssuer(symbol))
-			.sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0))[0];
-		return issuer === undefined ? null : { market: "US", symbol: issuer };
+			.sort(byLength)[0];
+		if (issuer !== undefined) return { market: "US", symbol: issuer };
+		// No common stock listed (Triton International: TRTN-PA … TRTN-PG): the
+		// first series of the same base and name is written, the others copy it.
+		if (base !== undefined) {
+			const firstSeries = sameNamed
+				.filter((symbol) => symbol.startsWith(`${base}-`))
+				.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))[0];
+			if (firstSeries !== undefined && firstSeries !== stock.symbol) {
+				return { market: "US", symbol: firstSeries };
+			}
+		}
+		// Another ticker of a filer whose main ticker is listed under the same
+		// name (MBNKO → MFIN, MHNC → MHLA), unless the name is shared like an
+		// ETN's bank (`sharedNameNote`): those are written as themselves.
+		const main = secMainTickerOf.get(stock.symbol);
+		const unrelated = sameNamed.filter(
+			(symbol) =>
+				symbol !== stock.symbol &&
+				!symbol.includes("-") &&
+				!isIssuerSymbol(symbol, stock.symbol) &&
+				!isIssuerSymbol(stock.symbol, symbol),
+		);
+		return main !== undefined &&
+			listed.has(`US:${main}`) &&
+			sameName(name, nameOf.get(main)) &&
+			unrelated.length < SHARED_NAME_LISTINGS
+			? { market: "US", symbol: main }
+			: null;
 	};
 }
 
@@ -305,7 +343,7 @@ export function groupDigits(value: string): string {
 export interface StockSources {
 	readonly stock: StockKey;
 	readonly name: { readonly en: string; readonly ja: string };
-	/** Whether a stored annual-report business section is among the sources (US 10-K / 20-F Item 1). */
+	/** Whether a stored annual-report business section of at least MIN_BUSINESS_TEXT_CHARS is among the sources (US 10-K Item 1 / 20-F Item 4). */
 	readonly hasBusinessText: boolean;
 	readonly sources: readonly CompanySource[];
 	readonly profile: StoredProfile;
@@ -342,7 +380,109 @@ export function sharedNameNote(stock: StockSources): string | null {
 	return `The stock list gives code ${stock.stock.symbol} its issuer's name, which ${others.length} other listings share (${shown}${others.length > 4 ? ", …" : ""}). Code ${stock.stock.symbol} may be an exchange-traded note (ETN), a fund or another security of that issuer rather than its common stock.`;
 }
 
-export function readStockSources(databasePath: string, stock: StockKey): StockSources {
+/**
+ * Listed companies' EDINET codes by their 4-character JPX code, from the
+ * EDINET code list (EdinetcodeDlInfo.csv in Edinetcode.zip, Shift_JIS):
+ * columns EDINET code, …, 上場区分 (3rd), …, 提出者名 (7th, the filer's name
+ * now), …, 証券コード (12th, the JPX code plus a check digit "0").
+ */
+export function edinetCodesByStockCode(
+	csv: string,
+): Map<string, { readonly edinetCode: string; readonly filerName: string }> {
+	const codes = new Map<string, { readonly edinetCode: string; readonly filerName: string }>();
+	for (const line of csv.split(/\r?\n/)) {
+		const fields = [...line.matchAll(/"([^"]*)"/g)].map((match) => match[1] ?? "");
+		const [edinetCode, , listing] = fields;
+		const securitiesCode = fields[11] ?? "";
+		if (edinetCode === undefined || listing !== "上場" || !/^E\d{5}$/.test(edinetCode)) continue;
+		if (!/^[0-9A-Z]{4}0$/.test(securitiesCode)) continue;
+		codes.set(securitiesCode.slice(0, 4), { edinetCode, filerName: fields[6] ?? "" });
+	}
+	return codes;
+}
+
+/**
+ * A stored business section shorter than this is a cross-reference, not a
+ * description ("See also 'Additional Information' of this Annual Report.",
+ * TotalEnergies' 20-F; 16 of 5,149 on 2026-11-05): it stays a source, but
+ * the stock is searched on the web as if it had none.
+ */
+export const MIN_BUSINESS_TEXT_CHARS = 1_500;
+
+/**
+ * `--pages`: lines "MARKET:SYMBOL=https://…" naming a page to read for a
+ * stock besides the search's; blank lines and "#" comments are skipped.
+ */
+export function pagesByStock(text: string): Map<string, string[]> {
+	const pages = new Map<string, string[]>();
+	for (const [index, raw] of text.split(/\r?\n/).entries()) {
+		const line = raw.trim();
+		if (line === "" || line.startsWith("#")) continue;
+		const match = /^((?:US|JP):[A-Z0-9.-]{1,16})=(https:\/\/\S+)$/.exec(line);
+		const [, stock, url] = match ?? [];
+		if (stock === undefined || url === undefined) {
+			throw new Error(`--pages line ${index + 1}: expected MARKET:SYMBOL=https://…, got ${line}`);
+		}
+		pages.set(stock, [...(pages.get(stock) ?? []), url]);
+	}
+	return pages;
+}
+
+const secTickerFileSchema = z.record(
+	z.string(),
+	z.object({ cik_str: z.number().int().positive(), ticker: z.string().min(1) }),
+);
+
+/**
+ * Each SEC filer's main ticker and its 10-digit CIK, from SEC's
+ * company_tickers.json: a filer's tickers are listed main one first (JPM
+ * before JPM-PC, VYLD and AMJB; KMI before EP-PC).
+ */
+export function secMainTickers(file: unknown): Map<string, string> {
+	const entries = Object.entries(secTickerFileSchema.parse(file)).sort(
+		([a], [b]) => Number(a) - Number(b),
+	);
+	const seen = new Set<number>();
+	const main = new Map<string, string>();
+	for (const [, entry] of entries) {
+		if (seen.has(entry.cik_str)) continue;
+		seen.add(entry.cik_str);
+		main.set(entry.ticker.toUpperCase(), String(entry.cik_str).padStart(10, "0"));
+	}
+	return main;
+}
+
+/** Each SEC filer's other tickers and the filer's main ticker (EP-PC → KMI, MBNKO → MFIN). */
+export function secMainTickerOf(file: unknown): Map<string, string> {
+	const entries = Object.entries(secTickerFileSchema.parse(file)).sort(
+		([a], [b]) => Number(a) - Number(b),
+	);
+	const mainOfFiler = new Map<number, string>();
+	const mainOf = new Map<string, string>();
+	for (const [, entry] of entries) {
+		const ticker = entry.ticker.toUpperCase();
+		const main = mainOfFiler.get(entry.cik_str);
+		if (main === undefined) mainOfFiler.set(entry.cik_str, ticker);
+		else if (main !== ticker) mainOf.set(ticker, main);
+	}
+	return mainOf;
+}
+
+/**
+ * `issuerCik`: the SEC CIK whose main ticker this listing is (the first of
+ * the CIK's tickers in SEC's company_tickers.json), or null. The equity sync
+ * gives a CIK to one listing only, the first synced: EP-PC holds Kinder
+ * Morgan's and KMI has none, AMJB holds JPMorgan's, CCZ Comcast's (review of
+ * 2026-11-05). A main ticker without its own business section reads the one
+ * stored under the listing that holds its CIK.
+ */
+export function readStockSources(
+	databasePath: string,
+	stock: StockKey,
+	issuerCik: string | null = null,
+	/** The EDINET filer's name: a renamed company's filings name it, not the stock list's old one. */
+	filerName: string | null = null,
+): StockSources {
 	const sources: CompanySource[] = [];
 	const nextId = (): SourceId => `S${sources.length + 1}`;
 	const cites: { listing: SourceId | null; sector: SourceId | null; figures: SourceId | null } = {
@@ -396,6 +536,9 @@ export function readStockSources(databasePath: string, stock: StockKey): StockSo
 			text: [
 				`Company name: ${directory.name}`,
 				...(directory.local_name === null ? [] : [`Japanese name: ${directory.local_name}`]),
+				...(filerName === null || filerName === "" || filerName === directory.local_name
+					? []
+					: [`EDINET filer name (the same securities code): ${filerName}`]),
 				`Listing: ${directory.listing}`,
 				`Symbol: ${stock.symbol}`,
 			].join("\n"),
@@ -403,17 +546,25 @@ export function readStockSources(databasePath: string, stock: StockKey): StockSo
 	}
 
 	if (stock.market === "US") {
-		const [business] = query(
-			databasePath,
-			`SELECT ebd.form, ebd.filed_on, ebd.period_end, ebd.source_url, ebd.status, ebd.paragraphs_json
-			 FROM equity_company AS eco
-			 JOIN equity_business_description AS ebd USING (owner_id, company_id)
-			 WHERE ${keyClause("eco", stock)}`,
-			businessRow,
-		);
+		const businessOf = (where: string) =>
+			query(
+				databasePath,
+				`SELECT ebd.form, ebd.filed_on, ebd.period_end, ebd.source_url, ebd.status, ebd.paragraphs_json
+				 FROM equity_company AS eco
+				 JOIN equity_business_description AS ebd USING (owner_id, company_id)
+				 WHERE ${where}`,
+				businessRow,
+			)[0];
+		const own = businessOf(keyClause("eco", stock));
+		const business =
+			own?.status !== "extracted" && issuerCik !== null && /^\d{10}$/.test(issuerCik)
+				? (businessOf(`eco.provider = 'sec' AND eco.source_company_id = '${issuerCik}'`) ?? own)
+				: own;
 		if (business !== undefined && business.status === "extracted") {
 			const paragraphs = paragraphsSchema.parse(JSON.parse(business.paragraphs_json));
-			hasBusinessText = true;
+			hasBusinessText =
+				paragraphs.reduce((chars, paragraph) => chars + paragraph.text.length, 0) >=
+				MIN_BUSINESS_TEXT_CHARS;
 			sources.push({
 				id: nextId(),
 				// A 20-F's business section is Item 4, "Information on the Company".

@@ -1,4 +1,5 @@
 import { createStockResearchRepository } from "../packages/adapters/src/sql/stockResearch.ts";
+import { analyzeDemand, matchesDemand } from "../packages/domain/src/news/demandSignals.ts";
 /**
  * Micro-benchmarks for the hot paths that run inside the Worker's CPU budget
  * (10 ms per request on Workers Free) or on every poll. Performance work in
@@ -1829,7 +1830,28 @@ const EQUITY_BENCH_COMPLETION_FILINGS = Array.from({ length: 60 }, (_, index) =>
 	};
 });
 
+const demandBenchArticles = Array.from({ length: 500 }, (_, index) => ({
+	articleId: String(index),
+	title: "Growing demand for semiconductor cooling and AI data centers",
+	excerpt:
+		"First commercial orders for battery storage. Demand is expected to rise. Orders fall in Europe.",
+}));
+const demandBenchCandidates = demandBenchArticles.map(analyzeDemand);
 const cases: Case[] = [
+	{
+		name: "demand analysis: 500 articles across 13 themes",
+		budgetMs: 20,
+		run: () => demandBenchArticles.map(analyzeDemand),
+	},
+	{
+		name: "demand filtering: 500 cached candidates",
+		budgetMs: 2,
+		run: () =>
+			demandBenchCandidates.filter((candidate) =>
+				matchesDemand(candidate, { theme: "ai", kind: "expanding", query: "cooling" }),
+			),
+	},
+
 	{
 		name: "select every metric of one company-year (60 facts, 5 filings)",
 		budgetMs: 1,

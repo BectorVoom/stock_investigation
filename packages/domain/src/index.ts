@@ -3,6 +3,7 @@ export * from "./calendar/googleSync.ts";
 export * from "./calendar/ics.ts";
 export * from "./calendar/monthGrid.ts";
 export * from "./calendar/upcoming.ts";
+export * from "./evidence/citationReference.ts";
 export * from "./evidence/verifyClaims.ts";
 export * from "./finance/businessDescription.ts";
 export * from "./finance/cagr.ts";
@@ -27,6 +28,17 @@ export * from "./market/seriesId.ts";
 export * from "./market/syncSchedule.ts";
 export * from "./market/tradingAxis.ts";
 export * from "./news/canonicalUrl.ts";
+export { demandDiscoveryQuery, demandDiscoveryUrl } from "./news/demandDiscovery.ts";
+export {
+	analyzeDemand,
+	DEMAND_THEMES,
+	type DemandCandidate,
+	type DemandKind,
+	type DemandKindFilter,
+	type DemandTheme,
+	demandKind,
+	matchesDemand,
+} from "./news/demandSignals.ts";
 export * from "./news/feed.ts";
 export * from "./news/ipClassification.ts";
 export * from "./news/stockMentions.ts";

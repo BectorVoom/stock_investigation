@@ -53,8 +53,11 @@ fn log_disabled_features(logger: &dyn EventLogger, config: &RunnerConfig) {
 	if config.sec_user_agent.is_none() {
 		logger.warn("sec_tools_disabled", &reason("SEC_USER_AGENT not set"));
 	}
-	if config.tavily_api_key.is_none() {
-		logger.warn("web_search_disabled", &reason("TAVILY_API_KEY not set"));
+	if config.agent_web_search_api_key.is_none() {
+		logger.warn(
+			"web_search_disabled",
+			&reason("AGENT_WEB_SEARCH_API_KEY not set"),
+		);
 	}
 	if config.pages_directory.is_none() {
 		logger.warn("web_pages_disabled", &reason("RUNNER_PAGES_DIR not set"));
@@ -433,7 +436,7 @@ mod tests {
 			]
 		);
 		assert!(lines[1].contains(r#""reason":"SEC_USER_AGENT not set""#));
-		assert!(lines[2].contains(r#""reason":"TAVILY_API_KEY not set""#));
+		assert!(lines[2].contains(r#""reason":"AGENT_WEB_SEARCH_API_KEY not set""#));
 		assert!(lines[5].contains(r#""reason":"TWELVE_DATA_API_KEY not set""#));
 		assert!(lines[7].contains(r#""reason":"MASSIVE_API_KEY not set""#));
 		assert!(lines[8].contains(r#""reason":"JQUANTS_API_KEY not set""#));

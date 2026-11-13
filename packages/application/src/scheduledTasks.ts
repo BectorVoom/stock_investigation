@@ -98,6 +98,7 @@ export function toScheduledTaskView(
 	return {
 		taskId: task.taskId,
 		workspaceId: task.workspaceId,
+		outputType: task.outputType ?? "chat",
 		title: task.title,
 		question: task.question,
 		horizonYears: task.horizonYears,
@@ -174,6 +175,7 @@ export function createScheduledTaskService(deps: ScheduledTaskServiceDeps) {
 		return {
 			workspaceId: task.workspaceId,
 			question: task.question,
+			...(task.outputType === "news" ? { outputType: "news" as const } : {}),
 			horizonYears: task.horizonYears,
 			markets: [...task.markets],
 		};
@@ -320,6 +322,7 @@ export function createScheduledTaskService(deps: ScheduledTaskServiceDeps) {
 				ownerId,
 				taskId,
 				workspaceId,
+				outputType: request.outputType ?? "chat",
 				title: request.title,
 				question: request.question,
 				horizonYears: request.horizonYears,
@@ -409,6 +412,7 @@ export function createScheduledTaskService(deps: ScheduledTaskServiceDeps) {
 				}
 			}
 			const patch: ScheduledTaskPatch = {
+				outputType: request.outputType,
 				title: request.title,
 				question: request.question,
 				horizonYears: request.horizonYears,

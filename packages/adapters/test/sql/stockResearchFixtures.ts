@@ -57,3 +57,61 @@ export async function seedStockResearch(db: SeedDatabase, ownerId: string): Prom
 		[ownerId, RETRIEVAL_TIME, RETRIEVAL_TIME],
 	);
 }
+
+/** Explicitly synthetic annual screening data: one match (25%), one exclusion (10%). */
+export async function seedStockScreening(db: SeedDatabase, ownerId: string): Promise<void> {
+	for (const [symbol, suffix, current] of [
+		["DRONE25", "25", "1250000"],
+		["DRONE10", "10", "1100000"],
+	] as const) {
+		const companyId = `eqc_screen_${suffix}`;
+		const filingId = `filing_screen_${suffix}`;
+		const sourceUrl = `https://filings.example.org/drone${suffix}`;
+		await db
+			.prepare(`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name, tracked, tracked_at)
+            VALUES (?, ?, 'US', ?, 'sec', ?, 0, ?)`)
+			.bind(ownerId, companyId, symbol, `Synthetic Drone ${suffix}`, RETRIEVAL_TIME)
+			.run();
+		await db
+			.prepare(`INSERT INTO equity_business_description (owner_id, company_id, source_document_id, form, filed_on, period_end, source_url, status, paragraphs_json, truncated, fetched_at)
+            VALUES (?, ?, ?, '10-K', '2026-03-01', '2025-12-31', ?, 'extracted', ?, 0, ?)`)
+			.bind(
+				ownerId,
+				companyId,
+				filingId,
+				sourceUrl,
+				JSON.stringify([
+					{
+						kind: "text",
+						text: `Synthetic Drone ${suffix} (${symbol}) manufactures drones. ドローンを製造しています。`,
+					},
+				]),
+				RETRIEVAL_TIME,
+			)
+			.run();
+		await db
+			.prepare(`INSERT INTO equity_report_filing (owner_id, filing_id, company_id, provider, source_document_id, form, filed_on, period_end, source_url, facts_status, primary_scope, first_seen_at, recorded_at)
+            VALUES (?, ?, ?, 'sec', ?, '10-K', '2026-03-01', '2025-12-31', ?, 'extracted', 'consolidated', ?, ?)`)
+			.bind(ownerId, filingId, companyId, filingId, sourceUrl, RETRIEVAL_TIME, RETRIEVAL_TIME)
+			.run();
+		for (const [year, value] of [
+			[2024, "1000000"],
+			[2025, current],
+		] as const) {
+			await db
+				.prepare(`INSERT INTO equity_metric_value (owner_id, company_id, metric_code, fiscal_year, value_decimal, currency, filing_id, concept, scope, period_start, period_end, reported_value_count, updated_at)
+                VALUES (?, ?, 'profit-attributable-to-owners', ?, ?, 'USD', ?, 'us-gaap:NetIncomeLoss', 'consolidated', ?, ?, 1, ?)`)
+				.bind(
+					ownerId,
+					companyId,
+					year,
+					value,
+					filingId,
+					`${year}-01-01`,
+					`${year}-12-31`,
+					RETRIEVAL_TIME,
+				)
+				.run();
+		}
+	}
+}

@@ -6,8 +6,9 @@
  *
  *   node --env-file=.env scripts/poc/companyDescription/run.ts [--db <sqlite file>] [--out <dir>]
  *     [--store] [--all] [--limit <n>] [--concurrency <n>] [--force] [--rewrite-before <ISO>]
- *     [--no-web | --web-all] [--search claude|tavily] [--backend claude-code|claude-api]
- *     [--ignore-plan-usage] [MARKET:SYMBOL ...]
+ *     [--no-web | --web-all] [--search claude|agent-web-search] [--backend claude-code|claude-api]
+ *     [--ignore-plan-usage] [--sec-tickers <company_tickers.json>] [--edinet-codes <EdinetcodeDlInfo.csv>]
+ *     [--pages <file of MARKET:SYMBOL=https://… lines>] [MARKET:SYMBOL ...]
  *
  * Backend (ADR-0064 §2d): `claude-code` (the default) runs Haiku 5.5 through
  * the Claude Code CLI on the owner's subscription login — writing turns with
@@ -28,7 +29,7 @@
  * Web pages: by default only a stock without a stored business text (every
  * Japanese stock, a US one without a 10-K Item 1) is searched — by a Claude
  * Haiku 5.5 agent with the Claude API's web search tool (claudePageFinder.ts,
- * about USD 0.02 a stock) or, with `--search tavily`, by Tavily;
+ * about USD 0.02 a stock) or, with `--search agent-web-search`, by Agent Web Search;
  * `--web-all` searches every stock and `--no-web` none. Five failed searches
  * in a row pause searching for five minutes (runPolicy.ts `WebBudget`). A
  * stock left with no business text and no web page is skipped without a
@@ -60,7 +61,7 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { appendFileSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	createClaudeApiRuntime,
@@ -77,6 +78,7 @@ import { renderCheck, renderPage, renderSection } from "./render.ts";
 import { parseReply, salvageReply } from "./reply.ts";
 import {
 	ISSUER_NOT_WRITTEN,
+	isFruitless,
 	isOutOfCredit,
 	KEPT_STORED,
 	mayReplace,
@@ -91,11 +93,15 @@ import {
 } from "./runPolicy.ts";
 import {
 	directoryStocks,
+	edinetCodesByStockCode,
 	issuerFinder,
 	ownerOf,
+	pagesByStock,
 	readStockSources,
 	type StockKey,
 	type StockSources,
+	secMainTickerOf,
+	secMainTickers,
 	storedOverviewEntry,
 	storedOverviewKeys,
 	storedOverviewView,
@@ -105,11 +111,12 @@ import { type StoredOverview, storeOverviews } from "./storeOverview.ts";
 import { styleProblems } from "./style.ts";
 import type { DescriptionToCheck, VerifiedDescription } from "./template.ts";
 import {
+	agentPageSearch,
 	createWebTools,
 	EXCLUDED_HOST_SUFFIXES,
+	edinetFilingTextUrl,
 	type FallbackRead,
 	type PageSearch,
-	tavilyPageSearch,
 	withWebSources,
 } from "./webSources.ts";
 
@@ -149,6 +156,12 @@ interface Args {
 	readonly rewriteBefore: string | null;
 	/** Pause or stop only when the plan refuses, not at 80% of a window. */
 	readonly ignorePlanUsage: boolean;
+	/** SEC's company_tickers.json: a filer's main ticker reads the 10-K stored under its CIK (sources.ts). */
+	readonly secTickers: string | null;
+	/** The EDINET code list: a Japanese stock also reads its 有価証券報告書 text (webSources.ts). */
+	readonly edinetCodes: string | null;
+	/** Pages to read for named stocks besides the search's (a fund's SEC filing the search cannot find). */
+	readonly pages: string | null;
 	readonly stocks: StockKey[] | null;
 }
 
@@ -171,6 +184,9 @@ function parseArgs(argv: readonly string[]): Args {
 	let concurrency = 1;
 	let force = false;
 	let ignorePlanUsage = false;
+	let secTickers: string | null = null;
+	let edinetCodes: string | null = null;
+	let pages: string | null = null;
 	let rewriteBefore: string | null = null;
 	let out = "scripts/poc/companyDescription/output";
 	const stocks: StockKey[] = [];
@@ -183,10 +199,10 @@ function parseArgs(argv: readonly string[]): Args {
 		else if (arg === "--web-all") web = "all";
 		else if (arg === "--search") {
 			const value = argv[++index];
-			if (value !== "claude" && value !== "tavily") {
-				throw new Error(`--search expects claude or tavily, got ${value}`);
+			if (value !== "claude" && value !== "tavily" && value !== "agent-web-search") {
+				throw new Error(`--search expects claude or agent-web-search, got ${value}`);
 			}
-			search = value;
+			search = value === "tavily" ? "agent-web-search" : value;
 		} else if (arg === "--backend") {
 			const value = argv[++index];
 			if (value !== "claude-code" && value !== "claude-api") {
@@ -196,6 +212,9 @@ function parseArgs(argv: readonly string[]): Args {
 		} else if (arg === "--all") all = true;
 		else if (arg === "--force") force = true;
 		else if (arg === "--ignore-plan-usage") ignorePlanUsage = true;
+		else if (arg === "--sec-tickers") secTickers = argv[++index] ?? null;
+		else if (arg === "--edinet-codes") edinetCodes = argv[++index] ?? null;
+		else if (arg === "--pages") pages = argv[++index] ?? null;
 		else if (arg === "--rewrite-before") {
 			const value = argv[++index] ?? "";
 			if (Number.isNaN(Date.parse(value))) {
@@ -227,6 +246,9 @@ function parseArgs(argv: readonly string[]): Args {
 		force,
 		rewriteBefore,
 		ignorePlanUsage,
+		secTickers,
+		edinetCodes,
+		pages,
 		stocks: stocks.length === 0 ? null : stocks,
 	};
 }
@@ -455,10 +477,15 @@ const DATABASE_PAUSE_MS = 5_000;
  * locked"). On 2026-11-04 a two-second outage failed 189 stocks in a row,
  * because the run moved straight on to the next one.
  */
-async function readSourcesWithRetries(db: string, key: StockKey): Promise<StockSources> {
+async function readSourcesWithRetries(
+	db: string,
+	key: StockKey,
+	issuerCik: string | null,
+	filerName: string | null,
+): Promise<StockSources> {
 	for (let attempt = 1; ; attempt += 1) {
 		try {
-			return readStockSources(db, key);
+			return readStockSources(db, key, issuerCik, filerName);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			const passing = /unable to open database|database is locked|SQLITE_BUSY/i.test(message);
@@ -471,18 +498,19 @@ async function readSourcesWithRetries(db: string, key: StockKey): Promise<StockS
 /**
  * The page search the run uses, and the fallback reader for pages the
  * runner's fetcher cannot read (the Claude API's web fetch; none with
- * Tavily). The Haiku agent needs ANTHROPIC_API_KEY, Tavily TAVILY_API_KEY.
+ * Agent Web Search). The Haiku agent needs ANTHROPIC_API_KEY, Agent Web Search AGENT_WEB_SEARCH_API_KEY.
  */
 function pageSearchFor(
 	provider: SearchProvider,
-	tavily: ToolDefinition | null,
+	agentSearch: ToolDefinition | null,
 	backend: Backend,
 	out: string,
 	plan: PlanGate,
 ): { readonly find: PageSearch; readonly fallbackRead: FallbackRead | null } {
-	if (provider === "tavily") {
-		if (tavily === null) throw new Error("--search tavily needs TAVILY_API_KEY");
-		return { find: tavilyPageSearch(tavily), fallbackRead: null };
+	if (provider === "tavily" || provider === "agent-web-search") {
+		if (agentSearch === null)
+			throw new Error("--search agent-web-search needs AGENT_WEB_SEARCH_API_KEY");
+		return { find: agentPageSearch(agentSearch), fallbackRead: null };
 	}
 	if (backend === "claude-code") {
 		const finder = createClaudeCodePageFinder({
@@ -541,6 +569,32 @@ async function main(): Promise<void> {
 	scratchDirectory = join(args.out, "claude-code-cwd");
 	mkdirSync(scratchDirectory, { recursive: true });
 	const plan = new PlanGate(Date.now, { ignoreUsage: args.ignorePlanUsage });
+	const secTickerFile: unknown =
+		args.secTickers === null ? null : JSON.parse(readFileSync(args.secTickers, "utf8"));
+	const mainTickers =
+		secTickerFile === null ? new Map<string, string>() : secMainTickers(secTickerFile);
+	const mainTickerOf =
+		secTickerFile === null ? new Map<string, string>() : secMainTickerOf(secTickerFile);
+	const edinetCodeOf =
+		args.edinetCodes === null
+			? new Map<string, { readonly edinetCode: string; readonly filerName: string }>()
+			: edinetCodesByStockCode(new TextDecoder("shift_jis").decode(readFileSync(args.edinetCodes)));
+	const edinetFilerOf = (key: StockKey) =>
+		key.market === "JP" ? (edinetCodeOf.get(key.symbol) ?? null) : null;
+	const namedPages =
+		args.pages === null
+			? new Map<string, string[]>()
+			: pagesByStock(readFileSync(args.pages, "utf8"));
+	const extraUrlsOf = (key: StockKey) => {
+		const filer = edinetFilerOf(key);
+		const filingText = filer === null ? null : edinetFilingTextUrl(filer.edinetCode);
+		return [
+			...(namedPages.get(`${key.market}:${key.symbol}`) ?? []),
+			...(filingText === null ? [] : [filingText]),
+		];
+	};
+	const issuerCikOf = (key: StockKey) =>
+		key.market === "US" ? (mainTickers.get(key.symbol) ?? null) : null;
 	const webTools = args.web === "none" ? null : createWebTools(join(args.out, "pages"));
 	const search =
 		webTools === null
@@ -560,7 +614,7 @@ async function main(): Promise<void> {
 					.map(([key]) => key),
 	);
 	const directory = directoryStocks(args.db);
-	const issuerOf = issuerFinder(directory);
+	const issuerOf = issuerFinder(directory, mainTickerOf);
 	const candidates = args.stocks ?? (args.all ? directory : watchlistStocks(args.db));
 	const logFile = join(args.out, "run.jsonl");
 	const unreadable = args.force
@@ -585,18 +639,27 @@ async function main(): Promise<void> {
 	async function writeOne(key: StockKey): Promise<StockOutcome> {
 		const label = `${key.market}:${key.symbol}`;
 		await plan.ready(sleep);
-		let sources = await readSourcesWithRetries(args.db, key);
-		const searchesWeb =
-			webTools !== null &&
-			findPages !== null &&
-			(args.web === "all" || !sources.hasBusinessText) &&
-			(await web.ready(sleep));
+		let sources = await readSourcesWithRetries(
+			args.db,
+			key,
+			issuerCikOf(key),
+			edinetFilerOf(key)?.filerName ?? null,
+		);
 		let webPages = 0;
 		let searched = false;
+		let searchedOnce = false;
 		let searchCostUsd = 0;
-		if (searchesWeb) {
+		const addWebPages = async () => {
+			if (webTools === null || findPages === null || !(await web.ready(sleep))) return;
+			searchedOnce = true;
 			const before = sources.sources.length;
-			const withWeb = await withWebSources(sources, findPages, webTools.fetchPage, fallbackRead);
+			const withWeb = await withWebSources(
+				sources,
+				findPages,
+				webTools.fetchPage,
+				fallbackRead,
+				extraUrlsOf(key),
+			);
 			searchCostUsd = withWeb.costUsd;
 			web.record(withWeb.searchFailure);
 			searched = withWeb.searchFailure === null;
@@ -605,7 +668,8 @@ async function main(): Promise<void> {
 			for (const line of withWeb.log) console.log(`  ${label} ${line}`);
 			// The Haiku search is paid by the same account as the turns: nothing more can be written.
 			if (searchPaysWithClaude && web.exhaustedBy !== null) stopReason ??= web.exhaustedBy;
-		}
+		};
+		if (args.web === "all" || !sources.hasBusinessText) await addWebPages();
 		if (stopReason !== null && !searched) {
 			return {
 				stock: label,
@@ -636,23 +700,39 @@ async function main(): Promise<void> {
 		}
 		// A stored entry is replaced only by one at least as full (ADR-0064 §5d).
 		const stored = storedAt.has(label) ? storedOverviewEntry(args.db, key) : null;
-		let described: Described | null = null;
-		let failure = "";
-		for (let attempt = 0; described === null; attempt += 1) {
-			try {
-				described = await describeStock(sources, ownerId, args.out, stored);
-			} catch (error) {
-				failure = error instanceof Error ? error.message : String(error);
-				if (isOutOfCredit(failure)) stopReason ??= failure;
-				if (args.backend === "claude-code" && /RATE_LIMIT/.test(failure)) {
-					// The plan's window is used up: wait for it instead of failing the stock.
-					plan.rateLimited();
-					await plan.ready(sleep);
-					if (plan.exhaustedBy === null && attempt < PLAN_RATE_LIMIT_WAITS) continue;
+		const describe = async (): Promise<{ described: Described | null; failure: string }> => {
+			let failure = "";
+			for (let attempt = 0; ; attempt += 1) {
+				try {
+					return { described: await describeStock(sources, ownerId, args.out, stored), failure };
+				} catch (error) {
+					failure = error instanceof Error ? error.message : String(error);
+					if (isOutOfCredit(failure)) stopReason ??= failure;
+					if (args.backend === "claude-code" && /RATE_LIMIT/.test(failure)) {
+						// The plan's window is used up: wait for it instead of failing the stock.
+						plan.rateLimited();
+						await plan.ready(sleep);
+						if (plan.exhaustedBy === null && attempt < PLAN_RATE_LIMIT_WAITS) continue;
+					}
+					if (attempt >= TRANSIENT_RETRIES || !isTransient(failure)) {
+						return { described: null, failure };
+					}
+					await sleep(TRANSIENT_PAUSE_MS * (attempt + 1));
 				}
-				if (attempt >= TRANSIENT_RETRIES || !isTransient(failure)) break;
-				await sleep(TRANSIENT_PAUSE_MS * (attempt + 1));
 			}
+		};
+		let { described, failure } = await describe();
+		// The annual report alone gave nothing to store (a renamed company's 10-K
+		// names the old one): search the web and write once more.
+		if (
+			!searchedOnce &&
+			stopReason === null &&
+			described !== null &&
+			isFruitless(described.outcome.error)
+		) {
+			const before = webPages;
+			await addWebPages();
+			if (webPages > before) ({ described, failure } = await describe());
 		}
 		const searchFields = {
 			webPages,

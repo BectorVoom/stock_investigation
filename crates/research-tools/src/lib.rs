@@ -7,6 +7,7 @@
 //! `positions` belong to the finance worker (they are thin wrappers around
 //! the finance sources).
 
+pub mod agent_search;
 pub mod catalogue;
 pub mod news;
 pub mod positions;

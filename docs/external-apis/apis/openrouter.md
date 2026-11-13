@@ -10,7 +10,7 @@
 | Endpoints | `POST /api/v1/chat/completions` — one model turn, streamed as server-sent events; `GET /api/v1/models` — the model catalogue (read for its free text models) |
 | Authentication | Chat: `Authorization: Bearer <key>`, env variable `OPENROUTER_API_KEY` in `apps/runner/.env` (8–512 printable ASCII after trimming; a free account's key works for `openrouter-free`). Catalogue: no credential is sent. Redirects are refused, so the key reaches only this origin. |
 | Configuration | `OPENROUTER_MODEL` (metered backend's model when Settings names none; required for that backend to be available), `OPENROUTER_FREE_MODEL` (free backend's fallback model, a `:free` id or `openrouter/free`). The model chosen in Settings → AI agent (`owner_settings.agent_settings_json`) wins over both. |
-| Usage Limits | Free models: 20 requests a minute, and 50 a day for an account that bought fewer than 10 credits (1,000 a day otherwise); a key may carry its own credit limit ([limits](https://openrouter.ai/docs/api-reference/limits)). Paid models are billed per token at the routed provider's price. Our caps: `max_completion_tokens` 8,192 per request, the run's authorized maximum spend (metered backend only), at most 3 retries of a request refused before any output. Catalogue: cached 10 minutes, a failed refresh suppresses the next for 60 s, one request in flight, 10 s timeout, 8 MiB body, at most 300 ids kept. |
+| Usage Limits | Free models: 20 requests a minute, and 50 a day for an account that bought fewer than 10 credits (1,000 a day otherwise); a key may carry its own credit limit ([limits](https://openrouter.ai/docs/api-reference/limits)). Paid models are billed per token at the routed provider's price. Our caps: `max_completion_tokens` 32,768 for the exact `nvidia/nemotron-3.5-lightning:free` and `dots-studio/dots-3-note-preview:free` ids, 8,192 for every other id, the run's authorized maximum spend (metered backend only), at most 3 retries of a request refused before any output. Catalogue: cached 10 minutes, a failed refresh suppresses the next for 60 s, one request in flight, 10 s timeout, 8 MiB body, at most 300 ids kept. |
 | Called By | Rust runner (default) and TypeScript runner (rollback). Chat: every agent turn of a job whose backend is `openrouter` or `openrouter-free`. Catalogue: the `openrouter-free` probe, only when `OPENROUTER_API_KEY` is set. |
 | Code | `crates/research-providers/src/openrouter.rs`, `crates/research-providers/src/openrouter_models.rs`, `crates/research-providers/src/http_turn.rs`, `crates/research-providers/src/http.rs`, `crates/research-providers/src/turn.rs`, `packages/adapters/src/providers/openRouter.ts`, `packages/adapters/src/providers/openRouterModels.ts`, `packages/adapters/src/providers/httpTurn.ts`, `packages/adapters/src/providers/turn.ts` |
 | Official Documentation | [Chat completion](https://openrouter.ai/docs/api-reference/chat-completion), [Streaming](https://openrouter.ai/docs/api-reference/streaming), [Parameters](https://openrouter.ai/docs/api-reference/parameters), [Usage accounting](https://openrouter.ai/docs/use-cases/usage-accounting), [Errors](https://openrouter.ai/docs/api-reference/errors), [Limits](https://openrouter.ai/docs/api-reference/limits), [List models](https://openrouter.ai/docs/api-reference/models/get-models) |
@@ -32,7 +32,7 @@ For each turn the runner first checks the key and the model — the metered back
 | `messages[0].role` | body | string | Yes | — | `user` | Role. |
 | `messages[0].content` | body | string | Yes | — | — | The turn's prompt (`AgentRequest.prompt`). |
 | `stream` | body | boolean | No | Provider: `false`; we send `true` | — | Server-sent events. |
-| `max_completion_tokens` | body | integer | No | Provider: the model's maximum; we send `8192` (`MAX_COMPLETION_TOKENS`) | — | Cap on reasoning plus visible output; bounds one turn's spend (AGT-008). Preferred over the deprecated `max_tokens`. |
+| `max_completion_tokens` | body | integer | No | Provider: the model's maximum; we send `32768` for `nvidia/nemotron-3.5-lightning:free` and `dots-studio/dots-3-note-preview:free`, otherwise `8192` (`completionTokenLimit`) | — | Cap on reasoning plus visible output; bounds one turn's spend (AGT-008). Preferred over the deprecated `max_tokens`. |
 | `usage.include` | body | boolean | No | We send `true` | — | Deprecated no-op: usage is always included now ([usage accounting](https://openrouter.ai/docs/use-cases/usage-accounting)). Kept so older behaviour is covered. |
 | `reasoning.effort` | body | string | No | Provider: model default (see the catalogue's `reasoning.default_effort`); we send the run's effort | Provider: `max`, `xhigh`, `high`, `medium`, `low`, `minimal`, `none`; we send `low`, `medium` or `high` | Reasoning depth. Sent for every model (a model without reasoning ignores it). OpenRouter turns it into a reasoning budget of about 20 % (`low`), 50 % (`medium`) or 80 % (`high`) of `max_completion_tokens` on models that take a token budget; effort-only models decide for themselves ([reasoning tokens](https://openrouter.ai/docs/use-cases/reasoning-tokens)). A model may still spend the whole cap on reasoning (see the example and section 7). |
 
@@ -187,7 +187,7 @@ Catalogue: a network error, a non-2xx status, a body over 8 MiB, invalid JSON, a
 
 ### POST /api/v1/chat/completions
 
-Request — the bounded diagnostic request the live check sent: the request both runners build (Rust writes the header names in lower case), except `max_completion_tokens` 16 instead of the code's 8192 (`MAX_COMPLETION_TOKENS`), to bound the check:
+Request — the bounded diagnostic request the live check sent: the request both runners build (Rust writes the header names in lower case), except `max_completion_tokens` 16 instead of the code's 32768 for this exact free model (`completionTokenLimit`), to bound the check:
 
 <!-- example: openrouter-chat-request -->
 ```http
@@ -200,7 +200,7 @@ Accept: text/event-stream
 {"model":"nvidia/nemotron-3.5-lightning:free","messages":[{"role":"user","content":"Reply with the single word OK."}],"stream":true,"max_completion_tokens":16,"usage":{"include":true},"reasoning":{"effort":"low"}}
 ```
 
-Verified: live, 2026-10-31, `curl` with exactly these headers and body (sent over HTTP/2; the runners send it over HTTP/1.1). A production request differs only in `max_completion_tokens` (8192); `openRouterDocExamples.test.ts` checks that every other byte equals what the code sends.
+Verified: live, 2026-10-31, `curl` with exactly these headers and body (sent over HTTP/2; the runners send it over HTTP/1.1). A production request differs only in `max_completion_tokens` (32768); `openRouterDocExamples.test.ts` checks that every other byte equals what the code sends.
 
 Response (the model spent the 16-token cap on reasoning, so the turn ends `PROVIDER_OUTPUT_TRUNCATED`; no keep-alive comment was sent this time):
 
@@ -476,6 +476,21 @@ Verified: fixture, 2026-10-31, `packages/adapters/test/providers/fixtures/openro
 
 **Test fixtures** (`packages/adapters/test/providers/fixtures/openrouter/`). Recorded live: `length-reasoning.sse` (the complete 18-event stream excerpted above), `error-401.json`, `error-403-key-limit.json` and `error-429-upstream.json` (2026-10-31; the key hash and `user_id` redacted as in the examples, JSON re-indented by the formatter), `upstream-overloaded.sse` (2026-10-17), `models.json` (2026-10-12, trimmed). Documentation-derived, because no live completed answer could be captured: `ok.sse`, `ok-no-cost.sse`, `midstream-error.sse`.
 
+**Dots Note free production-cap request** (the same bounded body both adapters send):
+
+<!-- example: openrouter-dots-request -->
+```http
+POST /api/v1/chat/completions HTTP/1.1
+Host: openrouter.ai
+Authorization: Bearer <OPENROUTER_API_KEY>
+Content-Type: application/json
+Accept: text/event-stream
+
+{"model":"dots-studio/dots-3-note-preview:free","messages":[{"role":"user","content":"Reply with the single word OK."}],"stream":true,"max_completion_tokens":32768,"usage":{"include":true},"reasoning":{"effort":"low"}}
+```
+
+Verified: live, 2026-11-12, exact request body sent with Node fetch; returned HTTP 429 with `error.metadata.limit_source = openrouter_free_tier_daily`. The catalogue maximum was independently checked live. This is a verified request/error path, not a successful completion at the new cap. `openRouterDocExamples.test.ts` compares the documented body byte-for-byte with the production adapter.
+
 ## 6. Data Mapping
 
 | External field | Transformation | Internal field | Stored in |
@@ -498,14 +513,27 @@ Verified: fixture, 2026-10-31, `packages/adapters/test/providers/fixtures/openro
 
 - A full in-flight budget (402, `limit_source` `openrouter_in_flight_budget`) is transient and carries `Retry-After` ([limits](https://openrouter.ai/docs/api-reference/limits)), but fails the turn as `PROVIDER_PAYMENT_REQUIRED` without an in-turn retry (the job may still be retried). Not seen live; treating it as a rate limit would be a one-line change in `failureForOpenRouterRejection` / `failure_for_openrouter_rejection`.
 - The [models reference](https://openrouter.ai/docs/api-reference/models/get-models) lists a bearer-key requirement, but production serves the catalogue without one (verified 2026-10-31) and the code deliberately sends none. If OpenRouter enforces the key, the free model list disappears from Settings (typed ids still work).
-- `reasoning.effort` is sent for every model; on a reasoning model the 8,192-token cap can be spent on reasoning alone (`PROVIDER_OUTPUT_TRUNCATED`), as the example shows at 16 tokens. OpenRouter ignores `reasoning` for a model without reasoning, so sending it only when the catalogue lists `reasoning` would change nothing for those; for budget models `high` reserves about 80 % of the cap (about 6,550 tokens), leaving about 1,640 for the answer, and effort-only or mandatory-reasoning models may use more. Bounding it needs an owner decision (spend per turn vs. answer room vs. what Settings → effort means): raise `MAX_COMPLETION_TOKENS` (more spend per turn), send `reasoning.max_tokens` (e.g. at most half the cap) instead of `effort`, or map `high` to `medium` on this backend.
-- No live completed chat answer with text was captured: the free models tried were rate-limited or spent the cap on reasoning, and the key has no credit for paid models. `packages/adapters/test/providers/fixtures/openrouter/ok.sse` is documentation-derived, not recorded.
+- `reasoning.effort` is sent for every model; the previous uniform 8,192-token cap could be spent on reasoning alone (`PROVIDER_OUTPUT_TRUNCATED`), as the example shows at 16 tokens. OpenRouter ignores `reasoning` for a model without reasoning, so sending it only when the catalogue lists `reasoning` would change nothing for those; for budget models `high` reserves about 80 % of the cap (about 6,550 tokens), leaving about 1,640 for the answer, and effort-only or mandatory-reasoning models may use more. Bounding it needs an owner decision (spend per turn vs. answer room vs. what Settings → effort means): raise `MAX_COMPLETION_TOKENS` (more spend per turn), send `reasoning.max_tokens` (e.g. at most half the cap) instead of `effort`, or map `high` to `medium` on this backend.
+- The 2026-11-06 live Node run on `nvidia/nemotron-3.5-lightning:free` at medium effort completed without truncation at the new 32,768 cap, but produced invalid citation ids and failed the sourced-screening assertions. Rust and the focused comparison were subsequently blocked by rate limits; a diagnostic confirmed a daily free-model quota rejection (HTTP 429, no Retry-After). Full sourced-screening verification on this model is not green. `packages/adapters/test/providers/fixtures/openrouter/ok.sse` remains documentation-derived, not a capture of that run.
 
 ### Verification log
 
 | Date | Method | What was checked | By |
 |---|---|---|---|
+| 2026-11-12 | live + regression | Dots Note free catalogue maximum 460,800; reproduced truncation of Japanese research at 8,192 including compact repair. Added exact-id 32,768 profile with unchanged effort; paid and near-match caps remain 8,192. | Codex |
+| 2026-11-06 | live + regression | Catalogue: exact Nemotron free id maximum 65,536, zero pricing; both adapters now send 32,768 preserving effort. Real dev Node turn completed without truncation but failed citation checks; real dev Rust/focused turns rate-limited; direct diagnostic confirmed daily free quota. Request/body tests and both Rust/TypeScript provider suites passed. | Codex |
 | 2026-10-31 | live | `GET /api/v1/models` without a key (456 models, 16 free); `POST /api/v1/chat/completions` on `nvidia/nemotron-3.5-lightning:free` with `max_completion_tokens` 16 (streamed, `finish_reason` `length`, `cost` 0); 401 with an invalid key; 403 key limit on a paid model; 429 upstream rate limit on `google/gemma-4-31b-it:free` | Claude (external API documentation, ADR-0047) |
 | 2026-10-31 | spec | Rejected-answer bodies now read for `error.metadata.limit_source` (spent budgets → `PROVIDER_PAYMENT_REQUIRED`, status kept; the live 403 key-limit example) against the [limits](https://openrouter.ai/docs/api-reference/limits) page; reasoning budgets against [reasoning tokens](https://openrouter.ai/docs/use-cases/reasoning-tokens). Recorded fixtures added from the live captures. | Claude (external API defect fixes) |
 | 2026-10-31 | spec | Request parameters, chunk and usage fields, error statuses and bodies, limits, model object against the official pages linked in the Overview | Claude (external API documentation, ADR-0047) |
 | 2026-10-17 | live | Upstream-overloaded error chunk before any output (fixture `upstream-overloaded.sse`) | earlier session (recorded in the `openRouter.ts` header until 2026-10-31) |
+
+
+#### 2026-11-06 — Nemotron free completion allowance
+
+The live `GET /api/v1/models` record for the exact id `nvidia/nemotron-3.5-lightning:free` reported `top_provider.max_completion_tokens = 65536`, zero prompt/completion pricing, support for `reasoning`, and optional reasoning (`mandatory = false`). Both runners now request a bounded **32,768 total tokens** for this exact id, preserving the owner's effort. All other ids, including the paid variant, keep 8,192. No fallback model, disabled thinking, new retries or paid-model budget increase is introduced. Truncated responses still fail explicitly; an incomplete JSON document is not published. The half-maximum profile leaves more room for reasoning plus structured answers while remaining bounded; it is not a guarantee that every prompt will finish.
+
+Primary references: [OpenRouter reasoning budgets](https://openrouter.ai/docs/guides/best-practices/reasoning-tokens), [NVIDIA Nemotron thinking/output budgets](https://docs.nvidia.com/nim/large-language-models/2.0.10/get-started/advanced/get-started-nemotron-3.5-lightning.html). The model-specific catalogue maximum was checked live rather than inferred from the model family. The older diagnostic 16-token stream above remains a historical truncation example; its request matches production except for the explicitly diagnostic cap.
+
+#### 2026-11-12 — Dots Note free completion allowance
+
+Verified: live, 2026-11-12, `GET /api/v1/models`: the exact `dots-studio/dots-3-note-preview:free` record reports a 512,000-token context and `top_provider.max_completion_tokens = 460800`, with reasoning support. A real Japanese corporate-training research run and its compact repair both hit the previous 8,192-token completion cap (`PROVIDER_OUTPUT_TRUNCATED`). Both adapters now request 32,768 total tokens for this exact free id, preserving the chosen effort and existing free-cost enforcement. Paid/near-match ids keep 8,192. This bounded allowance is below the live catalogue maximum; it does not guarantee that every answer completes. The older Nemotron diagnostic example above is unchanged.

@@ -3,6 +3,7 @@ import { LocaleProvider } from "@research/i18n/solid";
 import { cleanup, fireEvent, render, screen, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
+import { NewsView } from "../src/news/NewsView.tsx";
 import { SourcesView } from "../src/sources/SourcesView.tsx";
 import { createFakeBackend, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 
@@ -87,13 +88,26 @@ describe("Sources view in Japanese", () => {
 		).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "今すぐニュースを更新" })).toBeNull();
 		expect(screen.queryByText(/サーバーが約 30 分ごとに更新/)).toBeNull();
-		expect(screen.getByText("まだ取り込んだ記事はありません。", { exact: false })).toBeTruthy();
+		expect(screen.queryByText("まだ取り込んだ記事はありません。", { exact: false })).toBeNull();
 
 		// The recommended catalog's own title, publisher and rationale stay as the server sent them.
 		const entry = await screen.findByText("Primary source for monthly production statistics.");
 		expect(entry).toBeTruthy();
 		expect(screen.getByRole("button", { name: "「Official Statistics Feed」を購読" })).toBeTruthy();
 		expect(document.body.textContent).toContain("JP · ja · 公式 · 既定のライセンス:");
+	});
+
+	it("shows the dedicated News page in Japanese", async () => {
+		render(() => (
+			<LocaleProvider locale={() => "ja"}>
+				<NewsView api={createApiClient({ fetch: backend.fetch })} />
+			</LocaleProvider>
+		));
+		await screen.findByText("まだ取り込んだ記事はありません。", { exact: false });
+		expect(screen.getByRole("link", { name: "ニュースの情報源を管理" }).getAttribute("href")).toBe(
+			"#/sources",
+		);
+		expect(screen.getByRole("button", { name: "記事を再読み込み" })).toBeTruthy();
 	});
 
 	it("states the feed host's answer status beside the last error in Japanese", async () => {

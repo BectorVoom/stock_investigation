@@ -33,6 +33,11 @@ export const PAGES = [
 		purpose: "Ask research questions and read the answers, with their sources and run progress.",
 	},
 	{
+		view: "news",
+		title: "News",
+		purpose: "Read recent articles from your subscribed news sources.",
+	},
+	{
 		view: "sources",
 		title: "Sources",
 		purpose: "Choose which news sources research may read.",

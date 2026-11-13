@@ -382,10 +382,20 @@ test("dragging to the bottom edge auto-scrolls the container and persists", asyn
 	});
 	await page.mouse.up();
 
+	// The Notebook renders server-confirmed state, so the drop must finish its
+	// save and readback before the DOM order changes (ADR-0043).
+	await expect
+		.poll(
+			() =>
+				notebookArticles().evaluateAll((nodes) =>
+					nodes.map((node) => node.getAttribute("data-widget-id")),
+				),
+			{ timeout: 15_000 },
+		)
+		.not.toEqual(before);
 	const moved = await notebookArticles().evaluateAll((nodes) =>
 		nodes.map((node) => node.getAttribute("data-widget-id")),
 	);
-	expect(moved).not.toEqual(before);
 	const draggedIndex = moved.indexOf(draggedId);
 	const underIndex = moved.indexOf(underId);
 	// The widget left the top, landed where the pointer was (beside the

@@ -19,6 +19,13 @@ The API inserts a job in state `pending`. The runner claims it, which grants a l
 
 ## Columns
 
+Research requests may carry optional `outputType: "news" | "chat"` in
+`request_json`. News tasks preserve the original question (up to 2,000
+characters) and set this field; editorial instructions are added by the
+runner's prompt builder, never prepended to the stored question. Absence is
+valid for historical and ordinary Chat requests. This is an additive JSON
+contract change, not a column or migration change.
+
 | Column | Data Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | `owner_id` | TEXT | No | - | The single owner's id (no owners table; API-004). |

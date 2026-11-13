@@ -326,6 +326,7 @@ export type ScheduleChoice = (typeof SCHEDULE_CHOICES)[number];
 export const WEEKDAYS: readonly ScheduleWeekday[] = [0, 1, 2, 3, 4, 5, 6];
 
 export interface TaskDraft {
+	readonly outputType?: "news" | "chat";
 	readonly title: string;
 	readonly question: string;
 	readonly horizonYears: 3 | 4 | 5;
@@ -400,6 +401,7 @@ export function draftFromTask(
 		}
 	})();
 	return {
+		outputType: task.outputType ?? "chat",
 		title: task.title,
 		question: task.question,
 		horizonYears: task.horizonYears,
@@ -510,6 +512,7 @@ export function evaluateTaskDraft(
 		return { problems, request: null, consentNeed: need };
 	}
 	const parsed = createScheduledTaskRequestSchema.safeParse({
+		outputType: draft.outputType ?? "chat",
 		title,
 		question,
 		horizonYears: draft.horizonYears,

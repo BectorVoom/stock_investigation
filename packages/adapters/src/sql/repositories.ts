@@ -1336,6 +1336,13 @@ export function createChatRepository(db: SqlDatabase): ChatRepository {
 						AND cm_last.workspace_id = w.workspace_id
 						AND cm_last.seq = message_stats.max_seq
 					WHERE w.owner_id = ?
+						AND NOT EXISTS (
+							SELECT 1
+							FROM scheduled_tasks AS st
+							WHERE st.owner_id = w.owner_id
+								AND st.workspace_id = w.workspace_id
+								AND st.output_type = 'news'
+						)
 					ORDER BY last_activity_at DESC, w.workspace_id ASC
 					LIMIT ?`,
 				)

@@ -313,3 +313,20 @@ property tests, not Lean.
   (ADR-0010) and a new decision.
 - Not in scope: drawing tools, saving viewer settings, deep links to the
   viewer, comparing series not in the widget, export.
+
+### Retrying a failed viewer asset (2026-11-13)
+
+Clearing the app's import promise does not clear WebKit's failed-module URL
+cache. The first load keeps the normal static lazy import and preload path.
+After a failed root-asset fetch, a retry uses the compiler-emitted hashed viewer
+URL with a fresh `chart-retry` query. The URL must have the same origin; the
+loaded module's two component exports are checked before use. Successful loads
+and concurrent requests remain shared through the existing promise.
+
+A Vite virtual-module plugin supplies the compiled URL in builds and the Vite
+source-module URL in development. It does not eagerly fetch the viewer. The
+browser test blocks both ordinary and query-bearing root URLs, requires a
+fresh request on repeated failures, then restores the network and verifies
+opening, closing and focus return under the unchanged CSP. A removed release
+asset or a failed static dependency may still require reloading the page;
+root-asset query retries do not claim to repair the whole module graph.

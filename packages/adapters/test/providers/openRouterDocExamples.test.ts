@@ -8,9 +8,9 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { createOpenRouterFreeRuntime, createOpenRouterRuntime } from "../../src/providers/index.ts";
 import {
+	completionTokenLimit,
 	failureForOpenRouterRejection,
 	interpretSseLine,
-	MAX_COMPLETION_TOKENS,
 	OPENROUTER_CHAT_COMPLETIONS_URL,
 } from "../../src/providers/openRouter.ts";
 import {
@@ -68,7 +68,7 @@ describe("openrouter.md examples", () => {
 		expect(call.init.body).toBe(
 			documented.replace(
 				'"max_completion_tokens":16,',
-				`"max_completion_tokens":${MAX_COMPLETION_TOKENS},`,
+				`"max_completion_tokens":${completionTokenLimit(FREE_MODEL)},`,
 			),
 		);
 		const sent = new Headers(call.init.headers);
@@ -79,6 +79,22 @@ describe("openrouter.md examples", () => {
 			const value = line.slice(colon + 1).trim();
 			expect(sent.get(name), name).toBe(name === "Authorization" ? `Bearer ${API_KEY}` : value);
 		}
+	});
+
+	it("documents the exact Dots Note free request at its production completion cap", async () => {
+		const lines = docExampleText("openrouter", "openrouter-dots-request").split("\n");
+		const blank = lines.indexOf("");
+		const fake = recordingFetch(() => sseResponse(lengthStream()));
+		const runtime = createOpenRouterFreeRuntime(makeEnvironment({ fetch: fake.fetch, env: ENV }), {
+			catalog: { list: async () => null },
+		});
+		await collect(
+			runtime.run(
+				makeRequest({ prompt: PROMPT }),
+				makeContext({ model: "dots-studio/dots-3-note-preview:free", effort: "low" }),
+			),
+		);
+		expect(itemAt(fake.calls, 0).init.body).toBe(lines.slice(blank + 1).join("\n"));
 	});
 
 	it("reads the live length-capped stream as truncated, with no text", async () => {

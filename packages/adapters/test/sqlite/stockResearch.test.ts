@@ -8,7 +8,7 @@ import {
 	openNodeSqlite,
 	readSqlMigrations,
 } from "../../src/sqlite/index.ts";
-import { seedStockResearch } from "../sql/stockResearchFixtures.ts";
+import { seedStockResearch, seedStockScreening } from "../sql/stockResearchFixtures.ts";
 
 for (const layout of ["canonical", "migrated"] as const)
 	describe(`stored stock retrieval (${layout})`, () => {
@@ -30,6 +30,39 @@ for (const layout of ["canonical", "migrated"] as const)
 			await seedStockResearch(db, "owner");
 			return { db, repository: createStockResearchRepository(db) };
 		}
+		it("retrieves thematic candidates and both annual profit periods for staged agent screening", async () => {
+			const { db, repository } = await setup();
+			try {
+				await seedStockScreening(db, "owner");
+				const candidates = await repository.search("owner", {
+					query: "ドローン",
+					kind: "company",
+					limit: 12,
+				});
+				expect(candidates.hits).toHaveLength(2);
+				expect(candidates.hits.every((hit) => !hit.aiGenerated && hit.sourceUrl !== null)).toBe(
+					true,
+				);
+				for (const [symbol, current] of [
+					["DRONE25", "1250000"],
+					["DRONE10", "1100000"],
+				]) {
+					const financials = await repository.search("owner", {
+						query: `${symbol} 純利益`,
+						kind: "financials",
+						limit: 12,
+					});
+					expect(financials.hits).toHaveLength(2);
+					expect(financials.hits.map((hit) => hit.text).join(" ")).toContain(`value=${current}`);
+					expect(financials.hits.map((hit) => hit.text).join(" ")).toContain("value=1000000");
+					expect(financials.hits.map((hit) => hit.text).join(" ")).toContain("fiscalYear=2024");
+					expect(financials.hits.map((hit) => hit.text).join(" ")).toContain("fiscalYear=2025");
+				}
+			} finally {
+				db.close();
+			}
+		});
+
 		it("searches every corpus with exact decimals, lineage and owner isolation", async () => {
 			const { db, repository } = await setup();
 			try {

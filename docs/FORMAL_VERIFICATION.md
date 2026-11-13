@@ -94,3 +94,28 @@ The research clipboard snapshot reuses the existing `RecentWithinBudget.lean` se
 
 
 SEC identity handover: `ResearchFormal/SecIdentity.lean` models the optional `primaryListing` release predicate in `completionEffects`. It proves that a secondary never releases another listing, a confirmed main can release a tracked listing, and an older runner cannot release a tracked listing. Application regressions exercise the same three cases; SQL integration tests cover atomic handover. Directory decoding, SEC row ordering and report heading recognition remain outside the Lean model and are checked by parser tests and cross-language vectors. The existing `BusinessSection` proofs cover section bounds without changes.
+
+
+## Demand investigation selection
+
+`ResearchFormal/DemandSignals.lean` mirrors
+`packages/domain/src/news/demandSignals.ts`'s classification precedence and
+conjunctive selection. It proves that expanding classifications require positive
+input flags with no uncertainty/weakening, forecasts cannot become expanding,
+weakening takes precedence over positive wording when uncertainty is absent,
+and every filtered result belongs to the input and passes every condition.
+The exported `demandKind` and `demandFilter` vectors exhaustively replay all
+Boolean combinations in `tests/formal/demandSignals.conformance.test.ts`.
+
+These proofs do **not** establish linguistic accuracy, economic demand, theme
+attribution, significance, market size or source truth. Regex recognition,
+Unicode normalization, passage extraction and bilingual theme coverage are
+tested with a synthetic regression corpus; archive requests/cancellation and
+user workflows are integration/browser tested.
+
+Coverage-browsing correction: the demand model now explicitly permits unassessed
+context when coverage mode is selected, while proving that the theme/text filters
+still apply. The new demandCoverage vectors exhaust its Boolean combinations.
+This is a selection invariant, not a claim that useful demand information exists
+for each theme. Browser-search URL construction is tested separately; the app
+neither retrieves nor assesses the external search response.

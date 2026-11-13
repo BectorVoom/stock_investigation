@@ -45,7 +45,8 @@
 		"rust:test": "cargo test --workspace --locked",
 		"deploy": "bun run scripts/deploy.ts",
 		"db:migrate:remote": "wrangler d1 migrations apply research --remote --env production --config infra/wrangler.jsonc",
-		"review:ui": "playwright test --config tests/ui-review/playwright.config.ts"
+		"review:ui": "playwright test --config tests/ui-review/playwright.config.ts",
+		"search:service": "node --env-file-if-exists=apps/runner/.env scripts/agentWebSearch.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.5",

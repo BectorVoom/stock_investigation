@@ -347,6 +347,7 @@ mod tests {
 				port: Some(port),
 				extra_root_pem: Some(CA_PEM.to_owned()),
 				dial_loopback: true,
+				connect_timeout: None,
 			})
 			.unwrap(),
 			override_ip: Some("93.184.216.34".parse().unwrap()),

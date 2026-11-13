@@ -27,6 +27,11 @@ tokio = { workspace = true }
 tokio-util = { workspace = true }
 rayon = { workspace = true }
 
+bytes = { workspace = true }
+hyper = { workspace = true }
+hyper-util = { workspace = true }
+http-body-util = { workspace = true }
+
 [lints]
 workspace = true
 

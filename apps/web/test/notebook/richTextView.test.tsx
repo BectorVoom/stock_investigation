@@ -274,9 +274,15 @@ describe("text widget in place", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
 		const editor = await openEditor();
 		const view = pmView();
+		// An inactive toolbar reserves layout space but offers no accessible controls.
+		expect(screen.queryByRole("toolbar", { name: "Formatting" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Bold" })).toBeNull();
 		selectText(view, "this");
 		fireEvent.click(await screen.findByRole("button", { name: "Bold" }));
 		expect(editor.querySelector("strong")?.textContent).toBe("this");
+		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1)));
+		expect(screen.queryByRole("toolbar", { name: "Formatting" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Bold" })).toBeNull();
 	});
 
 	it("bolds with Ctrl+B and links with Ctrl+K plus a validated URL", async () => {

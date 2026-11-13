@@ -477,6 +477,18 @@ const NEXT_DUE_AT_OF_JOB_END = `CASE
 		ELSE excluded.next_due_at
 	END`;
 
+/**
+ * The `value_decimal` of a row as an IEEE-754 double, or NULL when there is
+ * no value or the decimal is not finite (a decimal beyond double range: the
+ * row keeps its exact text; screening skips it). Never shown; the screening
+ * range and sort use it (migration 0036).
+ */
+function valueRealOf(valueDecimal: string | null): number | null {
+	if (valueDecimal === null) return null;
+	const value = Number(valueDecimal);
+	return Number.isFinite(value) ? value : null;
+}
+
 function metricValueTuple(row: EquityMetricValueContent): SqlValue[] {
 	return [
 		row.metricCode,
@@ -491,6 +503,7 @@ function metricValueTuple(row: EquityMetricValueContent): SqlValue[] {
 		row.periodEnd,
 		row.derived ? 1 : 0,
 		row.reportedValueCount,
+		valueRealOf(row.valueDecimal),
 	];
 }
 
@@ -763,13 +776,14 @@ export function equitySyncStatements(
 					.prepare(
 						`INSERT INTO equity_metric_value (owner_id, company_id, metric_code, fiscal_year,
 							value_decimal, currency, unavailable_reason, filing_id, concept, scope,
-							period_start, period_end, derived, reported_value_count, updated_at)
+							period_start, period_end, derived, reported_value_count, updated_at, value_real)
 						SELECT ?, ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
 							json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
 							json_extract(incoming.value, '$[4]'), json_extract(incoming.value, '$[5]'),
 							json_extract(incoming.value, '$[6]'), json_extract(incoming.value, '$[7]'),
 							json_extract(incoming.value, '$[8]'), json_extract(incoming.value, '$[9]'),
-							json_extract(incoming.value, '$[10]'), json_extract(incoming.value, '$[11]'), ?
+							json_extract(incoming.value, '$[10]'), json_extract(incoming.value, '$[11]'), ?,
+							json_extract(incoming.value, '$[12]')
 						FROM json_each(?) AS incoming
 						WHERE ${g}
 						ON CONFLICT (owner_id, company_id, fiscal_year, metric_code) DO UPDATE SET
@@ -778,6 +792,7 @@ export function equitySyncStatements(
 							concept = excluded.concept, scope = excluded.scope,
 							period_start = excluded.period_start, period_end = excluded.period_end,
 							derived = excluded.derived, reported_value_count = excluded.reported_value_count,
+							value_real = excluded.value_real,
 							updated_at = excluded.updated_at
 						WHERE equity_metric_value.value_decimal IS NOT excluded.value_decimal
 							OR equity_metric_value.currency IS NOT excluded.currency
@@ -788,7 +803,8 @@ export function equitySyncStatements(
 							OR equity_metric_value.period_start IS NOT excluded.period_start
 							OR equity_metric_value.period_end IS NOT excluded.period_end
 							OR equity_metric_value.derived IS NOT excluded.derived
-							OR equity_metric_value.reported_value_count IS NOT excluded.reported_value_count`,
+							OR equity_metric_value.reported_value_count IS NOT excluded.reported_value_count
+							OR equity_metric_value.value_real IS NOT excluded.value_real`,
 					)
 					.bind(ownerId, companyId, effects.at, chunk, ...gv),
 			);

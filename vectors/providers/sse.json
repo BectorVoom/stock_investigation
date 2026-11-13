@@ -6794,6 +6794,57 @@
 		}
 	},
 	{
+		"input": "data:replays real 2.2.5 denied reads and shell calls, then accepts the text answer",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:opencode/v225-permission-rejected.jsonl",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"model\":\"opencode/nemotron-3.5-lightning-free\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:I'll start by exploring the current directory structure to understand what's available.\nISOLATED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:OPENCODE_ISOLATION_CANARY_225",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:write",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:replays real 2.2.6 rejected %s without executing a tool",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:ISOLATED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
 		"input": "data:opencode probe",
 		"output": {
 			"kind": "malformed"
@@ -6956,6 +7007,18 @@
 		}
 	},
 	{
+		"input": "data:opencode v2.2.4",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:opencode v2.2.7",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
 		"input": "data:opencode v3.0.0",
 		"output": {
 			"kind": "malformed"
@@ -6992,6 +7055,33 @@
 		"input": "data:opencode v2.0.31",
 		"output": {
 			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:2.2.5",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:2.2.6",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:accepts reverified %s with stored credentials and a model catalogue",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"lines\":[\"opencode/nemotron-3.5-lightning-free\"],\"code\":0}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
 		}
 	},
 	{
@@ -7151,6 +7241,54 @@
 		}
 	},
 	{
+		"input": "data:nvidia/nemotron-3.5-lightning:free",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:dots-studio/dots-3-note-preview:free",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:dots-studio/dots-3-note-preview",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:dots-studio/dots-3-note-preview:free-extra",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:nvidia/nemotron-3.5-lightning",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:nvidia/nemotron-3.5-lightning:free-extra",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:other/model:free",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:reserves the model-specific completion allowance for %s without changing effort",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
 		"input": "data:posts one streaming chat completion with the prompt, no tools and no fallback models",
 		"output": {
 			"kind": "malformed"
@@ -7260,12 +7398,6 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:other/model:free",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -8196,12 +8328,6 @@
 		}
 	},
 	{
-		"input": "data:nvidia/nemotron-3.5-lightning:free",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:openrouter-chat-stream-length",
 		"output": {
 			"kind": "malformed"
@@ -8244,6 +8370,27 @@
 		"input": "data:Host",
 		"output": {
 			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:documents the exact Dots Note free request at its production completion cap",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter-dots-request",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"model\":\"dots-studio/dots-3-note-preview:free\",\"effort\":\"low\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
 		}
 	},
 	{

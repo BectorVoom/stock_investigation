@@ -138,6 +138,7 @@ export function CitationChip(props: {
 	readonly number: number;
 	readonly label: string;
 	readonly relation?: CitationRelation | null;
+	readonly subtle?: boolean;
 	readonly open: boolean;
 	readonly interaction: CitationInteraction;
 }): JSX.Element {
@@ -148,7 +149,17 @@ export function CitationChip(props: {
 			data-relation={props.relation ?? undefined}
 			aria-label={props.label}
 			aria-expanded={props.open}
-			class={props.open ? CHIP_OPEN : CHIP}
+			class={
+				props.subtle
+					? `min-h-6 min-w-6 rounded px-1 text-2xs font-normal tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 ${
+							props.open
+								? "bg-slate-200 text-slate-800"
+								: "text-slate-600 hover:bg-slate-100 hover:text-slate-700"
+						}`
+					: props.open
+						? CHIP_OPEN
+						: CHIP
+			}
 			onMouseEnter={() => props.interaction.enterChip(props.chipKey)}
 			onFocus={() => props.interaction.preview(props.chipKey)}
 			onClick={(event) => {

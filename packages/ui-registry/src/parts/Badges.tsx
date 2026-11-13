@@ -1,6 +1,6 @@
 import type { Claim } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
-import type { JSX } from "solid-js";
+import { type JSX, Show } from "solid-js";
 import { badgeMessages } from "./parts.messages.tsx";
 
 export type ClaimType = Claim["claimType"];
@@ -11,15 +11,11 @@ export type ClaimStatus = Claim["status"];
  * word is the catalog's `badgeMessages[status]`).
  */
 const STATUS_PRESENTATION: {
-	readonly [S in ClaimStatus]: {
+	readonly [S in Exclude<ClaimStatus, "supported">]: {
 		readonly symbol: string;
 		readonly classes: string;
 	};
 } = {
-	supported: {
-		symbol: "✓",
-		classes: "border-emerald-700 bg-emerald-50 text-emerald-900",
-	},
 	unsupported: {
 		symbol: "✕",
 		classes: "border-red-700 bg-red-50 text-red-900",
@@ -50,16 +46,17 @@ export function ClaimTypeBadge(props: { readonly claimType: ClaimType }): JSX.El
 	);
 }
 
-/** Unsupported and conflicting claims are shown, visibly distinct, never hidden (section 9.8). */
+/** Verified prose has no success badge; audit failures and conflicts retain their labels. */
 export function ClaimStatusBadge(props: { readonly status: ClaimStatus }): JSX.Element {
 	const m = useMessages(badgeMessages);
 	return (
-		<span
-			data-claim-status={props.status}
-			class={`${BADGE_BASE} ${STATUS_PRESENTATION[props.status].classes}`}
-		>
-			<span aria-hidden="true">{STATUS_PRESENTATION[props.status].symbol}</span>
-			{m()[props.status]}
-		</span>
+		<Show when={props.status === "supported" ? null : STATUS_PRESENTATION[props.status]}>
+			{(presentation) => (
+				<span data-claim-status={props.status} class={`${BADGE_BASE} ${presentation().classes}`}>
+					<span aria-hidden="true">{presentation().symbol}</span>
+					{m()[props.status]}
+				</span>
+			)}
+		</Show>
 	);
 }

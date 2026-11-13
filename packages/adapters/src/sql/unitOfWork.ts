@@ -160,13 +160,20 @@ function stockDirectoryStatements(
 	completion: StockDirectoryCompletion,
 	guard: Guard,
 ): SqlStatement[] {
+	// Reconcile listing fields without discarding independently stored margin balances.
 	const statements: SqlStatement[] = [
 		db
 			.prepare(
 				`DELETE FROM stock_directory
-				WHERE owner_id = ? AND market = ? AND ${guard.sql}`,
+				WHERE owner_id = ? AND market = ? AND ${guard.sql}
+					AND symbol NOT IN (SELECT value FROM json_each(?))`,
 			)
-			.bind(ownerId, completion.market, ...guard.values),
+			.bind(
+				ownerId,
+				completion.market,
+				...guard.values,
+				JSON.stringify(completion.rows.map((row) => row.symbol)),
+			),
 	];
 	for (const chunk of chunkStockDirectoryRows(completion.rows)) {
 		statements.push(
@@ -178,7 +185,12 @@ function stockDirectoryStatements(
 						json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'), json_extract(incoming.value, '$[4]'),
 						json_extract(incoming.value, '$[5]'), json_extract(incoming.value, '$[6]'), json_extract(incoming.value, '$[7]')
 					FROM json_each(?) AS incoming
-					WHERE ${guard.sql}`,
+					WHERE ${guard.sql}
+					ON CONFLICT (owner_id, market, symbol) DO UPDATE SET
+						name = excluded.name, local_name = excluded.local_name,
+						listing = excluded.listing, symbol_key = excluded.symbol_key,
+						name_key = excluded.name_key, local_name_key = excluded.local_name_key,
+						search_key = excluded.search_key`,
 				)
 				.bind(ownerId, completion.market, chunk, ...guard.values),
 		);

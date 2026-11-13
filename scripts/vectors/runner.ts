@@ -495,6 +495,27 @@ export const runnerExporter: VectorExporter = {
 			environments.push(randomStockPriceEnvironment(stockPriceRandom));
 		}
 
+		for (const url of [
+			"http://127.0.0.1:8090",
+			"http://[::1]:8090",
+			"http://localhost:8090",
+			"http://192.168.1.1/",
+			"http://127.0.0.1:8090/?",
+			"http://127.0.0.1:8090/#",
+		]) {
+			environments.push({ ...BASE, AGENT_WEB_SEARCH_URL: url });
+		}
+		for (const key of [
+			"",
+			"agent-search-test-key",
+			"with spaces",
+			"a".repeat(15),
+			"a".repeat(16),
+			"a".repeat(256),
+			"a".repeat(257),
+		]) {
+			environments.push({ ...BASE, AGENT_WEB_SEARCH_API_KEY: key });
+		}
 		const texts: string[] = [...ENV_FIXED];
 		for (let index = 0; index < 6000; index += 1) texts.push(randomEnvText(random));
 

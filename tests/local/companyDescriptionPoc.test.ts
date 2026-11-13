@@ -32,6 +32,7 @@ import { salvageReply } from "../../scripts/poc/companyDescription/reply.ts";
 import {
 	EMPTY_SUMMARY,
 	hasEmptySummary,
+	isFruitless,
 	isOutOfCredit,
 	KEPT_STORED,
 	MAX_SEARCH_FAILURES_IN_A_ROW,
@@ -46,9 +47,13 @@ import {
 	WebBudget,
 } from "../../scripts/poc/companyDescription/runPolicy.ts";
 import {
+	edinetCodesByStockCode,
 	groupDigits,
 	isIssuerSymbol,
 	issuerFinder,
+	pagesByStock,
+	secMainTickerOf,
+	secMainTickers,
 	sharedNameNote,
 } from "../../scripts/poc/companyDescription/sources.ts";
 import { styleProblems } from "../../scripts/poc/companyDescription/style.ts";
@@ -65,6 +70,7 @@ import {
 import {
 	choosePages,
 	cooldownSeconds,
+	edinetFilingTextUrl,
 	isJobSiteHost,
 	isRegisterPageOfAnother,
 	nameWords,
@@ -835,6 +841,9 @@ describe("run policy (PoC)", () => {
 			"カナダで鉱物資産の取得と探鉱を行う。",
 			"エンジニアリング・プラスチックの販売（主力）事業を展開。",
 			"VLCC原油タンカーを世界のエネルギー企業に定期用船契約で貸し出す。",
+			// A brand that is a domain name (LTRYW, MCGAW) is not a web address.
+			"Sports.comはスポーツ動画配信基盤で、短編動画とライブ中継を提供。",
+			"TMTG、Crypto.comとの企業結合契約は2026年8月7日付で合意解除。",
 		]) {
 			expect(saysNothingOfTheBusiness(said(ja)), ja).toBe(false);
 		}
@@ -928,6 +937,18 @@ describe("listings that are not companies (PoC, ADR-0064 §5e)", () => {
 		expect(issuerOf({ market: "US", symbol: "EP-PC" })?.symbol).toBe("KMI");
 		expect(issuerOf({ market: "US", symbol: "CMS-PB" })).toBeNull();
 		expect(issuerOf({ market: "US", symbol: "BAC-PL" })?.symbol).toBe("BAC");
+	});
+
+	it("lets the series of an issuer with no listed common stock copy the first one (Triton)", () => {
+		const listing = (symbol: string) => ({
+			market: "US" as const,
+			symbol,
+			name: "Triton International Ltd",
+		});
+		const issuerOf = issuerFinder([listing("TRTN-PB"), listing("TRTN-PA"), listing("TRTN-PG")]);
+		expect(issuerOf({ market: "US", symbol: "TRTN-PA" })).toBeNull();
+		expect(issuerOf({ market: "US", symbol: "TRTN-PB" })?.symbol).toBe("TRTN-PA");
+		expect(issuerOf({ market: "US", symbol: "TRTN-PG" })?.symbol).toBe("TRTN-PA");
 	});
 
 	it("finds an issuer listed under the same name by its symbol (the 2026-11-04 failures)", () => {
@@ -1027,6 +1048,32 @@ describe("web fetch fallback (PoC, ADR-0064 §2c)", () => {
 		expect(result.stock.sources).toHaveLength(1);
 		expect(result.stock.sources[0]?.url).toBe(urls[0]);
 		expect(result.costUsd).toBeCloseTo(0.011);
+	});
+
+	it("reads the annual report's text after the company's own pages, also when the search failed", async () => {
+		read.length = 0;
+		const filing = "https://edinetdb.jp/company/E00933/text";
+		await withWebSources(stock, findPages, failingFetch("HTTP_ERROR"), fallbackRead, [filing]);
+		expect(read).toEqual([...urls, filing]);
+		read.length = 0;
+		const failedSearch = async () => ({
+			ok: false as const,
+			code: "SEARCH_FAILED",
+			detail: "timeout",
+			costUsd: 0,
+		});
+		const result = await withWebSources(
+			stock,
+			failedSearch,
+			failingFetch("HTTP_ERROR"),
+			fallbackRead,
+			[filing],
+		);
+		expect(read).toEqual([filing]);
+		expect(result.searchFailure?.code).toBe("SEARCH_FAILED");
+		expect(result.stock.sources).toHaveLength(1);
+		expect(edinetFilingTextUrl("E00933")).toBe(filing);
+		expect(edinetFilingTextUrl("../x")).toBeNull();
 	});
 
 	it("never reads a page robots.txt refuses, or a PDF, that way", async () => {
@@ -1131,7 +1178,94 @@ describe("the claude-code backend (PoC, ADR-0064 §2d)", () => {
 	});
 });
 
+describe("annual reports and filers (PoC, review of 2026-11-05)", () => {
+	it("maps each SEC filer's main ticker to its CIK, the first one listed", () => {
+		const main = secMainTickers({
+			"0": { cik_str: 19617, ticker: "JPM", title: "JPMORGAN CHASE & CO" },
+			"1": { cik_str: 1506307, ticker: "KMI", title: "KINDER MORGAN, INC." },
+			"2": { cik_str: 19617, ticker: "AMJB", title: "JPMORGAN CHASE & CO" },
+			"10": { cik_str: 1506307, ticker: "EP-PC", title: "KINDER MORGAN, INC." },
+		});
+		expect(main.get("JPM")).toBe("0000019617");
+		expect(main.get("KMI")).toBe("0001506307");
+		expect(main.has("AMJB")).toBe(false);
+		expect(main.has("EP-PC")).toBe(false);
+		expect(() => secMainTickers({ x: { ticker: "JPM" } })).toThrow();
+	});
+
+	it("reads listed companies' EDINET codes from the EDINET code list", () => {
+		const csv = [
+			"ダウンロード実行日,2026年11月04日現在,件数,11437件",
+			"ＥＤＩＮＥＴコード,提出者種別,上場区分,連結の有無,資本金,決算日,提出者名,提出者名（英字）,提出者名（ヨミ）,所在地,提出者業種,証券コード,提出者法人番号",
+			'"E00004","内国法人・組合","上場","有","1491","5月31日","カネコ種苗株式会社","KANEKO SEEDS CO., LTD.","カネコシュビョウカブシキガイシャ","前橋市","水産・農林業","13760","5070001000715"',
+			'"E39999","内国法人・組合","上場","無","100","3月31日","x","x","x","x","x","130A0","1"',
+			'"E00005","内国法人・組合","非上場","有","1","3月31日","y","y","y","y","y","","2"',
+		].join("\r\n");
+		expect([...edinetCodesByStockCode(csv)]).toEqual([
+			["1376", { edinetCode: "E00004", filerName: "カネコ種苗株式会社" }],
+			["130A", { edinetCode: "E39999", filerName: "x" }],
+		]);
+	});
+
+	it("names each other ticker's main ticker, and copies it unless the name is an ETN bank's", () => {
+		const file = {
+			"0": { cik_str: 1000209, ticker: "MFIN", title: "MEDALLION FINANCIAL CORP" },
+			"1": { cik_str: 927971, ticker: "BMO", title: "BANK OF MONTREAL" },
+			"5": { cik_str: 1000209, ticker: "MBNKO", title: "MEDALLION FINANCIAL CORP" },
+			"6": { cik_str: 927971, ticker: "DULL", title: "BANK OF MONTREAL" },
+			"7": { cik_str: 927971, ticker: "FLYD", title: "BANK OF MONTREAL" },
+			"8": { cik_str: 927971, ticker: "FNGD", title: "BANK OF MONTREAL" },
+		};
+		const mainOf = secMainTickerOf(file);
+		expect(mainOf.get("MBNKO")).toBe("MFIN");
+		expect(mainOf.get("DULL")).toBe("BMO");
+		expect(mainOf.has("MFIN")).toBe(false);
+		const listing = (symbol: string, name: string) => ({ market: "US" as const, symbol, name });
+		const issuerOf = issuerFinder(
+			[
+				listing("MFIN", "MEDALLION FINANCIAL CORP"),
+				listing("MBNKO", "MEDALLION FINANCIAL CORP"),
+				listing("BMO", "BANK OF MONTREAL /CAN/"),
+				listing("DULL", "BANK OF MONTREAL /CAN/"),
+				listing("FLYD", "BANK OF MONTREAL /CAN/"),
+				listing("FNGD", "BANK OF MONTREAL /CAN/"),
+			],
+			mainOf,
+		);
+		expect(issuerOf({ market: "US", symbol: "MBNKO" })?.symbol).toBe("MFIN");
+		// An ETN is written as itself, not as a copy of its bank.
+		expect(issuerOf({ market: "US", symbol: "DULL" })).toBeNull();
+		expect(issuerOf({ market: "US", symbol: "MFIN" })).toBeNull();
+	});
+
+	it("reads the pages named for stocks, one per line", () => {
+		const pages = pagesByStock(
+			"# funds\nUS:HYT=https://www.sec.gov/a.htm\n\nUS:HYT=https://www.sec.gov/b.htm\nJP:130A=https://x.jp/\n",
+		);
+		expect(pages.get("US:HYT")).toEqual(["https://www.sec.gov/a.htm", "https://www.sec.gov/b.htm"]);
+		expect(pages.get("JP:130A")).toEqual(["https://x.jp/"]);
+		expect(() => pagesByStock("US:HYT=http://www.sec.gov/a.htm")).toThrow(/line 1/);
+	});
+
+	it("counts an outcome as fruitless only when the sources gave nothing to store", () => {
+		expect(isFruitless(NO_SUMMARY)).toBe(true);
+		expect(isFruitless(EMPTY_SUMMARY)).toBe(true);
+		expect(isFruitless(KEPT_STORED)).toBe(false);
+		expect(isFruitless(null)).toBe(false);
+	});
+});
+
 describe("page text for the model (PoC, ADR-0064 §5f)", () => {
+	it("keeps an annual report's 「事業の内容」 after its long history (沿革)", () => {
+		const business =
+			"### ３【事業の内容】\n当社グループは、医薬品の研究開発、製造、販売を行っております。";
+		const page = `## 沿革\n${"1950年 設立。".repeat(1_500)}\n${business}\n${"z".repeat(9_000)}`;
+		const text = pageTextForModel(page);
+		expect(text.length).toBeLessThanOrEqual(10_010);
+		expect(text.startsWith("## 沿革")).toBe(true);
+		expect(text).toContain(business);
+	});
+
 	it("keeps a long page's sales-by-region table after its start", () => {
 		const table = "【地域ごとの情報】 日本 42,000 米国 33,000 計 100,000";
 		const page = `${"事業の内容。".repeat(2_000)}${"x".repeat(5_000)}${table}${"y".repeat(5_000)}`;

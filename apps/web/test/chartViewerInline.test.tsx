@@ -17,13 +17,15 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
  */
 const chunk = vi.hoisted(() => ({ fail: false, attempts: 0 }));
 
-vi.mock("../src/chartViewer/ChartViewer.tsx", async (importOriginal) => {
-	chunk.attempts += 1;
-	if (chunk.fail) {
-		throw new TypeError("Failed to fetch dynamically imported module: ChartViewer-x.js");
-	}
-	return importOriginal();
-});
+vi.mock("../src/chartViewer/viewerImport.ts", () => ({
+	importViewerModule: async () => {
+		chunk.attempts += 1;
+		if (chunk.fail) {
+			throw new TypeError("Failed to fetch dynamically imported module: ChartViewer-x.js");
+		}
+		return import("../src/chartViewer/ChartViewer.tsx");
+	},
+}));
 
 const { LazyInlineChartViewer } = await import("../src/chartViewer/LazyChartViewer.tsx");
 

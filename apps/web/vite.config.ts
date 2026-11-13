@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 import solid from "vite-plugin-solid";
+import { chartViewerChunkPlugin } from "./build/chartViewerChunk.ts";
 
 const webRoot = fileURLToPath(new URL(".", import.meta.url));
 
@@ -61,7 +62,15 @@ function cspMetaFromHeadersFile(): Plugin {
  */
 export default defineConfig({
 	root: webRoot,
-	plugins: [solid(), tailwindcss(), cspMetaFromHeadersFile()],
+	resolve: {
+		alias: [
+			{
+				find: /^zod$/,
+				replacement: fileURLToPath(new URL("./src/zodJitless.ts", import.meta.url)),
+			},
+		],
+	},
+	plugins: [solid(), tailwindcss(), cspMetaFromHeadersFile(), chartViewerChunkPlugin()],
 	build: {
 		outDir:
 			process.env.RESEARCH_WEB_OUT_DIR ?? fileURLToPath(new URL("../../dist/web", import.meta.url)),

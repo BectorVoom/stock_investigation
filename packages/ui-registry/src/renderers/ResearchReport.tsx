@@ -53,7 +53,7 @@ function StatementItem(props: {
 			data-citation-group={props.groupKey}
 			class="relative border-l-2 pl-2"
 			classList={{
-				"border-emerald-600": status() === "supported",
+				"border-slate-300": status() === "supported",
 				"border-red-600": status() === "unsupported",
 				"border-amber-600": status() === "conflicting",
 				"border-dashed border-slate-400": status() === null,

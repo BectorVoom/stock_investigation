@@ -113,6 +113,14 @@ failures can still be retried within the three rounds. Skipped requests do
 not consume tool-call allowance. State is discarded between attempts; this
 does not introduce a persistent data cache.
 
+A search cooldown with no evidence now overrides a plan's premature `done`:
+the planner gets the next available collection round and a note to use other
+listed sources. Unavailable tools are omitted from subsequent planning
+catalogues. The three-round cap, tool allowance, wall-clock deadline and
+analysis/verification reservation still apply. A run with evidence uses it;
+a run still unable to collect evidence after the allowance reports failure
+rather than publishing unsupported claims (ADR-0025, 2026-11-06 amendment).
+
 The tradeoff is reduced research breadth in exchange for bounded collection
 latency. A planning round can contain up to eight calls, whose existing
 individual deadlines still apply, so this is not a seconds-level latency

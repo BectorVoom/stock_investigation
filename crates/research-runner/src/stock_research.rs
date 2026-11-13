@@ -34,7 +34,7 @@ impl StockResearchTool {
 			hasher,
 			meta: ToolMeta {
 				tool_id: "stocks.search",
-				version: "1.0.2",
+				version: "1.0.3",
 				description: "Search stored company descriptions, financial statements and news. Use company names/tickers and metric keywords; all terms must match. AI-written context is not primary evidence. No live fetch.",
 				args_hint: "{\"query\": string (1–128 chars, at most 8 terms), \"kind\"?: \"company\" | \"financials\" | \"news\", \"limit\"?: 1..12 (default 6)}",
 				timeout_ms: 20_000,
@@ -54,18 +54,43 @@ fn invalid_args() -> ToolFailure {
 		upstream_status: None,
 	}
 }
+/// Normalize only the bounded count at the agent boundary; HTTP decoding stays strict.
+fn parse_tool_query(args: &Value) -> Option<StockResearchQuery> {
+	let mut normalized = args.clone();
+	if let Value::Object(ref mut fields) = normalized {
+		if let Some(Value::String(text)) = fields.get("limit") {
+			let count = match text.as_str() {
+				"1" => 1,
+				"2" => 2,
+				"3" => 3,
+				"4" => 4,
+				"5" => 5,
+				"6" => 6,
+				"7" => 7,
+				"8" => 8,
+				"9" => 9,
+				"10" => 10,
+				"11" => 11,
+				"12" => 12,
+				_ => return None,
+			};
+			fields.insert("limit", Value::Number(f64::from(count)));
+		}
+	}
+	research_contracts::validate::<StockResearchQuery>(&normalized).ok()
+}
+
 #[async_trait]
 impl Tool for StockResearchTool {
 	fn meta(&self) -> &ToolMeta {
 		&self.meta
 	}
 	fn parse_args(&self, args: &Value) -> Option<Value> {
-		let parsed = research_contracts::validate::<StockResearchQuery>(args).ok()?;
+		let parsed = parse_tool_query(args)?;
 		research_js::json::parse(&to_js_json(&parsed).ok()?).ok()
 	}
 	async fn execute(&self, args: Value, context: ToolContext) -> Result<ToolOutput, ToolFailure> {
-		let query = research_contracts::validate::<StockResearchQuery>(&args)
-			.map_err(|_| invalid_args())?;
+		let query = parse_tool_query(&args).ok_or_else(invalid_args)?;
 		let response = tokio::select! {
 			() = context.cancel.cancelled() => return Err(ToolFailure { code: "TOOL_ABORTED".to_owned(), detail: "Run was cancelled.".to_owned(), retryable: false, upstream_status: None }),
 			response = self.api.stock_search(&self.run_id, self.lease_generation, &query) => response,
@@ -169,6 +194,32 @@ mod tests {
 			)
 		}
 	}
+	#[test]
+	fn native_string_limits_are_bounded_without_coercing_tickers_or_http_inputs() {
+		for limit in ["1", "12"] {
+			let raw = research_js::json::parse(&format!(r#"{{"query":"7203","limit":"{limit}"}}"#))
+				.unwrap();
+			let query = parse_tool_query(&raw).unwrap();
+			assert_eq!(query.query, "7203");
+			assert_eq!(query.limit.to_string(), limit);
+			assert!(research_contracts::validate::<StockResearchQuery>(&raw).is_err());
+		}
+		for raw in [
+			r#""0""#,
+			r#""13""#,
+			r#""01""#,
+			r#""12.0""#,
+			r#"" 12""#,
+			r#""1e1""#,
+			"null",
+			"true",
+		] {
+			let args =
+				research_js::json::parse(&format!(r#"{{"query":"7203","limit":{raw}}}"#)).unwrap();
+			assert!(parse_tool_query(&args).is_none());
+		}
+	}
+
 	#[tokio::test]
 	async fn stored_retrieval_matches_typescript_and_binds_the_lease() {
 		let cases: serde_json::Value =

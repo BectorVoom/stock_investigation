@@ -563,6 +563,7 @@ CREATE TABLE scheduled_tasks (
     version INTEGER NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
+    output_type TEXT NOT NULL DEFAULT 'chat' CHECK (output_type IN ('news', 'chat')),
     PRIMARY KEY (owner_id, task_id)
 );
 
@@ -588,6 +589,8 @@ CREATE TABLE stock_directory (
     name_key TEXT NOT NULL,
     local_name_key TEXT NOT NULL,
     search_key TEXT NOT NULL,
+    margin_buying_balance INTEGER CHECK (margin_buying_balance IS NULL OR (typeof(margin_buying_balance) = 'integer' AND margin_buying_balance >= 0)),
+    margin_selling_balance INTEGER CHECK (margin_selling_balance IS NULL OR (typeof(margin_selling_balance) = 'integer' AND margin_selling_balance >= 0)),
     PRIMARY KEY (owner_id, market, symbol)
 ) WITHOUT ROWID;
 
@@ -1038,14 +1041,16 @@ CREATE TABLE equity_guidance_observation (
 -- 13. Financial statements synced from SEC and J-Quants (ADR-0048, migration
 --     0021; business descriptions ADR-0053, migration 0022; every directory
 --     stock tracked ADR-0058, migration 0026; Japanese statements from
---     J-Quants, EDINET removed ADR-0059, migration 0027)
+--     J-Quants, EDINET removed ADR-0059, migration 0027; screening support
+--     0036)
 --
 -- The comment blocks of infra/migrations/0021_equity_financial_sync.sql,
--- 0026_edinet_document_index.sql and 0027_jquants_financials.sql are
--- normative. Written only by a `financial-synced` runner completion in the
--- job's guarded batch (plus the claim-time directory reconcile on
--- equity_company and equity_sync_state); read by the Stocks page and the
--- financial widgets (packages/adapters/src/sql/equitySync.ts). Section 12's
+-- 0026_edinet_document_index.sql, 0027_jquants_financials.sql and
+-- 0036_equity_metric_value_screening.sql are normative. Written only by a
+-- `financial-synced` runner completion in the job's guarded batch (plus the
+-- claim-time directory reconcile on equity_company and equity_sync_state);
+-- read by the Stocks page and the financial widgets (and, for the screening
+-- index, nothing yet) (packages/adapters/src/sql/equitySync.ts). Section 12's
 -- import tables are no longer read or written.
 -- -----------------------------------------------------------------------------
 
@@ -1156,8 +1161,9 @@ CREATE INDEX idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_ye
 -- The current authoritative value per company, fiscal year and metric, or
 -- why it is unavailable; what the widgets read. Keyed years first: the
 -- newest-years read (valueYears) and the company list's latest year walk
--- the key backwards; the per-year and per-metric reads are key seeks. No
--- secondary index.
+-- the key backwards; the per-year and per-metric reads are key seeks.
+-- value_real (0036) is the value as an IEEE-754 double for the screening
+-- range and sort, never shown; NULL without a value or beyond double range.
 CREATE TABLE equity_metric_value (
     owner_id TEXT NOT NULL,
     company_id TEXT NOT NULL,
@@ -1174,6 +1180,7 @@ CREATE TABLE equity_metric_value (
     derived INTEGER NOT NULL DEFAULT 0 CHECK (derived IN (0, 1)),
     reported_value_count INTEGER NOT NULL DEFAULT 0 CHECK (reported_value_count >= 0),
     updated_at TEXT NOT NULL,
+    value_real REAL,
     PRIMARY KEY (owner_id, company_id, fiscal_year, metric_code),
     CHECK (
         (value_decimal IS NULL AND unavailable_reason IS NOT NULL AND filing_id IS NULL)
@@ -1183,6 +1190,14 @@ CREATE TABLE equity_metric_value (
     FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
         ON DELETE RESTRICT
 ) WITHOUT ROWID;
+
+-- The screening read: one metric of one fiscal year across the companies,
+-- range on value_real, ordered by it without a temporary sort (a backwards
+-- index scan). Covering: an entry carries the primary key. Partial: rows
+-- without a value are not indexed. 40.31 ms -> 0.05 ms at 750,400 rows.
+CREATE INDEX idx_equity_metric_value__owner_id_metric_code_fiscal_year_value_real
+    ON equity_metric_value (owner_id, metric_code, fiscal_year, value_real)
+    WHERE value_real IS NOT NULL;
 
 -- One row per company: schedule, last check / success / failure (stable
 -- code + the provider's HTTP status, ADR-0037), and data_updated_at (the

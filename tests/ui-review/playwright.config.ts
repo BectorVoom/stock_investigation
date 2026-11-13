@@ -23,7 +23,9 @@ export default defineConfig({
 	...e2eConfig,
 	testDir: ".",
 	testMatch: [
+		"loginReview.spec.ts",
 		"chatReview.spec.ts",
+		"newsReview.spec.ts",
 		"homeReview.spec.ts",
 		"materialsReview.spec.ts",
 		"settingsReview.spec.ts",

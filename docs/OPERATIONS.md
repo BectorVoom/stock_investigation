@@ -246,7 +246,8 @@ What each service is sent, its limits and how its errors are handled: [external 
 | `JQUANTS_REQUESTS_PER_MINUTE` | J-Quants request starts per minute for prices and the Listed Issue Master (default `3`; integer 1..600), evenly spaced over 65 s (one start per 21.7 s at 3). The Free plan publishes 5 a minute but answered `429` on the 7th request within about 120 s when measured (2026-11-02, [J-Quants](external-apis/apis/jquants.md)); raise it on a paid plan (Light: 60). Every page counts. The earnings summaries (`/v2/fins/summary`) have their own documented limit and are paced separately at 60 starts per 65 s (one per 1,084 ms); this setting does not change them. |
 | `JQUANTS_DELAY_DAYS` | How many days the J-Quants plan is behind (default `84`, the Free plan's 12 weeks; integer 0..365; `0` on a paid plan). Days newer than today minus this are not asked for. |
 | `TWELVE_DATA_DAILY_LIMIT` | Twelve Data requests per UTC day (default `800`, the Basic plan's daily credits; integer 0..1000000). `0` means no daily limit — set it on a paid plan, which has none. A runner restart starts the day's count at 0, and requests made with the same key elsewhere are not counted. |
-| `TAVILY_API_KEY` | Enables `web.search`, the whole-web search research tool (Tavily, ADR-0025): 1,000 free searches a month on Tavily's free plan, one per call (basic depth); the runner reuses a successful answer for 15 minutes per normalised query (ADR-0039), so a repeated query or a job's re-attempt spends no credit. Without it the runner warns once (`web_search_disabled`) and the planner is offered only `news.search` (GDELT news). The key travels only as `Authorization: Bearer <key>` to `api.tavily.com`. |
+| `AGENT_WEB_SEARCH_URL` | Agent Web Search literal loopback origin, default `http://127.0.0.1:8090`. Start it with `bun run search:service`; its search engine must be configured separately. |
+| `AGENT_WEB_SEARCH_API_KEY` | Enables `web.search`; must match the service SEARCH_API_KEY (16–256 printable nonspace characters). Tavily is not used by normal runners. Successful answers retain the 15-minute/200-entry cache. |
 | `FINNHUB_API_KEY` | Enables the Finnhub earnings-date source for the Watchlist (FR-018, ADR-0016). Without it the runner warns once (`earnings_source_disabled`) and US stocks are "unavailable (source not configured — `FINNHUB_API_KEY` is not set)" — never estimated. |
 | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Enable the Google Calendar sync for the Watchlist (FR-019, ADR-0018): an OAuth client of type "Desktop app". Without both values every `google-calendar` job fails with `GOOGLE_NOT_CONFIGURED` and the Watchlist card says so in one fixed sentence. |
 | `GOOGLE_TOKEN_FILE` | Where the runner keeps the Google refresh token (`<dataDir>/google-token.json`, beside `runner-credential.json`, in both environments; mode 0600, written atomically). Delete it (or Disconnect under Settings → Calendar) to forget the grant. |
@@ -383,7 +384,7 @@ under the same gate: `web.search` (Tavily, the whole web; needs
 `TAVILY_API_KEY`) and `news.search` (GDELT news, no key). A provider that
 fails is paused for a while and a successful answer is reused for 15 minutes
 (ADR-0039), so repeated questions spend no quota. Requests, limits, the
-outage pause and the cache: [Tavily Search](external-apis/apis/tavily-search.md),
+outage pause and the cache: [Agent Web Search](external-apis/apis/agent-web-search.md),
 [GDELT DOC 2.0](external-apis/apis/gdelt-doc.md).
 
 - **Where the files are:** `data/pages/` (or wherever `RUNNER_PAGES_DIR` points). File names carry the retrieval date, the host and a hash of the URL; each file's front matter records the requested and final URLs, the title, the retrieval time and a checksum of the Markdown.
@@ -746,3 +747,62 @@ or `bun run prod` do) and the next claim catches up once.
   with actor `scheduler`. Pages have no Sync, Update or Refresh button.
 - On a paid Twelve Data plan the schedule still plans for the free plan's
   daily limit (the API does not see the runner's `TWELVE_DATA_DAILY_LIMIT`).
+
+### Agent Web Search local deployment
+
+Build the separate sibling repository first: `cargo build --locked --release`
+in `../agent-web-search`. In apps/runner/.env configure AGENT_WEB_SEARCH_URL and
+AGENT_WEB_SEARCH_API_KEY; its key must match the service SEARCH_API_KEY. Then run
+`bun run search:service` in this repository. Optional AGENT_WEB_SEARCH_BINARY and
+AGENT_WEB_SEARCH_DB override the sibling binary and data-search/corpus.sqlite.
+AGENT_WEB_SEARCH_ENGINE defaults to searxng; AGENT_WEB_SEARCH_SEARXNG_URL defaults
+to http://127.0.0.1:8888/. Local-corpus mode searches imported documents only.
+
+The configured SearXNG deployment uses the upstream repository at commit
+626105eec11d776e2dbccff6cc93fd2cd85f4d0c, a uv Python3.12 virtual environment,
+and enabled Brave,Mojeek and Yahoo engines (Brave news for news requests).
+Source/venv/settings/logs live in ../agent-web-search/.services (ignored,private).
+It is a separate local process; no Docker daemon was available. To recreate:
+clone https://github.com/searxng/searxng.git,checkout that commit,create a uv
+Python3.12venv,install its requirements.txt,write settings enabling JSON output,
+bind127.0.0.1:8888,set a private server.secret_key and disable limiter for this
+loopback-only service. Run `SEARXNG_SETTINGS_PATH=/absolute/settings.yml
+.venv/bin/python -m searx.webapp`. This is a local development deployment.
+
+The service and SearXNG were started for the owner during integration. They are
+not installed as login/boot daemons. Runner env-file changes require a runner
+restart; the development Rust supervisor reloads after a source rebuild. Preserve
+existing Tavily credentials if still needed by external tools; this app no longer
+reads them to choose its runtime web.search provider.
+
+### Administrator login page (Cloudflare)
+
+The SPA checks `/api/v1/session` before mounting workspace pages. A missing
+session shows **Administrator login** (English and Japanese), a different
+account shows an administrator-only refusal with Cloudflare sign-out, and
+verification failures offer Retry. Sign-in navigates the browser back to the
+protected application URL so Access performs its normal login redirect. Protect
+the whole hostname with Access, not just the API; the Cloudflare login then
+appears before the SPA. Localhost retains automatic sign-in (ADR-0006).
+
+Keep `AUTH_MODE=cloudflare-access`, set `OWNER_EMAIL` to the administrator's
+email, and use that same single email in the Access Allow policy. The Worker
+independently checks the signed identity against `OWNER_EMAIL`; do not add a
+Bypass policy for owner endpoints. Missing configuration denies access.
+
+Verification on 2026-11-13 (JST): anonymous HTTPS requests to
+`https://research-workspace.appservice27.workers.dev/` and `/api/v1/session`
+both returned 302 to the configured `appservice27.cloudflareaccess.com` team,
+with the configured application audience. Following the redirect returned HTTP 200 with the title “Sign in ・ Cloudflare Access”
+and a Cloudflare account-member identity-provider option. This confirms edge protection, not
+a successful administrator login. The checked-in production `OWNER_EMAIL`
+remains empty. Live policy/binding inspection was unavailable because
+`wrangler whoami` reported an expired login; run `bunx wrangler login` before
+inspecting the policy, setting the administrator email and deploying.
+
+Follow-up authenticated inspection: the live Worker's `OWNER_EMAIL` is
+`appservice27@gmail.com`, and the application's sole Access Allow policy includes
+only that email. Its audience matches the Worker configuration. The local
+production configuration now preserves this verified email. The earlier empty
+value describes the previous checked-in configuration, not the current live
+binding. This inspection did not deploy code or complete an interactive login.

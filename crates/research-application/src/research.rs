@@ -234,6 +234,33 @@ fn failed(
 	}
 }
 
+fn claim_drafts(
+	analysis: &Value,
+	claim_evidence_id: impl Fn(&str) -> String,
+) -> Result<Vec<DraftClaim>, PipelineError> {
+	let mut drafts = Vec::new();
+	for (index, v) in items(analysis, "claims").iter().enumerate() {
+		let mut links = Vec::new();
+		for link in items(v, "evidence") {
+			links.push(DraftEvidenceLink {
+				evidence_id: claim_evidence_id(field(link, "evidenceId")),
+				relation: research_contracts::validate::<EvidenceRelation>(get(link, "relation"))?,
+				quote: get(link, "quote")
+					.as_str()
+					.filter(|s| !s.is_empty())
+					.map(str::to_owned),
+			});
+		}
+		drafts.push(DraftClaim {
+			claim_id: format!("draft_{index}"),
+			text: field(v, "text").to_owned(),
+			claim_type: research_contracts::validate::<ClaimType>(get(v, "claimType"))?,
+			links,
+		});
+	}
+	Ok(drafts)
+}
+
 /// Runs the entire research lifecycle without persistence. Provider and tool
 /// failures are outcomes; invalid injected infrastructure returns a typed error.
 pub async fn run_research_pipeline(
@@ -340,7 +367,9 @@ pub async fn run_research_pipeline(
 	let mut completed_requests = HashSet::new();
 	let mut unavailable_tools = HashSet::new();
 	let mut collection_limit_reached = false;
+	let mut search_cooldown_encountered = false;
 	'collection: for step in 0..collection_steps {
+		let mut found_search_leads = false;
 		if step >= 3 {
 			collection_limit_reached = true;
 			deps.reporter
@@ -354,10 +383,15 @@ pub async fn run_research_pipeline(
 		if remaining_calls == 0 {
 			break;
 		}
+		let available: Vec<_> = permitted
+			.iter()
+			.filter(|tool| !unavailable_tools.contains(tool.tool_id))
+			.cloned()
+			.collect();
 		let prompt = planning_prompt(PlanningPromptInput {
 			request: &input.request,
 			now_iso: &deps.clock.now_iso(),
-			tools: &permitted,
+			tools: &available,
 			sources: &input.sources,
 			collected_so_far: &collected_so_far_text(&entries, step),
 			remaining_tool_calls: remaining_calls,
@@ -555,21 +589,34 @@ pub async fn run_research_pipeline(
 			};
 			match result {
 				Err(error) => {
+					if call.tool_id == "web.search"
+						&& (error.upstream_status == Some(432) || error.code == "SEARCH_PLAN_LIMIT")
+					{
+						unavailable_tools.insert(call.tool_id.clone());
+						search_cooldown_encountered = true;
+						let note = "General web search is unavailable for this run.".to_owned();
+						entries.push(CollectedEntry {
+							step,
+							full_text: note.clone(),
+							digest_lines: vec![note],
+						});
+						continue;
+					}
 					if matches!(error.code.as_str(), "NOT_CONFIGURED" | "SEARCH_COOLDOWN") {
 						unavailable_tools.insert(call.tool_id.clone());
+					}
+					if error.code == "SEARCH_COOLDOWN" {
+						search_cooldown_encountered = true;
 					}
 					let code =
 						sanitize_tool_error_code(&utf16::truncate(&error.code, 80)).to_owned();
 					tool_error_statuses.record(&code, error.upstream_status, executed);
 					*tool_errors.entry(code).or_default() += 1;
+					let detail = utf16::truncate(&error.code, 300);
 					deps.reporter
-						.tool(
-							&label,
-							ToolCallOutcome::Failed,
-							&utf16::truncate(&error.code, 300),
-						)
+						.tool(&label, ToolCallOutcome::Failed, &detail)
 						.await;
-					let note = format!("Tool {label} failed: {}.", error.code);
+					let note = format!("Tool {label} failed: {detail}.");
 					entries.push(CollectedEntry {
 						step,
 						full_text: note.clone(),
@@ -585,7 +632,18 @@ pub async fn run_research_pipeline(
 						digest_lines: digest_lines_for(&call.tool_id, &output),
 					});
 					let count = output.evidence.len();
-					collected.evidence.extend(output.evidence);
+					// Search snippets are planning leads. Only the fetched original can support a claim.
+					let discovery = matches!(call.tool_id.as_str(), "web.search" | "news.search");
+					if discovery {
+						found_search_leads |= count > 0;
+					} else {
+						collected.evidence.extend(output.evidence);
+					}
+					let item_kind = if discovery {
+						"search lead(s)"
+					} else {
+						"evidence item(s)"
+					};
 					collected.securities.extend(output.securities);
 					collected
 						.financial_observations
@@ -599,13 +657,34 @@ pub async fn run_research_pipeline(
 						.tool(
 							&label,
 							ToolCallOutcome::Executed,
-							&format!("{count} evidence item(s)"),
+							&format!("{count} {item_kind}"),
 						)
 						.await;
 				}
 			}
 		}
 		deps.reporter.usage(&session.usage).await;
+		// The done flag was chosen before the planner saw the cooldown.
+		if search_cooldown_encountered && collected.evidence.is_empty() {
+			reminder = Some(
+				"Search is temporarily unavailable. Continue collecting evidence with another listed tool, subscribed feeds, stored records or known source URLs. Do not repeat a paused search or invent URLs.",
+			);
+			if step + 1 < collection_steps.min(3) {
+				deps.reporter
+					.note("Search is temporarily unavailable; continuing with other sources.")
+					.await;
+			}
+			continue;
+		}
+		if found_search_leads
+			&& collected.evidence.is_empty()
+			&& permitted_ids.contains("web.fetch_page")
+		{
+			reminder = Some(
+				"Open relevant original pages from the search leads and assess the sources before ending collection.",
+			);
+			continue;
+		}
 		if done || calls.is_empty() {
 			break;
 		}
@@ -627,7 +706,7 @@ pub async fn run_research_pipeline(
 	}
 	articles.truncate(400);
 	if collected.evidence.is_empty() {
-		let (code, detail) = if executed > 0 && succeeded == 0 {
+		let (code, detail) = if !tool_errors.is_empty() && succeeded == 0 {
 			let best = tool_errors
 				.iter()
 				.min_by(|(a, na), (b, nb)| nb.cmp(na).then_with(|| a.cmp(b)))
@@ -675,10 +754,11 @@ pub async fn run_research_pipeline(
 			continue;
 		}
 		let entry = format!(
-			"[{}] {} — {}; published {}; retrieved {}\n{}\n\n",
+			"[{}] {} — {}; {}; published {}; retrieved {}\n{}\n\n",
 			e.evidence_id,
 			e.title,
 			e.publisher,
+			e.source_url,
 			e.published_at.as_deref().unwrap_or("undated"),
 			e.retrieved_at,
 			utf16::truncate(&item.retrieved_text, 4000)
@@ -731,13 +811,46 @@ pub async fn run_research_pipeline(
 	} else {
 		&summary
 	};
+	// Expand only a current-run alias whose full id is actually in the shown pack.
+	let shown_ids: HashSet<&str> = shown
+		.iter()
+		.map(|item| item.evidence.evidence_id.as_str())
+		.collect();
+	let claim_evidence_id = |id: &str| {
+		if shown_ids.contains(id) {
+			return id.to_owned();
+		}
+		let alias = id.strip_prefix("ev").is_some_and(|digits| {
+			!digits.is_empty()
+				&& !digits.starts_with('0')
+				&& digits.bytes().all(|byte| byte.is_ascii_digit())
+		});
+		let canonical = format!("{}_{id}", input.run_id);
+		if alias && shown_ids.contains(canonical.as_str()) {
+			canonical
+		} else {
+			id.to_owned()
+		}
+	};
+	let quote_texts = shown
+		.iter()
+		.map(|item| EvidenceText {
+			evidence_id: item.evidence.evidence_id.clone(),
+			retrieved_text: format!(
+				"{}\n{}",
+				item.evidence.title,
+				utf16::truncate(&item.retrieved_text, 4000)
+			),
+		})
+		.collect::<Vec<_>>();
+	let quote_index = on_cpu(move || Arc::new(EvidenceIndex::new(&quote_texts))).await?;
 	let now = deps.clock.now_iso();
 	let mut repair = None;
 	let mut analysis = None;
 	let mut analysis_failure = None;
 	// The provider's status behind `analysis_failure`, unchanged (§4a); `None` when none.
 	let mut analysis_failure_status = None;
-	for _ in 0..2 {
+	for attempt in 0..2 {
 		let prompt = analysis_prompt(AnalysisPromptInput {
 			request: &input.request,
 			now_iso: &now,
@@ -757,6 +870,12 @@ pub async fn run_research_pipeline(
 				}
 				analysis_failure = Some(error.code());
 				analysis_failure_status = error.upstream_status();
+				// The repair uses the same cumulative budgets as every other turn.
+				if analysis_failure.as_deref() == Some("PROVIDER_OUTPUT_TRUNCATED") && attempt == 0
+				{
+					repair = Some("the provider truncated the previous reply at its output limit. Return a smaller complete JSON object: at most 6 short atomic claims with only the shortest sufficient verbatim supporting quotes; omit optional uiOperations and leave unrelated scenarios, suppliers and pricingPower empty. Prioritize the direct answer and state coverage limitations; do not repeat structured records.".to_owned());
+					continue;
+				}
 				break;
 			}
 		};
@@ -768,7 +887,41 @@ pub async fn run_research_pipeline(
 			continue;
 		};
 		match parse_draft("analysis", &value) {
+			Ok(value)
+				if items(&value, "claims").is_empty()
+					&& collected.financial_observations.is_empty()
+					&& collected.position_observations.is_empty()
+					&& collected.investor_filings.is_empty() =>
+			{
+				repair = Some("claims is empty despite retrieved evidence. Answer the question with cited findings or cited exclusions/data limitations for the inspected candidates; use inference for calculations and quote the source inputs. Do not fabricate a match or claim exhaustive coverage.".to_owned());
+				analysis_failure = Some("ANALYSIS_OUTPUT_INVALID".to_owned());
+				analysis_failure_status = None;
+			}
 			Ok(value) => {
+				if attempt == 0 {
+					let drafts = claim_drafts(&value, claim_evidence_id)?;
+					let index = Arc::clone(&quote_index);
+					let needs_repair = on_cpu(move || {
+						!drafts.is_empty()
+							&& verify_claims_with(&drafts, &index)
+								.iter()
+								.all(|claim| claim.status == ClaimStatus::Unsupported)
+					})
+					.await?;
+					if needs_repair {
+						repair = Some(format!(
+							"none of the claims has usable quoted support from a shown evidence id. Return at most 6 short atomic claims. Use only the exact ids printed in square brackets in the Evidence section; never invent ids or use an article id. Copy each supporting quote word-for-word from that evidence, including original dates and numbers, and use a passage at least 12 characters long. Never paraphrase a quote, change a year, or join nonadjacent passages. Omit claims you cannot quote. Observation numbers must retain the source digits and units (for example $108.5 billion, not 1085億ドル). A unit conversion is a calculation: use inference and quote the original inputs. Never change source years. Leave unrelated scenarios, suppliers and pricingPower empty. Valid evidence ids: {}",
+							research_js::json::stringify(&a(shown
+								.iter()
+								.take(12)
+								.map(|item| s(&item.evidence.evidence_id))
+								.collect::<Vec<_>>()))
+						));
+						analysis_failure = Some("ANALYSIS_OUTPUT_INVALID".to_owned());
+						analysis_failure_status = None;
+						continue;
+					}
+				}
 				analysis = Some(value);
 				analysis_failure = None;
 				analysis_failure_status = None;
@@ -795,7 +948,7 @@ pub async fn run_research_pipeline(
 	}
 	let omitted = collected.evidence.len() - shown.len();
 	if omitted > 0 {
-		notes.push(if duplicates>0{format!("{omitted} retrieved item(s) were not analysed: {duplicates} exact duplicate(s) skipped and the rest did not fit the input-size budget.")}else{format!("{omitted} retrieved item(s) did not fit the input-size budget and were not analysed.")});
+		notes.push(if duplicates>0{format!("{omitted} retrieved item(s) were not analysed: {duplicates} exact duplicate(s) skipped; {} item(s) did not fit the input-size budget.", omitted - duplicates)}else{format!("{omitted} retrieved item(s) did not fit the input-size budget and were not analysed.")});
 	}
 	if analysis.is_none()
 		&& collected.financial_observations.is_empty()
@@ -804,7 +957,10 @@ pub async fn run_research_pipeline(
 	{
 		return Ok(failed(
 			analysis_failure.as_deref().unwrap_or("ANALYSIS_FAILED"),
-			analysis_failure.as_deref() != Some("ANALYSIS_OUTPUT_INVALID"),
+			!matches!(
+				analysis_failure.as_deref(),
+				Some("ANALYSIS_OUTPUT_INVALID" | "PROVIDER_OUTPUT_TRUNCATED")
+			),
 			None,
 			analysis_failure_status,
 			session.usage,
@@ -812,40 +968,14 @@ pub async fn run_research_pipeline(
 	}
 	deps.reporter.state(JobState::Verifying).await;
 	let analysis = analysis.unwrap_or(Value::Null);
-	let mut drafts = Vec::new();
-	for v in items(&analysis, "claims") {
-		let mut links = Vec::new();
-		for link in items(v, "evidence") {
-			links.push(DraftEvidenceLink {
-				evidence_id: field(link, "evidenceId").to_owned(),
-				relation: research_contracts::validate::<EvidenceRelation>(get(link, "relation"))?,
-				quote: get(link, "quote")
-					.as_str()
-					.filter(|s| !s.is_empty())
-					.map(str::to_owned),
-			});
-		}
-		drafts.push(DraftClaim {
-			claim_id: ids_.next_id("cl"),
-			text: field(v, "text").to_owned(),
-			claim_type: research_contracts::validate::<ClaimType>(get(v, "claimType"))?,
-			links,
-		});
+
+	let mut drafts = claim_drafts(&analysis, claim_evidence_id)?;
+	for draft in &mut drafts {
+		draft.claim_id = ids_.next_id("cl");
 	}
-	let texts = shown
-		.iter()
-		.map(|item| EvidenceText {
-			evidence_id: item.evidence.evidence_id.clone(),
-			retrieved_text: format!(
-				"{}\n{}",
-				item.evidence.title,
-				utf16::truncate(&item.retrieved_text, 4000)
-			),
-		})
-		.collect::<Vec<_>>();
 	// CPU work leaves the tokio worker; a panic is an error, not a process abort.
 	let (index, mut claims) = on_cpu(move || {
-		let index = EvidenceIndex::new(&texts);
+		let index = quote_index;
 		let claims = verify_claims_with(&drafts, &index);
 		(index, claims)
 	})

@@ -383,6 +383,22 @@ describe("self-test: packages/domain imports nothing outside itself", () => {
 		expectViolation(violations, "NON_LITERAL_IMPORT", "<non-literal>");
 	});
 
+	it("lets only a declared file compute its dynamic import URL", () => {
+		const declared = "apps/web/src/chartViewer/viewerImport.ts";
+		const retry = [
+			'import url from "virtual:chart-viewer-url";',
+			"export const load = () => import(new URL(url, import.meta.url).href);",
+		].join("\n");
+		expect(check({ [declared]: retry })).toEqual([]);
+		// The allowance is that file alone: a neighbour in the same package
+		// still has to import a string literal.
+		expectViolation(
+			check({ "apps/web/src/chartViewer/other.ts": retry }),
+			"NON_LITERAL_IMPORT",
+			"<non-literal>",
+		);
+	});
+
 	it("reports the file and line of the offending import", () => {
 		const [violation] = check({
 			"packages/domain/src/deep/file.ts": '\n\nimport { z } from "zod";\nexport const s = z;\n',

@@ -28,7 +28,7 @@
  *   once with PROVIDER_FREE_MODEL_CHARGED; otherwise the usage is always
  *   unknown (null), even when the provider says 0 (AGT-008, AGT-012).
  * - Bounded spend per turn: every request carries `max_completion_tokens`
- *   (MAX_COMPLETION_TOKENS). The API reference marks `max_tokens` as
+ *   (completionTokenLimit; MAX_COMPLETION_TOKENS is the default). The API reference marks `max_tokens` as
  *   deprecated in favour of `max_completion_tokens`, so that one is sent. For reasoning models the
  *   limit covers reasoning and visible output together, and the docs warn that
  *   a small limit can be used up by reasoning, ending with
@@ -104,6 +104,17 @@ export const OPENROUTER_CHAT_COMPLETIONS_URL = "https://openrouter.ai/api/v1/cha
  * (AGT-008): without it the provider's own maximum, often 100k+ tokens, applies.
  */
 export const MAX_COMPLETION_TOKENS = 8_192;
+
+/** These free reasoning models need room for thinking plus the structured answer.
+ * Their catalogue maxima exceed this bounded 32,768-token allowance.
+ * Exact id matching keeps paid models and other providers' smaller limits unchanged.
+ */
+export function completionTokenLimit(model: string): number {
+	return model === "nvidia/nemotron-3.5-lightning:free" ||
+		model === "dots-studio/dots-3-note-preview:free"
+		? 32_768
+		: MAX_COMPLETION_TOKENS;
+}
 
 interface OpenRouterConfig {
 	readonly apiKey: string;
@@ -287,7 +298,7 @@ async function* attemptChatCompletion(
 				model: config.model,
 				messages: [{ role: "user", content: request.prompt }],
 				stream: true,
-				max_completion_tokens: MAX_COMPLETION_TOKENS,
+				max_completion_tokens: completionTokenLimit(config.model),
 				usage: { include: true },
 				reasoning: { effort: context.effort },
 			}),

@@ -90,7 +90,18 @@ export interface PinnedTlsOverrides {
 	readonly port?: number;
 	/** Additional trusted root, PEM. */
 	readonly ca?: string;
+	/** The connection deadline instead of CONNECT_ATTEMPT_TIMEOUT_MS. */
+	readonly connectTimeoutMs?: number;
 }
+
+/**
+ * How long one address may take to connect and finish its TLS handshake
+ * before the next validated address is tried (Rust `CONNECT_ATTEMPT_TIMEOUT`).
+ * A network that drops IPv6 silently made every dual-stack host wait for the
+ * whole request deadline on its first, IPv6, address (2026-11-05: sec.gov,
+ * edinetdb.jp, stockanalysis.com).
+ */
+export const CONNECT_ATTEMPT_TIMEOUT_MS = 3_000;
 
 class PinnedConnectError extends Error {
 	readonly code: string;
@@ -261,7 +272,12 @@ export function createPinnedHttpsConnect(tls: PinnedTlsOverrides = {}): PinnedCo
 			const outgoing = httpsRequest(buildPinnedRequestOptions(request, tls));
 			// Once TLS is up the queued request (and body) may reach the server.
 			let established = false;
+			// No byte of the request has left before TLS is up, so another address may be tried.
+			const deadline = setTimeout(() => {
+				outgoing.destroy(new PinnedConnectError("ETIMEDOUT"));
+			}, tls.connectTimeoutMs ?? CONNECT_ATTEMPT_TIMEOUT_MS);
 			const fail = (error: unknown): void => {
+				clearTimeout(deadline);
 				reject(
 					request.jsonBody !== null && established
 						? new RequestBodySentError(describeThrown(error))
@@ -272,6 +288,7 @@ export function createPinnedHttpsConnect(tls: PinnedTlsOverrides = {}): PinnedCo
 			outgoing.once("socket", (socket) => {
 				socket.once("secureConnect", () => {
 					established = true;
+					clearTimeout(deadline);
 				});
 				// Belt and braces: whatever happened below us (proxy agent, future Node behaviour),
 				// refuse to speak to a peer that is not the address that was validated.
@@ -284,6 +301,7 @@ export function createPinnedHttpsConnect(tls: PinnedTlsOverrides = {}): PinnedCo
 				else verifyPeer();
 			});
 			outgoing.once("response", (response) => {
+				clearTimeout(deadline);
 				try {
 					resolve(toPinnedResponse(response, request.maxEncodedBytes));
 				} catch (error) {

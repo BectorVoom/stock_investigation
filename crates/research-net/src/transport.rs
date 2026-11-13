@@ -13,8 +13,10 @@
 //!  4. refuse the hop unless EVERY answer is a public address. A single
 //!     non-public answer rejects the name, so a mixed answer cannot be used to
 //!     win a race for the private one;
-//!  5. use one of the first [`MAX_CONNECT_ATTEMPTS`] validated addresses as
-//!     an IP literal (`tls.rs`), with TLS verified against the host name. The
+//!  5. use one of the first [`MAX_CONNECT_ATTEMPTS`] validated addresses,
+//!     the families alternating ([`interleave_address_families`]), as an IP
+//!     literal (`tls.rs`, each within its connection deadline), with TLS
+//!     verified against the host name. The
 //!     name is never resolved again, so a second, different DNS answer
 //!     (rebinding) has nothing to influence. A pooled connection (ADR-0030
 //!     C1) is only used for an address of THIS answer, after step 4 passed;
@@ -46,6 +48,37 @@ use crate::tls::{PinnedTls, TlsSetupError};
 
 /// Validated addresses tried in order before giving up on a hop.
 pub const MAX_CONNECT_ATTEMPTS: usize = 3;
+
+/// `interleaveAddressFamilies`: the resolver's answers with the two address
+/// families alternating, starting with the first answer's family and keeping
+/// each family's order (RFC 8305 §4), so the second attempt uses the other
+/// family when the first one's network drops packets.
+#[must_use]
+pub fn interleave_address_families(addresses: &[ValidatedAddress]) -> Vec<ValidatedAddress> {
+	let Some(first) = addresses.first() else {
+		return Vec::new();
+	};
+	let first_is_v4 = first.ip().is_ipv4();
+	let (mut leading, mut other): (Vec<_>, Vec<_>) = (Vec::new(), Vec::new());
+	for address in addresses {
+		if address.ip().is_ipv4() == first_is_v4 {
+			leading.push(address.clone());
+		} else {
+			other.push(address.clone());
+		}
+	}
+	let mut interleaved = Vec::with_capacity(addresses.len());
+	let (mut leading, mut other) = (leading.into_iter(), other.into_iter());
+	loop {
+		match (leading.next(), other.next()) {
+			(None, None) => return interleaved,
+			(next_leading, next_other) => {
+				interleaved.extend(next_leading);
+				interleaved.extend(next_other);
+			}
+		}
+	}
+}
 
 /// The production `SafeFetcher` + `SafeBinaryFetcher`.
 pub type NodeSafeFetcher = SafeFetchCore<PinnedHopTransport>;
@@ -134,7 +167,10 @@ impl HopTransport for PinnedHopTransport {
 			}
 		};
 
-		let candidates = addresses.get(..MAX_CONNECT_ATTEMPTS).unwrap_or(&addresses);
+		let interleaved = interleave_address_families(&addresses);
+		let candidates = interleaved
+			.get(..MAX_CONNECT_ATTEMPTS)
+			.unwrap_or(&interleaved);
 		// ADR-0030 C1: an address with an idle connection goes first (stable),
 		// so DNS round-robin does not defeat reuse; the set of addresses and
 		// their count stay the TypeScript's.
@@ -410,6 +446,55 @@ mod tests {
 		assert_eq!(*lookup.lookups.lock().unwrap(), ["dual.synthetic-wire.org"]);
 		// An empty query is not sent ("/", not "/?").
 		assert_eq!(network.attempted.lock().unwrap()[0].2, "/");
+	}
+
+	#[test]
+	fn alternates_the_address_families_starting_with_the_first_answer() {
+		let validated =
+			|text: &str| ValidatedAddress::assume_validated("dual.synthetic-wire.org", ip(text));
+		let texts = |addresses: Vec<ValidatedAddress>| -> Vec<String> {
+			addresses
+				.iter()
+				.map(|address| address.ip().to_string())
+				.collect()
+		};
+		let answers = [
+			"2606:2800:220:1::1",
+			"2606:2800:220:1::2",
+			PUBLIC_V4,
+			PUBLIC_V4_B,
+		]
+		.map(validated);
+		assert_eq!(
+			texts(interleave_address_families(&answers)),
+			[
+				"2606:2800:220:1::1",
+				PUBLIC_V4,
+				"2606:2800:220:1::2",
+				PUBLIC_V4_B
+			]
+		);
+		let answers = [PUBLIC_V4, "2606:2800:220:1::1", "2606:2800:220:1::2"].map(validated);
+		assert_eq!(
+			texts(interleave_address_families(&answers)),
+			[PUBLIC_V4, "2606:2800:220:1::1", "2606:2800:220:1::2"]
+		);
+		assert!(interleave_address_families(&[]).is_empty());
+	}
+
+	#[tokio::test]
+	async fn tries_the_other_family_second_when_the_first_does_not_answer() {
+		let second_v6 = "2606:2800:220:1::7";
+		let network = connect(&[(PUBLIC_V6, "ETIMEDOUT"), (second_v6, "ETIMEDOUT")], &[]);
+		let lookup = dns(&[(
+			"dual.synthetic-wire.org",
+			Ok(vec![ip(PUBLIC_V6), ip(second_v6), ip(PUBLIC_V4)]),
+		)]);
+		fetcher(lookup, network.clone())
+			.fetch_text("https://dual.synthetic-wire.org/", &limits())
+			.await
+			.unwrap();
+		assert_eq!(attempted(&network), [ip(PUBLIC_V6), ip(PUBLIC_V4)]);
 	}
 
 	#[tokio::test]

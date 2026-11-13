@@ -49,6 +49,7 @@ test.describe("a browser that prefers Japanese", () => {
 			"株式データ",
 			"タスク",
 			"チャット",
+			"ニュース",
 			"情報源",
 		]);
 		await expect(page.getByRole("link", { name: /^サインイン中: / })).toHaveAttribute(

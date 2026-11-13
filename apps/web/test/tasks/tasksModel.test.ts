@@ -288,6 +288,7 @@ describe("evaluateTaskDraft", () => {
 		const result = evaluateTaskDraft(draft(), none, NOW_MS, en);
 		expect(result.problems).toEqual([]);
 		expect(result.request).toEqual({
+			outputType: "chat",
 			title: "Morning brief",
 			question: "What changed overnight?",
 			horizonYears: 5,

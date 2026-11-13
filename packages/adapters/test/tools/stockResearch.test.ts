@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { StockResearchHit } from "@research/contracts";
+import { type StockResearchHit, stockResearchQuerySchema } from "@research/contracts";
 import { err, ok, verifyClaims } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { createStockResearchTool } from "../../src/tools/stockResearch.ts";
@@ -24,6 +24,21 @@ const hasher = {
 };
 
 describe("stocks.search", () => {
+	it("normalizes native numeric-string limits while preserving ticker text and strict HTTP input", async () => {
+		const tool = createStockResearchTool({
+			hasher,
+			search: async (query) => {
+				expect(query).toEqual({ query: "7203", limit: 12 });
+				return ok({ hits: [], truncated: false });
+			},
+		});
+		expect((await tool.execute({ query: "7203", limit: "12" }, createToolContext())).ok).toBe(true);
+		expect(stockResearchQuerySchema.safeParse({ query: "7203", limit: "12" }).success).toBe(false);
+		for (const limit of ["0", "13", "01", "12.0", " 12", "1e1", "", null, true]) {
+			expect(tool.argsSchema.safeParse({ query: "7203", limit }).success).toBe(false);
+		}
+	});
+
 	it("verifies a publication-date claim against the same stored metadata shown to the agent", async () => {
 		const tool = createStockResearchTool({
 			hasher,

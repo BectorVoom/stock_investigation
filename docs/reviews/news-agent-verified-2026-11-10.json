@@ -1,0 +1,156 @@
+{
+	"backend": "codex",
+	"model": "gpt-6.1-sol",
+	"runId": "run_ea8089329c8e576d92d52e71",
+	"verificationStatus": "verified",
+	"report": "6 of 6 claim(s) are supported by retrieved evidence and independently confirmed; 0 have conflicting evidence and 0 are unsupported.\n\nSupported findings:\n- In earlier reporting published November 5, 2026, EIA said U.S. refineries shifted production from gasoline toward distillate fuel oil and jet fuel during January–August 2026.\n- EIA attributed the production shift to significantly higher margins for distillate fuel oil and jet fuel because of constrained global supplies.\n- In earlier reporting published November 3, 2026, EIA said U.S. refinery crude oil inputs increased by 0.5 million barrels per day in the second quarter and another 0.5 million barrels per day in the third quarter as exports helped replace lost global supply.\n- EIA reported that global refinery crude oil inputs remained about 5% below their year-earlier level in the third quarter of 2026 despite a partial recovery.\n- In earlier reporting published November 6, 2026, EIA said U.S. crude oil imports from Venezuela averaged 701,000 barrels per day in July 2026, the highest since May 2017, before declining to 655,000 barrels per day in August.\n- EIA attributed increased Venezuelan imports to high U.S. refinery crude oil demand amid high global refining margins and eased U.S. purchase restrictions.\n\n0 demand scenario(s), 0 supplier link(s) and 0 financial observation(s) are on the canvas.\n\nCollection was limited to three planning rounds; additional sources may not have been retrieved.\n\nResearch support only — not investment advice. Scenarios are conditional on their stated assumptions, not predictions, and every figure is as of its stated date.",
+	"claims": [
+		{
+			"claimId": "run_ea8089329c8e576d92d52e71_cl1",
+			"text": "In earlier reporting published November 5, 2026, EIA said U.S. refineries shifted production from gasoline toward distillate fuel oil and jet fuel during January–August 2026.",
+			"claimType": "observation",
+			"status": "supported",
+			"links": [
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev22",
+					"relation": "supports",
+					"quote": "In-brief analysis November 5, 2026"
+				},
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev22",
+					"relation": "supports",
+					"quote": "Data from our latest Petroleum Supply Monthly—which includes data through August 2026—indicate refinery yields of gasoline have decreased significantly this year to support increased production of distillate fuel oil and jet fuel, sometimes referred to as middle distillates due to their relative cut points in the oil refining process."
+				},
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev22",
+					"relation": "supports",
+					"quote": "From January through August 2026, refinery yields of gasoline have averaged less than 45% and have been well below the five-year low in every month."
+				}
+			],
+			"issues": []
+		},
+		{
+			"claimId": "run_ea8089329c8e576d92d52e71_cl2",
+			"text": "EIA attributed the production shift to significantly higher margins for distillate fuel oil and jet fuel because of constrained global supplies.",
+			"claimType": "observation",
+			"status": "supported",
+			"links": [
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev22",
+					"relation": "supports",
+					"quote": "This decline largely reflects refinery efforts to shift as much of their yields as possible into the production of distillate fuel oil and jet fuel, where margins are significantly higher because of constrained global supplies for these fuels."
+				}
+			],
+			"issues": []
+		},
+		{
+			"claimId": "run_ea8089329c8e576d92d52e71_cl3",
+			"text": "In earlier reporting published November 3, 2026, EIA said U.S. refinery crude oil inputs increased by 0.5 million barrels per day in the second quarter and another 0.5 million barrels per day in the third quarter as exports helped replace lost global supply.",
+			"claimType": "observation",
+			"status": "supported",
+			"links": [
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev23",
+					"relation": "supports",
+					"quote": "In-brief analysis November 3, 2026"
+				},
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev23",
+					"relation": "supports",
+					"quote": "Crude oil refinery inputs in the United States increased by 0.5 million b/d in 2Q26 and by an additional 0.5 million b/d in 3Q26, as the United States increasingly exported refined products around the world to make up for lost supply."
+				}
+			],
+			"issues": []
+		},
+		{
+			"claimId": "run_ea8089329c8e576d92d52e71_cl4",
+			"text": "EIA reported that global refinery crude oil inputs remained about 5% below their year-earlier level in the third quarter of 2026 despite a partial recovery.",
+			"claimType": "observation",
+			"status": "supported",
+			"links": [
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev23",
+					"relation": "supports",
+					"quote": "Global refinery crude oil inputs recovered somewhat in 3Q26, increasing by 1.8 million b/d overall as increased flows through the Strait of Hormuz, alternative routes, and ship-to-ship transfers put more Middle Eastern crude oil on the global market."
+				},
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev23",
+					"relation": "supports",
+					"quote": "Despite the increase in oil flows and refinery inputs, crude oil inputs in 3Q26 still remained about 5% lower on average than during the same period of 2025."
+				}
+			],
+			"issues": []
+		},
+		{
+			"claimId": "run_ea8089329c8e576d92d52e71_cl5",
+			"text": "In earlier reporting published November 6, 2026, EIA said U.S. crude oil imports from Venezuela averaged 701,000 barrels per day in July 2026, the highest since May 2017, before declining to 655,000 barrels per day in August.",
+			"claimType": "observation",
+			"status": "supported",
+			"links": [
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev21",
+					"relation": "supports",
+					"quote": "In-brief analysis November 6, 2026"
+				},
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev21",
+					"relation": "supports",
+					"quote": "In July 2026, U.S. imports of crude oil from Venezuela averaged 701,000 barrels per day (b/d), the most since May 2017, before decreasing to 655,000 b/d in August, according to data published in our Petroleum Supply Monthly."
+				}
+			],
+			"issues": []
+		},
+		{
+			"claimId": "run_ea8089329c8e576d92d52e71_cl6",
+			"text": "EIA attributed increased Venezuelan imports to high U.S. refinery crude oil demand amid high global refining margins and eased U.S. purchase restrictions.",
+			"claimType": "observation",
+			"status": "supported",
+			"links": [
+				{
+					"evidenceId": "run_ea8089329c8e576d92d52e71_ev21",
+					"relation": "supports",
+					"quote": "Increased imports from Venezuela are supported by high crude oil demand from U.S. refineries because of high global refinery margins and the easing of U.S. government restrictions on purchases from the country."
+				}
+			],
+			"issues": []
+		}
+	],
+	"evidence": [
+		{
+			"evidenceId": "run_ea8089329c8e576d92d52e71_ev21",
+			"sourceUrl": "https://www.eia.gov/todayinenergy/detail.php?id=68425",
+			"title": "U.S. crude oil imports from Venezuela in July were highest since 2017 - U.S. Energy Information Administration (EIA)",
+			"publisher": "U.S. Energy Information Administration",
+			"publishedAt": null,
+			"retrievedAt": "2026-11-09T22:53:16.521Z",
+			"effectiveAt": null,
+			"excerpt": "U.S. crude oil imports from Venezuela in July were highest since 2017 - U.S. Energy Information Administration (EIA) Skip to sub-navigation U.S. Energy Information Administration - EIA - Independent Statistics and Analysis Menu Statistics Analysis Tools Education News Enter Search Term(s): Search Today in Energy Skip to page content Recent articles Browse by tag liquid fuels natural gas electricity oil/petroleum production/supply crude oil consumption/demand generation prices map states exports…",
+			"checksum": "5f2e300f042ed2cd9b17a38fadd18ecc2ef08e44847ddc940cf60635167a6210",
+			"sourceClass": "news"
+		},
+		{
+			"evidenceId": "run_ea8089329c8e576d92d52e71_ev22",
+			"sourceUrl": "https://www.eia.gov/todayinenergy/detail.php?id=68424",
+			"title": "Refineries have shifted production away from gasoline to middle distillates - U.S. Energy Information Administration (EIA)",
+			"publisher": "U.S. Energy Information Administration",
+			"publishedAt": null,
+			"retrievedAt": "2026-11-09T22:53:17.488Z",
+			"effectiveAt": null,
+			"excerpt": "Refineries have shifted production away from gasoline to middle distillates - U.S. Energy Information Administration (EIA) Skip to sub-navigation U.S. Energy Information Administration - EIA - Independent Statistics and Analysis Menu Statistics Analysis Tools Education News Enter Search Term(s): Search Today in Energy Skip to page content Recent articles Browse by tag liquid fuels natural gas electricity oil/petroleum production/supply crude oil consumption/demand generation prices map states e…",
+			"checksum": "406c07a8ca28f366461d5114b271f4312b9ea29ce50ee3999d59d8324aa8c767",
+			"sourceClass": "news"
+		},
+		{
+			"evidenceId": "run_ea8089329c8e576d92d52e71_ev23",
+			"sourceUrl": "https://www.eia.gov/todayinenergy/detail.php?id=68404",
+			"title": "Global refinery inputs fell sharply in the second quarter of 2026 before modest recovery - U.S. Energy Information Administration (EIA)",
+			"publisher": "U.S. Energy Information Administration",
+			"publishedAt": null,
+			"retrievedAt": "2026-11-09T22:53:18.822Z",
+			"effectiveAt": null,
+			"excerpt": "Global refinery inputs fell sharply in the second quarter of 2026 before modest recovery - U.S. Energy Information Administration (EIA) Skip to sub-navigation U.S. Energy Information Administration - EIA - Independent Statistics and Analysis Menu Statistics Analysis Tools Education News Enter Search Term(s): Search Today in Energy Skip to page content Recent articles Browse by tag liquid fuels natural gas electricity oil/petroleum production/supply crude oil consumption/demand generation prices…",
+			"checksum": "fa235ae5505f4a3f1f9e6420d5f1cdad81a9e8fd7f44c543a5b5a5202ca0d1e0",
+			"sourceClass": "news"
+		}
+	]
+}

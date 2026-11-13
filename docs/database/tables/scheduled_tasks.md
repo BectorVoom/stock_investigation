@@ -42,12 +42,18 @@ The Tasks page creates, edits, pauses, resumes and deletes tasks through `create
 | `version` | INTEGER | No | - | Compare-and-set version: starts at 0 and every `write` increments it. |
 | `created_at` | TEXT | No | - | ISO-8601 UTC creation time. |
 | `updated_at` | TEXT | No | - | ISO-8601 UTC time of the last write. |
+| `output_type` | TEXT | No | `'chat'` | Output destination: news or chat. |
 
 ## Constraints
+
+- `CHECK (output_type IN ('news', 'chat'))` limits the output destination. Migration `0038_task_output_type.sql` defaults existing tasks to Chat.
+
 
 | Name | Type | Columns | Definition | Description |
 |---|---|---|---|---|
 | (unnamed) | PRIMARY KEY | `owner_id`, `task_id` | - | One row per task; `get`, `write` and `delete` address a task by this key. |
+
+| (unnamed) | CHECK | `output_type` | `output_type IN ('news', 'chat')` | Valid output destination. |
 
 ## Indexes
 

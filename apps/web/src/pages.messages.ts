@@ -28,6 +28,10 @@ const JAPANESE: { readonly [V in ViewName]: { readonly title: string; readonly p
 			title: "チャット",
 			purpose: "リサーチの質問をして、出典と実行の進み具合とともに回答を読みます。",
 		},
+		news: {
+			title: "ニュース",
+			purpose: "購読している情報源の最新記事を読みます。",
+		},
 		sources: {
 			title: "情報源",
 			purpose: "リサーチが読んでよいニュースの情報源を選びます。",

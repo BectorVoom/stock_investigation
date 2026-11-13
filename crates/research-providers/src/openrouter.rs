@@ -172,7 +172,20 @@ fn object_fields(fields: Vec<(&str, Value)>) -> Value {
 		fields.into_iter().map(|(k, v)| (k.to_owned(), v)).collect(),
 	))
 }
-/// Exact key order and fixed output token cap (ADR-0029).
+/// Exact model profile: allow thinking plus structured output without increasing
+/// paid-model allowances or sending an oversized limit to unrelated models.
+fn completion_token_limit(model: &str) -> f64 {
+	if matches!(
+		model,
+		"nvidia/nemotron-3.5-lightning:free" | "dots-studio/dots-3-note-preview:free"
+	) {
+		32768.0
+	} else {
+		8192.0
+	}
+}
+
+/// Exact key order and bounded model-specific output cap (ADR-0029).
 pub fn build_request_body(model: &str, prompt: &str, effort: Effort) -> String {
 	json::stringify(&object_fields(vec![
 		("model", model.into()),
@@ -184,7 +197,10 @@ pub fn build_request_body(model: &str, prompt: &str, effort: Effort) -> String {
 			])]),
 		),
 		("stream", true.into()),
-		("max_completion_tokens", 8192.0.into()),
+		(
+			"max_completion_tokens",
+			completion_token_limit(model).into(),
+		),
 		("usage", object_fields(vec![("include", true.into())])),
 		(
 			"reasoning",
@@ -482,5 +498,33 @@ impl AgentRuntime for OpenRouterRuntime {
 				free: self.free,
 			},
 		)
+	}
+}
+
+#[cfg(test)]
+mod completion_budget_tests {
+	use super::*;
+
+	#[test]
+	fn exact_free_model_allowance_preserves_effort_and_other_model_caps() {
+		for (model, cap) in [
+			("nvidia/nemotron-3.5-lightning:free", 32768),
+			("dots-studio/dots-3-note-preview:free", 32768),
+			("dots-studio/dots-3-note-preview", 8192),
+			("dots-studio/dots-3-note-preview:free-extra", 8192),
+			("nvidia/nemotron-3.5-lightning", 8192),
+			("nvidia/nemotron-3.5-lightning:free-extra", 8192),
+			("other/model:free", 8192),
+		] {
+			for effort in [Effort::Low, Effort::Medium, Effort::High] {
+				let body: serde_json::Value =
+					serde_json::from_str(&build_request_body(model, "prompt", effort)).unwrap();
+				assert_eq!(body["max_completion_tokens"], cap);
+				assert_eq!(body["reasoning"]["effort"], effort.as_str());
+				assert_eq!(body["model"], model);
+				assert!(body.get("tools").is_none());
+				assert!(body.get("models").is_none());
+			}
+		}
 	}
 }

@@ -233,6 +233,7 @@ async fn transcript(value: Value) {
 			feed_parser: Arc::new(research_feed::FastXmlFeedParser),
 		}),
 		"search" => create_search_tools(SearchToolDeps {
+			agent_web_search: None,
 			fetcher: script.clone(),
 			hasher: script.clone(),
 			clock: script.clone(),

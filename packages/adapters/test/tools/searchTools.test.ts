@@ -765,6 +765,11 @@ describe("web.search: Tavily", () => {
 			});
 			const second = await web?.execute({ query: "apple" }, createToolContext());
 			expect(second?.ok).toBe(!paused);
+			if (paused) {
+				expect(second).toMatchObject({
+					error: { code: status === 432 ? "SEARCH_PLAN_LIMIT" : "SEARCH_COOLDOWN" },
+				});
+			}
 			expect(calls).toHaveLength(paused ? 1 : 2);
 		}
 	});

@@ -374,6 +374,16 @@ test("UI review of the Chat page", async ({ browser }) => {
 	const thread = page.getByRole("list", { name: "Messages" });
 	await expect(thread).toBeVisible({ timeout: 20_000 });
 	await page.waitForTimeout(600);
+	const investigation = thread.locator('[data-report-format="investigation"]').first();
+	await expect(investigation.getByRole("heading", { name: "Summary", exact: true })).toBeAttached();
+	await expect(investigation.locator('[data-claim-status="supported"]')).toHaveCount(0);
+	await expect(investigation.locator('[data-claim-status="unsupported"]')).toHaveCount(0);
+	await investigation.scrollIntoViewIfNeeded();
+	await shot(page, "A0-investigation-report");
+	await audit(page, "A investigation report");
+	await thread.evaluate((element) => {
+		element.scrollTop = element.scrollHeight;
+	});
 	await shot(page, "A1-desktop-thread");
 	await audit(page, "A desktop thread");
 	const pageScrolls = await page.evaluate(

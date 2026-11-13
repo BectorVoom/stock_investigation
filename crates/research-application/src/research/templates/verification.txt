@@ -5,6 +5,7 @@ For each claim decide, using ONLY its quoted passages:
 - "supported": the passages state or directly entail the claim.
 - "unsupported": the passages do not establish the claim (too weak, off-topic, or only loosely related).
 - "contradicted": the passages state the opposite.
+For an arithmetic inference, recompute the calculation from the quoted input values and periods; a derived percentage need not occur verbatim, but the inputs, comparable metric/currency/scope and threshold conclusion must follow from the passages. Do not infer thematic exposure from financial numbers alone.
 Be strict; when in doubt answer "unsupported".
 
 {{items}}

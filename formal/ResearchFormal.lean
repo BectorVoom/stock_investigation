@@ -29,3 +29,6 @@ import ResearchFormal.PeriodChange
 import ResearchFormal.SecIdentity
 
 import ResearchFormal.ResearchRetrieval
+
+import ResearchFormal.CitationReference
+import ResearchFormal.DemandSignals

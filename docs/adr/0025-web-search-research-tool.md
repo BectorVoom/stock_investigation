@@ -1,8 +1,25 @@
 # ADR-0025: A web search research tool
 
+Research jobs use search results as discovery leads. They fetch original pages
+before citing them and assess publisher identity, date, scope, methodology and
+incentives. When Tavily returns HTTP 432, Research skips web search for the rest of the run and continues with available sources.
+
+
 **Status:** Accepted · **Date:** 2026-10-16 · **Amended:** 2026-10-19 (Wikipedia search removed), 2026-10-25 (web search over Tavily; GDELT becomes `news.search`)
 
 The current request bodies, response fields, limits and error handling of both services are maintained in [Tavily Search](../external-apis/apis/tavily-search.md) and [GDELT DOC 2.0](../external-apis/apis/gdelt-doc.md) ([ADR-0047](0047-external-api-documents.md)); the wire details below record the decision as made and are not kept current.
+
+**Amendment (2026-11-06): recover from search cooldown.** A plan's `done`
+flag is chosen before its tool results are known. If a search returns
+`SEARCH_COOLDOWN` and the run has no evidence, both runners continue planning
+within the existing collection allowance (at most three rounds), even if that
+plan said `done`. The next prompt explicitly asks for another listed tool,
+subscribed feeds, stored records or known source URLs. Unavailable tools are
+removed from subsequent planning catalogues and still blocked from execution
+for that attempt. Already collected evidence proceeds to analysis normally.
+This does not bypass the provider pause, spend extra steps beyond the run's
+budget, invent URLs or publish an answer without evidence. If all available
+collection rounds end without evidence, the existing explicit failure remains.
 
 > **Amendment (2026-10-25).** The owner asked for `web.search` to search
 > "normal web information" and chose Tavily, keeping GDELT as a separate
@@ -137,3 +154,7 @@ run had web access off.
 - The collection allowance is now 3 of the 6 default steps, so a run whose
   first analysis draft fails its schema still reaches independent verification
   on its repair turn.
+
+## Superseded provider in normal runners (2026-11-12)
+
+[ADR-0073](0073-agent-web-search.md) switches normal Rust/Node runner web.search to the local Agent Web Search service. The tool contract, discovery-only snippets and page verification remain; this document records the earlier GDELT/Tavily decisions.

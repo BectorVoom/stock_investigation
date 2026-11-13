@@ -40,7 +40,12 @@ const H1_ALLOWED_FILES = ["apps/web/src/App.tsx"] as const;
  * the Markdown `#`/`##` as `h1`/`h2` inside the text widget's own `article`,
  * so each widget keeps its article-scoped outline. No other file needs one.
  */
-const H1_ALLOWLIST: readonly string[] = ["apps/web/src/notebook/richText/RichTextView.tsx"];
+const H1_ALLOWLIST: readonly string[] = [
+	"apps/web/src/notebook/richText/RichTextView.tsx",
+	// The administrator login gate stands instead of the workspace, so it is
+	// the whole document and its title is that document's `h1` (section 7).
+	"apps/web/src/auth/LoginPage.tsx",
+];
 /** Guideline section 7: `h2` is the page title and lives only in `PageHeader`. */
 const H2_ALLOWED_FILES = ["apps/web/src/components/ui.tsx"] as const;
 /**

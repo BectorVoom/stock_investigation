@@ -11,9 +11,8 @@ import { ErrorNotice, IconButton } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { runStateMessages } from "../i18n/runState.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
-import { chatHash } from "../router.ts";
 import { createClock } from "./clock.ts";
-import { SkipLine, TASK_LINK, TaskOutcomeNotice } from "./TaskParts.tsx";
+import { SkipLine, TaskOutcomeNotice, TaskReportLink } from "./TaskParts.tsx";
 import { createTaskActions, outcomeStillCurrent, type TaskActionOutcome } from "./taskActions.ts";
 import { taskResultMessages, type VerificationStatus } from "./taskResult.messages.ts";
 import { resultStamp, taskResultFor } from "./taskResultStore.ts";
@@ -191,13 +190,7 @@ export function TaskResultWidget(props: {
 				<Show when={deleted() ? null : task()}>
 					{(current) => (
 						<div class="flex shrink-0 items-center gap-1">
-							<a
-								href={chatHash(current().workspaceId)}
-								class={`${TASK_LINK} whitespace-nowrap text-xs`}
-								aria-label={tasksText().openChatNamed(current().title)}
-							>
-								{tasksText().openChat}
-							</a>
+							<TaskReportLink task={current()} compact />
 							<IconButton
 								label={tasksText().runNowNamed(current().title)}
 								icon="lightning-charge"

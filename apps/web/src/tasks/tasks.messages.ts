@@ -25,6 +25,9 @@ const JA_CHOICES: { readonly [C in ScheduleChoice]: string } = {
  */
 export const tasksMessages = defineMessages({
 	en: {
+		outputType: "Output",
+		newsOutput: "News",
+		chatOutput: "Chat",
 		/* ----- the Tasks page ----- */
 		listTitle: "Scheduled tasks",
 		/** The noun in "Loading scheduled tasks…". */
@@ -34,13 +37,15 @@ export const tasksMessages = defineMessages({
 		counts: (active: number, maxActive: number, total: number, maxTasks: number) =>
 			`${active} of ${maxActive} active · ${total} of ${maxTasks} tasks`,
 		empty:
-			"No scheduled tasks yet. A task asks a research question by itself — once, every day, on weekdays, weekly or monthly — and its answers collect in its own chat.",
+			"No scheduled tasks yet. A task asks a research question by itself — once, every day, on weekdays, weekly or monthly — and sends its answers to News or Chat, as selected.",
 		agentNote:
 			"Each run uses the backend, model and effort saved in Settings → AI agent when it runs, and counts against the same hourly allowance as your own questions.",
 		taskList: "Your scheduled tasks",
 		question: "Question",
 		openChat: "Open chat",
 		openChatNamed: (title: string) => `Open the chat of ${title}`,
+		openNews: "Open News",
+		openNewsNamed: (title: string) => `Read ${title} in News`,
 		fixInSettings: "Open Settings → AI agent",
 
 		edit: "Edit",
@@ -60,6 +65,8 @@ export const tasksMessages = defineMessages({
 		notDeleted: "The task was not deleted.",
 
 		created: (title: string) => `Created ${title}. Its chat holds every answer.`,
+		createdNews: (title: string) => `Created ${title}. Its reports appear in News.`,
+		runQueuedNews: (title: string) => `Queued a run of ${title}. Its report will appear in News.`,
 		saved: (title: string) => `Saved ${title}.`,
 		paused: (title: string) => `Paused ${title}.`,
 		resumed: (title: string) => `Resumed ${title}.`,
@@ -121,6 +128,9 @@ export const tasksMessages = defineMessages({
 		notSaved: "The task was not saved.",
 	},
 	ja: {
+		outputType: "出力先",
+		newsOutput: "ニュース",
+		chatOutput: "チャット",
 		listTitle: "スケジュールされたタスク",
 		tasksThing: "スケジュールされたタスク",
 		loadFailed: "スケジュールされたタスクを読み込めませんでした。",
@@ -128,13 +138,15 @@ export const tasksMessages = defineMessages({
 		counts: (active, maxActive, total, maxTasks) =>
 			`有効 ${active} / ${maxActive} 件 · 全体 ${total} / ${maxTasks} 件`,
 		empty:
-			"スケジュールされたタスクはまだありません。タスクはリサーチの質問を 1 回だけ、毎日、平日、毎週、または毎月、自動で実行し、回答はタスク専用のチャットにたまります。",
+			"スケジュールされたタスクはまだありません。タスクはリサーチの質問を 1 回だけ、毎日、平日、毎週、または毎月、自動で実行し、回答は選択したニュースまたはチャットに表示されます。",
 		agentNote:
 			"各実行には、実行時点で設定 → AI エージェントに保存されているバックエンド、モデル、作業量が使われ、自分の質問と同じ 1 時間あたりの実行回数に数えられます。",
 		taskList: "スケジュールされたタスクの一覧",
 		question: "質問",
 		openChat: "チャットを開く",
 		openChatNamed: (title) => `${title} のチャットを開く`,
+		openNews: "ニュースを開く",
+		openNewsNamed: (title) => `${title} をニュースで読む`,
 		fixInSettings: "設定 → AI エージェントを開く",
 
 		edit: "編集",
@@ -154,6 +166,8 @@ export const tasksMessages = defineMessages({
 		notDeleted: "タスクを削除できませんでした。",
 
 		created: (title) => `${title} を作成しました。回答はすべてタスクのチャットに届きます。`,
+		createdNews: (title) => `${title} を作成しました。レポートはニュースに表示されます。`,
+		runQueuedNews: (title) => `${title} の実行を予約しました。レポートはニュースに表示されます。`,
 		saved: (title) => `${title} を保存しました。`,
 		paused: (title) => `${title} を一時停止しました。`,
 		resumed: (title) => `${title} を再開しました。`,

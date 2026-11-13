@@ -167,6 +167,7 @@ Measured on `node:sqlite` with one owner holding 40 companies × 25 fiscal years
 | A company's filings newest first (claim context, the filings read), its filing count | `idx_equity_report_filing__owner_id_company_id_filed_on_filing_id`, scanned backwards | No temporary sort; immutable columns. |
 | The due company of a runner claim | `idx_equity_sync_state__owner_id_next_due_at` (partial) | Ordered range, no sort; one rewrite per sync. |
 | The never-checked due company, read first (ADR-0058 §3, migration 0026) | `idx_equity_sync_state__owner_id_last_checked_at_next_due_at` (partial: never checked) | 0.07 ms at 11,400 companies; a company leaves the index with its first check. |
+| Screening one metric of one fiscal year across the companies (migration 0036) | `idx_equity_metric_value__owner_id_metric_code_fiscal_year_value_real` (partial, covering) | 40.31 ms → 0.05 ms at 750,400 rows; a backwards index scan serves the screen's `ORDER BY`, no temporary sort. |
 | A company by listing / by source identity | `uq_equity_company__owner_id_market_symbol`, `uq_equity_company__owner_id_provider_source_company_id` (partial) | Uniqueness the data requires; one seek. |
 
 Known and kept: the company list (`listSummaries`) sorts its at most a few dozen companies in a temporary B-tree (`ORDER BY tracked_at, market DESC, symbol`); an index would be rewritten on every re-track for no measurable gain.

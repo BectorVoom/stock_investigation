@@ -35,6 +35,7 @@ function workspace(workspaceId: string, title = "Morning brief"): WorkspaceRecor
 
 function task(overrides: Partial<StoredScheduledTask> = {}): StoredScheduledTask {
 	return {
+		outputType: "chat",
 		ownerId: OWNER,
 		taskId: "task_1",
 		workspaceId: "ws_1",
@@ -122,6 +123,19 @@ async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
 }
 
 describe("scheduled task repository (ADR-0033 §7)", () => {
+	it("persists News and keeps it when pausing, then permits switching to Chat", () =>
+		withDb(async (db) => {
+			await create(db, task({ outputType: "news" }));
+			const repository = createScheduledTaskRepository(db);
+			expect((await repository.get(OWNER, "task_1"))?.outputType).toBe("news");
+			expect(
+				await repository.write(OWNER, "task_1", 0, { status: "paused", nextRunAt: null }, AT, 10),
+			).toBe(true);
+			expect((await repository.get(OWNER, "task_1"))?.outputType).toBe("news");
+			expect(await repository.write(OWNER, "task_1", 1, { outputType: "chat" }, AT, 10)).toBe(true);
+			expect((await repository.get(OWNER, "task_1"))?.outputType).toBe("chat");
+		}));
+
 	it("creates the task with its conversation and reads it back unchanged", () =>
 		withDb(async (db) => {
 			expect(await create(db, task())).toBe("created");

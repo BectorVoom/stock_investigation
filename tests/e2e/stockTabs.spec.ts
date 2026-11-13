@@ -422,7 +422,7 @@ test("the Chart tab opens in candlesticks with a volume panel; Chart type switch
 	}
 
 	const chartType = chart.locator('sl-select[label="Chart type"]');
-	await chartType.click();
+	await chartType.locator('[part="combobox"]').click();
 	await page.getByRole("option", { name: "Line", exact: true }).click();
 	// Shoelace 2.20 re-opened during its hide animation ends with an open but
 	// invisible listbox: let it finish closing first.
@@ -430,7 +430,7 @@ test("the Chart tab opens in candlesticks with a volume panel; Chart type switch
 	await expect(plot).toHaveAttribute("data-chart-type", "line");
 	await expect(plot.locator('g[data-chart-part="candles"]')).toHaveCount(0);
 	await expect(plot.locator('g[data-chart-part="volume"]')).toHaveCount(1);
-	await chartType.click();
+	await chartType.locator('[part="combobox"]').click();
 	await page.getByRole("option", { name: "Candlestick", exact: true }).click();
 	await expect(plot).toHaveAttribute("data-chart-type", "candlestick");
 });

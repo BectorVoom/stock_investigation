@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+import { articleListResponseSchema } from "@research/contracts";
 import { suiteRunnerSettings, writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
 import {
 	launcherEnv,
@@ -73,7 +74,9 @@ function devEnv(): Record<string, string> {
 	});
 }
 
-test(`dev refreshes a real feed with the ${RUNNER} runner, and restarts it on a source edit`, async () => {
+test(`dev refreshes a real feed with the ${RUNNER} runner, and restarts it on a source edit`, async ({
+	page,
+}) => {
 	test.setTimeout(600_000);
 	if (pristine === null) throw new Error("the pristine copy was not created");
 	const pristineRoot = pristine.root;
@@ -102,6 +105,18 @@ test(`dev refreshes a real feed with the ${RUNNER} runner, and restarts it on a 
 		expect(refreshed.finalState).toBe("completed");
 		expect(refreshed.articleCount).toBeGreaterThanOrEqual(1);
 		expect(refreshed.lastErrorCode).toBeNull();
+		// Actual dev launcher + live ingested feed, not an intercepted articles response.
+		const storedResponse = await fetch(`${API_ORIGIN}/api/v1/articles`);
+		expect(storedResponse.ok).toBe(true);
+		const stored = articleListResponseSchema.parse(await storedResponse.json());
+		await page.goto(`${VITE_ORIGIN}/#/news`);
+		const articlesRegion = page.getByRole("region", { name: "Recent articles", exact: true });
+		await expect(articlesRegion).toBeVisible();
+		await expect(
+			articlesRegion.getByRole("link", { name: stored.articles[0]?.title ?? "" }),
+		).toBeVisible();
+		// Real feed content changes; this proves ingestion/read/UI integration.
+		await page.screenshot({ path: test.info().outputPath("news-real-dev.png"), fullPage: true });
 
 		// An edit to a runner source rebuilds the bundle and restarts the
 		// runner: the bundle is rewritten and a second start-up line appears.
