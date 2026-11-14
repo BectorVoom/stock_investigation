@@ -1,0 +1,5 @@
+data: {"choices":[{"delta":{"content":"#","role":"assistant"},"index":0}],"created":1794624282,"id":"Gsv3arfRCOG-1e8P8vn-2Ao","model":"gemini-3.5-flash-lite","object":"chat.completion.chunk"}
+
+data: {"choices":[{"delta":{"extra_content":{"google":{"thought_signature":"EmAKXgFpFH0T5mcb+Bh3bSVTtjKvWHwGA6fp+2ra1vtKDMOlwUbcfRb1vUijNV+r1bOson6mot70e9yz1ltqJqKM2k9EWQqRDxx2VR86jn/9V/2A73npK6r4pGTX8ZE2MWE="}},"role":"assistant"},"finish_reason":"length","index":0}],"created":1794624282,"id":"Gsv3arfRCOG-1e8P8vn-2Ao","model":"gemini-3.5-flash-lite","object":"chat.completion.chunk"}
+
+data: [DONE]

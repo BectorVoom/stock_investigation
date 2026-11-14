@@ -6599,6 +6599,12 @@
 				}
 			},
 			{
+				"input": "data:TEST-GEMINI-KEY-0123456789abcdef",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
 				"input": "data:{\"status\":200,\"headers\":{\"Content-Type\":\"text/event-stream\"}}",
 				"output": {
 					"kind": "malformed"
@@ -7067,6 +7073,66 @@
 				}
 			},
 			{
+				"input": "data:gemini-api ok",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api/ok.sse",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api thinking ok",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api/thinking-ok.sse",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api length",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api/length.sse",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api 429",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api garbage",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api invalid model id",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api not configured",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
 				"input": "data:openrouter",
 				"output": {
 					"kind": "malformed"
@@ -7080,6 +7146,12 @@
 			},
 			{
 				"input": "data:sarashina-api",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api",
 				"output": {
 					"kind": "malformed"
 				}
@@ -7151,7 +7223,7 @@
 				}
 			},
 			{
-				"input": "data:provides the baseline four, then openrouter-free, claude-api and sarashina-api, through createAgentRuntimes",
+				"input": "data:provides the baseline four, then openrouter-free, claude-api, sarashina-api and gemini-api, through createAgentRuntimes",
 				"output": {
 					"kind": "malformed"
 				}
@@ -7206,6 +7278,312 @@
 			},
 			{
 				"input": "data:plan-limited backends never report a known cost for a subscription run",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:../../src/providers/geminiApi.ts",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:string",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:expected a string body",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api runtime metadata",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:is a plan-limited, tool-isolated backend",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:Gemini API",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api probe",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:is NOT_CONFIGURED without GEMINI_API_KEY and never contacts the network",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"status\":\"unavailable\",\"reasonCode\":\"NOT_CONFIGURED\",\"detail\":\"The Gemini API needs GEMINI_API_KEY in the runner environment\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:The Gemini API needs GEMINI_API_KEY in the runner environment",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:is available with a key and offers the chat models, offline",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"supported\":[\"stream\",\"cancel\"],\"model\":\"gemini-3.5-flash\",\"models\":[\"gemini-3.5-flash\",\"gemini-3.5-flash-lite\",\"gemini-3.6-flash\",\"gemini-3.1-flash-lite\"]}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-3.5-flash",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-3.5-flash-lite",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-3.6-flash",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-3.1-flash-lite",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:reports GEMINI_MODEL as the default model when set",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data: gemini-3.5-flash-lite ",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api request",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:sends reasoning_effort and the 16,000-token cap",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:p",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"gemini-3.5-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"p\"}],\"stream\":true,\"max_completion_tokens\":16000,\"reasoning_effort\":\"high\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"gemini-3.5-flash-lite\",\"messages\":[{\"role\":\"user\",\"content\":\"p\"}],\"stream\":true,\"max_completion_tokens\":16000,\"reasoning_effort\":\"low\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:chooses Settings' model, then GEMINI_MODEL, then the default",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"GEMINI_MODEL\":\"gemini-3.5-flash-lite\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"GEMINI_MODEL\":\"  \"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:  ",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:posts to the fixed endpoint with the key only in Authorization",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"gemini-3.5-flash-lite\",\"effort\":\"low\",\"scratchDirectory\":null}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"gemini-3.5-flash-lite\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":16000,\"reasoning_effort\":\"low\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"role\":\"user\",\"content\":\"Reply with the single word OK.\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:secret",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api recorded streams",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:completes with the answer and an unknown cost (ok.sse)",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":\"gemini-3.5-flash-lite\",\"scratchDirectory\":null}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:forwards gemini-3.5-flash answer and ignores thought_signature (thinking-ok.sse)",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"model\":null,\"scratchDirectory\":null}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:reports a turn stopped by the token cap as truncated, not completed",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:maps a 400 to PROVIDER_REQUEST_REJECTED with the status unchanged, without retrying",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api/error-400.json",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"status\":400,\"headers\":{\"Content-Type\":\"application/json\"}}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"Content-Type\":\"application/json\"}",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:application/json",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_REQUEST_REJECTED\",\"upstreamStatus\":400}",
+				"output": {
+					"kind": "ignored"
+				}
+			},
+			{
+				"input": "data:fails closed before any request without a key or with an invalid model id",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:../../src/providers/openRouter.ts",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:DOC-EXAMPLE-GEMINI-0123456789abcdef",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api-chat-request",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api-chat-stream",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:gemini-api.md examples",
+				"output": {
+					"kind": "malformed"
+				}
+			},
+			{
+				"input": "data:parses the live stream into the answer text and a completed turn of unknown cost",
 				"output": {
 					"kind": "malformed"
 				}
@@ -8973,12 +9351,6 @@
 				}
 			},
 			{
-				"input": "data:../../src/providers/openRouter.ts",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
 				"input": "data:data: [DONE]\n\n",
 				"output": {
 					"kind": "malformed"
@@ -9064,12 +9436,6 @@
 			},
 			{
 				"input": "data:Authorization",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:string",
 				"output": {
 					"kind": "malformed"
 				}
@@ -10060,18 +10426,6 @@
 			},
 			{
 				"input": "data:{\"status\":200,\"headers\":{\"Content-Type\":\"application/json\"}}",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:{\"Content-Type\":\"application/json\"}",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:application/json",
 				"output": {
 					"kind": "malformed"
 				}
@@ -11163,19 +11517,7 @@
 				}
 			},
 			{
-				"input": "data:expected a string body",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
 				"input": "data:sarashina-api runtime metadata",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:is a plan-limited, tool-isolated backend",
 				"output": {
 					"kind": "malformed"
 				}
@@ -11206,12 +11548,6 @@
 			},
 			{
 				"input": "data:The Sarashina API needs SARASHINA_API_KEY in the runner environment",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:is available with a key and offers the chat models, offline",
 				"output": {
 					"kind": "malformed"
 				}
@@ -11265,12 +11601,6 @@
 				}
 			},
 			{
-				"input": "data:p",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
 				"input": "data:{\"model\":\"sarashina3.2-mini-thinking\",\"messages\":[{\"role\":\"user\",\"content\":\"p\"}],\"stream\":true,\"max_completion_tokens\":8000,\"reasoning_effort\":\"high\"}",
 				"output": {
 					"kind": "malformed"
@@ -11296,18 +11626,6 @@
 			},
 			{
 				"input": "data:{\"SARASHINA_MODEL\":\"  \"}",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:  ",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:posts to the fixed endpoint with the key only in Authorization",
 				"output": {
 					"kind": "malformed"
 				}
@@ -11343,12 +11661,6 @@
 				}
 			},
 			{
-				"input": "data:secret",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
 				"input": "data:passes the run's effort to a thinking model",
 				"output": {
 					"kind": "malformed"
@@ -11373,12 +11685,6 @@
 				}
 			},
 			{
-				"input": "data:completes with the answer and an unknown cost (ok.sse)",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
 				"input": "data:{\"model\":\"sarashina3-mini\",\"scratchDirectory\":null}",
 				"output": {
 					"kind": "malformed"
@@ -11386,18 +11692,6 @@
 			},
 			{
 				"input": "data:forwards a thinking model's answer and never its encrypted reasoning",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:{\"model\":null,\"scratchDirectory\":null}",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:reports a turn stopped by the token cap as truncated, not completed",
 				"output": {
 					"kind": "malformed"
 				}
@@ -11427,12 +11721,6 @@
 				}
 			},
 			{
-				"input": "data:fails closed before any request without a key or with an invalid model id",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
 				"input": "data:DOC-EXAMPLE-SARASHINA-0123456789abcdef",
 				"output": {
 					"kind": "malformed"
@@ -11458,12 +11746,6 @@
 			},
 			{
 				"input": "data:{\"model\":\"sarashina3-mini\",\"effort\":\"low\",\"scratchDirectory\":null}",
-				"output": {
-					"kind": "malformed"
-				}
-			},
-			{
-				"input": "data:parses the live stream into the answer text and a completed turn of unknown cost",
 				"output": {
 					"kind": "malformed"
 				}

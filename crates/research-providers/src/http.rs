@@ -1,5 +1,5 @@
 //! Fixed-endpoint, DNS-pinned HTTPS for the HTTP backends (OpenRouter, Claude API,
-//! Sarashina API).
+//! Sarashina API, Gemini API).
 //! Redirects are transport errors.
 //!
 //! Only a GET reuses an idle connection, and only a GET's connection is kept
@@ -30,9 +30,12 @@ pub const MODELS_URL: &str = "https://openrouter.ai/api/v1/models";
 pub const CLAUDE_MESSAGES_URL: &str = "https://api.anthropic.com/v1/messages";
 /// Sarashina chat endpoint; the only URL that receives the Sarashina key.
 pub const SARASHINA_CHAT_URL: &str = "https://api.sarashina.ai/v1/chat/completions";
+/// Gemini OpenAI-compatible chat endpoint; the only URL that receives the Gemini key.
+pub const GEMINI_CHAT_URL: &str =
+	"https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 /// Every URL the client will contact, with its host and request path. Any
 /// other URL is refused, so no owner-controlled URL can receive a key.
-const ENDPOINTS: [(&str, &str, &str); 4] = [
+const ENDPOINTS: [(&str, &str, &str); 5] = [
 	(CHAT_URL, "openrouter.ai", "/api/v1/chat/completions"),
 	(MODELS_URL, "openrouter.ai", "/api/v1/models"),
 	(CLAUDE_MESSAGES_URL, "api.anthropic.com", "/v1/messages"),
@@ -40,6 +43,11 @@ const ENDPOINTS: [(&str, &str, &str); 4] = [
 		SARASHINA_CHAT_URL,
 		"api.sarashina.ai",
 		"/v1/chat/completions",
+	),
+	(
+		GEMINI_CHAT_URL,
+		"generativelanguage.googleapis.com",
+		"/v1beta/openai/chat/completions",
 	),
 ];
 /// Exact outbound request; Debug deliberately omits headers and body.
@@ -235,6 +243,8 @@ mod tests {
 			"https://openrouter.ai/api/v1/messages",
 			"https://api.sarashina.ai/v1/models",
 			"https://api.sarashina.ai/v1/chat/completions/../x",
+			"https://generativelanguage.googleapis.com/v1beta/openai/models",
+			"https://generativelanguage.googleapis.com/v1beta/openai/chat/completions/../x",
 		] {
 			let request = HttpRequest {
 				method: "POST".to_owned(),
@@ -254,7 +264,8 @@ mod tests {
 				CHAT_URL,
 				MODELS_URL,
 				CLAUDE_MESSAGES_URL,
-				SARASHINA_CHAT_URL
+				SARASHINA_CHAT_URL,
+				GEMINI_CHAT_URL
 			]
 		);
 	}

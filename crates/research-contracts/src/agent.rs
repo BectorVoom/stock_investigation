@@ -38,6 +38,10 @@ pub const CLAUDE_API_AGENT_ID: &str = "claude-api";
 /// Intuitions' OpenAI-compatible chat completions, plan-limited (ADR-0074).
 pub const SARASHINA_API_AGENT_ID: &str = "sarashina-api";
 
+/// Agent id of the Gemini API backend (`GEMINI_API_AGENT_ID`): Google's
+/// OpenAI-compatible chat completions, plan-limited (ADR-0075).
+pub const GEMINI_API_AGENT_ID: &str = "gemini-api";
+
 /// Router id that selects a free model on the owner's behalf.
 pub const OPENROUTER_FREE_ROUTER_MODEL_ID: &str = "openrouter/free";
 

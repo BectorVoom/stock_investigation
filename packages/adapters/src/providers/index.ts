@@ -3,6 +3,7 @@ import { createClaudeApiRuntime } from "./claudeApi.ts";
 import { createClaudeCodeRuntime } from "./claudeCode.ts";
 import { createCodexRuntime } from "./codex.ts";
 import type { ProviderEnvironment } from "./environment.ts";
+import { createGeminiApiRuntime } from "./geminiApi.ts";
 import { createOpenCodeRuntime } from "./openCode.ts";
 import { createOpenRouterFreeRuntime, createOpenRouterRuntime } from "./openRouter.ts";
 import { createSarashinaApiRuntime } from "./sarashinaApi.ts";
@@ -19,6 +20,15 @@ export {
 export { createClaudeCodeRuntime } from "./claudeCode.ts";
 export { createCodexRuntime } from "./codex.ts";
 export type { ProviderEnvironment } from "./environment.ts";
+export {
+	buildGeminiRequestBody,
+	createGeminiApiRuntime,
+	GEMINI_API_DEFAULT_MODEL,
+	GEMINI_API_MODELS,
+	GEMINI_CHAT_COMPLETIONS_URL,
+	GEMINI_MAX_COMPLETION_TOKENS,
+	resolveGeminiModel,
+} from "./geminiApi.ts";
 export { createOpenCodeRuntime, type OpenCodeRuntimeOptions } from "./openCode.ts";
 export { createOpenRouterFreeRuntime, createOpenRouterRuntime } from "./openRouter.ts";
 export {
@@ -63,12 +73,13 @@ export function createBaselineAgentRuntimes(
 	];
 }
 
-/** Baseline backends plus the OpenRouter free-models, Claude API and Sarashina API backends. */
+/** Baseline backends plus the OpenRouter free-models, Claude API, Sarashina API and Gemini API backends. */
 export function createAgentRuntimes(environment: ProviderEnvironment): readonly AgentRuntime[] {
 	return [
 		...createBaselineAgentRuntimes(environment),
 		createOpenRouterFreeRuntime(environment),
 		createClaudeApiRuntime(environment),
 		createSarashinaApiRuntime(environment),
+		createGeminiApiRuntime(environment),
 	];
 }

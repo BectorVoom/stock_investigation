@@ -74,10 +74,10 @@ export function mentions(text: string, phrase: string): boolean {
 	return normalized !== "" && normalizeForMatch(text).includes(normalized);
 }
 
-/** Numeric tokens with thousands separators removed, e.g. "1,234.5%" -> "1234.5". */
+/** Numeric tokens with thousands separators and leading integer zeros removed, e.g. "1,234.5%" -> "1234.5", "05" -> "5". */
 export function extractNumberTokens(text: string): readonly string[] {
 	const matches = text.normalize("NFKC").match(/\d[\d,]*(?:\.\d+)?/g) ?? [];
-	return matches.map((token) => token.replace(/,/g, ""));
+	return matches.map((token) => token.replace(/,/g, "").replace(/^0+(?=\d)/, ""));
 }
 
 function verifyLink(

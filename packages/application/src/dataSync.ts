@@ -516,39 +516,134 @@ export function createDataSyncService(deps: DataSyncDeps) {
 		);
 	}
 
+	type StockPricesDecision =
+		| { readonly kind: "idle" }
+		| { readonly kind: "queue"; readonly days: number; readonly histories: number };
+
+	interface StockPricesMarketState {
+		readonly market: WatchMarket;
+		readonly activeJob: boolean;
+		readonly lastCreatedAtMs: number | null;
+		readonly hasStoredDay: boolean;
+		readonly waitingForFirstStoredDay: boolean;
+		readonly candidate: { readonly days: number; readonly histories: number } | null;
+	}
+
 	/**
-	 * One market's stock prices (ADR-0058 §2): a `stock-prices-sync` job
-	 * while no job of that market is active, the market's stock list is
-	 * stored, the last job of the market was created `SYNC_MIN_GAP_MS` ago
-	 * (`SYNC_RETRY_MS` after one that did not complete — `decideSync` with
-	 * the market's work as one never-refreshed item), and the plan has work:
-	 * due days, else directory stocks with no stored series. A market found
-	 * without work is not planned again for `STOCK_PRICES_IDLE_RECHECK_MS`.
+	 * Reads one market's stock-price scheduling state (ADR-0058 §2): skipped when
+	 * no directory is stored or its idle window has not expired.
 	 */
-	async function stockPricesDecision(
+	async function inspectStockPricesMarket(
 		ownerId: string,
 		market: WatchMarket,
 		directoryStored: boolean,
 		nowMs: number,
-	): Promise<
-		| { readonly kind: "idle" }
-		| { readonly kind: "queue"; readonly days: number; readonly histories: number }
-	> {
-		const idle = { kind: "idle" } as const;
-		if (!directoryStored || nowMs < deps.gate.stockPricesIdleUntil(ownerId, market)) return idle;
+	): Promise<StockPricesMarketState> {
+		if (!directoryStored || nowMs < deps.gate.stockPricesIdleUntil(ownerId, market)) {
+			return {
+				market,
+				activeJob: false,
+				lastCreatedAtMs: null,
+				hasStoredDay: false,
+				waitingForFirstStoredDay: false,
+				candidate: null,
+			};
+		}
 		const jobs = await jobsOf(ownerId, "stock-prices-sync", { market });
 		const gate = decideSync(
 			{ ...jobs, items: 1, neverRefreshed: 1, retryable: 0, oldestRefreshMs: null },
 			{ intervalMs: NEVER_MS, retryMs: SYNC_RETRY_MS, minGapMs: SYNC_MIN_GAP_MS },
 			nowMs,
 		);
-		if (gate.kind !== "queue") return idle;
-		const plan = await planStockPrices(deps.stockPrices, ownerId, market, nowMs);
-		if (!planHasWork(plan)) {
-			deps.gate.rememberStockPricesIdle(ownerId, market, nowMs + STOCK_PRICES_IDLE_RECHECK_MS);
-			return idle;
+		// A market whose last job did not complete is cooling down on SYNC_RETRY_MS
+		// and does not hold back already-seeded backfill work.
+		if (
+			gate.kind !== "queue" &&
+			!jobs.activeJob &&
+			jobs.lastJob !== null &&
+			!jobs.lastJob.completed
+		) {
+			return {
+				market,
+				activeJob: false,
+				lastCreatedAtMs: jobs.lastJob.createdAtMs,
+				hasStoredDay: false,
+				waitingForFirstStoredDay: false,
+				candidate: null,
+			};
 		}
-		return { kind: "queue", days: plan.days.length, histories: plan.histories.length };
+		const plan = await planStockPrices(deps.stockPrices, ownerId, market, nowMs);
+		const hasWork = planHasWork(plan);
+		if (!hasWork) {
+			if (!jobs.activeJob) {
+				deps.gate.rememberStockPricesIdle(ownerId, market, nowMs + STOCK_PRICES_IDLE_RECHECK_MS);
+			}
+			return {
+				market,
+				activeJob: jobs.activeJob,
+				lastCreatedAtMs: jobs.lastJob?.createdAtMs ?? null,
+				hasStoredDay: plan.hasStoredDay,
+				waitingForFirstStoredDay: false,
+				candidate: null,
+			};
+		}
+		return {
+			market,
+			activeJob: jobs.activeJob,
+			lastCreatedAtMs: jobs.lastJob?.createdAtMs ?? null,
+			hasStoredDay: plan.hasStoredDay,
+			waitingForFirstStoredDay:
+				!plan.hasStoredDay && (jobs.activeJob || jobs.lastJob === null || jobs.lastJob.completed),
+			candidate:
+				gate.kind === "queue" ? { days: plan.days.length, histories: plan.histories.length } : null,
+		};
+	}
+
+	/**
+	 * Stock-price decisions across markets (ADR-0058 §2): while a market still
+	 * has no stored day and has not failed, markets that already stored at
+	 * least one day yield so delayed-plan walks (JP) are not starved by US
+	 * backfill jobs; once all healthy markets have a stored day, at most one
+	 * backfill market runs at a time, oldest last-job first.
+	 */
+	async function stockPricesDecisions(
+		ownerId: string,
+		metas: ReadonlyMap<WatchMarket, { readonly entryCount: number }>,
+		nowMs: number,
+	): Promise<ReadonlyMap<WatchMarket, StockPricesDecision>> {
+		const states = await Promise.all(
+			STOCK_PRICE_MARKETS.map((market) =>
+				inspectStockPricesMarket(ownerId, market, (metas.get(market)?.entryCount ?? 0) > 0, nowMs),
+			),
+		);
+		const waiting = states.some((state) => state.waitingForFirstStoredDay);
+		const active = states.some((state) => state.activeJob);
+		const eligibleBackfill =
+			waiting || active
+				? []
+				: states.filter((state) => state.hasStoredDay && state.candidate !== null);
+		let chosenBackfillMarket: WatchMarket | null = null;
+		let oldestCreatedAt = Number.POSITIVE_INFINITY;
+		for (const state of eligibleBackfill) {
+			const createdAt = state.lastCreatedAtMs ?? Number.NEGATIVE_INFINITY;
+			if (chosenBackfillMarket === null || createdAt < oldestCreatedAt) {
+				chosenBackfillMarket = state.market;
+				oldestCreatedAt = createdAt;
+			}
+		}
+		const decisions = new Map<WatchMarket, StockPricesDecision>();
+		for (const state of states) {
+			if (state.candidate === null) {
+				decisions.set(state.market, { kind: "idle" });
+				continue;
+			}
+			if (state.hasStoredDay && (waiting || active || state.market !== chosenBackfillMarket)) {
+				decisions.set(state.market, { kind: "idle" });
+				continue;
+			}
+			decisions.set(state.market, { kind: "queue", ...state.candidate });
+		}
+		return decisions;
 	}
 
 	/**
@@ -804,9 +899,9 @@ export function createDataSyncService(deps: DataSyncDeps) {
 			}
 			if (kinds.has("stock-prices-sync")) {
 				const metas = await metasOnce();
+				const decisions = await stockPricesDecisions(ownerId, metas, nowMs);
 				for (const market of STOCK_PRICE_MARKETS) {
-					const stored = (metas.get(market)?.entryCount ?? 0) > 0;
-					const decision = await stockPricesDecision(ownerId, market, stored, nowMs);
+					const decision = decisions.get(market) ?? { kind: "idle" };
 					outcomes.push(
 						decision.kind === "queue"
 							? await queueJob(

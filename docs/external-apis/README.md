@@ -28,6 +28,7 @@ One reference document per external API the application calls: what we send, wha
 | [Claude API](apis/claude-api.md) | Anthropic | `claude-api` agent backend (Messages) | `api.anthropic.com` | `ANTHROPIC_API_KEY` |
 | [OpenRouter](apis/openrouter.md) | OpenRouter | `openrouter` agent backend, model catalogue | `openrouter.ai` | `OPENROUTER_API_KEY` |
 | [Sarashina API](apis/sarashina-api.md) | SB Intuitions | `sarashina-api` agent backend (chat completions) | `api.sarashina.ai` | `SARASHINA_API_KEY` |
+| [Gemini API](apis/gemini-api.md) | Google | `gemini-api` agent backend (chat completions) | `generativelanguage.googleapis.com` | `GEMINI_API_KEY` |
 | [Cloudflare Access signing keys](apis/cloudflare-access.md) | Cloudflare | Verifying the owner's Access JWT in the deployed Worker | `<team-name>.cloudflareaccess.com` | None (`ACCESS_TEAM_DOMAIN`, `ACCESS_AUDIENCE`) |
 | [Web feeds and pages](apis/web-feeds-and-pages.md) | Any publisher the owner subscribes to | News ingest (RSS/Atom), `web.fetch_page`, `robots.txt` | Owner-chosen `https` hosts | None |
 

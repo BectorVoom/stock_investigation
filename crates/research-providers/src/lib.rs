@@ -8,6 +8,7 @@ pub mod codex;
 mod composition;
 pub mod environment;
 pub mod external;
+pub mod gemini_api;
 pub mod http;
 pub mod http_turn;
 pub mod lines;

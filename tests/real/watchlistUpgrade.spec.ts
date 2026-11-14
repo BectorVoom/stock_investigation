@@ -264,13 +264,27 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 			timeout: 120_000,
 		});
 		await expect(homeWidget).not.toContainText("Earnings dates: refreshing", { timeout: 120_000 });
-		await expect(homeWidget).toContainText("7203");
-		if (widgetNext !== undefined && widgetNext.announcementDate !== null) {
+		const horizon = new Date(Date.parse(`${todayIso}T00:00:00.000Z`) + 180 * 86_400_000)
+			.toISOString()
+			.slice(0, 10);
+		if (
+			widgetNext !== undefined &&
+			widgetNext.announcementDate !== null &&
+			widgetNext.announcementDate <= horizon
+		) {
 			await expect(homeWidget).toContainText(widgetNext.announcementDate, { timeout: 120_000 });
+			await expect(homeWidget).toContainText("7203", { timeout: 120_000 });
 			// The widget marks the day with a link to the Registered stocks page, not a calendar link.
-			await expect(
-				homeWidget.getByRole("link", { name: /announcements?, (.*, )?7203/ }),
-			).toHaveAttribute("href", "#/registered");
+			const dayLink = homeWidget.getByRole("link", { name: /announcements?, (.*, )?7203/ });
+			for (let step = 0; step < 12 && (await dayLink.count()) === 0; step += 1) {
+				await homeWidget.getByRole("button", { name: "Next month" }).click();
+			}
+			await expect(dayLink).toHaveAttribute("href", "#/registered");
+		} else {
+			// Between seasons JPX publishes no upcoming date for 7203 (its last
+			// announcement already passed): the calendar marks no day and says
+			// so, rather than showing a stock without a date.
+			await expect(homeWidget).toContainText("Open Registered stocks", { timeout: 120_000 });
 		}
 		const shotsDir = join(REPO_ROOT, "test-results-real");
 		mkdirSync(shotsDir, { recursive: true });

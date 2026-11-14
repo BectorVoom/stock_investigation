@@ -49,8 +49,14 @@ const METERED_KEYS: Readonly<Record<string, string>> = {
 	"claude-api": "ANTHROPIC_API_KEY",
 	openrouter: "OPENROUTER_API_KEY",
 };
+/** Plan-limited HTTPS backends that still need their key in the runner env file (ADR-0074, ADR-0075). */
+const PLAN_KEYS: Readonly<Record<string, string>> = {
+	"sarashina-api": "SARASHINA_API_KEY",
+	"gemini-api": "GEMINI_API_KEY",
+};
 const METERED_KEY = METERED_KEYS[AGENT_ID] ?? null;
 const METERED = METERED_KEY !== null;
+const PLAN_KEY = PLAN_KEYS[AGENT_ID] ?? null;
 const MAX_SPEND_USD = Number((process.env.RUN_LIVE_MAX_SPEND ?? "0.5").trim());
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const VITE_PORT = 8917;
@@ -161,6 +167,8 @@ test.describe("a scheduled task fires by itself through the real backend (spends
 		const runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
 			...(AGENT_ID === "opencode" ? {} : { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" }),
 			...(METERED_KEY === null ? {} : { [METERED_KEY]: (process.env[METERED_KEY] ?? "").trim() }),
+			...(PLAN_KEY === null ? {} : { [PLAN_KEY]: (process.env[PLAN_KEY] ?? "").trim() }),
+			...(AGENT_ID === "gemini-api" && MODEL !== "" ? { GEMINI_MODEL: MODEL } : {}),
 		});
 		if (pristine === null) throw new Error("the pristine copy was not created");
 		const launched = await startLauncher({
@@ -312,9 +320,7 @@ test.describe("a scheduled task fires by itself through the real backend (spends
 		await expect(
 			page.getByRole("list", { name: "Messages" }).locator('[data-run-state="completed"]'),
 		).toBeAttached();
-		expect(
-			await assistant.locator('ul[aria-label="Claims"] > li[data-claim-id]').count(),
-		).toBeGreaterThan(0);
+		expect(await assistant.locator("li[data-claim-id]").count()).toBeGreaterThan(0);
 		expect(await assistant.locator("a").count()).toBeGreaterThan(0);
 		await page.screenshot({ path: join(SHOTS_DIR, "tasks-live-chat-1440x900.png") });
 

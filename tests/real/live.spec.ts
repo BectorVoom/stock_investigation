@@ -79,9 +79,10 @@ const METERED_KEYS: Readonly<Record<string, string>> = {
 	"claude-api": "ANTHROPIC_API_KEY",
 	openrouter: "OPENROUTER_API_KEY",
 };
-/** Plan-limited HTTPS backends that still need their key in the runner env file (ADR-0074). */
+/** Plan-limited HTTPS backends that still need their key in the runner env file (ADR-0074, ADR-0075). */
 const PLAN_KEYS: Readonly<Record<string, string>> = {
 	"sarashina-api": "SARASHINA_API_KEY",
+	"gemini-api": "GEMINI_API_KEY",
 };
 const METERED_KEY = METERED_KEYS[AGENT_ID] ?? null;
 const METERED = METERED_KEY !== null;
@@ -321,8 +322,16 @@ test.describe("live positive path through the real backend (spends real quota)",
 		if (METERED && !(MAX_SPEND_USD > 0)) {
 			throw new Error("RUN_LIVE_MAX_SPEND must be a positive number of USD");
 		}
-		const searchKey = (process.env.RESEARCH_LIVE_SEARCH_API_KEY ?? "").trim();
-		const searchUrl = (process.env.RESEARCH_LIVE_SEARCH_URL ?? "http://127.0.0.1:8090").trim();
+		const searchKey = (
+			process.env.RESEARCH_LIVE_SEARCH_API_KEY ??
+			process.env.AGENT_WEB_SEARCH_API_KEY ??
+			""
+		).trim();
+		const searchUrl = (
+			process.env.RESEARCH_LIVE_SEARCH_URL ??
+			process.env.AGENT_WEB_SEARCH_URL ??
+			"http://127.0.0.1:8090"
+		).trim();
 		runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
 			...(searchKey === ""
 				? {}
@@ -331,6 +340,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 			...(METERED_KEY === null ? {} : { [METERED_KEY]: meteredKey }),
 			...(PLAN_KEY === null ? {} : { [PLAN_KEY]: planKey }),
 			...(AGENT_ID === "openrouter" && MODEL !== "" ? { OPENROUTER_MODEL: MODEL } : {}),
+			...(AGENT_ID === "gemini-api" && MODEL !== "" ? { GEMINI_MODEL: MODEL } : {}),
 		});
 		service = await startDev(dataDirA);
 		livePage = await browser.newPage();

@@ -37,8 +37,19 @@ import {
  */
 test.describe.configure({ mode: "serial" });
 
-const LIVE = process.env.RUN_LIVE_OPENCODE === "1";
-const MODEL = (process.env.OPENCODE_MODEL ?? "").trim();
+const LIVE_AGENT_ENV = (process.env.RUN_LIVE_AGENT ?? "").trim();
+const LIVE_OPENCODE = process.env.RUN_LIVE_OPENCODE === "1";
+const LIVE = LIVE_AGENT_ENV !== "" || LIVE_OPENCODE;
+const AGENT_ID = LIVE_AGENT_ENV !== "" ? LIVE_AGENT_ENV : "opencode";
+const MODEL =
+	AGENT_ID === "opencode"
+		? (process.env.OPENCODE_MODEL ?? "").trim()
+		: (process.env.RUN_LIVE_MODEL ?? "").trim();
+const PLAN_KEYS: Readonly<Record<string, string>> = {
+	"sarashina-api": "SARASHINA_API_KEY",
+	"gemini-api": "GEMINI_API_KEY",
+};
+const PLAN_KEY = PLAN_KEYS[AGENT_ID] ?? null;
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const VITE_PORT = 8911;
 const API_PORT = 8912;
@@ -72,15 +83,26 @@ async function waitForRunnerWithModel(): Promise<void> {
 				const response = await fetch(`${API_ORIGIN}/api/v1/agents`, {
 					headers: ownerHeaders(API_ORIGIN),
 				});
-				if (!response.ok) return [];
+				if (!response.ok) return "agents API not ready";
 				const parsed = agentsResponseSchema.safeParse(await response.json());
-				if (!parsed.success) return [];
-				const opencode = parsed.data.agents.find((agent) => agent.agentId === "opencode");
-				return opencode?.capabilities.models ?? [];
+				if (!parsed.success) return "agents API response invalid";
+				const agent = parsed.data.agents.find((entry) => entry.agentId === AGENT_ID);
+				if (agent === undefined) return "backend not probed";
+				if (agent.availability.status !== "available") {
+					return `backend unavailable: ${agent.availability.reasonCode} ${agent.availability.detail}`;
+				}
+				if (
+					MODEL !== "" &&
+					agent.capabilities.model !== MODEL &&
+					!(agent.capabilities.models ?? []).includes(MODEL)
+				) {
+					return "model not listed";
+				}
+				return "ready";
 			},
 			{ timeout: 180_000 },
 		)
-		.toContain(MODEL);
+		.toBe("ready");
 }
 
 function dumpRunnerLog(label: string): void {
@@ -121,11 +143,15 @@ async function instruct(page: Page, instruction: string): Promise<void> {
 }
 
 test.describe("notebook assistant through the real backend (spends real quota)", () => {
-	test.skip(!LIVE, "needs RUN_LIVE_OPENCODE=1 with OPENCODE_MODEL in the environment");
+	test.skip(!LIVE, "needs RUN_LIVE_AGENT=<agentId>, or RUN_LIVE_OPENCODE=1 with OPENCODE_MODEL");
 
 	test.beforeAll(async ({ browser }) => {
-		if (MODEL === "") {
+		if (AGENT_ID === "opencode" && MODEL === "") {
 			throw new Error("RUN_LIVE_OPENCODE=1 requires OPENCODE_MODEL=provider/model");
+		}
+		const planKey = PLAN_KEY === null ? "" : (process.env[PLAN_KEY] ?? "").trim();
+		if (PLAN_KEY !== null && planKey === "") {
+			throw new Error(`RUN_LIVE_AGENT=${AGENT_ID} needs ${PLAN_KEY} in the environment`);
 		}
 		test.setTimeout(300_000);
 		pristine = makePristineCopy(REPO_ROOT);
@@ -134,7 +160,10 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		cleaners.add(() => rmSync(dataDir, { recursive: true, force: true }));
 		extraRoot = mkdtempSync(join(tmpdir(), "research-notebook-live-extra-"));
 		cleaners.add(() => rmSync(extraRoot, { recursive: true, force: true }));
-		const runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {});
+		const runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
+			...(PLAN_KEY === null ? {} : { [PLAN_KEY]: planKey }),
+			...(AGENT_ID === "gemini-api" && MODEL !== "" ? { GEMINI_MODEL: MODEL } : {}),
+		});
 		const launched = await startLauncher({
 			cwd: pristine.root,
 			args: ["dev"],
@@ -149,7 +178,7 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 				prodPort: "8910",
 				devPort: String(VITE_PORT),
 				devApiPort: String(API_PORT),
-				extra: { OPENCODE_MODEL: MODEL },
+				extra: AGENT_ID === "opencode" && MODEL !== "" ? { OPENCODE_MODEL: MODEL } : {},
 			}),
 		});
 		service = launched;
@@ -184,23 +213,25 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		await page.goto(`${VITE_ORIGIN}/#/settings`);
 		const agentSection = page.getByRole("region", { name: "AI agent" });
 		const backend = agentSection.getByLabel("Default backend");
-		await expect(backend.locator("option", { hasText: "OpenCode" })).toHaveCount(1, {
+		await expect(backend.locator(`option[value="${AGENT_ID}"]`)).toHaveCount(1, {
 			timeout: 30_000,
 		});
-		await backend.selectOption("opencode");
-		const modelSelect = agentSection.getByLabel("Model for this backend");
-		await expect
-			.poll(
-				async () =>
-					modelSelect
-						.locator("option")
-						.evaluateAll((nodes) =>
-							nodes.map((node) => (node instanceof HTMLOptionElement ? node.value : "")),
-						),
-				{ timeout: 60_000 },
-			)
-			.toContain(MODEL);
-		await modelSelect.selectOption(MODEL);
+		await backend.selectOption(AGENT_ID);
+		if (MODEL !== "") {
+			const modelSelect = agentSection.getByLabel("Model for this backend");
+			await expect
+				.poll(
+					async () =>
+						modelSelect
+							.locator("option")
+							.evaluateAll((nodes) =>
+								nodes.map((node) => (node instanceof HTMLOptionElement ? node.value : "")),
+							),
+					{ timeout: 60_000 },
+				)
+				.toContain(MODEL);
+			await modelSelect.selectOption(MODEL);
+		}
 		await agentSection.getByLabel("Effort").selectOption("low");
 		const save = agentSection.getByRole("button", { name: "Save" });
 		if (await save.isEnabled()) await save.click();

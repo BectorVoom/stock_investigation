@@ -89,6 +89,8 @@ export interface StockPricesPlan {
 	readonly windowStart: string;
 	/** The window's last day: the market's local today. */
 	readonly newest: string;
+	/** Whether at least one day in the window already stored bars. */
+	readonly hasStoredDay: boolean;
 }
 
 /** Whether a plan asks the runner for anything. */
@@ -144,6 +146,7 @@ export async function planStockPrices(
 		repository.listDays(ownerId, market, oldest, newest),
 		repository.getSplitCheckedOn(ownerId, market),
 	]);
+	const hasStoredDay = rows.some((row) => row.outcome === "stored");
 	const days = planSyncDays({
 		newest,
 		oldest,
@@ -171,7 +174,7 @@ export async function planStockPrices(
 			}
 		}
 	}
-	return { market, days, histories, adjustmentsSince, windowStart: oldest, newest };
+	return { market, days, histories, adjustmentsSince, windowStart: oldest, newest, hasStoredDay };
 }
 
 type StockPricesCompletion = Extract<CompleteJobRequest, { outcome: "stock-prices-synced" }>;

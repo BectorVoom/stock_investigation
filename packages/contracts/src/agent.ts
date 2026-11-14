@@ -37,6 +37,13 @@ export const CLAUDE_API_AGENT_ID = "claude-api" as const;
  */
 export const SARASHINA_API_AGENT_ID = "sarashina-api" as const;
 
+/**
+ * Agent id of the Gemini API backend: Google's OpenAI-compatible chat
+ * completions over HTTPS (GEMINI_API_KEY). Plan-limited: reports no price,
+ * cost is always unknown (ADR-0075).
+ */
+export const GEMINI_API_AGENT_ID = "gemini-api" as const;
+
 /** Router id that selects a free model on the owner's behalf. */
 export const OPENROUTER_FREE_ROUTER_MODEL_ID = "openrouter/free" as const;
 

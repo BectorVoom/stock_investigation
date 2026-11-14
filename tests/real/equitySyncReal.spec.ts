@@ -208,7 +208,27 @@ const snapshotSchema = z.object({
 	newestDescription: z.string().nullable(),
 });
 
-/** Row counts and newest write stamps of the financial tables. */
+/**
+ * Defer non-target companies whose syncs are due now so ongoing directory
+ * reconciliation does not starve the targeted re-syncs.
+ */
+function deferOtherCompanies(keepDueIds: readonly string[]): void {
+	const db = new DatabaseSync(devDatabasePath());
+	try {
+		db.exec("PRAGMA busy_timeout = 10000");
+		const now = new Date().toISOString();
+		const tomorrow = new Date(Date.now() + 86_400_000).toISOString();
+		db.prepare(
+			`UPDATE equity_sync_state
+			    SET next_due_at = ?
+			  WHERE company_id NOT IN (SELECT value FROM json_each(?))
+			    AND (next_due_at IS NULL OR next_due_at <= ?)`,
+		).run(tomorrow, JSON.stringify(keepDueIds), now);
+	} finally {
+		db.close();
+	}
+}
+
 /**
  * Makes the companies due at once, as the scheduler's 24-hour interval would
  * once it has passed: the next claim queues their syncs one at a time.
@@ -217,30 +237,39 @@ function makeDueNow(companyIds: readonly string[]): void {
 	const db = new DatabaseSync(devDatabasePath());
 	try {
 		db.exec("PRAGMA busy_timeout = 10000");
-		const update = db.prepare("UPDATE equity_sync_state SET next_due_at = ? WHERE company_id = ?");
 		const now = new Date().toISOString();
+		const tomorrow = new Date(Date.now() + 86_400_000).toISOString();
+		db.prepare(
+			`UPDATE equity_sync_state
+			    SET next_due_at = ?
+			  WHERE company_id NOT IN (SELECT value FROM json_each(?))
+			    AND (next_due_at IS NULL OR next_due_at <= ?)`,
+		).run(tomorrow, JSON.stringify(companyIds), now);
+		const update = db.prepare("UPDATE equity_sync_state SET next_due_at = ? WHERE company_id = ?");
 		for (const companyId of companyIds) update.run(now, companyId);
 	} finally {
 		db.close();
 	}
 }
 
-function financialSnapshot(): z.infer<typeof snapshotSchema> {
+/** Row counts and newest write stamps of the financial tables for the named companies. */
+function financialSnapshot(companyIds: readonly string[]): z.infer<typeof snapshotSchema> {
 	const db = new DatabaseSync(devDatabasePath(), { readOnly: true });
 	try {
 		db.exec("PRAGMA busy_timeout = 10000");
+		const idsJson = JSON.stringify(companyIds);
 		return snapshotSchema.parse(
 			db
 				.prepare(
-					`SELECT (SELECT count(*) FROM equity_report_filing) AS filings,
-					        (SELECT count(*) FROM equity_reported_fact) AS facts,
-					        (SELECT count(*) FROM equity_metric_value) AS valueRows,
-					        (SELECT max(updated_at) FROM equity_metric_value) AS newestValue,
-					        (SELECT max(recorded_at) FROM equity_reported_fact) AS newestFact,
-					        (SELECT count(*) FROM equity_business_description) AS descriptions,
-					        (SELECT max(fetched_at) FROM equity_business_description) AS newestDescription`,
+					`SELECT (SELECT count(*) FROM equity_report_filing WHERE company_id IN (SELECT value FROM json_each(?))) AS filings,
+					        (SELECT count(*) FROM equity_reported_fact WHERE company_id IN (SELECT value FROM json_each(?))) AS facts,
+					        (SELECT count(*) FROM equity_metric_value WHERE company_id IN (SELECT value FROM json_each(?))) AS valueRows,
+					        (SELECT max(updated_at) FROM equity_metric_value WHERE company_id IN (SELECT value FROM json_each(?))) AS newestValue,
+					        (SELECT max(recorded_at) FROM equity_reported_fact WHERE company_id IN (SELECT value FROM json_each(?))) AS newestFact,
+					        (SELECT count(*) FROM equity_business_description WHERE company_id IN (SELECT value FROM json_each(?))) AS descriptions,
+					        (SELECT max(fetched_at) FROM equity_business_description WHERE company_id IN (SELECT value FROM json_each(?))) AS newestDescription`,
 				)
-				.get(),
+				.get(idsJson, idsJson, idsJson, idsJson, idsJson, idsJson, idsJson),
 		);
 	} finally {
 		db.close();
@@ -547,12 +576,14 @@ test("syncs the default US and Japanese companies from SEC and J-Quants (US only
 	}
 
 	// 4. Nothing new upstream: a second sync of one US and one Japanese company writes no financial row.
-	const before = financialSnapshot();
 	const again = synced.filter((c) => c.symbol === "AAPL" || (japanLive && c.symbol === "7974"));
+	const againIds = again.map((company) => company.companyId);
+	const before = financialSnapshot(againIds);
 	const checkedBefore = new Map(again.map((c) => [c.companyId, c.sync.lastCheckedAt]));
-	makeDueNow(again.map((company) => company.companyId));
+	makeDueNow(againIds);
 	const resyncDeadline = Date.now() + 600_000;
 	for (;;) {
+		deferOtherCompanies(againIds);
 		const now = (await companies()).filter((c) => checkedBefore.has(c.companyId));
 		if (
 			now.every(
@@ -565,7 +596,7 @@ test("syncs the default US and Japanese companies from SEC and J-Quants (US only
 		if (Date.now() > resyncDeadline) throw new Error("the second syncs did not finish");
 		await new Promise((resolve) => setTimeout(resolve, 3_000));
 	}
-	expect(financialSnapshot()).toEqual(before);
+	expect(financialSnapshot(againIds)).toEqual(before);
 
 	// 5. The Stocks page's Financial statements tab reads the stored statements (ADR-0049 §5).
 	await page.setViewportSize({ width: 1440, height: 1000 });

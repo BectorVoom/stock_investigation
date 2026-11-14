@@ -399,6 +399,7 @@ describe("stockPricesEffects: histories", () => {
 				days: ["2026-10-09"],
 				histories: [{ symbol: "AAPL", ...WINDOW }],
 				adjustmentsSince: null,
+				hasStoredDay: true,
 				windowStart: "2024-10-10",
 				newest: "2026-10-10",
 			}),

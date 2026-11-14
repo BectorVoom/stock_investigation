@@ -340,10 +340,7 @@ impl OpenCodeRuntime {
 /// Release policy pinned to the permission configurations verified for this adapter.
 fn verified_release(version: Version) -> bool {
 	([2.0, 0.0, 27.0]..[2.0, 1.0, 0.0]).contains(&version)
-		|| matches!(
-			version,
-			[2.0, 2.0, 5.0] | [2.0, 2.0, 6.0] | [2.0, 3.0, 0.0]
-		)
+		|| matches!(version, [2.0, 2.0, 5.0] | [2.0, 2.0, 6.0] | [2.0, 3.0, 0.0])
 }
 
 #[async_trait]

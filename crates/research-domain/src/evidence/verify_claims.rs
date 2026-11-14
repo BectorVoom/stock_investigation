@@ -217,10 +217,11 @@ fn nfkc(text: &str) -> Cow<'_, str> {
 	}
 }
 
-/// `extractNumberTokens`: numeric tokens with thousands separators removed,
-/// e.g. `"1,234.5%"` → `"1234.5"`. The pattern is `/\d[\d,]*(?:\.\d+)?/g` on
-/// the NFKC form, where `\d` is ASCII (no `u` flag), so full-width digits
-/// count after normalisation and other scripts' digits never do.
+/// `extractNumberTokens`: numeric tokens with thousands separators and leading
+/// integer zeros removed, e.g. `"1,234.5%"` → `"1234.5"`, `"05"` → `"5"`.
+/// The pattern is `/\d[\d,]*(?:\.\d+)?/g` on the NFKC form, where `\d` is
+/// ASCII (no `u` flag), so full-width digits count after normalisation and
+/// other scripts' digits never do.
 #[must_use]
 pub fn extract_number_tokens(text: &str) -> Vec<String> {
 	let normalized = nfkc(text);
@@ -247,10 +248,18 @@ pub fn extract_number_tokens(text: &str) -> Vec<String> {
 			}
 		}
 		let token = bytes.get(start..end).unwrap_or_default();
+		let cleaned: Vec<u8> = token.iter().copied().filter(|byte| *byte != b',').collect();
+		let integer_zeros = cleaned.iter().take_while(|byte| **byte == b'0').count();
+		let trim_zeros = if cleaned.get(integer_zeros).is_some_and(u8::is_ascii_digit) {
+			integer_zeros
+		} else {
+			integer_zeros.saturating_sub(1)
+		};
 		tokens.push(
-			token
+			cleaned
+				.get(trim_zeros..)
+				.unwrap_or_default()
 				.iter()
-				.filter(|byte| **byte != b',')
 				.map(|byte| char::from(*byte))
 				.collect(),
 		);
@@ -531,6 +540,10 @@ mod tests {
 		assert_eq!(extract_number_tokens("売上高は１２３４億円"), ["1234"]);
 		assert_eq!(extract_number_tokens("1.2.3"), ["1.2", "3"]);
 		assert_eq!(extract_number_tokens("١٢٣"), Vec::<String>::new());
+		assert_eq!(
+			extract_number_tokens("2026-11-05T00:00:00Z and 0.5"),
+			["2026", "11", "5", "0", "0", "0", "0.5"]
+		);
 	}
 
 	#[test]

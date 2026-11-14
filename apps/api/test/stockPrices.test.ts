@@ -256,6 +256,87 @@ describe("stock-prices-sync scheduling (ADR-0058 §2)", () => {
 		).toEqual(["JP", "US"]);
 	});
 
+	it("yields an already-seeded market while the other still has no stored day, unless it failed", async () => {
+		const harness = setup();
+		const token = await issueRunnerToken(harness);
+		await seedDirectory(harness, "US", US_DIRECTORY);
+		await seedDirectory(harness, "JP", [{ symbol: "1380", listing: "tse-standard" }]);
+		const initial = [await claimPrices(harness, token), await claimPrices(harness, token)];
+		const us = initial.find((lease) => lease.market === "US");
+		const jp = initial.find((lease) => lease.market === "JP");
+		if (us === undefined || jp === undefined) throw new Error("expected one job per market");
+
+		// US stores a day; JP reports delayed days (`not-yet-available`) with no stored day yet.
+		await complete(
+			harness,
+			token,
+			us,
+			completion(harness, us, {
+				days: [{ date: us.days[0], outcome: "stored", bars: [["AAPL", 230, [229, 231, 228, 10]]] }],
+			}),
+		);
+		await complete(
+			harness,
+			token,
+			jp,
+			completion(harness, jp, {
+				market: "JP",
+				days: jp.days.map((date) => ({ date, outcome: "not-yet-available", bars: [] })),
+			}),
+		);
+
+		// Even past the 5 s check period and while JP cools down, US yields instead of starving JP.
+		harness.time.advance(6_000);
+		expect(await claim(harness, token)).toBeNull();
+		harness.time.advance(14_000);
+		const jp2 = await claimPrices(harness, token);
+		expect(jp2.market).toBe("JP");
+
+		// Once JP stores its first day, both markets backfill fairly (US resumes next).
+		await complete(
+			harness,
+			token,
+			jp2,
+			completion(harness, jp2, {
+				market: "JP",
+				days: [{ date: jp2.days[0], outcome: "stored", bars: [["1380", 500, [495, 505, 490, 1]]] }],
+			}),
+		);
+		harness.time.advance(GAP);
+		expect((await claimPrices(harness, token)).market).toBe("US");
+	});
+
+	it("does not stall an already-seeded market when the other market failed", async () => {
+		const harness = setup();
+		const token = await issueRunnerToken(harness);
+		await seedDirectory(harness, "US", US_DIRECTORY);
+		await seedDirectory(harness, "JP", [{ symbol: "1380", listing: "tse-standard" }]);
+		const initial = [await claimPrices(harness, token), await claimPrices(harness, token)];
+		const us = initial.find((lease) => lease.market === "US");
+		const jp = initial.find((lease) => lease.market === "JP");
+		if (us === undefined || jp === undefined) throw new Error("expected one job per market");
+
+		await complete(
+			harness,
+			token,
+			us,
+			completion(harness, us, {
+				days: [{ date: us.days[0], outcome: "stored", bars: [["AAPL", 230, [229, 231, 228, 10]]] }],
+			}),
+		);
+		const failed = await harness.runner(token, `/jobs/${jp.runId}/complete`, {
+			outcome: "failed",
+			leaseGeneration: jp.leaseGeneration,
+			usage: USAGE,
+			failureCode: "SOURCE_NOT_CONFIGURED",
+			retryable: false,
+		});
+		expect(failed.status).toBe(200);
+
+		harness.time.advance(GAP);
+		expect((await claimPrices(harness, token)).market).toBe("US");
+	});
+
 	it("stores only directory stocks' bars, under their price series, with a series row", async () => {
 		const harness = setup();
 		const token = await issueRunnerToken(harness);

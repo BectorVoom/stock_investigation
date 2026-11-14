@@ -64,6 +64,18 @@ describe("extractNumberTokens", () => {
 		expect(extractNumberTokens("売上高は１２３４億円")).toEqual(["1234"]);
 	});
 
+	it("normalizes redundant leading integer zeros while keeping zero and decimals intact", () => {
+		expect(extractNumberTokens("2026-11-05T00:00:00Z and 0.5")).toEqual([
+			"2026",
+			"11",
+			"5",
+			"0",
+			"0",
+			"0",
+			"0.5",
+		]);
+	});
+
 	it("returns nothing for text without digits", () => {
 		expect(extractNumberTokens("no figures here")).toEqual([]);
 		expect(extractNumberTokens("")).toEqual([]);

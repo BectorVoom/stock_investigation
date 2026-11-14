@@ -17,6 +17,7 @@ import {
 	createClaudeApiRuntime,
 	createClaudeCodeRuntime,
 	createCodexRuntime,
+	createGeminiApiRuntime,
 	createOpenCodeRuntime,
 	createOpenRouterFreeRuntime,
 	createOpenRouterRuntime,
@@ -55,6 +56,11 @@ const CLAUDE_API_ENV = {
 const SARASHINA_API_ENV = {
 	...BASE_ENV,
 	SARASHINA_API_KEY: "TEST-SARASHINA-KEY-0123456789abcdef",
+};
+
+const GEMINI_API_ENV = {
+	...BASE_ENV,
+	GEMINI_API_KEY: "TEST-GEMINI-KEY-0123456789abcdef",
 };
 
 interface Scenario {
@@ -97,6 +103,17 @@ function sarashinaApiScenario(
 ): Scenario {
 	const runtime = createSarashinaApiRuntime(
 		makeEnvironment({ env: SARASHINA_API_ENV, fetch: () => Promise.resolve(respond()) }),
+	);
+	return { name, runtime, ...extra };
+}
+
+function geminiApiScenario(
+	name: string,
+	respond: () => Response,
+	extra: Partial<Scenario> = {},
+): Scenario {
+	const runtime = createGeminiApiRuntime(
+		makeEnvironment({ env: GEMINI_API_ENV, fetch: () => Promise.resolve(respond()) }),
 	);
 	return { name, runtime, ...extra };
 }
@@ -264,6 +281,21 @@ const SCENARIOS: readonly Scenario[] = [
 		name: "sarashina-api not configured",
 		runtime: createSarashinaApiRuntime(makeEnvironment({ env: BASE_ENV })),
 	},
+	geminiApiScenario("gemini-api ok", () => sse(fixtureText("gemini-api/ok.sse"))),
+	geminiApiScenario("gemini-api thinking ok", () => sse(fixtureText("gemini-api/thinking-ok.sse"))),
+	geminiApiScenario("gemini-api length", () => sse(fixtureText("gemini-api/length.sse"))),
+	geminiApiScenario(
+		"gemini-api 429",
+		() => new Response("{}", { status: 429, headers: { "Retry-After": "3600" } }),
+	),
+	geminiApiScenario("gemini-api garbage", () =>
+		sse(GARBAGE.map((line) => `data: ${line}\n\n`).join("")),
+	),
+	geminiApiScenario("gemini-api invalid model id", () => sse(""), { model: "bad model" }),
+	{
+		name: "gemini-api not configured",
+		runtime: createGeminiApiRuntime(makeEnvironment({ env: BASE_ENV })),
+	},
 ];
 
 const HTTP_AGENT_IDS: ReadonlySet<string> = new Set([
@@ -271,6 +303,7 @@ const HTTP_AGENT_IDS: ReadonlySet<string> = new Set([
 	"openrouter-free",
 	"claude-api",
 	"sarashina-api",
+	"gemini-api",
 ]);
 
 async function runScenario(scenario: Scenario): Promise<AgentEvent[]> {
@@ -394,7 +427,7 @@ describe("baseline registry", () => {
 		]);
 	});
 
-	it("provides the baseline four, then openrouter-free, claude-api and sarashina-api, through createAgentRuntimes", () => {
+	it("provides the baseline four, then openrouter-free, claude-api, sarashina-api and gemini-api, through createAgentRuntimes", () => {
 		const all = createAgentRuntimes(
 			makeEnvironment({
 				processRunner: createFakeProcessRunner({ spawnErrorCode: "ENOENT" }).runner,
@@ -405,6 +438,7 @@ describe("baseline registry", () => {
 			"openrouter-free",
 			"claude-api",
 			"sarashina-api",
+			"gemini-api",
 		]);
 	});
 });

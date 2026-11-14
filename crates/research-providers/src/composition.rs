@@ -5,6 +5,7 @@ use crate::{
 	codex::CodexRuntime,
 	environment::ProviderEnvironment,
 	external::{ExternalConfigError, load_external_runtimes},
+	gemini_api::GeminiApiRuntime,
 	opencode::OpenCodeRuntime,
 	openrouter::OpenRouterRuntime,
 	sarashina_api::SarashinaApiRuntime,
@@ -23,8 +24,8 @@ pub fn create_baseline_agent_runtimes(
 		Arc::new(OpenRouterRuntime::new(environment)),
 	]
 }
-/// Production defaults to seven backends (the baseline four, OpenRouter free models, the
-/// Claude API, the Sarashina API — the order of `createAgentRuntimes`); external-only/baseline modes support FR-013.
+/// Production defaults to eight backends (the baseline four, OpenRouter free models, the
+/// Claude API, the Sarashina API, the Gemini API — the order of `createAgentRuntimes`); external-only/baseline modes support FR-013.
 pub fn create_agent_runtimes(
 	environment: ProviderEnvironment,
 ) -> Result<Vec<Arc<dyn AgentRuntime>>, ExternalConfigError> {
@@ -41,6 +42,7 @@ pub fn create_agent_runtimes(
 		runtimes.push(Arc::new(OpenRouterRuntime::free(environment.clone())));
 		runtimes.push(Arc::new(ClaudeApiRuntime::new(environment.clone())));
 		runtimes.push(Arc::new(SarashinaApiRuntime::new(environment.clone())));
+		runtimes.push(Arc::new(GeminiApiRuntime::new(environment.clone())));
 	}
 	if set != "baseline" {
 		runtimes.extend(load_external_runtimes(&environment)?);

@@ -110,11 +110,17 @@ async function start(): Promise<void> {
 async function newChat(page: Page): Promise<void> {
 	await page.goto(ORIGIN);
 	await page.getByRole("link", { name: "Chat", exact: true }).click();
-	await page
-		.getByRole("navigation", { name: "Chats" })
-		.getByRole("button", { name: "New chat", exact: true })
-		.click();
+	const chatsNav = page.getByRole("navigation", { name: "Chats" });
+	await chatsNav.getByRole("button", { name: "New chat", exact: true }).waitFor();
+	const hadWorkspace = await chatsNav.locator('a[href^="#/chat/ws_"]').count();
+	if (hadWorkspace > 0) await expect(page).toHaveURL(/#\/chat\/ws_/);
+	const currentUrl = page.url();
+	const messages = page.getByRole("list", { name: "Messages" }).getByRole("article");
+	const hasMessages = (await messages.count()) > 0;
+	await chatsNav.getByRole("button", { name: "New chat", exact: true }).click();
+	if (hasMessages) await expect(page).not.toHaveURL(currentUrl);
 	await expect(page).toHaveURL(/#\/chat\/ws_/);
+	await expect(messages).toHaveCount(0);
 }
 async function askAndVerify(page: Page): Promise<void> {
 	await expect(page).toHaveURL(/#\/chat\/ws_/);
@@ -205,12 +211,24 @@ async function askAndVerify(page: Page): Promise<void> {
 
 test.beforeAll(async () => {
 	test.skip(
-		!["claude-code", "codex", "opencode", "openrouter-free"].includes(AGENT),
-		"Opt in with RUN_LIVE_AGENT=claude-code, codex, opencode or openrouter-free (real model quota).",
+		![
+			"claude-code",
+			"codex",
+			"opencode",
+			"openrouter-free",
+			"sarashina-api",
+			"gemini-api",
+		].includes(AGENT),
+		"Opt in with RUN_LIVE_AGENT=claude-code, codex, opencode, openrouter-free, sarashina-api or gemini-api (real model quota).",
 	);
 	if (AGENT === "openrouter-free" && (!process.env.OPENROUTER_API_KEY || MODEL === "")) {
 		throw new Error(
 			"OpenRouter live verification requires OPENROUTER_API_KEY and RUN_LIVE_MODEL in the test process environment.",
+		);
+	}
+	if (AGENT === "gemini-api" && !process.env.GEMINI_API_KEY) {
+		throw new Error(
+			"Gemini API live verification requires GEMINI_API_KEY in the test process environment.",
 		);
 	}
 	test.setTimeout(300_000);
@@ -222,6 +240,15 @@ test.beforeAll(async () => {
 		...(AGENT === "opencode" ? { OPENCODE_MODEL: MODEL } : {}),
 		...(AGENT === "openrouter-free"
 			? { OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY ?? "", OPENROUTER_FREE_MODEL: MODEL }
+			: {}),
+		...(AGENT === "sarashina-api"
+			? { SARASHINA_API_KEY: process.env.SARASHINA_API_KEY ?? "" }
+			: {}),
+		...(AGENT === "gemini-api"
+			? {
+					GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? "",
+					...(MODEL === "" ? {} : { GEMINI_MODEL: MODEL }),
+				}
 			: {}),
 	});
 	await start();
@@ -273,6 +300,23 @@ test.afterAll(async () => {
 	}
 });
 
+async function selectModel(settings: ReturnType<Page["getByRole"]>, model: string): Promise<void> {
+	if (model === "") return;
+	const selector = settings.getByLabel("Model for this backend");
+	await expect
+		.poll(
+			async () =>
+				selector
+					.locator("option")
+					.evaluateAll((nodes) =>
+						nodes.map((node) => (node instanceof HTMLOptionElement ? node.value : "")),
+					),
+			{ timeout: 120_000 },
+		)
+		.toContain(model);
+	await selector.selectOption(model);
+}
+
 test("fresh settings: real agent searches company, financials and news and publishes citations", async ({
 	page,
 }) => {
@@ -283,13 +327,7 @@ test("fresh settings: real agent searches company, financials and news and publi
 	await page.locator('[data-field="session-owner-link"]').click();
 	const settings = page.getByRole("region", { name: "AI agent" });
 	await settings.getByLabel("Default backend").selectOption(AGENT);
-	if (MODEL !== "") {
-		const selector = settings.getByLabel("Model for this backend");
-		await expect(selector.locator("option").filter({ hasText: MODEL })).toHaveCount(1, {
-			timeout: 120_000,
-		});
-		await selector.selectOption(MODEL);
-	}
+	await selectModel(settings, MODEL);
 	await settings.getByLabel("Effort").selectOption(EFFORT);
 	const access = settings.getByRole("switch", { name: "Allow the agent to open public web pages" });
 	if (await access.isChecked()) await access.uncheck();
@@ -346,13 +384,7 @@ async function verifyDroneScreening(page: Page, question: string): Promise<void>
 	await page.goto(`${ORIGIN}/#/settings/agent`);
 	const settings = page.getByRole("region", { name: "AI agent" });
 	await settings.getByLabel("Default backend").selectOption(AGENT);
-	if (MODEL !== "") {
-		const selector = settings.getByLabel("Model for this backend");
-		await expect(selector.locator("option").filter({ hasText: MODEL })).toHaveCount(1, {
-			timeout: 120_000,
-		});
-		await selector.selectOption(MODEL);
-	}
+	await selectModel(settings, MODEL);
 	await settings.getByLabel("Effort").selectOption(EFFORT);
 	const access = settings.getByRole("switch", { name: "Allow the agent to open public web pages" });
 	if (await access.isChecked()) await access.uncheck();

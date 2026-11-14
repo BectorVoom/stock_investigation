@@ -2995,6 +2995,10 @@
 			"output": null
 		},
 		{
+			"input": "TEST-GEMINI-KEY-0123456789abcdef",
+			"output": null
+		},
+		{
 			"input": "Content-Type",
 			"output": null
 		},
@@ -3251,6 +3255,46 @@
 			"output": null
 		},
 		{
+			"input": "gemini-api ok",
+			"output": null
+		},
+		{
+			"input": "gemini-api/ok.sse",
+			"output": null
+		},
+		{
+			"input": "gemini-api thinking ok",
+			"output": null
+		},
+		{
+			"input": "gemini-api/thinking-ok.sse",
+			"output": null
+		},
+		{
+			"input": "gemini-api length",
+			"output": null
+		},
+		{
+			"input": "gemini-api/length.sse",
+			"output": null
+		},
+		{
+			"input": "gemini-api 429",
+			"output": "rate-limit"
+		},
+		{
+			"input": "gemini-api garbage",
+			"output": null
+		},
+		{
+			"input": "gemini-api invalid model id",
+			"output": null
+		},
+		{
+			"input": "gemini-api not configured",
+			"output": null
+		},
+		{
 			"input": "openrouter",
 			"output": null
 		},
@@ -3260,6 +3304,10 @@
 		},
 		{
 			"input": "sarashina-api",
+			"output": null
+		},
+		{
+			"input": "gemini-api",
 			"output": null
 		},
 		{
@@ -3307,7 +3355,7 @@
 			"output": null
 		},
 		{
-			"input": "provides the baseline four, then openrouter-free, claude-api and sarashina-api, through createAgentRuntimes",
+			"input": "provides the baseline four, then openrouter-free, claude-api, sarashina-api and gemini-api, through createAgentRuntimes",
 			"output": null
 		},
 		{
@@ -3344,6 +3392,154 @@
 		},
 		{
 			"input": "plan-limited backends never report a known cost for a subscription run",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/geminiApi.ts",
+			"output": null
+		},
+		{
+			"input": "string",
+			"output": null
+		},
+		{
+			"input": "expected a string body",
+			"output": null
+		},
+		{
+			"input": "gemini-api runtime metadata",
+			"output": null
+		},
+		{
+			"input": "is a plan-limited, tool-isolated backend",
+			"output": null
+		},
+		{
+			"input": "Gemini API",
+			"output": null
+		},
+		{
+			"input": "gemini-api probe",
+			"output": null
+		},
+		{
+			"input": "is NOT_CONFIGURED without GEMINI_API_KEY and never contacts the network",
+			"output": null
+		},
+		{
+			"input": "The Gemini API needs GEMINI_API_KEY in the runner environment",
+			"output": null
+		},
+		{
+			"input": "is available with a key and offers the chat models, offline",
+			"output": null
+		},
+		{
+			"input": "gemini-3.5-flash",
+			"output": null
+		},
+		{
+			"input": "gemini-3.5-flash-lite",
+			"output": null
+		},
+		{
+			"input": "gemini-3.6-flash",
+			"output": null
+		},
+		{
+			"input": "gemini-3.1-flash-lite",
+			"output": null
+		},
+		{
+			"input": "reports GEMINI_MODEL as the default model when set",
+			"output": null
+		},
+		{
+			"input": " gemini-3.5-flash-lite ",
+			"output": null
+		},
+		{
+			"input": "gemini-api request",
+			"output": null
+		},
+		{
+			"input": "sends reasoning_effort and the 16,000-token cap",
+			"output": null
+		},
+		{
+			"input": "p",
+			"output": null
+		},
+		{
+			"input": "chooses Settings' model, then GEMINI_MODEL, then the default",
+			"output": null
+		},
+		{
+			"input": "  ",
+			"output": null
+		},
+		{
+			"input": "posts to the fixed endpoint with the key only in Authorization",
+			"output": null
+		},
+		{
+			"input": "secret",
+			"output": null
+		},
+		{
+			"input": "gemini-api recorded streams",
+			"output": null
+		},
+		{
+			"input": "completes with the answer and an unknown cost (ok.sse)",
+			"output": null
+		},
+		{
+			"input": "forwards gemini-3.5-flash answer and ignores thought_signature (thinking-ok.sse)",
+			"output": null
+		},
+		{
+			"input": "reports a turn stopped by the token cap as truncated, not completed",
+			"output": null
+		},
+		{
+			"input": "maps a 400 to PROVIDER_REQUEST_REJECTED with the status unchanged, without retrying",
+			"output": null
+		},
+		{
+			"input": "gemini-api/error-400.json",
+			"output": null
+		},
+		{
+			"input": "application/json",
+			"output": null
+		},
+		{
+			"input": "fails closed before any request without a key or with an invalid model id",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/openRouter.ts",
+			"output": null
+		},
+		{
+			"input": "DOC-EXAMPLE-GEMINI-0123456789abcdef",
+			"output": null
+		},
+		{
+			"input": "gemini-api-chat-request",
+			"output": null
+		},
+		{
+			"input": "gemini-api-chat-stream",
+			"output": null
+		},
+		{
+			"input": "gemini-api.md examples",
+			"output": null
+		},
+		{
+			"input": "parses the live stream into the answer text and a completed turn of unknown cost",
 			"output": null
 		},
 		{
@@ -4227,10 +4423,6 @@
 			"output": null
 		},
 		{
-			"input": "../../src/providers/openRouter.ts",
-			"output": null
-		},
-		{
 			"input": "data: [DONE]\n\n",
 			"output": null
 		},
@@ -4288,10 +4480,6 @@
 		},
 		{
 			"input": "Authorization",
-			"output": null
-		},
-		{
-			"input": "string",
 			"output": null
 		},
 		{
@@ -4760,10 +4948,6 @@
 		},
 		{
 			"input": "google/gemma-4-31b-it:free",
-			"output": null
-		},
-		{
-			"input": "application/json",
 			"output": null
 		},
 		{
@@ -5263,15 +5447,7 @@
 			"output": null
 		},
 		{
-			"input": "expected a string body",
-			"output": null
-		},
-		{
 			"input": "sarashina-api runtime metadata",
-			"output": null
-		},
-		{
-			"input": "is a plan-limited, tool-isolated backend",
 			"output": null
 		},
 		{
@@ -5288,10 +5464,6 @@
 		},
 		{
 			"input": "The Sarashina API needs SARASHINA_API_KEY in the runner environment",
-			"output": null
-		},
-		{
-			"input": "is available with a key and offers the chat models, offline",
 			"output": null
 		},
 		{
@@ -5323,27 +5495,11 @@
 			"output": null
 		},
 		{
-			"input": "p",
-			"output": null
-		},
-		{
 			"input": "chooses Settings' model, then SARASHINA_MODEL, then the default",
 			"output": null
 		},
 		{
-			"input": "  ",
-			"output": null
-		},
-		{
-			"input": "posts to the fixed endpoint with the key only in Authorization",
-			"output": null
-		},
-		{
 			"input": "Reply with exactly: OK",
-			"output": null
-		},
-		{
-			"input": "secret",
 			"output": null
 		},
 		{
@@ -5355,15 +5511,7 @@
 			"output": null
 		},
 		{
-			"input": "completes with the answer and an unknown cost (ok.sse)",
-			"output": null
-		},
-		{
 			"input": "forwards a thinking model's answer and never its encrypted reasoning",
-			"output": null
-		},
-		{
-			"input": "reports a turn stopped by the token cap as truncated, not completed",
 			"output": null
 		},
 		{
@@ -5373,10 +5521,6 @@
 		{
 			"input": "sarashina-api/error-401.json",
 			"output": "auth"
-		},
-		{
-			"input": "fails closed before any request without a key or with an invalid model id",
-			"output": null
 		},
 		{
 			"input": "DOC-EXAMPLE-SARASHINA-0123456789abcdef",
@@ -5392,10 +5536,6 @@
 		},
 		{
 			"input": "sarashina-api.md examples",
-			"output": null
-		},
-		{
-			"input": "parses the live stream into the answer text and a completed turn of unknown cost",
 			"output": null
 		},
 		{

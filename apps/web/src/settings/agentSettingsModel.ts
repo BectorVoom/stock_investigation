@@ -5,6 +5,7 @@ import {
 	BASELINE_AGENT_IDS,
 	BUDGET_LIMITS,
 	CLAUDE_API_AGENT_ID,
+	GEMINI_API_AGENT_ID,
 	isFreeTierModelId,
 	isOpenRouterFreeModelId,
 	OPENROUTER_FREE_AGENT_ID,
@@ -292,6 +293,7 @@ export function customModelPlaceholder(agentId: string, text: AgentSettingsText)
 	if (agentId === "opencode" || agentId === "openrouter") return "provider/model";
 	if (agentId === CLAUDE_API_AGENT_ID) return "claude-…";
 	if (agentId === SARASHINA_API_AGENT_ID) return "sarashina…";
+	if (agentId === GEMINI_API_AGENT_ID) return "gemini-…";
 	return text.modelIdPlaceholder;
 }
 

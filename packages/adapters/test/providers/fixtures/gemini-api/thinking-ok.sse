@@ -1,0 +1,5 @@
+data: {"choices":[{"delta":{"content":"OK","role":"assistant"},"index":0}],"created":1794624281,"id":"GMv3avHEGJLlrfcPqMHcyQ4","model":"gemini-3.5-flash","object":"chat.completion.chunk"}
+
+data: {"choices":[{"delta":{"extra_content":{"google":{"thought_signature":"Ev8DCvwDAWkUfRNyFKdHyOgy1Kz1jiL7SRqN2msqhV5dUiFk5P7QFxI0KQz5LP2BPkXbpr8WQA+mhU5/fWX9/RTSTxlzQ0wLoV7FLMeAIpCb5QtESfcOuYYBhfQQ6HlGeQyqul3Sn2TQz9c63ajbL/Pm3Pw0wHQCelmG7E+644E+rzikHSd1QTYldrzepbyUMt4caiGUA5cN0T93HjZr83rYCceGesXzG9LMwlRa9I1a5qM8Pccs6vyG9RvEfkHaWOkttcxOUNz2STyLP/3IZvEwYdtQLUFywc5sKo4PiblfpLTjV4Ep+m6EIl6rSYBWKe/PCqg+DEgj8/IE1OW1GnbGPOj4M2XRrSW5ZRvt36rHK60NhVeoRZbBEDBQ6S0TpLq0KSkH2BjWdMDlhmSF7l0vxHEIFRErtvwcyaNNOs5gyVKVCIlCnQiJ2d+6ljWrlknvtHJKKXQonGCYF5erhBPrqZ2W9iSztA8uH8ZxPeiN807r1/LTy0vmnQDtviPjBjS8h3itROtz1rjrQuqZsCLhX9CWTV9MZSgtKEYhSB/WDxc0Yey5af+I4skLMsyYosvB9QWAMNOMEcYECh7fVil/FhupV09Jg+dMF8r2elRmiXp+xeQrSiYd1htMA2rSdnul5S0mjViYpn150majyQywD500FR713M/YbylwtAOTlA=="}},"role":"assistant"},"finish_reason":"stop","index":0}],"created":1794624281,"id":"GMv3avHEGJLlrfcPqMHcyQ4","model":"gemini-3.5-flash","object":"chat.completion.chunk"}
+
+data: [DONE]

@@ -102,6 +102,7 @@ test.describe("live OpenCode through the whole application (spends real quota)",
 			);
 		}
 		await modelSelect.selectOption(model.trim());
+		await expect(agentSection).toContainText("plan-limited (cost unknown)");
 		await agentSection.getByLabel("Effort").selectOption("low");
 		const save = agentSection.getByRole("button", { name: "Save" });
 		if (await save.isEnabled()) await save.click();
@@ -139,47 +140,62 @@ test.describe("live OpenCode through the whole application (spends real quota)",
 			timeout: 900_000,
 		});
 
-		// An assistant message with at least one claim and a source link.
+		// An assistant message with at least one claim and a citation chip that opens its source card.
 		const conversation = page.getByRole("region", { name: "Conversation" });
 		const assistant = conversation.getByRole("article", { name: "Assistant message" });
 		await expect(assistant).toBeVisible();
-		const claims = assistant.locator('ul[aria-label="Claims"] > li[data-claim-id]');
+		const claims = assistant.locator("li[data-claim-id]");
+		await expect(claims.first()).toBeVisible();
 		expect(await claims.count()).toBeGreaterThan(0);
-		await expect(
-			assistant.getByRole("link", { name: HEADLINE, exact: true }).first(),
-		).toBeVisible();
 
-		// A plan-limited backend is never shown as free.
-		const cost = thread.locator('[data-field="cost"]').first();
-		await expect(cost).toContainText(/unknown/i);
-		await expect(cost).not.toContainText("$0");
+		const firstChip = assistant.locator("[data-citation-chip]").first();
+		await expect(firstChip).toBeVisible();
+		await firstChip.click();
+		const citationCard = assistant.locator("[data-citation-card]");
+		await expect(citationCard).toBeVisible();
+		await expect(citationCard).toContainText(HEADLINE);
+		await expect(citationCard.getByRole("link", { name: "Open source" })).toHaveAttribute(
+			"href",
+			"https://news.example.org/articles/grid-storage-orders",
+		);
+		await page.keyboard.press("Escape");
+		await expect(citationCard).toHaveCount(0);
 
 		// Run count while the thread is rendered: the reload below must not
 		// start another run.
 		const runsBefore = await thread.locator("[data-run-state]").count();
 		expect(runsBefore).toBeGreaterThan(0);
 
-		// Canvas panel: a research report and a source list, no fallback component.
-		const canvas = page.getByRole("region", { name: "Canvas" });
-		await expect(canvas.locator('[data-component-type="research-report"]').first()).toBeVisible();
-		await expect(canvas.locator('[data-component-type="source-list"]').first()).toBeVisible();
-		await expect(canvas.locator("[data-fallback]")).toHaveCount(0);
-		const sourceLink = canvas
-			.locator('[data-component-type="source-list"]')
-			.getByRole("link", { name: HEADLINE, exact: true });
+		// Research output in the thread (ADR-0020): source-list preview with Add to Notebook, no fallback component.
+		const previews = conversation.locator("[data-preview-component]");
+		await expect(previews.first()).toBeVisible();
+		await expect(previews.first().getByRole("button", { name: "Add to Notebook" })).toBeVisible();
+		await expect(conversation.locator("[data-fallback]")).toHaveCount(0);
+		const sourceList = conversation.locator('[data-component-type="source-list"]').first();
+		await expect(sourceList).toBeVisible();
+		await sourceList.locator("summary").click();
+		const sourceLink = sourceList.getByRole("link", { name: new RegExp(HEADLINE) });
 		await expect(sourceLink).toHaveAttribute(
 			"href",
 			"https://news.example.org/articles/grid-storage-orders",
 		);
 
 		// A reload shows the same conversation without a new run.
+		const chatUrl = page.url();
 		await page.reload();
-		await expect(canvas.locator("[data-component-id]").first()).toBeVisible();
-		await page.getByRole("link", { name: "Chat", exact: true }).click();
+		await page.goto(chatUrl);
 		await expect(
 			page
 				.getByRole("region", { name: "Conversation" })
-				.getByRole("article", { name: "Assistant message" }),
+				.getByRole("article", { name: "Assistant message" })
+				.locator("li[data-claim-id]")
+				.first(),
+		).toBeVisible({ timeout: 15_000 });
+		await expect(
+			page
+				.getByRole("region", { name: "Conversation" })
+				.locator("[data-preview-component]")
+				.first(),
 		).toBeVisible();
 		await expect(
 			page.getByRole("list", { name: "Messages" }).locator("[data-run-state]"),
