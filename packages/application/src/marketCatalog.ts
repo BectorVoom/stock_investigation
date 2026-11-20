@@ -138,4 +138,26 @@ export const MARKET_CATALOG: readonly MarketCatalogEntry[] = [
 		category: "fx",
 		description: "US dollar to Japanese yen exchange rate.",
 	},
+	// ADR-0076: JPX's published margin and short-selling statistics.
+	{
+		seriesId: "jpx:SHORT_SELLING_RATIO",
+		label: "Short-selling ratio (空売り比率)",
+		category: "margin",
+		description:
+			"Daily share of short sales in the TSE auction market's trading value, from JPX's short-selling summary.",
+	},
+	{
+		seriesId: "jpx:MARGIN_BUYING_VALUE",
+		label: "Margin buying balance (信用買い残)",
+		category: "margin",
+		description:
+			"Weekly outstanding margin purchases in value, Tokyo and Nagoya, in JPY millions, from JPX.",
+	},
+	{
+		seriesId: "jpx:MARGIN_RATIO",
+		label: "Margin ratio (信用倍率)",
+		category: "margin",
+		description:
+			"Weekly outstanding margin purchases over margin sales in shares, Tokyo and Nagoya, from JPX.",
+	},
 ];

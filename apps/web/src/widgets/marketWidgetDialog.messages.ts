@@ -8,7 +8,16 @@ type Scope = "dashboard" | "notebook";
 
 /** The provider's product name (never translated). */
 function providerName(provider: MarketProviderId): string {
-	return provider === "materials" ? "Materials DB" : provider === "fred" ? "FRED" : "Twelve Data";
+	switch (provider) {
+		case "materials":
+			return "Materials DB";
+		case "fred":
+			return "FRED";
+		case "jpx":
+			return "JPX";
+		case "twelve-data":
+			return "Twelve Data";
+	}
 }
 
 const ENGLISH_CATEGORIES: { readonly [C in Category]: string } = {
@@ -21,6 +30,7 @@ const ENGLISH_CATEGORIES: { readonly [C in Category]: string } = {
 	fx: "Currencies",
 	commodity: "Commodities",
 	equity: "Equities",
+	margin: "Margin & short selling",
 };
 
 const JAPANESE_CATEGORIES: { readonly [C in Category]: string } = {
@@ -33,18 +43,21 @@ const JAPANESE_CATEGORIES: { readonly [C in Category]: string } = {
 	fx: "為替",
 	commodity: "商品",
 	equity: "株式",
+	margin: "信用・空売り",
 };
 
 const ENGLISH_SYMBOL_EXAMPLES: { readonly [P in MarketProviderId]: string } = {
 	fred: "e.g. VIXCLS",
 	materials: "Select an imported material series",
 	"twelve-data": "e.g. AAPL, XAU/USD, 7203:JPX",
+	jpx: "SHORT_SELLING_RATIO, MARGIN_BUYING_VALUE or MARGIN_RATIO",
 };
 
 const JAPANESE_SYMBOL_EXAMPLES: { readonly [P in MarketProviderId]: string } = {
 	fred: "例: VIXCLS",
 	materials: "インポート済みの素材系列を選択",
 	"twelve-data": "例: AAPL, XAU/USD, 7203:JPX",
+	jpx: "SHORT_SELLING_RATIO、MARGIN_BUYING_VALUE、MARGIN_RATIO のいずれか",
 };
 
 const JAPANESE_SCOPES: { readonly [S in Scope]: string } = {

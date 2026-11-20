@@ -33,7 +33,12 @@ function enUnavailableReason(code: MarketUnavailableCode, provider: MarketSource
 
 /** `provider` is the series' source (`marketSourceOf`): Massive or J-Quants for a directory stock (ADR-0058 §2). */
 function jaUnavailableReason(code: MarketUnavailableCode, provider: MarketSourceId | undefined) {
-	if (code !== "SOURCE_NOT_CONFIGURED" || provider === undefined || provider === "materials") {
+	if (
+		code !== "SOURCE_NOT_CONFIGURED" ||
+		provider === undefined ||
+		provider === "materials" ||
+		provider === "jpx"
+	) {
 		return JA_UNAVAILABLE_REASONS[code];
 	}
 	const { name, key } = marketSourceKey(provider);

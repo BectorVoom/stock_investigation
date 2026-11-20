@@ -23,6 +23,7 @@ use research_finance::finnhub::FinnhubEarningsSource;
 use research_finance::fred::FredSeriesSource;
 use research_finance::jpx::JpxEarningsSource;
 use research_finance::jpx_directory::JpxDirectorySource;
+use research_finance::jpx_stats::JpxStatsSeriesSource;
 use research_finance::jquants::JquantsStockPriceSource;
 use research_finance::jquants_financials::{
 	CompanyProfileSource, JquantsFinancialsSource, JquantsProfileSource,
@@ -117,10 +118,12 @@ fn process_runner(logger: &dyn EventLogger) -> Arc<dyn ProcessRunner> {
 
 /// Keyed market-data adapters (FR-017): a provider without a key keeps its
 /// "unconfigured" source, so its series honestly report SOURCE_NOT_CONFIGURED
-/// while the other provider works.
+/// while the other provider works. JPX's statistics (`jpx`) need no key and
+/// share the runner's fetchers and clock.
 fn market_sources(
 	config: &RunnerConfig,
 	fetcher: &Arc<dyn SafeFetcher>,
+	binary_fetcher: &Arc<dyn SafeBinaryFetcher>,
 	clock: &Arc<dyn Clock>,
 ) -> HashMap<String, Arc<dyn MarketSeriesSource>> {
 	let unconfigured = |provider: MarketProviderId| -> Arc<dyn MarketSeriesSource> {
@@ -151,6 +154,15 @@ fn market_sources(
 	HashMap::from([
 		(MarketProviderId::Fred.as_str().to_owned(), fred),
 		(MarketProviderId::TwelveData.as_str().to_owned(), twelve),
+		// JPX's public statistics need no key.
+		(
+			MarketProviderId::Jpx.as_str().to_owned(),
+			Arc::new(JpxStatsSeriesSource::new(
+				Arc::clone(fetcher),
+				Arc::clone(binary_fetcher),
+				Arc::clone(clock),
+			)),
+		),
 	])
 }
 
@@ -451,7 +463,7 @@ pub fn compose(
 				hasher,
 				clock: Arc::clone(&clock),
 			},
-			market_sources: market_sources(config, &fetcher, &clock),
+			market_sources: market_sources(config, &fetcher, &binary_fetcher, &clock),
 			earnings_sources: earnings.watchlist,
 			earnings_calendar_sources: earnings.calendars,
 			stock_directory_sources: stock_directory_sources(

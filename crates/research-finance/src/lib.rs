@@ -7,6 +7,7 @@ pub mod fred;
 pub mod jobs;
 pub mod jpx;
 pub mod jpx_directory;
+pub mod jpx_stats;
 pub mod jpx_workbook;
 pub mod jquants;
 pub mod jquants_financials;

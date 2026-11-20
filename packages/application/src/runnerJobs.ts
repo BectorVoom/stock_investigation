@@ -571,7 +571,9 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				errorCode: entry.errorCode,
 				upstreamStatus: entry.upstreamStatus ?? null,
 				// Absent: a runner from before ADR-0044, merged without deleting.
-				history: entry.history ?? null,
+				// A JPX series is always merged (ADR-0076 §3): JPX lists only
+				// recent files, so no answer may replace the stored history.
+				history: parsed.provider === "jpx" ? null : (entry.history ?? null),
 			});
 		}
 		return ok({

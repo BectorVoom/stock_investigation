@@ -29,6 +29,7 @@ import {
 	idSchema,
 	isoDateSchema,
 	jobKindSchema,
+	marketProviderIdSchema,
 	materialDetailsSchema,
 	type NewsSource,
 	type Notebook,
@@ -720,15 +721,11 @@ const marketUnavailableCodeSchema = z.enum([
 
 export function toStoredMarketSeries(row: unknown): StoredMarketSeries {
 	const r = decode("market_series", marketSeriesRowSchema, row);
-	const provider =
-		r.provider === "materials"
-			? "materials"
-			: r.provider === "twelve-data"
-				? "twelve-data"
-				: "fred";
-	if (r.provider !== "fred" && r.provider !== "twelve-data" && r.provider !== "materials") {
+	const parsedProvider = marketProviderIdSchema.safeParse(r.provider);
+	if (!parsedProvider.success) {
 		throw new StoredDataError("market_series", "provider");
 	}
+	const provider = parsedProvider.data;
 	return {
 		seriesId: r.series_id,
 		...(r.material_details == null

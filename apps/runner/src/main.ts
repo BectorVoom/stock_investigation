@@ -7,6 +7,7 @@ import {
 	createFredSeriesSource,
 	createJpxDirectorySource,
 	createJpxEarningsSource,
+	createJpxMarketStatsSource,
 	createJquantsFinancialsSource,
 	createJquantsProfileSource,
 	createJquantsStockPriceSource,
@@ -256,6 +257,8 @@ function runnerProgram(
 									)
 								: createTwelveDataSeriesSource({ apiKey: value.twelveDataApiKey, fetcher }),
 						],
+						// ADR-0076: JPX's public statistics files need no key.
+						["jpx", createJpxMarketStatsSource({ fetcher, binaryFetcher, clock: systemClock })],
 					]),
 					marketPacer: createMarketPacer({
 						clock: systemClock,

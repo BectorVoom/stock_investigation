@@ -330,15 +330,24 @@ impl Known {
 		matches!(
 			self,
 			K::Area
-				| K::Base | K::Basefont
-				| K::Br | K::Col
-				| K::Command | K::Embed
-				| K::Frame | K::Hr
-				| K::Img | K::Input
-				| K::Isindex | K::Keygen
-				| K::Link | K::Meta
-				| K::Param | K::Source
-				| K::Track | K::Wbr
+				| K::Base
+				| K::Basefont
+				| K::Br
+				| K::Col
+				| K::Command
+				| K::Embed
+				| K::Frame
+				| K::Hr
+				| K::Img
+				| K::Input
+				| K::Isindex
+				| K::Keygen
+				| K::Link
+				| K::Meta
+				| K::Param
+				| K::Source
+				| K::Track
+				| K::Wbr
 		)
 	}
 
@@ -349,11 +358,14 @@ impl Known {
 		matches!(
 			self,
 			K::Mi
-				| K::Mo | K::Mn
-				| K::Ms | K::Mtext
+				| K::Mo
+				| K::Mn
+				| K::Ms
+				| K::Mtext
 				| K::AnnotationXml
 				| K::ForeignObject
-				| K::Desc | K::Title
+				| K::Desc
+				| K::Title
 		)
 	}
 }

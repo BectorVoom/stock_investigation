@@ -62,6 +62,7 @@ import {
 	err,
 	firstHistoryFetch,
 	type HistoryFetch,
+	type HistoryOutcome,
 	type HistoryRefreshRequest,
 	historyOutcome,
 	parseMarketSeriesId,
@@ -839,7 +840,11 @@ async function executeMarketRefresh(
 			continue;
 		}
 		const request: HistoryRefreshRequest = { anchor: query.anchor, fullCheck: query.fullCheck };
-		const first = firstHistoryFetch(request);
+		// ADR-0076 §3: JPX lists only recent files, so a `jpx` series is asked
+		// once for everything JPX lists and merged (no history write), never
+		// windowed or replaced.
+		const accumulates = parsed.value.provider === "jpx";
+		const first: HistoryFetch = accumulates ? { kind: "full" } : firstHistoryFetch(request);
 		let answer = await fetchSeriesAnswer(
 			source,
 			query.seriesId,
@@ -854,7 +859,9 @@ async function executeMarketRefresh(
 			series.push(answer.entry);
 			continue;
 		}
-		let outcome = historyOutcome(request, first, answer.points);
+		let outcome: HistoryOutcome = accumulates
+			? { kind: "store", write: null }
+			: historyOutcome(request, first, answer.points);
 		if (outcome.kind === "refetch-full") {
 			const full: HistoryFetch = { kind: "full" };
 			answer = await fetchSeriesAnswer(

@@ -11,8 +11,15 @@ js_literal_enum! {
 		Materials = "materials",
 		/// `twelve-data`.
 		TwelveData = "twelve-data",
+		/// `jpx`: Japan Exchange Group's public statistics files.
+		Jpx = "jpx",
 	}
 }
+
+/// The `jpx` symbols, an exact allow-list: `SHORT_SELLING_RATIO`,
+/// `MARGIN_BUYING_VALUE`, `MARGIN_RATIO`.
+pub const JPX_SERIES_SYMBOLS: [&str; 3] =
+	["SHORT_SELLING_RATIO", "MARGIN_BUYING_VALUE", "MARGIN_RATIO"];
 
 /// `INVALID_SERIES_ID`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
@@ -87,6 +94,10 @@ pub fn parse_market_series_id(value: &str) -> Result<MarketSeriesId<'_>, SeriesI
 			provider: MarketProviderId::TwelveData,
 			symbol,
 		}),
+		"jpx" if JPX_SERIES_SYMBOLS.contains(&symbol) => Ok(MarketSeriesId {
+			provider: MarketProviderId::Jpx,
+			symbol,
+		}),
 		_ => Err(SeriesIdError),
 	}
 }
@@ -111,5 +122,25 @@ mod tests {
 		assert!(parse_market_series_id("twelve-data:A:B").is_err());
 		assert!(parse_market_series_id("twelve-data:.A").is_err());
 		assert!(parse_market_series_id("twelve-data:A:BB:CC").is_err());
+	}
+
+	#[test]
+	fn parses_only_the_allow_listed_jpx_symbols() {
+		for symbol in JPX_SERIES_SYMBOLS {
+			let id = format!("jpx:{symbol}");
+			let parsed = parse_market_series_id(&id);
+			assert_eq!(
+				parsed,
+				Ok(MarketSeriesId {
+					provider: MarketProviderId::Jpx,
+					symbol,
+				})
+			);
+		}
+		assert!(parse_market_series_id("jpx:short_selling_ratio").is_err());
+		assert!(parse_market_series_id("jpx:MARGIN").is_err());
+		assert!(parse_market_series_id("jpx:MARGIN_RATIO ").is_err());
+		assert!(parse_market_series_id("jpx:").is_err());
+		assert_eq!(MarketProviderId::Jpx.as_str(), "jpx");
 	}
 }

@@ -16,8 +16,8 @@ use research_contracts::{
 	equity_financials::{EquityProvider, EquitySyncFailureCode},
 	jobs::*,
 	market::{
-		MarketHistoryWrite, MarketObservation, MarketSeriesId, MarketUnavailableCode,
-		limits::MAX_OBSERVATIONS_PER_RESPONSE, parse_market_series_id,
+		MarketHistoryWrite, MarketObservation, MarketProviderId, MarketSeriesId,
+		MarketUnavailableCode, limits::MAX_OBSERVATIONS_PER_RESPONSE, parse_market_series_id,
 	},
 	stock_company_profile::StockCompanyProfile,
 	stock_directory::{StockDirectoryFailureCode, stock_directory_source_id},
@@ -160,7 +160,9 @@ fn wire_write(write: HistoryWrite) -> MarketHistoryWrite {
 /// check is due); when the window does not reproduce the anchor, the provider
 /// changed older history and a second, paced request fetches everything in
 /// the same job. The completion carries how the answer replaces the stored
-/// history (`history`), decided by the domain rule.
+/// history (`history`), decided by the domain rule. A `jpx` series is the
+/// exception: one fetch of everything JPX lists, reported with no `history`
+/// so the API merges it.
 pub async fn execute_market_refresh(
 	job: &MarketRefreshJob,
 	deps: &RefreshDeps<'_>,
@@ -204,6 +206,38 @@ pub async fn execute_market_refresh(
 			series.push(output);
 			continue;
 		};
+		// JPX lists only recent files: one fetch for everything listed, and no
+		// history write, so the API merges the points into the stored
+		// history and never replaces it (the claim's anchor and full check
+		// are ignored).
+		if target.provider == MarketProviderId::Jpx {
+			match fetch_series_answer(
+				source.as_ref(),
+				entry,
+				&target,
+				HistoryFetch::Full,
+				deps,
+				cancel,
+			)
+			.await
+			{
+				SeriesAnswer::Stopped => break 'series,
+				SeriesAnswer::Failed(code, upstream_status) => {
+					output.error_code = Some(code);
+					output.upstream_status = upstream_status;
+				}
+				SeriesAnswer::Answered(data) => {
+					output.meta = Some(data.meta);
+					output.observations = data
+						.observations
+						.into_iter()
+						.map(|p| MarketObservation(p.observed_on, p.value, p.bar))
+						.collect();
+				}
+			}
+			series.push(output);
+			continue;
+		}
 		let request = history_request(entry);
 		let mut fetch = first_history_fetch(&request);
 		// At most two rounds: `history_outcome` asks for a full refetch only

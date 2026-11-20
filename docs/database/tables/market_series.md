@@ -5,7 +5,7 @@
 | Property | Value |
 |---|---|
 | Table Name | `market_series` |
-| Purpose | One row holds the metadata and refresh state of one market series: a FRED or Twelve Data series that Home, a notebook or a watchlist list tracks, or a directory stock's daily prices (ADR-0058 §2). |
+| Purpose | One row holds the metadata and refresh state of one market series: a FRED, Twelve Data or JPX series that Home, a notebook or a watchlist list tracks (ADR-0076), or a directory stock's daily prices (ADR-0058 §2). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 6. Home and market data |
 | Created By | `infra/migrations/0006_market_data.sql` |
@@ -22,14 +22,14 @@ The runner fetches series for `market-refresh` jobs, and each completion upserts
 | Column | Data Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | `owner_id` | TEXT | No | - | The single owner's id (no owners table; every key starts with it, API-004). |
-| `series_id` | TEXT | No | - | `<provider>:<symbol>`, parsed by `parseMarketSeriesId` (e.g. `fred:DGS10`, `twelve-data:AAPL`, `twelve-data:7203:JPX`). |
-| `provider` | TEXT | No | - | `fred` or `twelve-data` — the id namespace, not necessarily the source: a directory stock's series is `twelve-data` whoever wrote its bars (ADR-0058 §2); materials series live in `metal_series` and are only merged in at read time. |
+| `series_id` | TEXT | No | - | `<provider>:<symbol>`, parsed by `parseMarketSeriesId` (e.g. `fred:DGS10`, `twelve-data:AAPL`, `twelve-data:7203:JPX`, `jpx:SHORT_SELLING_RATIO`). |
+| `provider` | TEXT | No | - | `fred`, `twelve-data` or `jpx` — the id namespace, not necessarily the source: a directory stock's series is `twelve-data` whoever wrote its bars (ADR-0058 §2); materials series live in `metal_series` and are only merged in at read time. |
 | `symbol` | TEXT | No | - | Provider symbol, the part of `series_id` after the provider. |
 | `title` | TEXT | No | - | Series title from the provider; the symbol for a series whose first fetch failed. A directory stock's series: `<symbol> (<listing>)` from the directory, e.g. `AAPL (NASDAQ)`, `1380 (JPX)`. |
 | `unit` | TEXT | No | - | Unit text from the provider; empty for a series whose first fetch failed. `USD` / `JPY` for a directory stock's series. |
 | `frequency` | TEXT | No | - | `daily`, `weekly`, `monthly`, `quarterly`, `annual` or `unknown` (checked on read); `unknown` for a series whose first fetch failed. |
-| `publisher` | TEXT | No | - | Data publisher shown as the source — the one that wrote the stored bars (`Twelve Data`, `Federal Reserve Bank of St. Louis (FRED)`, `Massive`, `J-Quants`); empty for a series whose first fetch failed. |
-| `source_url` | TEXT | No | - | Source page URL (`https://massive.com/`, `https://jpx-jquants.com/` for directory stocks); for a failed first fetch, the FRED series page or `https://twelvedata.com/`. |
+| `publisher` | TEXT | No | - | Data publisher shown as the source — the one that wrote the stored bars (`Twelve Data`, `Federal Reserve Bank of St. Louis (FRED)`, `Japan Exchange Group (JPX)`, `Massive`, `J-Quants`); empty for a series whose first fetch failed. |
+| `source_url` | TEXT | No | - | Source page URL (`https://massive.com/`, `https://jpx-jquants.com/` for directory stocks); for a failed first fetch, the FRED series page, the JPX statistics page or `https://twelvedata.com/`. |
 | `last_refreshed_at` | TEXT | Yes | - | ISO-8601 UTC time of the last fetch attempt (the runner's `fetchedAt`), success or failure. |
 | `retrieved_at` | TEXT | Yes | - | ISO-8601 UTC time of the last successful fetch; NULL until one succeeds. |
 | `unavailable_code` | TEXT | Yes | - | Failure code of the last attempt (`NEVER_REFRESHED`, `SOURCE_NOT_CONFIGURED`, `SOURCE_AUTH_FAILED`, `SERIES_NOT_FOUND`, `PLAN_NOT_ENTITLED`, `RATE_LIMITED`, `NO_DATA`, `SOURCE_FAILED`); NULL after a success. |
@@ -67,7 +67,7 @@ The same statements upsert with `ON CONFLICT (owner_id, series_id) DO UPDATE`. A
 
 ### Synchronization
 
-Follows FRED and Twelve Data through `market-refresh` runner jobs the server queues at claim time (ADR-0051: every 30 minutes, stretched for many Twelve Data series; new series within seconds; scope `all` or `unrefreshed`). `last_refreshed_at` is the stamp that schedule reads. The claim sends each tracked series with its newest stored date, its history anchor (the 32nd newest observation) and whether a full fetch is due, so the runner fetches only the recent window except every 7 days (ADR-0044). An `unrefreshed` job fetches only series never refreshed or without data (ADR-0039). A directory stock's series follows Massive / J-Quants instead, through `stock-prices-sync` jobs (one market and up to 10 dates per job, then the stocks that have no row at all; [`stock_price_day`](stock_price_day.md)).
+Follows FRED, Twelve Data and JPX through `market-refresh` runner jobs the server queues at claim time (ADR-0051: every 30 minutes, stretched for many Twelve Data series; new series within seconds; scope `all` or `unrefreshed`). `last_refreshed_at` is the stamp that schedule reads. The claim sends each tracked series with its newest stored date, its history anchor (the 32nd newest observation) and whether a full fetch is due, so the runner fetches only the recent window except every 7 days (ADR-0044); a `jpx` series ignores the anchor and merges every answer so stored weeks accumulate (`history_checked_at` stays NULL, ADR-0076 §3). An `unrefreshed` job fetches only series never refreshed or without data (ADR-0039). A directory stock's series follows Massive / J-Quants instead, through `stock-prices-sync` jobs (one market and up to 10 dates per job, then the stocks that have no row at all; [`stock_price_day`](stock_price_day.md)).
 
 ### Retention
 

@@ -312,3 +312,69 @@ describe("incremental market history (ADR-0044)", () => {
 		}
 	});
 });
+
+describe("JPX statistics accumulate (ADR-0076 §3)", () => {
+	it("merges every JPX answer, ignoring a history write that would replace the stored weeks", async () => {
+		const harness = createHarness();
+		const saved = await harness.call("PUT", "/home/dashboard", {
+			dashboard: {
+				schemaVersion: 2,
+				widgets: [
+					{
+						type: "market-metric",
+						widgetId: "w-margin",
+						title: "Margin ratio",
+						size: "small",
+						seriesId: "jpx:MARGIN_RATIO",
+					},
+				],
+			},
+			expectedVersion: 0,
+		});
+		expect(saved.status).toBe(200);
+		const token = await issueRunnerToken(harness);
+		const meta = {
+			title: "Margin ratio (信用倍率), shares, Tokyo & Nagoya",
+			unit: "Times",
+			frequency: "weekly",
+			publisher: "Japan Exchange Group (JPX)",
+			sourceUrl: "https://www.jpx.co.jp/markets/statistics-equities/margin/04.html",
+		} as const;
+		const answer = async (observations: readonly Observation[]) => {
+			const job = await claimRefresh(harness, token);
+			expect(job.series.map((entry) => entry.seriesId)).toEqual(["jpx:MARGIN_RATIO"]);
+			const response = await harness.runner(token, `/jobs/${job.runId}/complete`, {
+				outcome: "market-refreshed",
+				leaseGeneration: job.leaseGeneration,
+				usage: USAGE,
+				series: [
+					{
+						seriesId: "jpx:MARGIN_RATIO",
+						fetchedAt: harness.time.clock.nowIso(),
+						meta,
+						observations: [...observations],
+						errorCode: null,
+						history: { mode: "full", replaceFrom: null },
+					},
+				],
+			});
+			expect(response.status).toBe(200);
+		};
+		await answer([
+			["2026-10-23", 9.76],
+			["2026-10-30", 10.47],
+		]);
+		await answer([
+			["2026-10-30", 10.47],
+			["2026-11-13", 9.52],
+		]);
+		const data = await body(await harness.call("GET", "/home/data"), homeDataResponseSchema);
+		const series = data.series.find((entry) => entry.seriesId === "jpx:MARGIN_RATIO");
+		expect(series?.unit).toBe("Times");
+		expect(series?.observations).toEqual([
+			["2026-10-23", 9.76],
+			["2026-10-30", 10.47],
+			["2026-11-13", 9.52],
+		]);
+	});
+});

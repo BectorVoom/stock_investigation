@@ -79,14 +79,17 @@ const fn is_dropped_element(known: Known) -> bool {
 			| K::Style
 			| K::Noscript
 			| K::Template
-			| K::Svg | K::Canvas
+			| K::Svg
+			| K::Canvas
 			| K::Iframe
 			| K::Object
 			| K::Embed
-			| K::Form | K::Button
+			| K::Form
+			| K::Button
 			| K::Select
 			| K::Textarea
-			| K::Nav | K::Footer
+			| K::Nav
+			| K::Footer
 			| K::Aside
 	)
 }
@@ -100,7 +103,8 @@ fn is_drop_role(token: &str) -> bool {
 			| "contentinfo"
 			| "complementary"
 			| "search"
-			| "menu" | "menubar"
+			| "menu"
+			| "menubar"
 			| "dialog"
 			| "alertdialog"
 	)
@@ -113,7 +117,8 @@ fn is_boilerplate_token(token: &str) -> bool {
 		"nav"
 			| "navbar"
 			| "navigation"
-			| "menu" | "breadcrumb"
+			| "menu"
+			| "breadcrumb"
 			| "breadcrumbs"
 			| "sidebar"
 			| "footer"
@@ -122,9 +127,11 @@ fn is_boilerplate_token(token: &str) -> bool {
 			| "consent"
 			| "banner"
 			| "masthead"
-			| "share" | "social"
+			| "share"
+			| "social"
 			| "subnav"
-			| "skip" | "skiplink"
+			| "skip"
+			| "skiplink"
 			| "toolbar"
 	)
 }
@@ -144,11 +151,15 @@ const fn is_void_element(known: Known) -> bool {
 	matches!(
 		known,
 		K::Area
-			| K::Base | K::Br
-			| K::Col | K::Embed
-			| K::Hr | K::Img
+			| K::Base
+			| K::Br
+			| K::Col
+			| K::Embed
+			| K::Hr
+			| K::Img
 			| K::Input
-			| K::Link | K::Meta
+			| K::Link
+			| K::Meta
 			| K::Param
 			| K::Source
 			| K::Track
@@ -164,12 +175,15 @@ const fn is_block_element(known: Known) -> bool {
 		K::P | K::Div
 			| K::Section
 			| K::Article
-			| K::Main | K::Header
+			| K::Main
+			| K::Header
 			| K::Hgroup
 			| K::Figure
 			| K::Figcaption
-			| K::Dl | K::Dt
-			| K::Dd | K::Details
+			| K::Dl
+			| K::Dt
+			| K::Dd
+			| K::Details
 			| K::Summary
 			| K::Address
 			| K::Search
@@ -758,7 +772,8 @@ impl Converter {
 				|| matches!(
 					known,
 					K::Ul | K::Ol | K::Li | K::Blockquote | K::Table | K::Tr | K::Td
-				) || matches!(known, K::Th | K::Hr))
+				)
+				|| matches!(known, K::Th | K::Hr))
 		{
 			// A block tag inside a heading is invalid HTML; keep its text flowing, not its structure.
 			return;

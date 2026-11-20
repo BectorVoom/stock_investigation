@@ -758,4 +758,48 @@ describe("market-refresh execution: incremental history (ADR-0044)", () => {
 		expect(completion.series.map((series) => series.seriesId)).toEqual(["twelve-data:AAPL"]);
 		expect(completeJobRequestSchema.safeParse(completion).success).toBe(true);
 	});
+
+	it("asks a JPX series once for everything and sends no history write (ADR-0076)", async () => {
+		const froms: (string | null)[] = [];
+		const source: MarketSeriesSource = {
+			providerId: "jpx",
+			fetchSeries: async (query) => {
+				froms.push(query.from);
+				// JPX lists only recent files: the stored anchor is not in the answer.
+				return ok({
+					meta: {
+						title: "Margin ratio (信用倍率), shares, Tokyo & Nagoya",
+						unit: "Times",
+						frequency: "weekly",
+						publisher: "Japan Exchange Group (JPX)",
+						sourceUrl: "https://www.jpx.co.jp/markets/statistics-equities/margin/04.html",
+					},
+					observations: [{ observedOn: "2026-11-13", value: 9.52 }],
+				});
+			},
+		};
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		await executeJob(
+			{
+				...MARKET_JOB,
+				series: [
+					{
+						seriesId: "jpx:MARGIN_RATIO",
+						latestObservedOn: "2026-11-06",
+						anchor: ANCHOR,
+						fullCheck: true,
+					},
+				],
+			},
+			{ ...harness.deps, marketSources: new Map([["jpx", source]]) },
+			never,
+		);
+		expect(froms).toEqual([null]);
+		const completion = marketCompletionOf(calls.completions[0]);
+		expect(completeJobRequestSchema.safeParse(completion).success).toBe(true);
+		const [entry] = completion.series;
+		expect(entry?.observations).toEqual([["2026-11-13", 9.52]]);
+		expect(entry !== undefined && "history" in entry).toBe(false);
+	});
 });

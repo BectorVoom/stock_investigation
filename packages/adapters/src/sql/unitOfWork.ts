@@ -56,6 +56,29 @@ interface Guard {
 const ALWAYS: Guard = { sql: "1 = 1", values: [] };
 
 /**
+ * The source page a failed, never-answered series' placeholder row links to
+ * (the provider's page for the symbol, or its home page). Materials are
+ * imported, never fetched, so they never fail here.
+ */
+function placeholderSourceUrl(
+	provider: MarketCompletionSeries["provider"],
+	symbol: string,
+): string {
+	switch (provider) {
+		case "fred":
+			return `https://fred.stlouisfed.org/series/${symbol}`;
+		case "jpx":
+			// ADR-0076: the page that links the series' files.
+			return symbol === "SHORT_SELLING_RATIO"
+				? "https://www.jpx.co.jp/markets/statistics-equities/short-selling/index.html"
+				: "https://www.jpx.co.jp/markets/statistics-equities/margin/04.html";
+		case "twelve-data":
+		case "materials":
+			return "https://twelvedata.com/";
+	}
+}
+
+/**
  * One answered point as the upsert binds it: a JSON array, not an object, so
  * the bar's four numbers (ADR-0056) add no key text. The bar columns are all
  * null when the answer carried no bar; `volume` may be null on its own.
@@ -555,10 +578,7 @@ function marketStatements(
 			provider: entry.provider,
 			symbol: entry.symbol,
 			title: entry.symbol,
-			sourceUrl:
-				entry.provider === "fred"
-					? `https://fred.stlouisfed.org/series/${entry.symbol}`
-					: "https://twelvedata.com/",
+			sourceUrl: placeholderSourceUrl(entry.provider, entry.symbol),
 			lastRefreshedAt: entry.fetchedAt,
 			unavailableCode: entry.errorCode,
 			upstreamStatus: entry.upstreamStatus,

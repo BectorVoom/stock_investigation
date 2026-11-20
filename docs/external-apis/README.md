@@ -14,7 +14,7 @@ One reference document per external API the application calls: what we send, wha
 | API | Provider | Used for | Hosts | Credential |
 |---|---|---|---|---|
 | [SEC EDGAR](apis/sec-edgar.md) | U.S. Securities and Exchange Commission | US stock directory, XBRL company facts, 13F holdings, US annual financial statements | `www.sec.gov`, `data.sec.gov` | None (`SEC_USER_AGENT` contact header) |
-| [JPX](apis/jpx.md) | Japan Exchange Group | Japanese stock directory, earnings announcement schedule | `www.jpx.co.jp` | None |
+| [JPX](apis/jpx.md) | Japan Exchange Group | Japanese stock directory, earnings announcement schedule, daily short-selling ratio and weekly margin statistics | `www.jpx.co.jp` | None |
 | [FRED](apis/fred.md) | Federal Reserve Bank of St. Louis | Economic indicator series on Home and in the Notebook | `api.stlouisfed.org` | `FRED_API_KEY` |
 | [Twelve Data](apis/twelve-data.md) | Twelve Data | Daily prices of stocks, FX and metals | `api.twelvedata.com` | `TWELVE_DATA_API_KEY` |
 | [Massive](apis/massive.md) | Massive (formerly Polygon.io) | Daily prices of every US directory stock (grouped daily, ranges, splits) | `api.massive.com` | `MASSIVE_API_KEY` (`Authorization: Bearer`) |

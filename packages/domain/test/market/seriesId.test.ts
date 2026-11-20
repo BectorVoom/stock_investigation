@@ -29,6 +29,21 @@ describe("parseMarketSeriesId", () => {
 		});
 	});
 
+	it("parses only the listed JPX statistics (ADR-0076)", () => {
+		for (const symbol of ["SHORT_SELLING_RATIO", "MARGIN_BUYING_VALUE", "MARGIN_RATIO"]) {
+			expect(expectOk(parseMarketSeriesId(`jpx:${symbol}`))).toEqual({ provider: "jpx", symbol });
+		}
+		for (const bad of [
+			"jpx:",
+			"jpx:7203",
+			"jpx:margin_ratio",
+			"jpx:MARGIN_RATIO\n",
+			"jpx:NIKKEI",
+		]) {
+			expect(expectErr(parseMarketSeriesId(bad))).toBe("INVALID_SERIES_ID");
+		}
+	});
+
 	it("rejects unknown providers, empty symbols and bad shapes", () => {
 		for (const bad of [
 			"",

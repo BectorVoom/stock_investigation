@@ -9,6 +9,7 @@
  * served by a scripted network at the URLs the schedule page links. JPX's real
  * workbooks are never committed (JPX terms of use).
  */
+import { deflateSync } from "node:zlib";
 import type {
 	BinaryDocument,
 	Clock,
@@ -30,6 +31,18 @@ import {
 	JPX_SHEET_PATH,
 	JPX_STRINGS_PATH,
 } from "../../src/finance/jpxEarnings.ts";
+import {
+	createJpxMarketStatsSource,
+	JPX_MARGIN_HISTORY_URL,
+	JPX_MARGIN_WEEKLY_URL,
+	JPX_SERIES_META,
+	JPX_SHORT_SELLING_URL,
+	marginHistoryLink,
+	marginWeeklyLinks,
+	readShortSellingPdf,
+	shortSellingLinks,
+	shortSellingRatio,
+} from "../../src/finance/jpxMarketStats.ts";
 import { docExampleText } from "../docExamples.ts";
 import { buildTestZip } from "../zipTestUtils.ts";
 import { expectOk } from "./support.ts";
@@ -75,7 +88,7 @@ function workbookBytes(cells: readonly ExampleCell[]): Uint8Array {
 	for (const cell of cells) {
 		const ref = `${cell.column}${cell.row}`;
 		let xml: string;
-		if (/^[0-9]+$/.test(cell.text)) {
+		if (/^-?[0-9]+(?:\.[0-9]+)?$/.test(cell.text)) {
 			xml = `<c r="${ref}"><v>${cell.text}</v></c>`;
 		} else {
 			let index = indexOf.get(cell.text);
@@ -232,6 +245,127 @@ describe("JPX document examples", () => {
 						fiscalPeriodEnd: "2027-03-31",
 						timing: "unknown",
 					},
+				],
+			}),
+		);
+	});
+
+	it("reads the short-selling and margin series from the documented pages, PDF tokens and workbooks", async () => {
+		const ssHtml = docExampleText("jpx", "jpx-short-selling-page");
+		const ssLinks = shortSellingLinks(ssHtml);
+		expect(ssLinks).toEqual([
+			{
+				url: "https://www.jpx.co.jp/markets/statistics-equities/short-selling/t13vrt000002q127-att/261118-m.pdf",
+				date: "2026-11-18",
+			},
+			{
+				url: "https://www.jpx.co.jp/markets/statistics-equities/short-selling/t13vrt000002py6q-att/261117-m.pdf",
+				date: "2026-11-17",
+			},
+		]);
+
+		const weeklyHtml = docExampleText("jpx", "jpx-margin-weekly-page");
+		const weeklyLinks = marginWeeklyLinks(weeklyHtml);
+		expect(weeklyLinks).toEqual([
+			{
+				url: "https://www.jpx.co.jp/markets/statistics-equities/margin/tvdivq0000001rk9-att/20261113_mtcurrent.xlsx",
+				date: "2026-11-13",
+			},
+			{
+				url: "https://www.jpx.co.jp/markets/statistics-equities/margin/tvdivq0000001rk9-att/20261106_mtcurrent.xlsx",
+				date: "2026-11-06",
+			},
+		]);
+
+		const historyHtml = docExampleText("jpx", "jpx-margin-history-page");
+		const historyUrl = marginHistoryLink(historyHtml);
+		expect(historyUrl).toBe(
+			"https://www.jpx.co.jp/markets/statistics-equities/margin/tvdivq0000001rq1-att/tvdivq0000015969.xlsx",
+		);
+
+		const pdfTokens = docExampleText("jpx", "jpx-short-selling-pdf")
+			.split("\n")
+			.map((line) => {
+				const parsed: unknown = JSON.parse(line);
+				if (typeof parsed !== "string") throw new Error(`not a string token: ${line}`);
+				return parsed;
+			});
+		const streamBody = pdfTokens
+			.map((token) => {
+				const escaped = token
+					.replaceAll("\\", "\\\\")
+					.replaceAll("(", "\\(")
+					.replaceAll(")", "\\)");
+				return `BT\r\n/F2 10.08 Tf\r\n[(${escaped})] TJ\r\nET\r\n`;
+			})
+			.join("");
+		const deflated = deflateSync(Buffer.from(streamBody, "latin1"));
+		const pdfBytes = Buffer.concat([
+			Buffer.from(
+				`%PDF-1.7\r\n1 0 obj\r\n<</Filter/FlateDecode/Length ${deflated.length}>>stream\r\n`,
+				"latin1",
+			),
+			deflated,
+			Buffer.from("\r\nendstream\r\nendobj\r\n%%EOF", "latin1"),
+		]);
+		const day = readShortSellingPdf(pdfBytes);
+		expect(day).toEqual({
+			actual: 4_925_148,
+			restricted: 3_012_856,
+			unrestricted: 809_020,
+			total: 8_747_024,
+		});
+		if (day === null) throw new Error("unreachable");
+		expect(shortSellingRatio(day)).toBe(43.7);
+
+		const weeklyBytes = workbookBytes(exampleCells(docExampleText("jpx", "jpx-margin-weekly")));
+		const historyBytes = workbookBytes(exampleCells(docExampleText("jpx", "jpx-margin-history")));
+		const { fetcher, binaryFetcher } = scriptedNetwork(
+			{
+				[JPX_SHORT_SELLING_URL]: ssHtml,
+				[JPX_MARGIN_WEEKLY_URL]: weeklyHtml,
+				[JPX_MARGIN_HISTORY_URL]: historyHtml,
+			},
+			{
+				[ssLinks[0]?.url ?? ""]: pdfBytes,
+				[ssLinks[1]?.url ?? ""]: Buffer.from("%PDF-1.7 omitted"),
+				[weeklyLinks[0]?.url ?? ""]: weeklyBytes,
+				[weeklyLinks[1]?.url ?? ""]: weeklyBytes,
+				[historyUrl ?? ""]: historyBytes,
+			},
+		);
+		const source = createJpxMarketStatsSource({ fetcher, binaryFetcher, clock: CLOCK });
+		const ask = (symbol: string) =>
+			source.fetchSeries({
+				symbol,
+				from: null,
+				maxObservations: 800,
+				signal: new AbortController().signal,
+				beforeRequest: () => Promise.resolve("granted"),
+			});
+		expect(await ask("SHORT_SELLING_RATIO")).toEqual(
+			ok({
+				meta: JPX_SERIES_META.SHORT_SELLING_RATIO,
+				observations: [{ observedOn: "2026-11-18", value: 43.7 }],
+			}),
+		);
+		expect(await ask("MARGIN_BUYING_VALUE")).toEqual(
+			ok({
+				meta: JPX_SERIES_META.MARGIN_BUYING_VALUE,
+				observations: [
+					{ observedOn: "2026-10-23", value: 6_534_069 },
+					{ observedOn: "2026-10-30", value: 6_505_887 },
+					{ observedOn: "2026-11-13", value: 5_768_159 },
+				],
+			}),
+		);
+		expect(await ask("MARGIN_RATIO")).toEqual(
+			ok({
+				meta: JPX_SERIES_META.MARGIN_RATIO,
+				observations: [
+					{ observedOn: "2026-10-23", value: 9.76 },
+					{ observedOn: "2026-10-30", value: 10.47 },
+					{ observedOn: "2026-11-13", value: 9.52 },
 				],
 			}),
 		);

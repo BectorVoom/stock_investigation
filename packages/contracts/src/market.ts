@@ -41,7 +41,7 @@ export const MARKET_LIMITS = {
 	maxWidgetTitle: DASHBOARD_LIMITS.maxWidgetTitle,
 } as const;
 
-export const marketProviderIdSchema = z.enum(["fred", "twelve-data", "materials"]);
+export const marketProviderIdSchema = z.enum(["fred", "twelve-data", "materials", "jpx"]);
 export type MarketProviderId = z.infer<typeof marketProviderIdSchema>;
 
 export const marketSeriesIdSchema = z
@@ -205,11 +205,13 @@ const SOURCE_KEYS: {
 	"twelve-data": { name: "Twelve Data", key: "TWELVE_DATA_API_KEY" },
 	// Materials are imported, never fetched; listed so every source has an entry.
 	materials: { name: "materials", key: "" },
+	// JPX's statistics are public files: no key (ADR-0076).
+	jpx: { name: "JPX", key: "" },
 	massive: { name: "Massive", key: "MASSIVE_API_KEY" },
 	jquants: { name: "J-Quants", key: "JQUANTS_API_KEY" },
 };
 
-/** The variable that configures a source's key (empty for materials). */
+/** The variable that configures a source's key (empty for materials and JPX). */
 export function marketSourceKey(source: MarketSourceId): {
 	readonly name: string;
 	readonly key: string;
@@ -221,7 +223,12 @@ export function marketUnavailableReason(
 	code: MarketUnavailableCode,
 	source?: MarketSourceId,
 ): string {
-	if (code !== "SOURCE_NOT_CONFIGURED" || source === undefined || source === "materials") {
+	if (
+		code !== "SOURCE_NOT_CONFIGURED" ||
+		source === undefined ||
+		source === "materials" ||
+		source === "jpx"
+	) {
 		return MARKET_UNAVAILABLE_REASONS[code];
 	}
 	const { name, key } = SOURCE_KEYS[source];
@@ -345,6 +352,8 @@ export const marketCatalogCategorySchema = z.enum([
 	"fx",
 	"commodity",
 	"equity",
+	// Japanese margin trading and short selling (ADR-0076).
+	"margin",
 ]);
 export type MarketCatalogCategory = z.infer<typeof marketCatalogCategorySchema>;
 

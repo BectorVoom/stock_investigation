@@ -4,19 +4,19 @@
 
 | Property | Value |
 |---|---|
-| Provider | Japan Exchange Group, Inc. (JPX), operator of the Tokyo Stock Exchange — public web pages and Excel workbooks on its website; JPX offers no API |
-| Purpose | The Japanese half of the Watchlist's stock directory: the monthly "List of TSE-listed Issues" in Japanese and English ([ADR-0034](../../adr/0034-stock-directory-search.md)); and the earnings-announcement schedule that dates JP watchlist stocks ([ADR-0016](../../adr/0016-earnings-dates-and-calendar-export.md), FR-018) and, with every one of its rows, every listed JP stock on the Stocks page ([ADR-0068](../../adr/0068-every-listed-stocks-next-earnings-date.md)). |
+| Provider | Japan Exchange Group, Inc. (JPX), operator of the Tokyo Stock Exchange — public web pages, Excel workbooks and PDFs on its website; JPX offers no API |
+| Purpose | (1) The Japanese half of the Watchlist's stock directory: the monthly "List of TSE-listed Issues" in Japanese and English ([ADR-0034](../../adr/0034-stock-directory-search.md)). (2) The earnings-announcement schedule that dates JP watchlist stocks ([ADR-0016](../../adr/0016-earnings-dates-and-calendar-export.md), FR-018) and, with every one of its rows, every listed JP stock on the Stocks page ([ADR-0068](../../adr/0068-every-listed-stocks-next-earnings-date.md)). (3) Market statistics series on Home and in the Notebook ([ADR-0076](../../adr/0076-jpx-margin-and-short-selling-series.md)): the daily TSE short-selling ratio (`jpx:SHORT_SELLING_RATIO`) and the weekly Tokyo & Nagoya margin buying balance in value (`jpx:MARGIN_BUYING_VALUE`) and margin ratio (`jpx:MARGIN_RATIO`). |
 | Hosts | `www.jpx.co.jp` |
-| Endpoints | `GET /markets/statistics-equities/misc/01.html` — Japanese listed-issues page, links `data_j.xlsx`; `GET /markets/statistics-equities/misc/{folder}/data_j.xlsx` — listed issues, Japanese names and sections; `GET /english/markets/statistics-equities/misc/01.html` — English listed-issues page, links `data_e.xlsx`; `GET /english/markets/statistics-equities/misc/{folder}/data_e.xlsx` — listed issues, English names; `GET /listing/event-schedules/financial-announcement/index.html` — earnings schedule page, links the schedule workbooks; `GET /listing/event-schedules/financial-announcement/{folder}/kessanMM_MMDD.xlsx` — scheduled announcement dates of companies whose quarter or year ended in month `MM` |
+| Endpoints | `GET /markets/statistics-equities/misc/01.html` — Japanese listed-issues page, links `data_j.xlsx`; `GET /markets/statistics-equities/misc/{folder}/data_j.xlsx` — listed issues, Japanese names and sections; `GET /english/markets/statistics-equities/misc/01.html` — English listed-issues page, links `data_e.xlsx`; `GET /english/markets/statistics-equities/misc/{folder}/data_e.xlsx` — listed issues, English names; `GET /listing/event-schedules/financial-announcement/index.html` — earnings schedule page, links the schedule workbooks; `GET /listing/event-schedules/financial-announcement/{folder}/kessanMM_MMDD.xlsx` — scheduled announcement dates of companies whose quarter or year ended in month `MM`; `GET /markets/statistics-equities/short-selling/index.html` — daily short-selling summary page, links `YYMMDD-m.pdf`; `GET /markets/statistics-equities/short-selling/{folder}/YYMMDD-m.pdf` — one trading day's TSE short-selling summary; `GET /markets/statistics-equities/margin/04.html` — weekly current margin trading page, links `YYYYMMDD_mtcurrent.xlsx`; `GET /markets/statistics-equities/margin/{folder}/YYYYMMDD_mtcurrent.xlsx` — one week's Tokyo & Nagoya margin balances; `GET /markets/statistics-equities/margin/05.html` — margin history page, links the history workbook; `GET /markets/statistics-equities/margin/{folder}/{name}.xlsx` — recent-weeks margin history table |
 | Authentication | None. |
 | Configuration | None. |
-| Usage Limits | JPX publishes no quota. Its [terms of use](https://www.jpx.co.jp/english/term-of-use/index.html) ask users to "refrain from automatic information retrieval and other operations which may lead to high-load and/or high frequency access" and prohibit "the collection of data or secondary use of information from this website for commercial purposes" without permission. Ours: every request start takes a grant from the shared pacer window `jpx` (6 starts per 60 s, shared by the directory and earnings refreshes); requests are sequential; at most 4 requests per directory refresh and 1 + 6 per earnings refresh or JP earnings-calendar sync (the two share one source object, so a calendar sync after a refresh is served from the caches); the earnings page is cached 30 min and each schedule workbook by URL (section 4). |
-| Called By | Rust runner (default) and TypeScript runner (rollback): `stock-directory-refresh` jobs for market `JP` (queued by the API at claim time when the JP list is missing or 7 days old, an hour after a failed download, ADR-0054 §2), `earnings-refresh` jobs for JP watchlist stocks, and `earnings-calendar-sync` jobs for market `JP` (every 24 hours once the JP list is stored, ADR-0068). The API Worker and the browser never call JPX; the browser only shows the earnings page URL as attribution. |
-| Code | `crates/research-finance/src/jpx.rs`, `crates/research-finance/src/jpx_directory.rs`, `crates/research-finance/src/jpx_workbook.rs`, `crates/research-finance/src/zip_reader.rs`, `crates/research-finance/src/stock_directory.rs`, `crates/research-finance/src/pacing.rs`, `crates/research-runner/src/composition.rs`, `packages/adapters/src/finance/jpxDirectory.ts`, `packages/adapters/src/finance/jpxEarnings.ts`, `packages/adapters/src/finance/jpxWorkbook.ts`, `packages/adapters/src/node/zipReader.ts`, `packages/adapters/src/finance/stockDirectory.ts`, `apps/runner/src/marketPacing.ts`, `apps/runner/src/jobExecution.ts` |
-| Official Documentation | [東証上場銘柄一覧](https://www.jpx.co.jp/markets/statistics-equities/misc/01.html), [List of TSE-listed Issues](https://www.jpx.co.jp/english/markets/statistics-equities/misc/01.html), [決算発表予定日](https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html), [Terms of Use](https://www.jpx.co.jp/english/term-of-use/index.html). JPX documents the files only by these pages; the layouts below are as observed. |
-| Last Verified | 2026-10-31, live (section 7) |
+| Usage Limits | JPX publishes no quota. Its [terms of use](https://www.jpx.co.jp/english/term-of-use/index.html) ask users to "refrain from automatic information retrieval and other operations which may lead to high-load and/or high frequency access" and prohibit "the collection of data or secondary use of information from this website for commercial purposes" without permission. Ours: every request start takes a grant from the shared pacer window `jpx` (6 starts per 60 s, shared by the directory, earnings and market-statistics refreshes); requests are sequential; at most 4 requests per directory refresh, 1 + 6 per earnings refresh or JP earnings-calendar sync (the two share one source object, so a calendar sync after a refresh is served from the caches), 1 + 10 for `jpx:SHORT_SELLING_RATIO`, and 2 + 1 + 8 shared across `jpx:MARGIN_BUYING_VALUE` and `jpx:MARGIN_RATIO`; the earnings page is cached 30 min, the three statistics pages 3 hours (`JPX_STATS_PAGE_TTL_MS`), and every schedule workbook, margin workbook and short-selling PDF by URL (section 4). |
+| Called By | Rust runner (default) and TypeScript runner (rollback): `stock-directory-refresh` jobs for market `JP` (queued by the API at claim time when the JP list is missing or 7 days old, an hour after a failed download, ADR-0054 §2), `earnings-refresh` jobs for JP watchlist stocks, `earnings-calendar-sync` jobs for market `JP` (every 24 hours once the JP list is stored, ADR-0068), and `market-refresh` jobs when a page tracks a `jpx:` series (ADR-0076). The API Worker and the browser never call JPX; the browser only shows the page URLs as attribution. |
+| Code | `crates/research-finance/src/jpx.rs`, `crates/research-finance/src/jpx_directory.rs`, `crates/research-finance/src/jpx_stats.rs`, `crates/research-finance/src/jpx_workbook.rs`, `crates/research-finance/src/zip_reader.rs`, `crates/research-finance/src/stock_directory.rs`, `crates/research-finance/src/jobs.rs`, `crates/research-finance/src/pacing.rs`, `crates/research-runner/src/composition.rs`, `packages/adapters/src/finance/jpxDirectory.ts`, `packages/adapters/src/finance/jpxEarnings.ts`, `packages/adapters/src/finance/jpxMarketStats.ts`, `packages/adapters/src/finance/jpxWorkbook.ts`, `packages/adapters/src/node/pdfText.ts`, `packages/adapters/src/node/zipReader.ts`, `packages/adapters/src/finance/stockDirectory.ts`, `packages/adapters/src/sql/unitOfWork.ts`, `apps/runner/src/marketPacing.ts`, `apps/runner/src/jobExecution.ts`, `apps/runner/src/main.ts` |
+| Official Documentation | [東証上場銘柄一覧](https://www.jpx.co.jp/markets/statistics-equities/misc/01.html), [List of TSE-listed Issues](https://www.jpx.co.jp/english/markets/statistics-equities/misc/01.html), [決算発表予定日](https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html), [空売り集計](https://www.jpx.co.jp/markets/statistics-equities/short-selling/index.html), [信用取引現在高](https://www.jpx.co.jp/markets/statistics-equities/margin/04.html), [信用取引現在高　過去推移表](https://www.jpx.co.jp/markets/statistics-equities/margin/05.html), [Terms of Use](https://www.jpx.co.jp/english/term-of-use/index.html). JPX documents the files only by these pages; the layouts below are as observed. |
+| Last Verified | 2026-11-19, live (section 7) |
 
-A JP directory refresh asks the Japanese listed-issues page for its `data_j.xlsx` link, downloads and parses that workbook, then does the same with the English page and `data_e.xlsx`; the Japanese list decides which issues are kept (Prime, Standard and Growth), the English list supplies the English names, and the result is the `stock-directory-refreshed` completion. An earnings refresh asks the schedule page for its `kessanMM_MMDD.xlsx` links (the file name carries the update date), downloads every workbook not already cached, and maps each requested code's rows inside the refresh window to earnings events. Link targets are read from the pages, never hard-coded, because the `…-att` folder can move. Workbooks are read with a bounded ZIP reader: only `xl/worksheets/sheet1.xml` and `xl/sharedStrings.xml` are inflated, and columns are located by header text.
+A JP directory refresh asks the Japanese listed-issues page for its `data_j.xlsx` link, downloads and parses that workbook, then does the same with the English page and `data_e.xlsx`; the Japanese list decides which issues are kept (Prime, Standard and Growth), the English list supplies the English names, and the result is the `stock-directory-refreshed` completion. An earnings refresh asks the schedule page for its `kessanMM_MMDD.xlsx` links (the file name carries the update date), downloads every workbook not already cached, and maps each requested code's rows inside the refresh window to earnings events. A market refresh of a `jpx:` series asks the short-selling page for its `YYMMDD-m.pdf` links (for `SHORT_SELLING_RATIO`) or pages `04.html` and `05.html` for the margin history `.xlsx` and weekly `YYYYMMDD_mtcurrent.xlsx` workbooks (shared by `MARGIN_BUYING_VALUE` and `MARGIN_RATIO`), downloads any file not cached yet, and merges the dated values into `market_observations` without replacing older history (ADR-0076 §3). Link targets are read from the pages, never hard-coded, because the `…-att` folder can move. Workbooks are read with a bounded ZIP reader: only `xl/worksheets/sheet1.xml` and `xl/sharedStrings.xml` are inflated, and columns are located by header text; short-selling PDFs are read by inflating `/FlateDecode` text streams up to 4 MiB and checking the four sales totals against their three printed percentages.
 
 ## 2. Input Parameters
 
@@ -24,7 +24,7 @@ Every request goes through the runner's safe fetcher (`packages/adapters/src/nod
 
 | Name | In | Type | Required | Default | Constraints | Description |
 |---|---|---|---|---|---|---|
-| `Accept` | header | string | No | We send `text/html` (pages) or `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` (workbooks) | Printable ASCII | What we expect; JPX serves each path in one format. |
+| `Accept` | header | string | No | We send `text/html` (pages), `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` (workbooks) or `application/pdf` (short-selling PDFs) | Printable ASCII | What we expect; JPX serves each path in one format. |
 | `User-Agent` | header | string | No | We send `stock-investigation-research/0.1 (single-owner research workspace; automated read-only fetch)` | Printable ASCII | The runner's fixed identification (`DEFAULT_USER_AGENT`). |
 | `Accept-Encoding` | header | string | No | We send `gzip` | `gzip` | JPX gzips the HTML pages; workbooks arrive as stored. |
 
@@ -59,6 +59,39 @@ No parameters besides the headers above (`Accept: text/html`). URL: `JPX_INDEX_U
 | `{folder}` | path | string | Yes | — ; read from the schedule page | `[A-Za-z0-9_-]+` (observed `tvdivq0000001ofb-att`) | Every link (document order, de-duplicated, at most 6) whose path matches `^/listing/event-schedules/financial-announcement/[A-Za-z0-9_-]+/kessan[0-9]{2}_[0-9]{4}\.xlsx$`. |
 | `MM` | path | string | Yes | — | 2 digits | The month in which the listed companies' quarter or fiscal year ended. |
 | `MMDD` | path | string | Yes | — | 4 digits | JPX's update date of the file; a new update is a new URL. The page's next-day list `kessan.xlsx` does not match and is not read. |
+
+### GET /markets/statistics-equities/short-selling/index.html
+
+No parameters besides the headers above (`Accept: text/html`). URL: `JPX_SHORT_SELLING_URL` (`packages/adapters/src/finance/jpxMarketStats.ts`, `crates/research-finance/src/jpx_stats.rs`).
+
+### GET /markets/statistics-equities/short-selling/{folder}/YYMMDD-m.pdf
+
+| Name | In | Type | Required | Default | Constraints | Description |
+|---|---|---|---|---|---|---|
+| `{folder}` | path | string | Yes | — ; read from the short-selling page | `[A-Za-z0-9_-]+` (observed `t13vrt000002q127-att`) | Every link (`Accept: application/pdf`, document order, de-duplicated, valid calendar dates only, at most 10) whose path matches `^/markets/statistics-equities/short-selling/[A-Za-z0-9_-]+/([0-9]{6})-m\.pdf$`. Sector-breakdown files (`YYMMDD-g.pdf`) do not match and are ignored. |
+| `YYMMDD` | path | string | Yes | — | 6 digits; `20YY-MM-DD` must be a valid calendar date | Trading day of the summary (`261118` → `2026-11-18`). |
+
+### GET /markets/statistics-equities/margin/04.html
+
+No parameters besides the headers above (`Accept: text/html`). URL: `JPX_MARGIN_WEEKLY_URL`.
+
+### GET /markets/statistics-equities/margin/{folder}/YYYYMMDD_mtcurrent.xlsx
+
+| Name | In | Type | Required | Default | Constraints | Description |
+|---|---|---|---|---|---|---|
+| `{folder}` | path | string | Yes | — ; read from `margin/04.html` | `[A-Za-z0-9_-]+` (observed `tvdivq0000001rk9-att`) | Every link (document order, de-duplicated, valid calendar dates only, at most 8) whose path matches `^/markets/statistics-equities/margin/[A-Za-z0-9_-]+/([0-9]{8})_mtcurrent\.xlsx$`. Companion PDF links (`_mtcurrent.pdf`) do not match. |
+| `YYYYMMDD` | path | string | Yes | — | 8 digits; `YYYY-MM-DD` must be a valid calendar date | Application date (`申込日基準`) of the weekly margin snapshot (`20261113` → `2026-11-13`). |
+
+### GET /markets/statistics-equities/margin/05.html
+
+No parameters besides the headers above (`Accept: text/html`). URL: `JPX_MARGIN_HISTORY_URL`.
+
+### GET /markets/statistics-equities/margin/{folder}/{name}.xlsx
+
+| Name | In | Type | Required | Default | Constraints | Description |
+|---|---|---|---|---|---|---|
+| `{folder}` | path | string | Yes | — ; read from `margin/05.html` | `[A-Za-z0-9_-]+` (observed `tvdivq0000001rq1-att`) | The first link whose path matches `^/markets/statistics-equities/margin/[A-Za-z0-9_-]+/[A-Za-z0-9_]+\.xlsx$`. |
+| `{name}` | path | string | Yes | — ; read from `margin/05.html` | `[A-Za-z0-9_]+` (observed `tvdivq0000015969`) | JPX's current history workbook; legacy `.xls` archives (`20260925_mtgk.xls`, `20260925_mtsk.xls`) and PDFs do not match. |
 
 ## 3. Output Parameters
 
@@ -133,6 +166,81 @@ Office Open XML workbook, about 240 kB; same caps as above. One sheet (`List`): 
 | `I` `Fiscal Year/Quarter` | string | No | No | Yes | Period kind in English (`Second quarter`), 1–80 characters. |
 | `J` `市場区分`, `K` `Market Segment` | string | No | No | No | Market segment in Japanese and English. |
 
+### GET /markets/statistics-equities/short-selling/index.html
+
+`text/html` (UTF-8, gzip), about 36 kB; read up to 1,000,000 bytes.
+
+| Field | Type | Nullable | Optional | Read | Description |
+|---|---|---|---|---|---|
+| `<a href>` | attribute | No | No | Yes | Links matching `YYMMDD-m.pdf` with a valid calendar date, in document order, de-duplicated, at most 10 (`MAX_SHORT_SELLING_FILES`; 13 were listed on 2026-11-19). Zero matching links fails the series `SOURCE_FAILED`. |
+| `<td>` date cell and `YYMMDD-g.pdf` link | text / attribute | No | No | No | Display date (`2026/11/18`) and sector-breakdown PDF. |
+| All other markup | HTML | — | — | No | Navigation, notes. |
+
+### GET /markets/statistics-equities/short-selling/{folder}/YYMMDD-m.pdf
+
+One-page PDF 1.7 (`application/pdf`), about 42 kB; download capped at 1,048,576 bytes (`MAX_SHORT_SELLING_PDF_BYTES`), total inflated `/FlateDecode` zlib stream bytes capped at 4,194,304 (`MAX_PDF_INFLATED_BYTES`). Binary font streams are dropped; in printable-ASCII content streams, literal strings inside each `BT … ET` text object are concatenated into one token (Japanese labels are CID hex strings and are ignored). A file that fails inflation cap, token counts, sum check (`|a + b + c - d| <= 3`, JPY millions rounded) or percentage check (`|p_i - 100 * x_i / d| <= 0.1`) is skipped as unparsable; zero readable files across the listed links fails the series `SOURCE_FAILED`.
+
+| Field | Type | Nullable | Optional | Read | Description |
+|---|---|---|---|---|---|
+| Header date `YYYY/MM/DD` | PDF literal token | No | Yes | No | Publication/trading date in top-right (absent on some days, e.g. `261106-m.pdf`; observation date comes from the filename). |
+| Column markers `(a)`, `(a)/(d)`, `(b)`, `(b)/(d)`, `(c)`, `(c)/(d)`, `(d)` | PDF literal tokens | No | No | No | Formula labels in the table header. |
+| Amount 1 (`実注文`, `a`) | comma-grouped integer token | No | No | Yes | First `[0-9]{1,3}(,[0-9]{3})+` token: non-short-sale trading value (JPY millions). Checked against percentage 1 and total `d`. |
+| Percentage 1 (`a/d`) | `[0-9]{1,3}\.[0-9]%` token | No | No | Yes | First percentage token; must be within `0.1` of `100 * a / d`. |
+| Amount 2 (`空売り（価格規制あり）`, `b`) | comma-grouped integer token | No | No | Yes | Second amount token: short sales subject to the price restriction (JPY millions). |
+| Percentage 2 (`b/d`) | `[0-9]{1,3}\.[0-9]%` token | No | No | Yes | Second percentage token; must be within `0.1` of `100 * b / d`. |
+| Amount 3 (`空売り（価格規制なし）`, `c`) | comma-grouped integer token | No | No | Yes | Third amount token: short sales exempt from the price restriction (JPY millions). |
+| Percentage 3 (`c/d`) | `[0-9]{1,3}\.[0-9]%` token | No | No | Yes | Third percentage token; must be within `0.1` of `100 * c / d`. |
+| Amount 4 (`合計`, `d`) | comma-grouped integer token | No | No | Yes | Fourth amount token: total auction trading value (JPY millions, `d > 0`, `|a + b + c - d| <= 3`). |
+| Japanese titles, row date and footnotes | CID hex strings `<…>` | No | No | No | Skipped by the literal-token scanner. |
+
+### GET /markets/statistics-equities/margin/04.html
+
+`text/html` (UTF-8, gzip), about 30 kB; read up to 1,000,000 bytes.
+
+| Field | Type | Nullable | Optional | Read | Description |
+|---|---|---|---|---|---|
+| `<a href>` | attribute | No | No | Yes | Links matching `YYYYMMDD_mtcurrent.xlsx` with a valid calendar date, in document order, de-duplicated, at most 8 (`MAX_MARGIN_WEEKLY_FILES`; 5 were listed on 2026-11-19). Zero matching links fails the series `SOURCE_FAILED`. |
+| `<th>` date label and `_mtcurrent.pdf` link | text / attribute | No | No | No | Application date in Japanese (`2026年11月13日申込現在`) and PDF version. |
+| All other markup | HTML | — | — | No | Navigation, tabs. |
+
+### GET /markets/statistics-equities/margin/{folder}/YYYYMMDD_mtcurrent.xlsx
+
+Office Open XML workbook, about 14 kB; same ZIP and XML caps as `data_j.xlsx`. One sheet (`Sheet1`): rows 1–3 hold Excel serial dates, row 6 holds the market group headers (`二市場 Tokyo&Nagoya` at `E6`, `東京 Tokyo` at `I6`), row 7 holds balance/change column headers, rows 8–13 break down standardized and negotiable balances, rows 14–15 hold `信用取引残高合計` (`株数Shs.` and `金額Val.`), rows 16–20 hold internal matching / JSF / non-JSF figures, and rows 22–36 hold notes. Phonetic runs (`<rPh>`) in shared strings are stripped by `readWorkbookRows`. A file whose rows before the `二市場` header lack the filename date's Excel serial or whose required headers/numbers are missing is skipped as unparsable.
+
+| Field | Type | Nullable | Optional | Read | Description |
+|---|---|---|---|---|---|
+| Rows 1–3 (`B1`, `B2`, `C2`, `B3`, `C3`) | number | No | No | Yes | Application and publication dates as Excel 1900 serials (`46339` = `2026-11-13`, `46343` = `2026-11-17`); at least one cell before the `二市場` row must equal the filename date's serial. |
+| Row 6 `二市場 Tokyo&Nagoya` (`E6`) | string | No | No | Yes | Locates the start column of the two-market block. |
+| Row 6 `東京 Tokyo` (`I6`) and columns `I`–`L` | string / number | No | No | No | Tokyo-only figures and weekly changes. |
+| Row 7 `売残高・…` (`E7`) and `買残高・…` (`G7`) | string | No | No | Yes | First `売残高…` and `買残高…` headers at or right of the `二市場` column locate `sellCol` and `buyCol`. |
+| Row 7 `前週比 Weekly change` (`F7`, `H7`) | string / number | No | No | No | Week-over-week deltas (may be negative). |
+| Rows 8–13 (`制度信用取引残高`, `一般信用取引残高`) | string / number | No | No | No | Proprietary and customer breakdowns. |
+| Row 14 `信用取引残高合計` + `株数Shs.` (`B14`, `D14`, `sellCol`, `buyCol`) | string / number | No | No | Yes | Two-market total short (`sellShares`) and long (`buyShares`) margin balances in thousand shares (non-negative integers). |
+| Row 15 `金額Val.` (`D15`, `sellCol`, `buyCol`) | string / number | No | No | Yes | Immediately follows row 14: two-market total short (`sellValue`) and long (`buyValue`) margin balances in JPY millions (contract-price basis, non-negative integers). |
+| Rows 16–36 (`社内対当`, `貸借取引残高`, `自己貸株・自己融資`, notes) | string / number | No | No | No | Supplemental breakdowns and notes. |
+
+### GET /markets/statistics-equities/margin/05.html
+
+`text/html` (UTF-8, gzip), about 29 kB; read up to 1,000,000 bytes.
+
+| Field | Type | Nullable | Optional | Read | Description |
+|---|---|---|---|---|---|
+| `<a href>` | attribute | No | No | Yes | The first `.xlsx` link matching `^/markets/statistics-equities/margin/[A-Za-z0-9_-]+/[A-Za-z0-9_]+\.xlsx$`. Missing link fails the series `SOURCE_FAILED`. |
+| PDF and `.xls` archive links | attribute | No | No | No | `tvdivq0000015980.pdf` and pre-2026-09-18 `.xls` workbooks (`20260925_mtgk.xls`, `20260925_mtsk.xls`). |
+| All other markup | HTML | — | — | No | Navigation, notes. |
+
+### GET /markets/statistics-equities/margin/{folder}/{name}.xlsx
+
+Office Open XML workbook, about 16 kB; same ZIP and XML caps as `data_j.xlsx`. One sheet (`Sheet1`): rows 1–9 are titles and multi-row headers, row 10 starts `[東京・名古屋 Tokyo & Nagoya]`, rows 11–16 hold weekly rows (6 weeks on 2026-11-19), and row 19 holds notes (a subsequent `[…]` section header in column `A`, if present, ends the two-market section).
+
+| Field | Type | Nullable | Optional | Read | Description |
+|---|---|---|---|---|---|
+| Row 7 `株数(A)` (`N7`), `金額` (`O7`), `株数(B)` (`P7`), `金額` (`Q7`) | string | No | No | Yes | Locates total short shares (`sA`), short value (`sA + 1`), long shares (`sB`) and long value (`sB + 1`). |
+| Other header rows (`1`–`6`, `8`–`9`) and columns `B`–`M`, `R`–`Z` | string / number | No | No | No | Standardized/negotiable, internal-matching, JSF and non-JSF columns and unit labels. |
+| Section row `[東京・名古屋 Tokyo & Nagoya]` (`A10`) | string | No | No | Yes | Starts reading weekly rows in column `A` until the next `[…]` label in column `A` or end of sheet. |
+| Data row `A` (`月日`) | number | No | No | Yes | Weekly application date as an Excel 1900 serial in `36526..=73050` (`2000-01-01` .. `2099-12-31`); rows outside this range (blank or note rows) are skipped. |
+| Data row `sA`, `sA + 1`, `sB`, `sB + 1` (`N`, `O`, `P`, `Q`) | number | No | No | Yes | `sellShares` (thousand shares), `sellValue` (JPY millions), `buyShares` (thousand shares), `buyValue` (JPY millions), all non-negative integers. Overridden by any weekly `YYYYMMDD_mtcurrent.xlsx` workbook for the same date. |
+
 ## 4. Error Handling
 
 ### HTTP status codes
@@ -141,14 +249,14 @@ JPX's status travels unchanged as `upstreamStatus` beside our code ([§4a](../..
 
 | Status | When the provider sends it | What our code does | Our error code |
 |---|---|---|---|
-| 200 | Page or workbook served | Parsed (section 3) | — |
-| 301, 302, 303, 307, 308 | Redirect | Followed up to 5 hops on `www.jpx.co.jp` only; another host fails the fetch | Directory `DIRECTORY_SOURCE_FAILED`; earnings `SOURCE_FAILED` |
-| 404 | File or page not found (a workbook moved after the page was read) | Stops the refresh | Directory `DIRECTORY_SOURCE_FAILED`; earnings `SOURCE_FAILED` for every requested JP stock |
-| 429 | Rate limit (never observed) | Stops the refresh | Directory `DIRECTORY_RATE_LIMITED`; earnings `SOURCE_FAILED` |
-| Other non-2xx, 5xx | Refusal or server failure | Stops the refresh | Directory `DIRECTORY_SOURCE_FAILED`; earnings `SOURCE_FAILED` |
-| — (no answer) | Timeout, network error, stopped job | Stops, `upstreamStatus` null | Directory `DIRECTORY_SOURCE_FAILED`; earnings `SOURCE_FAILED` |
+| 200 | Page, workbook or PDF served | Parsed (section 3) | — |
+| 301, 302, 303, 307, 308 | Redirect | Followed up to 5 hops on `www.jpx.co.jp` only; another host fails the fetch | Directory `DIRECTORY_SOURCE_FAILED`; earnings `SOURCE_FAILED`; market statistics `SOURCE_FAILED` |
+| 404 | File or page not found (a file moved after the page was read) | Stops the refresh (nothing cached for the failed URL) | Directory `DIRECTORY_SOURCE_FAILED`; earnings `SOURCE_FAILED` for every requested JP stock; market statistics `SOURCE_FAILED` |
+| 429 | Rate limit (never observed) | Stops the refresh | Directory `DIRECTORY_RATE_LIMITED`; earnings `SOURCE_FAILED`; market statistics `RATE_LIMITED` |
+| Other non-2xx, 5xx | Refusal or server failure | Stops the refresh | Directory `DIRECTORY_SOURCE_FAILED`; earnings `SOURCE_FAILED`; market statistics `SOURCE_FAILED` |
+| — (no answer) | Timeout, network error, stopped job, spent daily budget | Stops, `upstreamStatus` null | Directory `DIRECTORY_SOURCE_FAILED`; earnings `SOURCE_FAILED`; market statistics `RATE_LIMITED` (budget spent) or `SOURCE_FAILED` |
 
-Our own failures, with no JPX status: no matching workbook link on a listed-issues page, a workbook that is not a readable ZIP or lacks the two entries, missing headers, a bound exceeded (20,000 data rows, 100,000 shared strings, 1,000,000 cells), or fewer than 1,000 / more than 10,000 kept issues → directory `DIRECTORY_PARSE_FAILED`. For the earnings schedule a workbook that does not parse (including a header followed by data rows of which none parses) → `SOURCE_FAILED` for every requested JP stock; a code in no workbook, or with no dated row inside the window, → `NO_SCHEDULED_DATE` (which may still carry the company name). Rows that fail a row check (bad code, date, label, period key) are skipped.
+Our own failures, with no JPX status: no matching workbook link on a listed-issues page, a workbook that is not a readable ZIP or lacks the two entries, missing headers, a bound exceeded (20,000 data rows, 100,000 shared strings, 1,000,000 cells), or fewer than 1,000 / more than 10,000 kept issues → directory `DIRECTORY_PARSE_FAILED`. For the earnings schedule a workbook that does not parse (including a header followed by data rows of which none parses) → `SOURCE_FAILED` for every requested JP stock; a code in no workbook, or with no dated row inside the window, → `NO_SCHEDULED_DATE` (which may still carry the company name). Rows that fail a row check (bad code, date, label, period key) are skipped. For market statistics (`jpx:`), an individual PDF or workbook that does not parse is cached as unparsable and skipped so one bad file does not block the rest; no matching link on a required page or zero readable points across all listed files → `SOURCE_FAILED` (`upstreamStatus` null).
 
 ### Provider error codes and body
 
@@ -158,15 +266,15 @@ None: JPX answers errors with plain HTTP statuses and an HTML "ページが見�
 
 | Concern | Behaviour | Code |
 |---|---|---|
-| Timeout | Pages: 30 s, 1,000,000 bytes. Workbooks: 60 s, 4,194,304 bytes; each inflated ZIP entry at most 16,777,216 bytes. | `packages/adapters/src/finance/jpxDirectory.ts`, `packages/adapters/src/finance/jpxEarnings.ts`, `packages/adapters/src/node/zipReader.ts`, `crates/research-finance/src/zip_reader.rs` |
-| Retries | Source: none. Transport: a request that fails before any answer (connection refused, unreachable address family) is tried on the next validated DNS address, at most 3 addresses (`MAX_CONNECT_ATTEMPTS`, both runners). Rust only: a GET sent on an idle keep-alive connection that the server closed before answering is sent once more on a fresh connection. Job: a `stock-directory-refresh` job has at most 3 attempts (`MAX_JOB_ATTEMPTS`); the runner marks only `DIRECTORY_SOURCE_FAILED` retryable, and the API re-queues it while attempts remain; a rate limit or parse failure is not retried. An earnings refresh is not retried for a JPX failure: the failure is stored per stock in a completed job. | `crates/research-net/src/transport.rs`, `crates/research-net/src/pinned.rs`, `packages/adapters/src/node/index.ts`, `packages/application/src/stockDirectory.ts`, `packages/application/src/researchRuns.ts`, `packages/application/src/runnerJobs.ts`, `apps/runner/src/jobExecution.ts`, `crates/research-runner/src/job_execution.rs` |
-| Rate limit | Each request start first takes a grant from the pacer window `jpx` (6 per 60,000 ms), shared by directory and earnings refreshes; a refused grant (job stopped) sends nothing more. Requests are sequential; the Japanese workbook is parsed before the English page is asked for, so a broken list costs 2 requests, not 4. No response header is read. | `apps/runner/src/marketPacing.ts`, `crates/research-finance/src/pacing.rs` |
-| Cache | Earnings: the schedule page for 30 min, and each parsed workbook by URL for as long as the page lists that URL; cache reads take no grant. Rust holds the cache lock across the downloads, so concurrent refreshes queue. The listed-issues pages and workbooks are never cached; the stored directory is replaced on each successful refresh. | `packages/adapters/src/finance/jpxEarnings.ts`, `crates/research-finance/src/jpx.rs` |
-| Fallback | None. The Watchlist keeps the stored JP list and shows the failure code; JP stocks keep their stored earnings dates with the failure code and JPX's status. | `apps/runner/src/jobExecution.ts` |
+| Timeout | Pages: 30 s, 1,000,000 bytes. Workbooks: 60 s, 4,194,304 bytes; each inflated ZIP entry at most 16,777,216 bytes. Short-selling PDFs: 60 s, 1,048,576 bytes; total inflated `/FlateDecode` streams per PDF at most 4,194,304 bytes. | `packages/adapters/src/finance/jpxDirectory.ts`, `packages/adapters/src/finance/jpxEarnings.ts`, `packages/adapters/src/finance/jpxMarketStats.ts`, `packages/adapters/src/node/pdfText.ts`, `packages/adapters/src/node/zipReader.ts`, `crates/research-finance/src/jpx_stats.rs`, `crates/research-finance/src/zip_reader.rs` |
+| Retries | Source: none. Transport: a request that fails before any answer (connection refused, unreachable address family) is tried on the next validated DNS address, at most 3 addresses (`MAX_CONNECT_ATTEMPTS`, both runners). Rust only: a GET sent on an idle keep-alive connection that the server closed before answering is sent once more on a fresh connection. Job: a `stock-directory-refresh` job has at most 3 attempts (`MAX_JOB_ATTEMPTS`); the runner marks only `DIRECTORY_SOURCE_FAILED` retryable, and the API re-queues it while attempts remain; a rate limit or parse failure is not retried. Earnings and market-statistics refreshes are not retried for a JPX failure: the failure is stored per stock or series in a completed job. | `crates/research-net/src/transport.rs`, `crates/research-net/src/pinned.rs`, `packages/adapters/src/node/index.ts`, `packages/application/src/stockDirectory.ts`, `packages/application/src/researchRuns.ts`, `packages/application/src/runnerJobs.ts`, `apps/runner/src/jobExecution.ts`, `crates/research-runner/src/job_execution.rs` |
+| Rate limit | Each request start first takes a grant from the pacer window `jpx` (6 per 60,000 ms), shared by directory, earnings and market-statistics refreshes; a refused grant (job stopped) sends nothing more. Requests are sequential; the Japanese workbook is parsed before the English page is asked for, so a broken list costs 2 requests, not 4. No response header is read. | `apps/runner/src/marketPacing.ts`, `crates/research-finance/src/pacing.rs` |
+| Cache | Earnings: the schedule page for 30 min, and each parsed workbook by URL for as long as the page lists that URL. Market statistics: each of the three HTML pages for 3 hours (`JPX_STATS_PAGE_TTL_MS`), and each parsed PDF or workbook outcome by URL for as long as its page lists that URL. Cache reads take no grant. Rust holds its cache lock across the downloads, so concurrent refreshes queue. The listed-issues pages and workbooks are never cached; the stored directory is replaced on each successful refresh. | `packages/adapters/src/finance/jpxEarnings.ts`, `packages/adapters/src/finance/jpxMarketStats.ts`, `crates/research-finance/src/jpx.rs`, `crates/research-finance/src/jpx_stats.rs` |
+| Fallback | None. The Watchlist keeps the stored JP list and shows the failure code; JP stocks keep their stored earnings dates and `jpx:` market series keep their accumulated observations with the failure code and JPX's status. | `apps/runner/src/jobExecution.ts`, `crates/research-finance/src/jobs.rs` |
 
 ## 5. Examples
 
-All captured on 2026-10-31 with `curl -A "stock-investigation-research/0.1 (single-owner research workspace; automated read-only fetch)" -H "Accept: <type>" -H "Accept-Encoding: gzip" --compressed` (the runner's headers), nine requests 4–5 s apart; curl and both runners speak HTTP/1.1, so the status lines are as captured. A workbook response body is the binary file; its decoded cells follow it in a separate block (`readWorkbookRows` in `packages/adapters/src/finance/jpxWorkbook.ts`). The captured workbooks are not in the repository (JPX's terms); the tests rebuild a workbook from the documented cells.
+Captured on 2026-10-31 (listed issues and earnings schedule) and 2026-11-19 (short-selling and margin statistics) with `curl -A "stock-investigation-research/0.1 (single-owner research workspace; automated read-only fetch)" -H "Accept: <type>" -H "Accept-Encoding: gzip" --compressed` (the runner's headers), 4–5 s apart; curl and both runners speak HTTP/1.1, so the status lines are as captured. A workbook or PDF response body is the binary file; its decoded cells (`readWorkbookRows` in `packages/adapters/src/finance/jpxWorkbook.ts`) or text tokens (`readPdfTextTokens` in `packages/adapters/src/node/pdfText.ts`) follow it in a separate block. The captured files are not in the repository (JPX's terms); the tests rebuild a workbook or PDF from the documented contents.
 
 ### GET /markets/statistics-equities/misc/01.html
 
@@ -563,6 +671,353 @@ K2946: "Standard"
 
 Verified: live, 2026-10-31, `curl` capture decoded with `readWorkbookRows`. Sheet rows 1–5, 715 and 2946 of 2,974 kept; the empty styled cells `B1`–`K4` and all other rows omitted (`…`); numbers shown as their stored text.
 
+### GET /markets/statistics-equities/short-selling/index.html
+
+Request:
+
+```http
+GET /markets/statistics-equities/short-selling/index.html HTTP/1.1
+Host: www.jpx.co.jp
+Accept: text/html
+User-Agent: stock-investigation-research/0.1 (single-owner research workspace; automated read-only fetch)
+Accept-Encoding: gzip
+```
+
+Verified: live, 2026-11-19, `curl`.
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Encoding: gzip
+Last-Modified: Wed, 18 Nov 2026 07:39:55 GMT
+```
+
+<!-- example: jpx-short-selling-page -->
+```html
+<!-- … -->
+<title>日次集計 | 空売り集計 | 日本取引所グループ</title>
+<!-- … -->
+                <table _fixedhead="rows:1; cols:0;div-auto-size: none;" class="overtable fixedhead">
+                  <tr>
+                    <th>日付</th>
+                    <th>空売り集計</th>
+                    <th>業種別集計</th>
+                  </tr>
+                  
+                      <tr>
+                        <td class="a-center w-space">2026/11/18</td>
+                        <td class="a-center"><a href="/markets/statistics-equities/short-selling/t13vrt000002q127-att/261118-m.pdf" rel="external"><img src="/common/images/icon/icon-pdf.png" alt="PDF" title="PDF" width="18" height="18" /></a></td>
+                        <td class="a-center"><a href="/markets/statistics-equities/short-selling/t13vrt000002q127-att/261118-g.pdf" rel="external"><img src="/common/images/icon/icon-pdf.png" alt="PDF" title="PDF" width="18" height="18" /></a></td>
+                      </tr>
+                    
+                      <tr>
+                        <td class="a-center w-space">2026/11/17</td>
+                        <td class="a-center"><a href="/markets/statistics-equities/short-selling/t13vrt000002py6q-att/261117-m.pdf" rel="external"><img src="/common/images/icon/icon-pdf.png" alt="PDF" title="PDF" width="18" height="18" /></a></td>
+                        <td class="a-center"><a href="/markets/statistics-equities/short-selling/t13vrt000002py6q-att/261117-g.pdf" rel="external"><img src="/common/images/icon/icon-pdf.png" alt="PDF" title="PDF" width="18" height="18" /></a></td>
+                      </tr>
+<!-- … -->
+                </table>
+<!-- … -->
+```
+
+Verified: live, 2026-11-19, `curl`. Lines 29 and 437–455 of the 35,816-byte page kept verbatim (2 of 13 trading-day rows); the rest and other headers omitted (`<!-- … -->`).
+
+### GET /markets/statistics-equities/short-selling/{folder}/YYMMDD-m.pdf
+
+Request:
+
+```http
+GET /markets/statistics-equities/short-selling/t13vrt000002q127-att/261118-m.pdf HTTP/1.1
+Host: www.jpx.co.jp
+Accept: application/pdf
+User-Agent: stock-investigation-research/0.1 (single-owner research workspace; automated read-only fetch)
+Accept-Encoding: gzip
+```
+
+Verified: live, 2026-11-19, `curl`; the URL is a link read from the page above.
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/pdf
+Content-Length: 42069
+Last-Modified: Wed, 18 Nov 2026 07:39:55 GMT
+```
+
+```text
+<binary PDF 1.7, 42069 bytes>
+```
+
+Verified: live, 2026-11-19, `curl`. The body is the PDF file itself; it is not reproduced (JPX's copyright, section 7).
+
+**Decoded PDF literal tokens** — every text token `readPdfTextTokens` extracts from `261118-m.pdf` (`BT … ET` literal strings of the printable `/FlateDecode` content stream, one JSON string per line, in drawing order):
+
+<!-- example: jpx-short-selling-pdf -->
+```text
+"2026/11/18"
+"(a)"
+"(a)/(d)"
+"(b)"
+"(b)/(d)"
+"(c)"
+"(c)/(d)"
+"4,925,148"
+"56.3%"
+"3,012,856"
+"34.4%"
+"809,020"
+"9.2%"
+"8,747,024"
+"(d)"
+```
+
+Verified: live, 2026-11-19, `curl` capture decoded with `readPdfTextTokens`. All 15 literal tokens of the content stream kept verbatim (ratio `Math.round(((3012856 + 809020) * 1000) / 8747024) / 10 = 43.7`).
+
+### GET /markets/statistics-equities/margin/04.html
+
+Request:
+
+```http
+GET /markets/statistics-equities/margin/04.html HTTP/1.1
+Host: www.jpx.co.jp
+Accept: text/html
+User-Agent: stock-investigation-research/0.1 (single-owner research workspace; automated read-only fetch)
+Accept-Encoding: gzip
+```
+
+Verified: live, 2026-11-19, `curl`.
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Encoding: gzip
+Last-Modified: Tue, 17 Nov 2026 07:00:31 GMT
+```
+
+<!-- example: jpx-margin-weekly-page -->
+```html
+<!-- … -->
+<title>信用取引現在高 | 信用取引残高等 | 日本取引所グループ</title>
+<!-- … -->
+<div class="component-file">
+  <table width="50%">
+    
+          <tr>
+            <th width="80%">2026年11月13日申込現在</th>
+            
+                  <td width="10%" class="tb-separated"><a href="/markets/statistics-equities/margin/tvdivq0000001rk9-att/20261113_mtcurrent.xlsx" rel="external"><img src="/common/images/icon/icon-xls.png" alt="Excel" title="Excel" width="18" height="18" /></a></td>
+                
+                  <td width="10%"><a href="/markets/statistics-equities/margin/tvdivq0000001rk9-att/20261113_mtcurrent.pdf" rel="external"><img src="/common/images/icon/icon-pdf.png" alt="PDF" title="PDF" width="18" height="18" /></a></td>
+                
+          </tr>
+        
+          <tr>
+            <th width="80%">2026年11月6日申込現在</th>
+            
+                  <td width="10%" class="tb-separated"><a href="/markets/statistics-equities/margin/tvdivq0000001rk9-att/20261106_mtcurrent.xlsx" rel="external"><img src="/common/images/icon/icon-xls.png" alt="Excel" title="Excel" width="18" height="18" /></a></td>
+                
+                  <td width="10%"><a href="/markets/statistics-equities/margin/tvdivq0000001rk9-att/20261106_mtcurrent.pdf" rel="external"><img src="/common/images/icon/icon-pdf.png" alt="PDF" title="PDF" width="18" height="18" /></a></td>
+                
+          </tr>
+<!-- … -->
+  </table>
+</div>
+<!-- … -->
+```
+
+Verified: live, 2026-11-19, `curl`. Lines 29 and 450–469 of the 29,930-byte page kept verbatim (2 of 5 weekly rows); the rest and other headers omitted (`<!-- … -->`).
+
+### GET /markets/statistics-equities/margin/{folder}/YYYYMMDD_mtcurrent.xlsx
+
+Request:
+
+```http
+GET /markets/statistics-equities/margin/tvdivq0000001rk9-att/20261113_mtcurrent.xlsx HTTP/1.1
+Host: www.jpx.co.jp
+Accept: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+User-Agent: stock-investigation-research/0.1 (single-owner research workspace; automated read-only fetch)
+Accept-Encoding: gzip
+```
+
+Verified: live, 2026-11-19, `curl`; the URL is a link read from `margin/04.html`.
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+Content-Length: 13638
+Last-Modified: Tue, 17 Nov 2026 07:00:31 GMT
+```
+
+```text
+<binary XLSX (Office Open XML ZIP), 13638 bytes>
+```
+
+Verified: live, 2026-11-19, `curl`. The body is the workbook file itself; it is not reproduced (JPX's copyright, section 7).
+
+**Decoded workbook contents** — the non-empty cells `readWorkbookRows` reads from `20261113_mtcurrent.xlsx`:
+
+<!-- example: jpx-margin-weekly -->
+```text
+B1: "46339.0"
+B2: "46339.0"
+C2: "46339.0"
+B3: "46343.0"
+C3: "46343.0"
+L4: "東京証券取引所株式部 Tokyo Stock Exchange, Equities Dept."
+L5: "(単位：千株、百万円）(Unit: thou. shares, JPY mil.)"
+E6: "二市場 Tokyo&Nagoya"
+I6: "東京 Tokyo"
+E7: "売残高・\n貸株残高\nSales"
+F7: "前週比\nWeekly change"
+G7: "買残高・\n融資残高\nPurchases"
+H7: "前週比\nWeekly change"
+I7: "売残高・\n貸株残高\nSales"
+J7: "前週比\nWeekly change"
+K7: "買残高・\n融資残高\nPurchases"
+L7: "前週比\nWeekly change"
+…
+B14: "信用取引残高合計\nTotal Outstanding Margin Trading"
+D14: "株数Shs."
+E14: "356858.0"
+F14: "24439.0"
+G14: "3396354.0"
+H14: "-64338.0"
+I14: "356856.0"
+J14: "24439.0"
+K14: "3393654.0"
+L14: "-64317.0"
+D15: "金額Val."
+E15: "660000.0"
+F15: "46513.0"
+G15: "5768159.0"
+H15: "-112836.0"
+I15: "659998.0"
+J15: "46514.0"
+K15: "5764651.0"
+L15: "-112879.0"
+…
+```
+
+Verified: live, 2026-11-19, `curl` capture decoded with `readWorkbookRows`. Sheet rows 1–7 and 14–15 of 37 kept; empty styled cells and rows 8–13, 16–37 omitted (`…`).
+
+### GET /markets/statistics-equities/margin/05.html
+
+Request:
+
+```http
+GET /markets/statistics-equities/margin/05.html HTTP/1.1
+Host: www.jpx.co.jp
+Accept: text/html
+User-Agent: stock-investigation-research/0.1 (single-owner research workspace; automated read-only fetch)
+Accept-Encoding: gzip
+```
+
+Verified: live, 2026-11-19, `curl`.
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Encoding: gzip
+Last-Modified: Wed, 04 Nov 2026 07:00:30 GMT
+```
+
+<!-- example: jpx-margin-history-page -->
+```html
+<!-- … -->
+<title>信用取引現在高　過去推移表 | 信用取引残高等 | 日本取引所グループ</title>
+<!-- … -->
+<div class="component-file">
+  <table width="50%">
+    
+          <tr>
+            <th width="80%">信用取引現在高</th>
+            
+                  <td width="10%" class="tb-separated"><a href="/markets/statistics-equities/margin/tvdivq0000001rq1-att/tvdivq0000015969.xlsx" rel="external"><img src="/common/images/icon/icon-xls.png" alt="Excel" title="Excel" width="18" height="18" /></a></td>
+                
+                  <td width="10%"><a href="/markets/statistics-equities/margin/tvdivq0000001rq1-att/tvdivq0000015980.pdf" rel="external"><img src="/common/images/icon/icon-pdf.png" alt="PDF" title="PDF" width="18" height="18" /></a></td>
+                
+          </tr>
+        
+  </table>
+</div>
+<!-- … -->
+                  <td width="10%" class="tb-separated"><a href="/markets/statistics-equities/margin/tvdivq0000001rq1-att/20260925_mtgk.xls" rel="external"><img src="/common/images/icon/icon-xls.png" alt="Excel" title="Excel" width="18" height="18" /></a></td>
+<!-- … -->
+```
+
+Verified: live, 2026-11-19, `curl`. Lines 29, 451–464 and 479 of the 28,729-byte page kept verbatim; the rest and other headers omitted (`<!-- … -->`).
+
+### GET /markets/statistics-equities/margin/{folder}/{name}.xlsx
+
+Request:
+
+```http
+GET /markets/statistics-equities/margin/tvdivq0000001rq1-att/tvdivq0000015969.xlsx HTTP/1.1
+Host: www.jpx.co.jp
+Accept: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+User-Agent: stock-investigation-research/0.1 (single-owner research workspace; automated read-only fetch)
+Accept-Encoding: gzip
+```
+
+Verified: live, 2026-11-19, `curl`; the URL is the `.xlsx` link read from `margin/05.html`.
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+Content-Length: 16220
+Last-Modified: Wed, 04 Nov 2026 07:00:30 GMT
+```
+
+```text
+<binary XLSX (Office Open XML ZIP), 16220 bytes>
+```
+
+Verified: live, 2026-11-19, `curl`. The body is the workbook file itself; it is not reproduced (JPX's copyright, section 7).
+
+**Decoded workbook contents** — the cells `readWorkbookRows` reads from `tvdivq0000015969.xlsx`:
+
+<!-- example: jpx-margin-history -->
+```text
+A1: "信用取引現在高"
+Z1: "46330"
+…
+A4: "月日"
+N4: "合計 Total"
+…
+N7: "株数(A)"
+O7: "金額"
+P7: "株数(B)"
+Q7: "金額"
+…
+A10: "[東京・名古屋 Tokyo & Nagoya]"
+…
+A15: "46318"
+N15: "375064"
+O15: "688573"
+P15: "3660529"
+Q15: "6534069"
+…
+A16: "46325"
+N16: "349230"
+O16: "643859"
+P16: "3654854"
+Q16: "6505887"
+…
+```
+
+Verified: live, 2026-11-19, `curl` capture decoded with `readWorkbookRows`. Title, total-column headers (row 7), section label (row 10) and 2 of 6 weekly data rows (rows 15–16 of 19) kept; other columns (`B`–`M`, `R`–`Z`) and rows omitted (`…`).
+
 ### Error response
 
 ```http
@@ -597,21 +1052,29 @@ Verified: live, 2026-10-31, `curl` of `/markets/statistics-equities/misc/tvdivq0
 | (none) | JPX states no time of day | `EarningsEvent.timing` = `unknown` | [`earnings_events.timing`](../../database/tables/earnings_events.md) |
 | `Issue Name` | Trimmed; the first non-empty name of the code's rows; dropped when over 200 UTF-16 units; sent with events only when the stock needs a name, and always with `NO_SCHEDULED_DATE` | `EarningsData.name` | [`watchlist_stocks.name`](../../database/tables/watchlist_stocks.md) |
 | (fixed) | `EARNINGS_SOURCE_INFO.jpx` | publisher `Japan Exchange Group (JPX)`, source URL of the schedule page | [`earnings_sources.publisher`, `earnings_sources.source_url`](../../database/tables/earnings_sources.md) |
+| `YYMMDD-m.pdf` filename `YYMMDD` | `20YY-MM-DD`, checked as a real calendar date | `MarketObservationTuple[0]` (`observedOn`) of `jpx:SHORT_SELLING_RATIO` (`packages/contracts/src/market.ts`) | [`market_observations.observed_on`](../../database/tables/market_observations.md) |
+| `YYMMDD-m.pdf` amounts `b` (`空売り価格規制あり`), `c` (`空売り価格規制なし`), `d` (`合計`) | Checked against `a` and the three printed percentages; `Math.round(((b + c) * 1000) / d) / 10` | `MarketObservationTuple[1]` (`value`, `Percent`, `daily`) of `jpx:SHORT_SELLING_RATIO` | [`market_observations.value`](../../database/tables/market_observations.md) |
+| `YYYYMMDD_mtcurrent.xlsx` filename `YYYYMMDD` (verified against Excel serial above `二市場`) and `{name}.xlsx` column `A` serial | `YYYY-MM-DD` (weekly workbooks override history rows of the same date) | `MarketObservationTuple[0]` (`observedOn`) of `jpx:MARGIN_BUYING_VALUE` and `jpx:MARGIN_RATIO` | [`market_observations.observed_on`](../../database/tables/market_observations.md) |
+| `信用取引残高合計` `二市場` `買残高` `金額` (`YYYYMMDD_mtcurrent.xlsx` / history column `sB + 1`) | Non-negative integer, JPY millions (contract-price basis) | `MarketObservationTuple[1]` (`value`, `Millions of Yen`, `weekly`) of `jpx:MARGIN_BUYING_VALUE` | [`market_observations.value`](../../database/tables/market_observations.md) |
+| `信用取引残高合計` `二市場` `株数` (`buyShares` over `sellShares`, history `sB` / `sA`) | `Math.round((buyShares * 100) / sellShares) / 100` (week skipped when `sellShares === 0`) | `MarketObservationTuple[1]` (`value`, `Times`, `weekly`) of `jpx:MARGIN_RATIO` | [`market_observations.value`](../../database/tables/market_observations.md) |
+| (fixed) | `JPX_SERIES_META` (`ADR-0076 §3`: `history` always null so completions merge without replacing older dates) | `MarketSeriesMeta` (`title`, `unit`, `frequency`, publisher `Japan Exchange Group (JPX)`, `sourceUrl`) | [`market_series`](../../database/tables/market_series.md) |
 
-At most 8 events per stock are kept, dated ones first in date order, undecided ones last.
+At most 8 events per stock are kept, dated ones first in date order, undecided ones last. Each `jpx:` market series keeps up to 1,500 accumulated observations (`MARKET_LIMITS.maxStoredObservations`).
 
 ## 7. Maintenance
 
 ### Known differences between the runners
 
 - Transport: the Rust fetcher keeps a keep-alive connection pool (an address with an idle connection is tried first) and resends a GET once on a fresh connection when the pooled one was closed before answering; the TypeScript fetcher opens a fresh socket per request (`agent: false`) and never resends. Both try up to 3 validated addresses (`crates/research-net/src/pinned.rs`, `crates/research-net/src/transport.rs`, `packages/adapters/src/node/pinnedConnect.ts`, `packages/adapters/src/node/index.ts`).
-- The Rust earnings source holds its cache lock across the page and workbook downloads, so two concurrent earnings refreshes queue behind each other (recorded in `crates/research-finance/src/jpx.rs`); the TypeScript source has no lock, so two concurrent calls could each download a workbook that is not cached yet. Both send their requests one after another within a call.
+- The Rust earnings and market-statistics sources hold their cache locks across page and file downloads, so concurrent calls queue behind each other (`crates/research-finance/src/jpx.rs`, `crates/research-finance/src/jpx_stats.rs`); the TypeScript sources have no lock, though `executeMarketRefresh` / `executeEarningsRefresh` call them sequentially within a job.
 - Rust decodes workbook XML with `String::from_utf8_lossy` and strips a leading BOM; TypeScript's `TextDecoder("utf-8")` does the same.
 
 ### Open issues
 
-- JPX documents neither the workbook layouts nor the link shapes; both are as observed on 2026-10-31 and fail closed when they change (`DIRECTORY_PARSE_FAILED`, `SOURCE_FAILED`).
-- The decoded workbook contents are checked by rebuilding a real `.xlsx` from the documented cells (shared strings for text, numbers as numbers, like JPX's file) with `packages/adapters/test/zipTestUtils.ts` and parsing its bytes with `parseJpxListingWorkbook` and the whole earnings source (`packages/adapters/test/finance/jpxDocExamples.test.ts`). The captured workbooks themselves are not committed (JPX's terms), so the rebuilt file holds only the documented rows and not JPX's exact styles or ZIP layout.
+- JPX documents neither the workbook/PDF layouts nor the link shapes; all are as observed on 2026-10-31 and 2026-11-19 and fail closed when they change (`DIRECTORY_PARSE_FAILED`, `SOURCE_FAILED`).
+- JPX lists only recent statistics files (~10 trading days of short-selling PDFs, 5 weekly margin workbooks and ~6 weeks in the margin history `.xlsx`; legacy pre-2026-09-18 `.xls` binary BIFF files on `margin/05.html` are not read). Deeper history accumulates automatically across refreshes (`ADR-0076 §3`).
+- `信用評価損益率` (margin valuation gain/loss ratio) is not published by JPX and has no free downloadable source, so it is not offered (`ADR-0076 §4`).
+- The decoded workbook and PDF contents are checked by rebuilding real `.xlsx` and `.pdf` bytes from the documented cells and tokens (`packages/adapters/test/zipTestUtils.ts`, `packages/adapters/test/finance/jpxDocExamples.test.ts`) and feeding them through the TypeScript parsers and sources. The captured binary files themselves are not committed (JPX's terms).
 - The next-day list `kessan.xlsx` ("scheduled to be disclosed on" the next business day) is not read; its rows also appear in the monthly `kessanMM_MMDD.xlsx` files.
 - JPX's terms prohibit collecting data for commercial purposes without permission; this single-owner workspace uses the files for the owner's own research only.
 
@@ -622,4 +1085,5 @@ At most 8 events per stock are kept, dated ones first in date order, undecided o
 | 2026-10-13 | live | Earnings schedule page links and workbook layout (`earningsLive.test.ts`) | Earnings implementation (ADR-0016) |
 | 2026-10-24 | live | Listed-issues pages, `data_j.xlsx` / `data_e.xlsx` layout, 3,707 kept issues | Directory implementation (ADR-0034) |
 | 2026-11-03 | code | `earnings-calendar-sync` reads the same index page and workbooks as `earnings-refresh` (no new request); all rows kept as calendar events (`jpxCalendarEvents`) | Claude (ADR-0068) |
-| 2026-10-31 | live | All six endpoints (3 pages, 3 workbooks) and one 404; link discovery by `extractJpxListingUrl` / `extractJpxWorkbookUrls` on the captured pages; the captured workbooks through `parseJpxListingWorkbook` (4,440 issues per language, 3,700 kept, `asOf` 2026-09-30) and `parseJpxWorkbook` (2,961 rows, 21 undecided); terms of use | Claude (external API documents, ADR-0047) |
+| 2026-10-31 | live | Six directory/earnings endpoints (3 pages, 3 workbooks) and one 404; link discovery by `extractJpxListingUrl` / `extractJpxWorkbookUrls` on the captured pages; the captured workbooks through `parseJpxListingWorkbook` (4,440 issues per language, 3,700 kept, `asOf` 2026-09-30) and `parseJpxWorkbook` (2,961 rows, 21 undecided); terms of use | Claude (external API documents, ADR-0047) |
+| 2026-11-19 | live | Six market-statistics endpoints (`short-selling/index.html`, 4 `YYMMDD-m.pdf` files, `margin/04.html`, 2 `YYYYMMDD_mtcurrent.xlsx` files, `margin/05.html`, `tvdivq0000015969.xlsx`); byte-for-byte agreement between TypeScript (`jpxMarketStats.ts`) and Rust (`jpx_stats.rs`) on all captures (`261118-m.pdf` → 43.7%, `20261113_mtcurrent.xlsx` → 5,768,159百万円 / 9.52x, `tvdivq0000015969.xlsx` → 6 weeks) | ADR-0076 implementation |
