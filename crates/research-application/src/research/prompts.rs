@@ -1,4 +1,4 @@
-//! Byte-identical research-v10 prompt builders (SEC-001, AGT-007).
+//! Byte-identical research-v11 prompt builders (SEC-001, AGT-007).
 use research_agent_core::{
 	model_text::{EmptyFenceToken, fence_untrusted_text},
 	tools::ToolMeta,
@@ -10,11 +10,15 @@ use research_contracts::jobs::{
 use research_js::{number::to_js_string, utf16};
 
 /// Prompt provenance version.
-pub const PROMPT_VERSION: &str = "research-v10";
+pub const PROMPT_VERSION: &str = "research-v11";
 /// Maximum planning prompt bytes, including all fences and fixed sections.
 pub const PLANNING_PROMPT_BUDGET_BYTES: usize = 76_000;
 /// Reminder after an empty plan, copied verbatim from the TypeScript builder.
 pub const PLANNING_REMINDER: &str = "Nothing has been collected yet. Request at least one tool call; if no subscribed source fits, search.";
+/// Sent on the next planning round when every call in a round was dropped as a repeat.
+pub const PLANNING_REPEAT_NOTE: &str = "Your last request repeated an earlier call and its result is above; request the candidates' financials by ticker (kind \"financials\", query \"<ticker> 純利益\"), a different theme term, or web.search.";
+/// Attached to the round just before the final one when no citeable evidence has been collected and web.search is still untried.
+pub const PLANNING_SEARCH_BEFORE_FINAL_NOTE: &str = "One round remains after this one; if stored records gave no citeable evidence, request web.search now so its leads can be opened in the final round.";
 /// Attached to the last planning round's prompt (ADR-0078): no round follows
 /// to open search results, so the pipeline skips search requests there.
 pub const PLANNING_FINAL_ROUND_NOTE: &str = "This is the final collection round. Search results can no longer be opened, so web.search and news.search will not run: request only tools that return citeable evidence, such as reading the most relevant original pages from the leads already found or stored records.";

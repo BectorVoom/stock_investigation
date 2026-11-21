@@ -18,7 +18,12 @@ import {
 	type ResearchPipelineInput,
 	runResearchPipeline,
 } from "../src/index.ts";
-import { PLANNING_FINAL_ROUND_NOTE, PLANNING_ROUTING_NOTE } from "../src/research/prompts.ts";
+import {
+	PLANNING_FINAL_ROUND_NOTE,
+	PLANNING_REPEAT_NOTE,
+	PLANNING_ROUTING_NOTE,
+	PLANNING_SEARCH_BEFORE_FINAL_NOTE,
+} from "../src/research/prompts.ts";
 import {
 	ARTICLE_TEXT,
 	analysis,
@@ -133,7 +138,7 @@ describe("research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)", () =>
 		]);
 		expect(bundle.provenance).toMatchObject({
 			agentId: "scripted",
-			promptVersion: "research-v10",
+			promptVersion: "research-v11",
 			toolVersions: { "news.fetch_feed": "1" },
 		});
 		expect(bundle.evidence.map((item) => item.evidenceId)).toEqual([EV1]);
@@ -1832,7 +1837,7 @@ describe("research pipeline: a question that needs no research is answered direc
 			answerClaimIds: [],
 			datasets: [],
 			verificationStatus: "unverified",
-			provenance: { promptVersion: "research-v10" },
+			provenance: { promptVersion: "research-v11" },
 		});
 		expect(bundle.answerText).toBe(
 			`${ANSWER}\n\nこの回答は調査を行わず、AI モデルの一般知識から書かれています。出典との照合は行っていません。投資助言ではありません。`,
@@ -2727,4 +2732,182 @@ it("keeps context-only candidate leads in round-3 planning digests without turni
 	expect(verificationPromptText).not.toContain("lead (no evidence)");
 	expect(outcome.bundle.evidence.map((item) => item.evidenceId)).toEqual([EV1]);
 	expect(checkBundleIntegrity(RUN_ID, outcome.bundle)).toEqual([]);
+});
+
+describe("stock screening repeat and pre-final search guidance", () => {
+	function screeningTools() {
+		const baseTools = newsTools();
+		const stockTool = defineTool({
+			toolId: "stocks.search",
+			version: "1.1.0",
+			description: "Search stored stock records.",
+			argsHint: '{"query": string, "kind"?: "company" | "financials" | "news", "limit"?: number}',
+			argsSchema: z.object({
+				query: z.string(),
+				kind: z.enum(["company", "financials", "news"]).optional(),
+				limit: z.number().int().optional(),
+			}),
+			timeoutMs: 5_000,
+			permission: "research-read",
+			costCategory: "free",
+			sideEffect: "none",
+			networkAllowlist: { kind: "none" },
+			async execute(args, context) {
+				if (args.kind === "financials") {
+					const passage =
+						"Stored source metadata:\nTitle: JP:7018 Synthetic Zosen profit attributable to owners 親会社株主に帰属する当期純利益 net income\nPublisher: J-Quants\nPublished at: 2026-05-08T00:00:00Z\nRetrieved at: 2026-11-05T00:00:00Z\nEffective at: 2025-03-31T00:00:00Z\n\nPassage:\nmetric=profit-attributable-to-owners; fiscalYear=2025; value=4200000000; currency=JPY; unit=base currency units; scope=consolidated";
+					const id = context.nextId("ev");
+					return ok({
+						...EMPTY_TOOL_OUTPUT,
+						modelText: passage,
+						evidence: [
+							{
+								evidence: {
+									evidenceId: id,
+									sourceUrl: "https://api.jquants.com/v2/fins/summary?code=70180",
+									title: "JP:7018 Synthetic Zosen profit attributable to owners",
+									publisher: "J-Quants",
+									publishedAt: "2026-05-08T00:00:00Z",
+									retrievedAt: "2026-11-05T00:00:00Z",
+									effectiveAt: "2025-03-31T00:00:00Z",
+									excerpt: null,
+									checksum: "c".repeat(64),
+									sourceClass: "regulatory-filing",
+								},
+								retrievedText: passage,
+								retainQuotes: false,
+							},
+						],
+					});
+				}
+				return ok({
+					...EMPTY_TOOL_OUTPUT,
+					modelText:
+						'{"reference":"Context only; no citeable evidence","kind":"company","recordId":"JP:7018","title":"JP:7018 合成造船 (Synthetic Zosen) AI-written company overview","snippet":"造船"}',
+					planningLeads: [
+						"lead (no evidence): JP:7018 合成造船 (Synthetic Zosen) AI-written company overview",
+					],
+				});
+			},
+		});
+		const webSearchTool = defineTool({
+			toolId: "web.search",
+			version: "2.0.0",
+			description: "Search the public web.",
+			argsHint: '{"query": string}',
+			argsSchema: z.object({ query: z.string() }),
+			timeoutMs: 5_000,
+			permission: "research-read",
+			costCategory: "metered",
+			sideEffect: "external-read",
+			networkAllowlist: { kind: "public-web" },
+			async execute() {
+				return ok({ ...EMPTY_TOOL_OUTPUT, modelText: "leads" });
+			},
+		});
+		return {
+			...baseTools,
+			registry: createToolRegistry([...baseTools.registry.list(), stockTool, webSearchTool]),
+		};
+	}
+
+	it("sends pre-final search and repeat notes and reports the no-evidence 3-round note when the planner still stalls", async () => {
+		const companyPlan = JSON.stringify({
+			toolCalls: [{ toolId: "stocks.search", args: { query: "造船", kind: "company", limit: 12 } }],
+			done: false,
+		});
+		const finalWebPlan = JSON.stringify({
+			toolCalls: [{ toolId: "web.search", args: { query: "日本の造船会社 純利益率 高い" } }],
+			done: false,
+		});
+		const { run, agent, reporter } = setup([companyPlan, companyPlan, finalWebPlan], {
+			tools: screeningTools(),
+			input: {
+				request: request({
+					question: "造船で純利益率が高い日本の銘柄を調査してください",
+					webAccess: "public-web",
+					budget: { ...request().budget, maxAgentSteps: 10 },
+				}),
+			},
+		});
+		const outcome = await run();
+		expect(outcome).toMatchObject({
+			kind: "failed",
+			failureCode: "NO_EVIDENCE_COLLECTED",
+			failureDetail: "TOOLS_RETURNED_NOTHING",
+		});
+		// Round 2 (before round 3) gets the pre-final web.search note; Round 3 gets the repeat + final-round notes.
+		expect(agent.requests[1]?.prompt).toContain(PLANNING_SEARCH_BEFORE_FINAL_NOTE);
+		expect(agent.requests[1]?.prompt).not.toContain(PLANNING_REPEAT_NOTE);
+		expect(agent.requests[2]?.prompt).toContain(PLANNING_REPEAT_NOTE);
+		expect(agent.requests[2]?.prompt).toContain(PLANNING_FINAL_ROUND_NOTE);
+		expect(agent.requests[2]?.prompt).toContain("lead (no evidence): JP:7018 合成造船");
+		expect(reporter.recorded.tools).toContainEqual({
+			toolId: "stocks.search",
+			outcome: "denied",
+			detail: "REPEATED_REQUEST",
+		});
+		expect(reporter.recorded.tools).toContainEqual({
+			toolId: "web.search",
+			outcome: "denied",
+			detail: "FINAL_ROUND_NO_SEARCH",
+		});
+		expect(reporter.recorded.notes).toContain(
+			"Collection ended after three planning rounds without citeable evidence.",
+		);
+		expect(reporter.recorded.notes).not.toContain(
+			"Collection stopped after three planning rounds.",
+		);
+	});
+
+	it("reaches analysis with J-Quants evidence when a planner follows the repeat note to request candidate financials", async () => {
+		const companyPlan = JSON.stringify({
+			toolCalls: [{ toolId: "stocks.search", args: { query: "造船", kind: "company", limit: 12 } }],
+			done: false,
+		});
+		const financialsPlan = JSON.stringify({
+			toolCalls: [{ toolId: "stocks.search", args: { query: "7018 純利益", kind: "financials" } }],
+			done: true,
+		});
+		const draft = JSON.stringify({
+			claims: [
+				{
+					text: "JP:7018の2025年度の親会社株主に帰属する当期純利益は4200000000円であった。",
+					claimType: "observation",
+					evidence: [
+						{
+							evidenceId: EV1,
+							relation: "supports",
+							quote: "Title: JP:7018 Synthetic Zosen profit attributable to owners",
+						},
+						{
+							evidenceId: EV1,
+							relation: "supports",
+							quote: "fiscalYear=2025; value=4200000000; currency=JPY",
+						},
+					],
+				},
+			],
+		});
+		const { run, agent } = setup(
+			[companyPlan, companyPlan, financialsPlan, draft, VERDICT_SUPPORTED],
+			{
+				tools: screeningTools(),
+				input: {
+					request: request({
+						question: "造船で純利益率が高い日本の銘柄を調査してください",
+						webAccess: "public-web",
+						budget: { ...request().budget, maxAgentSteps: 10 },
+					}),
+				},
+			},
+		);
+		const outcome = expectBundle(await run());
+		expect(agent.requests[2]?.prompt).toContain(PLANNING_REPEAT_NOTE);
+		expect(outcome.bundle.evidence[0]).toMatchObject({
+			evidenceId: EV1,
+			publisher: "J-Quants",
+		});
+		expect(outcome.bundle.claims[0]).toMatchObject({ status: "supported" });
+	});
 });

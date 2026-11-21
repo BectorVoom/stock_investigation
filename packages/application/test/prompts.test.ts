@@ -5,7 +5,9 @@ import {
 	analysisPrompt,
 	directAnswerPrompt,
 	PLANNING_REMINDER,
+	PLANNING_REPEAT_NOTE,
 	PLANNING_ROUTING_NOTE,
+	PLANNING_SEARCH_BEFORE_FINAL_NOTE,
 	PLANNING_SOURCES_MAX_BYTES,
 	PROMPT_VERSION,
 	planningPrompt,
@@ -40,7 +42,7 @@ function planPrompt(args: Partial<Parameters<typeof planningPrompt>[0]>): string
 
 describe("conversation context in prompts (AGT-007)", () => {
 	it("bumps the prompt version", () => {
-		expect(PROMPT_VERSION).toBe("research-v10");
+		expect(PROMPT_VERSION).toBe("research-v11");
 	});
 
 	it("adds the context block to the planning prompt right after the question", () => {
@@ -354,5 +356,17 @@ describe("demand source selection", () => {
 		expect(prompt).toContain("METI shipments/inventories");
 		expect(prompt).toContain("orders net of cancellations");
 		expect(prompt).toContain("never infer demand growth from headline counts");
+	});
+
+	it("tells stock screening not to repeat a theme search and surfaces repeat/search reminders", () => {
+		const prompt = planPrompt({
+			reminder: `${PLANNING_REPEAT_NOTE} ${PLANNING_SEARCH_BEFORE_FINAL_NOTE}`,
+		});
+		expect(prompt).toContain(
+			"A theme search lists candidates only; do not repeat it; next, request the relevant candidates' financials by ticker.",
+		);
+		expect(prompt).toContain(PLANNING_REPEAT_NOTE);
+		expect(prompt).toContain(PLANNING_SEARCH_BEFORE_FINAL_NOTE);
+		expect(promptBytes(prompt)).toBeLessThanOrEqual(PLANNING_PROMPT_BUDGET_BYTES);
 	});
 });

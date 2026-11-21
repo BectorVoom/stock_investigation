@@ -16,8 +16,8 @@ use self::{
 	draft::parse_draft,
 	prompts::{
 		AnalysisPromptInput, PLANNING_FINAL_ROUND_NOTE, PLANNING_PROMPT_BUDGET_BYTES,
-		PLANNING_REMINDER, PlanningPromptInput, analysis_prompt, planning_prompt,
-		verification_prompt,
+		PLANNING_REMINDER, PLANNING_REPEAT_NOTE, PLANNING_SEARCH_BEFORE_FINAL_NOTE,
+		PlanningPromptInput, analysis_prompt, planning_prompt, verification_prompt,
 	},
 	turn::{Session, TurnFailure},
 	value::*,
@@ -376,7 +376,7 @@ pub async fn run_research_pipeline(
 		mut invalid_plans,
 	) = (0u64, 0u64, 0u64, 0u64, 0u64, 0u64);
 	let mut reminder_sent = false;
-	let mut reminder = None;
+	let mut reminder: Option<&str> = None;
 	let mut reached_collecting = false;
 	let mut tool_errors = HashMap::<String, u64>::new();
 	// Per tool error code: each upstream status seen, how often and the index
@@ -387,11 +387,16 @@ pub async fn run_research_pipeline(
 	let mut collection_limit_reached = false;
 	let mut search_cooldown_encountered = false;
 	let mut found_search_leads = false;
+	let mut web_search_requested = false;
 	'collection: for step in 0..collection_steps {
 		if step >= 3 {
 			collection_limit_reached = true;
 			deps.reporter
-				.note("Collection stopped after three planning rounds.")
+				.note(if collected.evidence.is_empty() {
+					"Collection ended after three planning rounds without citeable evidence."
+				} else {
+					"Collection stopped after three planning rounds."
+				})
 				.await;
 			break;
 		}
@@ -407,30 +412,37 @@ pub async fn run_research_pipeline(
 			.cloned()
 			.collect();
 		let pending_reminder = reminder.take();
-		let search_guidance =
-			(!permitted_ids.contains("web.fetch_page") && permitted_ids.contains("stocks.search"))
-				.then(|| {
-					let guidance = if permitted_ids.contains("web.extract") { "Use web.search for discovery and web.extract to read relevant original pages. For news.search, use keywords of at least three characters, e.g. artificial intelligence. Use the exact company name alone when searching stored records before adding topic terms. A general feed is a recent snapshot. Use only sources relevant to the requested company and state when evidence is missing." } else { "Use web.search for discovery when listed. Direct page fetching is unavailable. Use listed stored-record, subscribed-feed, or official-data tools to collect citeable evidence, and disclose remaining gaps." };
-					match pending_reminder {
-						Some(note) => format!("{guidance} {note}"),
-						None => guidance.to_owned(),
-					}
-				});
 		// No round follows the last one to open search results (ADR-0078).
 		let final_round = step + 1 >= collection_steps.min(3);
+		let search_before_final = !final_round
+			&& step + 2 == collection_steps.min(3)
+			&& collected.evidence.is_empty()
+			&& permitted_ids.contains("web.search")
+			&& !unavailable_tools.contains("web.search")
+			&& !web_search_requested;
 		// ADR-0079: only the first round, before anything was collected, may
 		// decide that the question needs no research. A news task always researches.
 		let routing_round = step == 0
 			&& entries.is_empty()
 			&& input.request.output_type
 				!= Some(research_contracts::jobs::ResearchOutputType::News);
-		let round_reminder = search_guidance.as_deref().or(pending_reminder);
-		let final_reminder = final_round.then(|| {
-			round_reminder.map_or_else(
-				|| PLANNING_FINAL_ROUND_NOTE.to_owned(),
-				|note| format!("{note} {PLANNING_FINAL_ROUND_NOTE}"),
-			)
-		});
+		let mut reminder_parts: Vec<&str> = Vec::new();
+		if !permitted_ids.contains("web.fetch_page") && permitted_ids.contains("stocks.search") {
+			reminder_parts.push(if permitted_ids.contains("web.extract") {
+				"Use web.search for discovery and web.extract to read relevant original pages. For news.search, use keywords of at least three characters, e.g. artificial intelligence. Use the exact company name alone when searching stored records before adding topic terms. A general feed is a recent snapshot. Use only sources relevant to the requested company and state when evidence is missing."
+			} else {
+				"Use web.search for discovery when listed. Direct page fetching is unavailable. Use listed stored-record, subscribed-feed, or official-data tools to collect citeable evidence, and disclose remaining gaps."
+			});
+		}
+		if let Some(note) = pending_reminder.filter(|note| !note.is_empty()) {
+			reminder_parts.push(note);
+		}
+		if final_round {
+			reminder_parts.push(PLANNING_FINAL_ROUND_NOTE);
+		} else if search_before_final {
+			reminder_parts.push(PLANNING_SEARCH_BEFORE_FINAL_NOTE);
+		}
+		let combined_reminder = (!reminder_parts.is_empty()).then(|| reminder_parts.join(" "));
 		let prompt = planning_prompt(PlanningPromptInput {
 			request: &input.request,
 			now_iso: &deps.clock.now_iso(),
@@ -441,7 +453,7 @@ pub async fn run_research_pipeline(
 			conversation_context: &input.conversation_context,
 			fence_token: &(deps.new_fence_token)(),
 			prompt_budget_bytes: PLANNING_PROMPT_BUDGET_BYTES,
-			reminder: final_reminder.as_deref().or(round_reminder),
+			reminder: combined_reminder.as_deref(),
 			routing: routing_round,
 		})?;
 		if prompt.len() > PLANNING_PROMPT_BUDGET_BYTES {
@@ -518,6 +530,9 @@ pub async fn run_research_pipeline(
 		calls.truncate(8);
 		valid_plans += 1;
 		requested += u64::try_from(calls.len()).unwrap_or(u64::MAX);
+		if calls.iter().any(|call| call.tool_id == "web.search") {
+			web_search_requested = true;
+		}
 		if routing_round
 			&& calls.is_empty()
 			&& plan
@@ -545,6 +560,7 @@ pub async fn run_research_pipeline(
 		// Batch consecutive page reads or stock and SEC financial reads.
 		// Authorization, de-duplication, final-round rules, and budgets are
 		// checked in plan order, and results are recorded in that order.
+		let mut repeated_in_round = 0usize;
 		let mut call_index = 0;
 		while call_index < calls.len() {
 			let mut batch_end = call_index + 1;
@@ -622,10 +638,22 @@ pub async fn run_research_pipeline(
 					call.tool_id,
 					research_js::json::stringify(&authorized.args)
 				);
-				if completed_requests.contains(&request_key)
-					|| batch_keys.contains(&request_key)
-					|| unavailable_tools.contains(&call.tool_id)
-				{
+				if completed_requests.contains(&request_key) || batch_keys.contains(&request_key) {
+					repeated_in_round += 1;
+					deps.reporter
+						.tool(&label, ToolCallOutcome::Denied, "REPEATED_REQUEST")
+						.await;
+					let note = format!(
+						"Tool {label} was not repeated; use its earlier result or another tool."
+					);
+					entries.push(CollectedEntry {
+						step,
+						full_text: note.clone(),
+						digest_lines: vec![note],
+					});
+					continue;
+				}
+				if unavailable_tools.contains(&call.tool_id) {
 					let note = format!(
 						"Tool {label} was not repeated; use its earlier result or another tool."
 					);
@@ -788,6 +816,12 @@ pub async fn run_research_pipeline(
 			}
 		}
 		deps.reporter.usage(&session.usage).await;
+		if !calls.is_empty() && repeated_in_round == calls.len() {
+			reminder = Some(PLANNING_REPEAT_NOTE);
+			if collected.evidence.is_empty() {
+				continue;
+			}
+		}
 		// The done flag was chosen before the planner saw the cooldown.
 		if search_cooldown_encountered && collected.evidence.is_empty() {
 			reminder = Some(

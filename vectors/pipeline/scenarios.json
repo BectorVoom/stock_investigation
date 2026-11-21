@@ -399,7 +399,15 @@
 		{
 			"name": "/keeps context-only candidate leads in round-3 planning digests without turning them into evidence or sources",
 			"runs": 1
+		},
+		{
+			"name": "/stock screening repeat and pre-final search guidance/sends pre-final search and repeat notes and reports the no-evidence 3-round note when the planner still stalls",
+			"runs": 1
+		},
+		{
+			"name": "/stock screening repeat and pre-final search guidance/reaches analysis with J-Quants evidence when a planner follows the repeat note to request candidate financials",
+			"runs": 1
 		}
 	],
-	"handWrittenRuns": 111
+	"handWrittenRuns": 113
 }

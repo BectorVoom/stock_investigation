@@ -72,6 +72,8 @@ import {
 	PLANNING_CONTEXT_MAX_BYTES,
 	PLANNING_FINAL_ROUND_NOTE,
 	PLANNING_REMINDER,
+	PLANNING_REPEAT_NOTE,
+	PLANNING_SEARCH_BEFORE_FINAL_NOTE,
 	PLANNING_SOURCES_MAX_BYTES,
 	PLANNING_TOOL_CATALOG_MAX_BYTES,
 	PROMPT_VERSION,
@@ -727,19 +729,31 @@ export async function runResearchPipeline(
 	let collectionLimitReached = false;
 	let searchCooldownEncountered = false;
 	let foundSearchLeads = false;
+	let webSearchRequested = false;
 
 	collection: for (let step = 0; step < collectionSteps; step += 1) {
 		// Spend the remaining model turns on analysis and verification instead
 		// of an open-ended search for more sources.
 		if (step >= 3) {
 			collectionLimitReached = true;
-			await deps.reporter.note("Collection stopped after three planning rounds.");
+			await deps.reporter.note(
+				collected.evidence.length === 0
+					? "Collection ended after three planning rounds without citeable evidence."
+					: "Collection stopped after three planning rounds.",
+			);
 			break;
 		}
 		const remainingToolCalls = budget.maxToolCalls - usage.toolCalls;
 		if (remainingToolCalls <= 0) break;
 		// No round follows the last one to open search results (ADR-0078).
 		const finalRound = step + 1 >= Math.min(collectionSteps, 3);
+		const searchBeforeFinal =
+			!finalRound &&
+			step + 2 === Math.min(collectionSteps, 3) &&
+			collected.evidence.length === 0 &&
+			permittedToolIds.has("web.search") &&
+			!unavailableTools.has("web.search") &&
+			!webSearchRequested;
 		// ADR-0079: only the first round, before anything was collected, may
 		// decide that the question needs no research. A news task always researches.
 		const routingRound =
@@ -755,6 +769,11 @@ export async function runResearchPipeline(
 						.filter(Boolean)
 						.join(" ")
 				: reminderPending;
+		const stageNote = finalRound
+			? PLANNING_FINAL_ROUND_NOTE
+			: searchBeforeFinal
+				? PLANNING_SEARCH_BEFORE_FINAL_NOTE
+				: null;
 		const prompt = planningPrompt({
 			request,
 			nowIso: deps.clock.nowIso(),
@@ -766,9 +785,7 @@ export async function runResearchPipeline(
 			fenceToken: deps.newFenceToken(),
 			promptBudgetBytes: PLANNING_PROMPT_BUDGET_BYTES,
 			routing: routingRound,
-			reminder: finalRound
-				? [roundReminder, PLANNING_FINAL_ROUND_NOTE].filter(Boolean).join(" ")
-				: roundReminder,
+			reminder: [roundReminder, stageNote].filter(Boolean).join(" ") || null,
 		});
 		// The reminder is consumed by the prompt it was attached to.
 		reminderPending = null;
@@ -827,6 +844,9 @@ export async function runResearchPipeline(
 		);
 		validPlanCount += 1;
 		requestedToolCalls += calls.length;
+		if (calls.some((call) => call.toolId === "web.search")) {
+			webSearchRequested = true;
+		}
 		if (routingRound && calls.length === 0 && plan.needsResearch === false) {
 			return answerDirectly();
 		}
@@ -852,6 +872,7 @@ export async function runResearchPipeline(
 		// Batch consecutive page reads or stock and SEC financial reads.
 		// Authorization, de-duplication, final-round rules, and budgets are
 		// checked in plan order, and results are recorded in that order.
+		let repeatedInRound = 0;
 		let callIndex = 0;
 		while (callIndex < calls.length) {
 			let batchEnd = callIndex + 1;
@@ -904,11 +925,14 @@ export async function runResearchPipeline(
 					continue;
 				}
 				const requestKey = `${call.toolId}\n${JSON.stringify(authorized.value.args)}`;
-				if (
-					completedRequests.has(requestKey) ||
-					batchKeys.has(requestKey) ||
-					unavailableTools.has(call.toolId)
-				) {
+				if (completedRequests.has(requestKey) || batchKeys.has(requestKey)) {
+					repeatedInRound += 1;
+					await deps.reporter.tool(label, "denied", "REPEATED_REQUEST");
+					const note = `Tool ${label} was not repeated; use its earlier result or another tool.`;
+					collected.entries.push({ step, fullText: note, digestLines: [note] });
+					continue;
+				}
+				if (unavailableTools.has(call.toolId)) {
 					const note = `Tool ${label} was not repeated; use its earlier result or another tool.`;
 					collected.entries.push({ step, fullText: note, digestLines: [note] });
 					continue;
@@ -1018,6 +1042,10 @@ export async function runResearchPipeline(
 			if (stopAfterBatch) break collection;
 		}
 		await deps.reporter.usage(usage);
+		if (calls.length > 0 && repeatedInRound === calls.length) {
+			reminderPending = PLANNING_REPEAT_NOTE;
+			if (collected.evidence.length === 0) continue;
+		}
 		// A plan's done flag predates its tool results. A paused search with
 		// no evidence needs another plan, rather than immediate failure.
 		if (searchCooldownEncountered && collected.evidence.length === 0) {

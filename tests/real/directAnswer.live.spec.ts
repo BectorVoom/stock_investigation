@@ -269,7 +269,7 @@ test("a research question still researches, and a diagram follow-up is answered 
 	).toBe(true);
 	expect(direct.usage.agentSteps).toBe(2);
 	expect(direct.verificationStatus).toBe("unverified");
-	expect(direct.provenance?.promptVersion).toBe("research-v10");
+	expect(direct.provenance?.promptVersion).toBe("research-v11");
 	const conversation = conversationResponseSchema.parse(
 		await api(`/workspaces/${workspaceId}/messages`),
 	);

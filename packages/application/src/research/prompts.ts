@@ -10,11 +10,19 @@ import { MAX_TOOL_CALLS_PER_REPLY } from "./draft.ts";
 import { NEWS_SENTENCE_FORMAT } from "./newsSentenceFormat.ts";
 
 /** Bump when any prompt text changes; stored with every run for reproducibility (AGT-010). */
-export const PROMPT_VERSION = "research-v10";
+export const PROMPT_VERSION = "research-v11";
 
 /** One planning retry note (ADR-0025): sent once when the first plan asks for no tools. */
 export const PLANNING_REMINDER =
 	"Nothing has been collected yet. Request at least one tool call; if no subscribed source fits, search.";
+
+/** Sent on the next planning round when every call in a round was dropped as a repeat. */
+export const PLANNING_REPEAT_NOTE =
+	'Your last request repeated an earlier call and its result is above; request the candidates\' financials by ticker (kind "financials", query "<ticker> 純利益"), a different theme term, or web.search.';
+
+/** Attached to the round just before the final one when no citeable evidence has been collected and web.search is still untried. */
+export const PLANNING_SEARCH_BEFORE_FINAL_NOTE =
+	"One round remains after this one; if stored records gave no citeable evidence, request web.search now so its leads can be opened in the final round.";
 
 /**
  * Attached to the last planning round's prompt (ADR-0078): no round follows to
@@ -159,7 +167,7 @@ Collected so far:
 
 ${routing ? `${PLANNING_ROUTING_NOTE}\n` : ""}Decide what evidence is still needed, including evidence that could CONTRADICT the emerging thesis.
 While nothing has been collected, return at least one tool call: done with no calls is only for when evidence has been collected or every listed tool has been tried.
-For stock screening, use stocks.search in stages: first discover candidates with short theme terms (try Japanese and English variants separately, kind "company"), then retrieve each candidate's financials with stocks.search (kind "financials", query "<ticker> 純利益" or "<ticker> profit attributable to owners" only, with no extra words like 通期, 年度, years or percentages; do not call external SEC tools when screening stored records). Its search is literal all-term matching, not a numeric filter; fetch the latest two comparable annual fiscal years per candidate with a sufficient limit. Request missing periods before setting done=true. AI-written themes identify candidates only; verify thematic exposure from source passages or fetch a referenced primary page. A search miss or missing period is not proof that no stock qualifies. State the screened subset and data gaps; do not claim market-wide coverage from a limited search.
+For stock screening, use stocks.search in stages: first discover candidates with short theme terms (try Japanese and English variants separately, kind "company"), then retrieve each candidate's financials with stocks.search (kind "financials", query "<ticker> 純利益" or "<ticker> profit attributable to owners" only, with no extra words like 通期, 年度, years or percentages; do not call external SEC tools when screening stored records). A theme search lists candidates only; do not repeat it; next, request the relevant candidates' financials by ticker. Its search is literal all-term matching, not a numeric filter; fetch the latest two comparable annual fiscal years per candidate with a sufficient limit. Request missing periods before setting done=true. AI-written themes identify candidates only; verify thematic exposure from source passages or fetch a referenced primary page. A search miss or missing period is not proof that no stock qualifies. State the screened subset and data gaps; do not claim market-wide coverage from a limited search.
 For demand research, prioritize primary measures of orders net of cancellations, shipments, inventories, consumption and customer spending. Retrieve original releases: Census M3 and retail sales (US), METI shipments/inventories and Cabinet Office machinery orders (Japan), EIA electricity consumption, JMTBA machine-tool orders and SIA/WSTS semiconductor shipments as relevant. Pair orders with realized sales/usage and inventory; separate volume from prices, forecasts from actuals and company guidance from independent evidence. News aggregators are discovery tools, not primary evidence. State coverage gaps; never infer demand growth from headline counts or supply expansion alone.
 Use general web search when available for public facts that need external evidence, including industry demand. Search in the market’s language using short keywords. Prefer official statistics, regulators and original releases. Open promising results with the page tool and assess who publishes the page, its date, scope, methodology and incentives. Trace summaries to their original sources, and corroborate consequential claims from interested publishers with independent evidence. Skip anonymous, promotional or unverifiable pages as support for factual claims. Search snippets are leads only. If search is unavailable, fetch known official URLs with the page tool and disclose any remaining coverage gap.${reminderBlock}
 Return: {${routing ? '"needsResearch":<false only for a general explanation that needs no research>,' : ""}"toolCalls":[{"toolId":"<id>","args":{...}}],"done":<true when enough evidence is collected or no tool can help>}`;
