@@ -71,6 +71,7 @@ for (const layout of ["canonical", "migrated"] as const)
 					new Set(["company", "financials", "news"]),
 				);
 				const financial = result.hits.find((hit) => hit.kind === "financials");
+				expect(financial?.text).toContain("issuer=US:SYNTH Synthetic Solar;");
 				expect(financial?.text).toContain("12345678901234567890.12");
 				expect(financial?.text).toContain("currency=USD");
 				expect(financial?.text).toContain("scope=consolidated");

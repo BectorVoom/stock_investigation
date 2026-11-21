@@ -365,6 +365,7 @@ describe("demand source selection", () => {
 		expect(prompt).toContain(
 			"A theme search lists candidates only; do not repeat it; next, request the relevant candidates' financials by ticker.",
 		);
+		expect(prompt).toContain('plus "<ticker> 売上高" or "<ticker> revenue" when screening margins');
 		expect(prompt).toContain(PLANNING_REPEAT_NOTE);
 		expect(prompt).toContain(PLANNING_SEARCH_BEFORE_FINAL_NOTE);
 		expect(promptBytes(prompt)).toBeLessThanOrEqual(PLANNING_PROMPT_BUDGET_BYTES);

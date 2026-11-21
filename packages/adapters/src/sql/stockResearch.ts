@@ -63,7 +63,8 @@ const DOCUMENTS = {
 		WHERE scs.owner_id = ? AND (scs.generated_at IS NOT NULL OR scs.overview_generated_at IS NOT NULL)`,
 	financials: `SELECT 'financials' AS kind, emv.company_id || ':' || emv.fiscal_year || ':' || emv.metric_code AS record_id,
 		eco.market || ':' || eco.symbol || ' ' || coalesce(eco.name, '') || ' ' || replace(emv.metric_code, '-', ' ') || ' ' || (${METRIC_CASE}) AS title,
-		'metric=' || emv.metric_code || '; fiscalYear=' || emv.fiscal_year ||
+		'issuer=' || eco.market || ':' || eco.symbol || CASE WHEN eco.name IS NOT NULL AND eco.name <> '' THEN ' ' || eco.name ELSE '' END ||
+		'; metric=' || emv.metric_code || '; fiscalYear=' || emv.fiscal_year ||
 		'; value=' || coalesce(emv.value_decimal, 'unavailable') || '; currency=' || coalesce(emv.currency, 'unavailable') ||
 		'; unit=base currency units; periodStart=' || coalesce(emv.period_start, 'unavailable') ||
 		'; periodEnd=' || coalesce(emv.period_end, 'unavailable') || '; scope=' || coalesce(emv.scope, 'unavailable') ||
