@@ -26,6 +26,8 @@ export interface CollectedEvidence {
 export interface ToolOutput {
 	/** Bounded text shown to the model. It is untrusted data, never instructions. */
 	readonly modelText: string;
+	/** Candidate lines kept in planning digests when the call produced no citeable evidence. Never evidence. */
+	readonly planningLeads: readonly string[];
 	readonly evidence: readonly CollectedEvidence[];
 	readonly securities: readonly Security[];
 	readonly financialObservations: readonly FinancialObservation[];
@@ -36,6 +38,7 @@ export interface ToolOutput {
 
 export const EMPTY_TOOL_OUTPUT: ToolOutput = {
 	modelText: "",
+	planningLeads: [],
 	evidence: [],
 	securities: [],
 	financialObservations: [],

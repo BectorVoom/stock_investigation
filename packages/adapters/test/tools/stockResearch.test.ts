@@ -161,9 +161,13 @@ describe("stocks.search", () => {
 		expect(new TextEncoder().encode(result.value.modelText).byteLength).toBeLessThanOrEqual(6_000);
 		expect(result.value.modelText).not.toContain("[output truncated]");
 		expect(result.value.modelText).not.toContain("\nPassage:\n");
+		expect(result.value.planningLeads).toHaveLength(12);
 		for (let index = 0; index < 12; index += 1) {
 			expect(result.value.modelText).toContain(`"recordId":"JP:${7000 + index}"`);
 			expect(result.value.modelText).toContain(`造船および舶用機器を手掛ける企業${index}`);
+			expect(result.value.planningLeads[index]).toBe(
+				`lead (no evidence): JP:${7000 + index} 合成造船${index} (Synthetic Zosen ${index}) AI-written company overview`,
+			);
 		}
 	});
 	it("keeps citeable passages whole while they fit and compacts later citeable hits", async () => {

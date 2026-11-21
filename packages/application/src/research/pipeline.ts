@@ -263,7 +263,10 @@ function reservedPostCollectionSteps(remainingSteps: number): number {
 	return 1;
 }
 
-/** One line per evidence item; a result with no evidence is one line naming its record count. */
+const MAX_PLANNING_LEADS_PER_CALL = 12;
+const MAX_PLANNING_LEAD_BYTES = 200;
+
+/** One line per evidence item; otherwise any planning leads, else one line naming the record count. */
 function digestLinesFor(toolId: string, output: ToolOutput): string[] {
 	const oneLine = (text: string): string => text.replace(/[\r\n]+/g, " ");
 	if (output.evidence.length > 0) {
@@ -273,6 +276,11 @@ function digestLinesFor(toolId: string, output: ToolOutput): string[] {
 				`[${evidence.evidenceId}] ${evidence.title} — ${evidence.publisher}; ${evidence.publishedAt ?? "undated"}`,
 			);
 		});
+	}
+	if (output.planningLeads.length > 0) {
+		return output.planningLeads
+			.slice(0, MAX_PLANNING_LEADS_PER_CALL)
+			.map((lead) => cutUtf8Bytes(oneLine(lead), MAX_PLANNING_LEAD_BYTES));
 	}
 	const records =
 		output.securities.length +

@@ -155,6 +155,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "Example Storage Corp supplies battery systems to utilities.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -1071,6 +1072,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Two\nline title\nShort interest fell to 1.2 million shares as reported on 2026-09-30.\nShort interest fell to 1.2 million shares as reported on 2026-09-30.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nExample Storage Corp supplies battery systems to utilities.\nExample Storage Corp supplies battery systems to utilities.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -1985,6 +1987,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] 日本の蓄電池需要\nRevenue was ＄４５６ million (fullwidth digits) in the period.\n\n[run_gen_ev2] Two\nline title\nExample Storage Corp supplies battery systems to utilities. 売上高は1,234億円となり、前年比で12.5%増加した。",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -2103,6 +2106,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -2724,6 +2728,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] 日本の蓄電池需要\nExample Storage Corp supplies battery systems to utilities. Emoji 📈 appear in headlines sometimes and 0.5 percent is small. Short interest fell to 1.2 million shares as reported on 2026-09-30. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Short interest fell to 1.2 million shares as reported on 2026-09-30. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\n\n[run_gen_ev2] Grid storage orders rise\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nShort interest fell to 1.2 million shares as reported on 2026-09-30.\n\n[run_gen_ev3] Grid storage orders rise\nShort interest fell to 1.2 million shares as reported on 2026-09-30.\n\n[run_gen_ev4] 日本の蓄電池需要\n売上高は1,234億円となり、前年比で12.5%増加した。 Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\n\n[run_gen_ev5] Grid storage orders rise\n売上高は1,234億円となり、前年比で12.5%増加した。 Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Analysts at a rival firm said demand could stall if subsidies lapse. Short interest fell to 1.2 million shares as reported on 2026-09-30. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Analysts at a rival firm said demand could stall if subsidies lapse.\n\n[run_gen_ev6] 日本の蓄電池需要\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\n売上高は1,234億円となり、前年比で12.5%増加した。\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -3732,6 +3737,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Two\nline title\nRevenue was ＄４５６ million (fullwidth digits) in the period. Example Storage Corp supplies battery systems to utilities. Analysts at a rival firm said demand could stall if subsidies lapse.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -3774,6 +3780,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev2] Two\nline title\n売上高は1,234億円となり、前年比で12.5%増加した。 Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -3850,6 +3857,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [],
@@ -3926,6 +3934,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records Ünïcode ✓",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -4821,6 +4830,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] 日本の蓄電池需要\nAnalysts at a rival firm said demand could stall if subsidies lapse. Revenue was ＄４５６ million (fullwidth digits) in the period. Short interest fell to 1.2 million shares as reported on 2026-09-30. Example Storage Corp supplies battery systems to utilities.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -5264,6 +5274,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] 日本の蓄電池需要\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nExample Storage Corp supplies battery systems to utilities.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -5711,6 +5722,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "Emoji 📈 appear in headlines sometimes and 0.5 percent is small. Example Storage Corp supplies battery systems to utilities. Revenue was ＄４５６ million (fullwidth digits) in the period.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -5853,6 +5865,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -6237,6 +6250,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nAnalysts at a rival firm said demand could stall if subsidies lapse.\n売上高は1,234億円となり、前年比で12.5%増加した。\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\nExample Storage Corp supplies battery systems to utilities.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -7224,6 +7238,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Two\nline title\n売上高は1,234億円となり、前年比で12.5%増加した。 Emoji 📈 appear in headlines sometimes and 0.5 percent is small. Example Storage Corp supplies battery systems to utilities. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -8271,6 +8286,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records Ünïcode ✓",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -8639,6 +8655,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records Ünïcode ✓",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -9865,6 +9882,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nShort interest fell to 1.2 million shares as reported on 2026-09-30.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -10210,6 +10228,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -13730,6 +13749,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -14548,6 +14568,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ok",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [],
@@ -15209,6 +15230,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Example Storage Corp supplies battery systems to utilities. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Example Storage Corp supplies battery systems to utilities. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Hitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030. The İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Example Storage Corp supplies battery systems to utilities. Analysts at a rival firm said demand could stall if subsidies lapse. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -15565,6 +15587,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] 日本の蓄電池需要\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030. 売上高は1,234億円となり、前年比で12.5%増加した。 Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Example Storage Corp supplies battery systems to utilities. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -16279,6 +16302,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ok",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -16715,6 +16739,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\n\n[run_gen_ev2] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\n\n[run_gen_ev3] Grid storage orders rise\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here. Example Storage Corp supplies battery systems to utilities. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -16853,6 +16878,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ok",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [
@@ -19711,6 +19737,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030. Analysts at a rival firm said demand could stall if subsidies lapse. Example Storage Corp supplies battery systems to utilities. Analysts at a rival firm said demand could stall if subsidies lapse. Analysts at a rival firm said demand could stall if subsidies lapse.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -19787,6 +19814,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [],
@@ -19855,6 +19883,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -21141,6 +21170,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\n\n[run_gen_ev2] Grid storage orders rise\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Analysts at a rival firm said demand could stall if subsidies lapse. The İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Analysts at a rival firm said demand could stall if subsidies lapse. Example Storage Corp supplies battery systems to utilities.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -22804,6 +22834,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nRevenue was ＄４５６ million (fullwidth digits) in the period.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -22906,6 +22937,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [],
@@ -24423,6 +24455,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records Ünïcode ✓",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [
@@ -26131,6 +26164,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ok",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [
@@ -27474,6 +27508,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -30282,6 +30317,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Two\nline title\nAnalysts at a rival firm said demand could stall if subsidies lapse. Example Storage Corp supplies battery systems to utilities. Analysts at a rival firm said demand could stall if subsidies lapse.\n\n[run_gen_ev2] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Example Storage Corp supplies battery systems to utilities. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Revenue was ＄４５６ million (fullwidth digits) in the period. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Short interest fell to 1.2 million shares as reported on 2026-09-30.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -31022,6 +31058,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nExample Storage Corp supplies battery systems to utilities.\nExample Storage Corp supplies battery systems to utilities.\n\n[run_gen_ev2] Grid storage orders rise\nAnalysts at a rival firm said demand could stall if subsidies lapse.\n売上高は1,234億円となり、前年比で12.5%増加した。\nAnalysts at a rival firm said demand could stall if subsidies lapse.\n\n[run_gen_ev3] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\n\n[run_gen_ev4] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nAnalysts at a rival firm said demand could stall if subsidies lapse. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Example Storage Corp supplies battery systems to utilities. Example Storage Corp supplies battery systems to utilities. Example Storage Corp supplies battery systems to utilities. Example Storage Corp supplies battery systems to utilities.\n\n[run_gen_ev5] 日本の蓄電池需要\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Analysts at a rival firm said demand could stall if subsidies lapse. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Short interest fell to 1.2 million shares as reported on 2026-09-30.\n\n[run_gen_ev6] 日本の蓄電池需要\nExample Storage Corp supplies battery systems to utilities.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -31164,6 +31201,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev7] 日本の蓄電池需要\nAnalysts at a rival firm said demand could stall if subsidies lapse. Short interest fell to 1.2 million shares as reported on 2026-09-30. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Example Storage Corp supplies battery systems to utilities. Analysts at a rival firm said demand could stall if subsidies lapse. Example Storage Corp supplies battery systems to utilities.\n\n[run_gen_ev8] Two\nline title\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Emoji 📈 appear in headlines sometimes and 0.5 percent is small. Emoji 📈 appear in headlines sometimes and 0.5 percent is small. Example Storage Corp supplies battery systems to utilities. Hitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\n\n[run_gen_ev9] Grid storage orders rise\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\n\n[run_gen_ev10] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\n売上高は1,234億円となり、前年比で12.5%増加した。\n\n[run_gen_ev11] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nExample Storage Corp supplies battery systems to utilities.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\n\n[run_gen_ev12] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -31340,6 +31378,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [],
@@ -31404,6 +31443,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ok",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -31908,6 +31948,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] TT\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\n\n[run_gen_ev2] Grid storage orders rise\nExample Storage Corp supplies battery systems to utilities.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nExample Storage Corp supplies battery systems to utilities.\nExample Storage Corp supplies battery systems to utilities.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\n\n[run_gen_ev3] 日本の蓄電池需要\nAnalysts at a rival firm said demand could stall if subsidies lapse. Analysts at a rival firm said demand could stall if subsidies lapse. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Example Storage Corp supplies battery systems to utilities. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -32672,6 +32713,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nShort interest fell to 1.2 million shares as reported on 2026-09-30.\n\n[run_gen_ev2] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nAnalysts at a rival firm said demand could stall if subsidies lapse.\n\n[run_gen_ev3] Grid storage orders rise\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Analysts at a rival firm said demand could stall if subsidies lapse. Hitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\n\n[run_gen_ev4] 日本の蓄電池需要\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\n\n[run_gen_ev5] Two\nline title\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small. Hitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\n\n[run_gen_ev6] 日本の蓄電池需要\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -33268,6 +33310,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [],
@@ -33352,6 +33395,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Two\nline title\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\n売上高は1,234億円となり、前年比で12.5%増加した。\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\n売上高は1,234億円となり、前年比で12.5%増加した。\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nExample Storage Corp supplies battery systems to utilities.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\n\n[run_gen_ev2] Two\nline title\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nExample Storage Corp supplies battery systems to utilities.\nExample Storage Corp supplies battery systems to utilities.\n\n[run_gen_ev3] Grid storage orders rise\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\n\n[run_gen_ev4] Grid storage orders rise\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\n\n[run_gen_ev5] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nAnalysts at a rival firm said demand could stall if subsidies lapse. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\n\n[run_gen_ev6] Grid storage orders rise\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nShort interest fell to 1.2 million shares as reported on 2026-09-30.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nShort interest fell to 1.2 million shares as reported on 2026-09-30.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nExample Storage Corp supplies battery systems to utilities.\nExample Storage Corp supplies battery systems to utilities.\n売上高は1,234億円となり、前年比で12.5%増加した。\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -33923,6 +33967,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Two\nline title\nShort interest fell to 1.2 million shares as reported on 2026-09-30.\n\n[run_gen_ev2] Two\nline title\nAnalysts at a rival firm said demand could stall if subsidies lapse.\n\n[run_gen_ev3] 日本の蓄電池需要\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Analysts at a rival firm said demand could stall if subsidies lapse.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -34812,6 +34857,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nExample Storage Corp supplies battery systems to utilities.\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nExample Storage Corp supplies battery systems to utilities.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\n売上高は1,234億円となり、前年比で12.5%増加した。\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\nExample Storage Corp supplies battery systems to utilities.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nExample Storage Corp supplies battery systems to utilities.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nExample Storage Corp supplies battery systems to utilities.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nExample Storage Corp supplies battery systems to utilities.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nExample Storage Corp supplies battery systems to utilities.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nExample Storage Corp supplies battery systems to utilities.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nExample Storage Corp supplies battery systems to utilities.\nExample Storage Corp supplies battery systems to utilities.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nExample Storage Corp supplies battery systems to utilities.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\nExample Storage Corp supplies battery systems to utilities.\nHitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\nExample Storage Corp supplies battery systems to utilities.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -35227,6 +35273,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Two\nline title\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\n\n[run_gen_ev2] Two\nline title\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\n売上高は1,234億円となり、前年比で12.5%増加した。\n\n[run_gen_ev3] 日本の蓄電池需要\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small.\nRevenue was ＄４５６ million (fullwidth digits) in the period.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nExample Storage Corp supplies battery systems to utilities.\nExample Storage Corp supplies battery systems to utilities.\n\n[run_gen_ev4] Grid storage orders rise\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. The İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\n\n[run_gen_ev5] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Analysts at a rival firm said demand could stall if subsidies lapse.\n\n[run_gen_ev6] 日本の蓄電池需要\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -37145,6 +37192,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nExample Storage Corp supplies battery systems to utilities.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\n\n[run_gen_ev2] TTTTTTTTTT\nAnalysts at a rival firm said demand could stall if subsidies lapse. Revenue was ＄４５６ million (fullwidth digits) in the period. Analysts at a rival firm said demand could stall if subsidies lapse. Hitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\n\n[run_gen_ev3] Two\nline title\nExample Storage Corp supplies battery systems to utilities.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -37219,6 +37267,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev4] 日本の蓄電池需要\nShort interest fell to 1.2 million shares as reported on 2026-09-30. Example Storage Corp supplies battery systems to utilities. Revenue was ＄４５６ million (fullwidth digits) in the period.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -38685,6 +38734,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [],
 									"financialObservations": [
@@ -39133,6 +39183,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Two\nline title\nGross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\n\n[run_gen_ev2] Grid storage orders rise\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Analysts at a rival firm said demand could stall if subsidies lapse.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -40071,6 +40122,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here. Example Storage Corp supplies battery systems to utilities. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Hitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030.\n\n[run_gen_ev2] Two\nline title\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nShort interest fell to 1.2 million shares as reported on 2026-09-30.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -43586,6 +43638,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records ",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -44189,6 +44242,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records Ünïcode ✓",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -45041,6 +45095,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records Ünïcode ✓",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -46188,6 +46243,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\nOrders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Example Storage Corp supplies battery systems to utilities. 売上高は1,234億円となり、前年比で12.5%増加した。 The İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Revenue was ＄４５６ million (fullwidth digits) in the period.\n\n[run_gen_ev2] Grid storage orders rise\nAnalysts at a rival firm said demand could stall if subsidies lapse. Short interest fell to 1.2 million shares as reported on 2026-09-30.\n\n[run_gen_ev3] Grid storage orders rise\nShort interest fell to 1.2 million shares as reported on 2026-09-30.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -47741,6 +47797,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] Grid storage orders rise\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nThe İstanbul office closed; ΑΣ results were final.  Spaced　text﻿ here.\nAnalysts at a rival firm said demand could stall if subsidies lapse.\nShort interest fell to 1.2 million shares as reported on 2026-09-30.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {
@@ -49485,6 +49542,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "records Ünïcode ✓",
+									"planningLeads": [],
 									"evidence": [],
 									"securities": [
 										{
@@ -50596,6 +50654,7 @@
 								"ok": true,
 								"value": {
 									"modelText": "[run_gen_ev1] TTT\nExample Storage Corp supplies battery systems to utilities. Example Storage Corp supplies battery systems to utilities.\n\n[run_gen_ev2] Two\nline title\nEmoji 📈 appear in headlines sometimes and 0.5 percent is small. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Short interest fell to 1.2 million shares as reported on 2026-09-30. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Analysts at a rival firm said demand could stall if subsidies lapse. Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. Example Storage Corp supplies battery systems to utilities. Example Storage Corp supplies battery systems to utilities. Gross margin improved 120 bps while volumes grew 8.5% and prices rose 3.2%.\n\n[run_gen_ev3] Two\nline title\n売上高は1,234億円となり、前年比で12.5%増加した。 Hitachi Ltd. (TSE: 6501) expects capacity of 2,000 MW by 2030. Example Storage Corp supplies battery systems to utilities.",
+									"planningLeads": [],
 									"evidence": [
 										{
 											"evidence": {

@@ -2669,3 +2669,62 @@ it("keeps invented, unshown, noncanonical and other-run claim references unsuppo
 		});
 	}
 });
+
+it("keeps context-only candidate leads in round-3 planning digests without turning them into evidence or sources", async () => {
+	const baseTools = newsTools();
+	const stockTool = defineTool({
+		toolId: "stocks.search",
+		version: "1.1.0",
+		description: "Search stored stock records.",
+		argsHint: '{"query": string}',
+		argsSchema: z.object({ query: z.string() }),
+		timeoutMs: 5_000,
+		permission: "research-read",
+		costCategory: "free",
+		sideEffect: "none",
+		networkAllowlist: { kind: "none" },
+		async execute() {
+			return ok({
+				...EMPTY_TOOL_OUTPUT,
+				modelText:
+					'{"reference":"Context only; no citeable evidence","kind":"company","recordId":"JP:7018","title":"JP:7018 合成造船 (Synthetic Zosen) AI-written company overview","snippet":"造船"}',
+				planningLeads: [
+					"lead (no evidence): JP:7018 合成造船 (Synthetic Zosen) AI-written company overview",
+					`lead (no evidence): JP:7003 合成マリン (${"長い説明".repeat(30)})`,
+					...Array.from({ length: 14 }, (_, index) => `lead (no evidence): extra-${index}\nline`),
+				],
+			});
+		},
+	});
+	const registry = createToolRegistry([...baseTools.registry.list(), stockTool]);
+	const round1 = JSON.stringify({
+		toolCalls: [{ toolId: "stocks.search", args: { query: "造船" } }],
+		done: false,
+	});
+	const round2 = JSON.stringify({
+		toolCalls: [{ toolId: "news.fetch_feed", args: { sourceId: "src_news" } }],
+		done: false,
+	});
+	const round3 = JSON.stringify({ toolCalls: [], done: true });
+	const { run, agent } = setup([round1, round2, round3, analysis(), VERDICT_SUPPORTED], {
+		tools: { ...baseTools, registry },
+		input: { request: request({ budget: { ...request().budget, maxAgentSteps: 10 } }) },
+	});
+	const outcome = expectBundle(await run());
+	const round3Prompt = agent.requests[2]?.prompt ?? "";
+	expect(round3Prompt).toContain(
+		"lead (no evidence): JP:7018 合成造船 (Synthetic Zosen) AI-written company overview",
+	);
+	expect(round3Prompt).toContain("lead (no evidence): JP:7003 合成マリン");
+	expect(round3Prompt).not.toContain("stocks.search: 0 record(s), no evidence");
+	// Capped at 12 leads, newlines collapsed, each line <= 200 UTF-8 bytes.
+	expect(round3Prompt).toContain("lead (no evidence): extra-9 line");
+	expect(round3Prompt).not.toContain("extra-10");
+	const analysisPromptText = agent.requests[3]?.prompt ?? "";
+	const verificationPromptText = agent.requests[4]?.prompt ?? "";
+	expect(analysisPromptText).not.toContain("lead (no evidence)");
+	expect(analysisPromptText).not.toContain("JP:7018");
+	expect(verificationPromptText).not.toContain("lead (no evidence)");
+	expect(outcome.bundle.evidence.map((item) => item.evidenceId)).toEqual([EV1]);
+	expect(checkBundleIntegrity(RUN_ID, outcome.bundle)).toEqual([]);
+});

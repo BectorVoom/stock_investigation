@@ -201,7 +201,7 @@ fn output(result: Result<ToolOutput, ToolFailure>) -> Value {
 			json!({"ok":false,"error":error})
 		}
 		Ok(v) => {
-			json!({"ok":true,"value":{"modelText":v.model_text,"evidence":v.evidence.iter().map(|c|json!({"evidence":c.evidence,"retrievedText":c.retrieved_text,"retainQuotes":c.retain_quotes})).collect::<Vec<_>>(),"securities":v.securities,"financialObservations":v.financial_observations,"positionObservations":v.position_observations,"investorFilings":v.investor_filings,"articles":v.articles}})
+			json!({"ok":true,"value":{"modelText":v.model_text,"planningLeads":v.planning_leads,"evidence":v.evidence.iter().map(|c|json!({"evidence":c.evidence,"retrievedText":c.retrieved_text,"retainQuotes":c.retain_quotes})).collect::<Vec<_>>(),"securities":v.securities,"financialObservations":v.financial_observations,"positionObservations":v.position_observations,"investorFilings":v.investor_filings,"articles":v.articles}})
 		}
 	}
 }

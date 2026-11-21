@@ -395,7 +395,11 @@
 		{
 			"name": "/keeps invented, unshown, noncanonical and other-run claim references unsupported",
 			"runs": 4
+		},
+		{
+			"name": "/keeps context-only candidate leads in round-3 planning digests without turning them into evidence or sources",
+			"runs": 1
 		}
 	],
-	"handWrittenRuns": 110
+	"handWrittenRuns": 111
 }

@@ -16,6 +16,16 @@ use serde::Serialize;
 use std::sync::Arc;
 
 const PASSAGE_NOT_SHOWN: &str = "(passage not shown in full; narrow the query or select a kind)";
+const MAX_PLANNING_LEADS: usize = 12;
+const MAX_PLANNING_LEAD_BYTES: usize = 200;
+
+fn cut_utf8_bytes(text: &str, max_bytes: usize) -> &str {
+	let mut end = text.len().min(max_bytes);
+	while !text.is_char_boundary(end) {
+		end -= 1;
+	}
+	&text[..end]
+}
 
 fn line_bytes(line: &str) -> usize {
 	line.len() + 1
@@ -226,6 +236,12 @@ impl Tool for StockResearchTool {
 					full_bytes,
 				});
 			} else {
+				if output.planning_leads.len() < MAX_PLANNING_LEADS {
+					let lead = collapse_newlines(&format!("lead (no evidence): {}", hit.title));
+					output
+						.planning_leads
+						.push(cut_utf8_bytes(&lead, MAX_PLANNING_LEAD_BYTES).to_owned());
+				}
 				#[derive(Serialize)]
 				#[serde(rename_all = "camelCase")]
 				struct ContextHit<'a> {
@@ -372,6 +388,10 @@ mod tests {
 				.unwrap();
 			let expected = &case["output"]["value"];
 			assert_eq!(output.model_text, expected["modelText"].as_str().unwrap());
+			assert_eq!(
+				serde_json::to_value(&output.planning_leads).unwrap(),
+				expected["planningLeads"]
+			);
 			assert_eq!(
 				output.evidence.len(),
 				expected["evidence"].as_array().unwrap().len()

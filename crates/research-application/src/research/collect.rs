@@ -10,45 +10,56 @@ pub(super) struct CollectedEntry {
 	pub digest_lines: Vec<String>,
 }
 
-pub(super) fn digest_lines_for(id: &str, output: &ToolOutput) -> Vec<String> {
-	if output.evidence.is_empty() {
-		return vec![format!(
-			"{id}: {} record(s), no evidence",
-			output.securities.len()
-				+ output.financial_observations.len()
-				+ output.position_observations.len()
-				+ output.investor_filings.len()
-				+ output.articles.len()
-		)];
-	}
-	output
-		.evidence
-		.iter()
-		.map(|item| {
-			let e = &item.evidence;
-			let line = format!(
-				"[{}] {} — {}; {}",
-				e.evidence_id,
-				e.title,
-				e.publisher,
-				e.published_at.as_deref().unwrap_or("undated")
-			);
-			let mut result = String::with_capacity(line.len());
-			let mut newline = false;
-			for ch in line.chars() {
-				if ch == '\r' || ch == '\n' {
-					if !newline {
-						result.push(' ');
-					}
-					newline = true;
-				} else {
-					result.push(ch);
-					newline = false;
-				}
+fn one_line(line: &str) -> String {
+	let mut result = String::with_capacity(line.len());
+	let mut newline = false;
+	for ch in line.chars() {
+		if ch == '\r' || ch == '\n' {
+			if !newline {
+				result.push(' ');
 			}
-			result
-		})
-		.collect()
+			newline = true;
+		} else {
+			result.push(ch);
+			newline = false;
+		}
+	}
+	result
+}
+
+pub(super) fn digest_lines_for(id: &str, output: &ToolOutput) -> Vec<String> {
+	if !output.evidence.is_empty() {
+		return output
+			.evidence
+			.iter()
+			.map(|item| {
+				let e = &item.evidence;
+				one_line(&format!(
+					"[{}] {} — {}; {}",
+					e.evidence_id,
+					e.title,
+					e.publisher,
+					e.published_at.as_deref().unwrap_or("undated")
+				))
+			})
+			.collect();
+	}
+	if !output.planning_leads.is_empty() {
+		return output
+			.planning_leads
+			.iter()
+			.take(12)
+			.map(|lead| cut_utf8_bytes(&one_line(lead), 200).to_owned())
+			.collect();
+	}
+	vec![format!(
+		"{id}: {} record(s), no evidence",
+		output.securities.len()
+			+ output.financial_observations.len()
+			+ output.position_observations.len()
+			+ output.investor_filings.len()
+			+ output.articles.len()
+	)]
 }
 pub(super) fn collected_so_far_text(entries: &[CollectedEntry], step: u64) -> String {
 	let fresh = entries

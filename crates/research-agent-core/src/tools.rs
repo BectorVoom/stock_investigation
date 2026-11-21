@@ -36,6 +36,8 @@ pub struct CollectedEvidence {
 pub struct ToolOutput {
 	/// Bounded text shown to the model. It is untrusted data, never instructions.
 	pub model_text: String,
+	/// Candidate lines kept in planning digests when the call produced no citeable evidence. Never evidence.
+	pub planning_leads: Vec<String>,
 	/// Evidence collected by the call.
 	pub evidence: Vec<CollectedEvidence>,
 	/// Securities identified.

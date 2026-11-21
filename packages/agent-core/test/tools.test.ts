@@ -392,6 +392,7 @@ describe("defineTool", () => {
 	it("starts from an empty tool output that invents no records", () => {
 		expect(EMPTY_TOOL_OUTPUT).toEqual({
 			modelText: "",
+			planningLeads: [],
 			evidence: [],
 			securities: [],
 			financialObservations: [],

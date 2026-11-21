@@ -321,6 +321,7 @@ impl Tool for ScriptTool {
 		let value = get(result, "value");
 		Ok(ToolOutput {
 			model_text: field(value, "modelText").to_owned(),
+			planning_leads: strings(get(value, "planningLeads")),
 			evidence: items(value, "evidence")
 				.iter()
 				.map(|v| CollectedEvidence {
@@ -389,8 +390,8 @@ fn compare(actual: &Value, expected: &Value, path: &str) {
 
 /// Pipeline.test.ts blocks (it.each rows expanded) and the hand-written runs
 /// they record; the seeded `gen/` and `edge/` runs come on top.
-const HAND_WRITTEN_BLOCKS: usize = 99;
-const HAND_WRITTEN_RUNS: usize = 110;
+const HAND_WRITTEN_BLOCKS: usize = 100;
+const HAND_WRITTEN_RUNS: usize = 111;
 
 #[tokio::test]
 async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
