@@ -6,6 +6,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
 import {
 	analysisDraftSchema,
+	directAnswerSchema,
+	directDiagramSchema,
 	draftPricingPowerSchema,
 	draftScenarioSchema,
 	draftSupplierSchema,
@@ -30,6 +32,7 @@ async function loadScenarios(path: string): Promise<void> {
 		"planningPrompt",
 		"analysisPrompt",
 		"verificationPrompt",
+		"directAnswerPrompt",
 	]) {
 		const captured = `captured${name[0]?.toUpperCase()}${name.slice(1)}`;
 		source = source.replace(new RegExp(`\\b${name}\\(`, "g"), `${captured}(`);
@@ -45,7 +48,7 @@ async function loadScenarios(path: string): Promise<void> {
 		/from "([^".:][^"]*)"/g,
 		(_match: string, specifier: string) => `from "${import.meta.resolve(specifier)}"`,
 	);
-	source += `\nimport { capturedRunResearchPipeline, capturedPlanningPrompt, capturedAnalysisPrompt, capturedVerificationPrompt } from "${new URL("./pipeline/capture.ts", import.meta.url).href}";`;
+	source += `\nimport { capturedRunResearchPipeline, capturedPlanningPrompt, capturedAnalysisPrompt, capturedVerificationPrompt, capturedDirectAnswerPrompt } from "${new URL("./pipeline/capture.ts", import.meta.url).href}";`;
 	const compiled = ts.transpileModule(source, {
 		compilerOptions: {
 			target: ts.ScriptTarget.ES2022,
@@ -83,6 +86,8 @@ export const pipelineExporter: VectorExporter = {
 			supplier: draftSupplierSchema,
 			pricingPower: draftPricingPowerSchema,
 			verdicts: verdictsSchema,
+			direct: directAnswerSchema,
+			directDiagram: directDiagramSchema,
 		};
 		const drafts = [];
 		const seeds: unknown[] = [
@@ -97,6 +102,8 @@ export const pipelineExporter: VectorExporter = {
 			{ toolCalls: [{ toolId: "x" }] },
 			{ done: true },
 			{ verdicts: [{ claimIndex: 0, verdict: "supported" }] },
+			{ needsResearch: "no" },
+			{ answer: " ", diagram: { title: "t", steps: [{ label: " " }] } },
 		];
 		for (const [name, schema] of Object.entries(schemas)) {
 			const base =
@@ -110,18 +117,29 @@ export const pipelineExporter: VectorExporter = {
 								? {
 										toolCalls: [{ toolId: "news.fetch_feed", args: { sourceId: "src_news" } }],
 										done: true,
+										needsResearch: false,
 									}
-								: name === "pricingPower"
-									? {
-											ticker: "EXMP",
-											exchange: "NASDAQ",
-											fiscalYear: 2026,
-											fiscalPeriod: "FY",
-											periodStart: "2026-01-01",
-											periodEnd: "2026-12-31",
-											evidenceIds: [],
-										}
-									: { verdicts: [] };
+								: name === "direct"
+									? { answer: "ダイシングはウェハーをチップに切り分ける工程です。", diagram: null }
+									: name === "directDiagram"
+										? {
+												title: "後工程",
+												steps: [
+													{ label: "バックグラインド", detail: "薄くする" },
+													{ label: "ダイシング", detail: null },
+												],
+											}
+										: name === "pricingPower"
+											? {
+													ticker: "EXMP",
+													exchange: "NASDAQ",
+													fiscalYear: 2026,
+													fiscalPeriod: "FY",
+													periodStart: "2026-01-01",
+													periodEnd: "2026-12-31",
+													evidenceIds: [],
+												}
+											: { verdicts: [] };
 			const inputs = [...seeds, base];
 			for (let i = 0; i < 160; i++) {
 				const value = structuredClone(base) as Record<string, unknown>;

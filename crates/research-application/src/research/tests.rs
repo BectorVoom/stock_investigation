@@ -389,8 +389,8 @@ fn compare(actual: &Value, expected: &Value, path: &str) {
 
 /// Pipeline.test.ts blocks (it.each rows expanded) and the hand-written runs
 /// they record; the seeded `gen/` and `edge/` runs come on top.
-const HAND_WRITTEN_BLOCKS: usize = 85;
-const HAND_WRITTEN_RUNS: usize = 96;
+const HAND_WRITTEN_BLOCKS: usize = 96;
+const HAND_WRITTEN_RUNS: usize = 107;
 
 #[tokio::test]
 async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
@@ -611,9 +611,17 @@ fn prompt_cases(cases: &Value) -> usize {
 					))
 					.unwrap(),
 					reminder: get(input, "reminder").as_str(),
+					routing: get(input, "routing").as_bool() == Some(true),
 				})
 				.unwrap()
 			}
+			"direct" => prompts::direct_answer_prompt(prompts::DirectAnswerPromptInput {
+				request: request.unwrap(),
+				now_iso: field(input, "nowIso"),
+				conversation_context: &context,
+				fence_token: field(input, "fenceToken"),
+			})
+			.unwrap(),
 			"analysis" => analysis_prompt(AnalysisPromptInput {
 				request: request.unwrap(),
 				now_iso: field(input, "nowIso"),
@@ -1039,6 +1047,7 @@ mod hot_paths {
 				fence_token: "fence-1",
 				prompt_budget_bytes: PLANNING_PROMPT_BUDGET_BYTES,
 				reminder: Some(PLANNING_REMINDER),
+				routing: true,
 			})
 			.unwrap();
 			assert!(prompt.len() <= PLANNING_PROMPT_BUDGET_BYTES);

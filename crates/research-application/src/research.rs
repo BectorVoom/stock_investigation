@@ -1,6 +1,7 @@
 //! Evidence-first research lifecycle. The model proposes; this pipeline
 //! authorizes, verifies and publishes under the owner's cumulative ceilings.
 mod collect;
+mod direct;
 pub mod draft;
 pub mod presentation;
 pub mod prompts;
@@ -410,6 +411,12 @@ pub async fn run_research_pipeline(
 				});
 		// No round follows the last one to open search results (ADR-0078).
 		let final_round = step + 1 >= collection_steps.min(3);
+		// ADR-0079: only the first round, before anything was collected, may
+		// decide that the question needs no research. A news task always researches.
+		let routing_round = step == 0
+			&& entries.is_empty()
+			&& input.request.output_type
+				!= Some(research_contracts::jobs::ResearchOutputType::News);
 		let round_reminder = search_guidance.as_deref().or(pending_reminder);
 		let final_reminder = final_round.then(|| {
 			round_reminder.map_or_else(
@@ -428,6 +435,7 @@ pub async fn run_research_pipeline(
 			fence_token: &(deps.new_fence_token)(),
 			prompt_budget_bytes: PLANNING_PROMPT_BUDGET_BYTES,
 			reminder: final_reminder.as_deref().or(round_reminder),
+			routing: routing_round,
 		})?;
 		if prompt.len() > PLANNING_PROMPT_BUDGET_BYTES {
 			deps.reporter
@@ -503,6 +511,14 @@ pub async fn run_research_pipeline(
 		calls.truncate(8);
 		valid_plans += 1;
 		requested += u64::try_from(calls.len()).unwrap_or(u64::MAX);
+		if routing_round
+			&& calls.is_empty()
+			&& plan
+				.as_ref()
+				.is_some_and(|p| get(p, "needsResearch").as_bool() == Some(false))
+		{
+			return direct::answer_directly(&mut session, &input, &deps, &probe).await;
+		}
 		if calls.is_empty()
 			&& !reminder_sent
 			&& collected.evidence.is_empty()

@@ -159,7 +159,46 @@ const SCENARIOS: { readonly [T in BaselineType]: Scenario } = {
 		invalidProps: { ...VALID_PROPS["research-report"], disclaimer: "" },
 		links: [SOURCE_A, SOURCE_B],
 	},
+	// A flow diagram references no data or source (ADR-0079): what it always
+	// states explicitly is that it was not researched, and a missing detail is
+	// simply absent.
+	"flow-diagram": {
+		validText: [
+			"Back-end semiconductor steps",
+			"Back grinding",
+			"The wafer is cut into individual dies.",
+			"Molding",
+		],
+		missing: {
+			props: VALID_PROPS["flow-diagram"],
+			expectText:
+				"Written by AI from general knowledge — not researched or checked against sources",
+		},
+		unavailable: {
+			props: VALID_PROPS["flow-diagram"],
+			expectText:
+				"Written by AI from general knowledge — not researched or checked against sources",
+		},
+		invalidProps: { ...VALID_PROPS["flow-diagram"], basis: "verified" },
+		links: [],
+	},
 };
+
+describe("flow diagram", () => {
+	it("draws the stages as an ordered list in order, with arrows only between them", () => {
+		const container = renderComponent(component("flow-diagram", VALID_PROPS["flow-diagram"]));
+		const stages = [...container.querySelectorAll("ol > li")];
+		expect(stages.map((stage) => stage.getAttribute("aria-label"))).toEqual([
+			"Stage 1 of 3",
+			"Stage 2 of 3",
+			"Stage 3 of 3",
+		]);
+		expect(stages.map((stage) => stage.querySelectorAll("svg").length)).toEqual([0, 1, 1]);
+		// The last stage has no detail, so it shows its label alone.
+		expect(stages[2]?.querySelectorAll("p")).toHaveLength(1);
+		expect(container.querySelector("[data-flow-diagram-basis]")?.tagName).toBe("FIGCAPTION");
+	});
+});
 
 describe.each(BASELINE_TYPES)("%s renderer", (componentType) => {
 	const scenario = SCENARIOS[componentType];

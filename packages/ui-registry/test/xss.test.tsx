@@ -162,6 +162,14 @@ const HOSTILE_PROPS: { readonly [T in BaselineType]: WorkspaceComponent["props"]
 		],
 		disclaimer: HOSTILE,
 	},
+	"flow-diagram": {
+		title: HOSTILE,
+		steps: [
+			{ label: SCRIPT.slice(0, 60), detail: HOSTILE.slice(0, 240) },
+			{ label: IMG.slice(0, 60), detail: JS_URL },
+		],
+		basis: "model-knowledge",
+	},
 };
 
 function readXssFlag(): unknown {

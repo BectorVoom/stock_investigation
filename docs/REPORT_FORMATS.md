@@ -71,7 +71,9 @@ not a claimed publisher-specific house style:
 - [Reuters: Standards and values](https://reutersagency.com/about/standards-values/): accuracy, attribution and independence.
 - [University of Melbourne: Research reports](https://students.unimelb.edu.au/academic-skills/reading-writing-and-referencing/reports/research-reports): summary, findings, discussion and conclusion serve distinct purposes.
 
-Prompt provenance: `research-v8`, with byte-identical TypeScript/Rust templates.
+Prompt provenance: `research-v8`, with byte-identical TypeScript/Rust templates
+(now `research-v9`: the first planning round may route a question that needs
+no research to a direct answer, [ADR-0079](adr/0079-direct-answers-for-questions-that-need-no-research.md)).
 No domain algorithm, database schema or historical report text changes.
 
 ## Validation — 2026-11-10

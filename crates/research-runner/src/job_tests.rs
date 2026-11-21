@@ -1552,7 +1552,7 @@ async fn job_finished_carries_attempt_budget_usage_cost_verification_and_progres
 		.find(|line| line.contains(r#""event":"job_finished""#))
 		.unwrap();
 	for expected in [
-		r#""runId":"run_test","state":"completed","attempt":1,"maxAttempts":3,"agentId":"scripted","providerModel":null,"promptVersion":"research-v8""#,
+		r#""runId":"run_test","state":"completed","attempt":1,"maxAttempts":3,"agentId":"scripted","providerModel":null,"promptVersion":"research-v9""#,
 		r#""costKnown":false"#,
 		r#""failureCode":null,"verificationStatus":"verified""#,
 		r#""maxAgentSteps":6,"maxToolCalls":10,"maxWallClockMs":600000,"maxInputBytes":400000,"maxSpendUsd":null"#,
@@ -1593,7 +1593,7 @@ fn job_finished_logs_the_failure_code_with_no_verification_for_a_failed_run() {
 	assert_eq!(*field(&fields, "providerModel"), LogValue::Null);
 	assert_eq!(
 		text(field(&fields, "promptVersion")).as_deref(),
-		Some("research-v8")
+		Some("research-v9")
 	);
 	assert_eq!(*field(&fields, "progressCount"), LogValue::Int(3));
 	assert_eq!(*field(&fields, "progressStateCount"), LogValue::Int(2));

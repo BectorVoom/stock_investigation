@@ -25,8 +25,40 @@ export const planSchema = z.object({
 		.transform((calls) => calls.slice(0, MAX_TOOL_CALLS_PER_REPLY))
 		.default([]),
 	done: z.boolean().default(false),
+	/**
+	 * The first round's routing decision (ADR-0079). Only an explicit `false`
+	 * on a plan that asks for no tools sends the question to a direct answer;
+	 * a missing field means research, so an older or terse reply never skips it.
+	 */
+	needsResearch: z.boolean().default(true),
 });
 export type Plan = z.infer<typeof planSchema>;
+
+/**
+ * The direct answer's reply (ADR-0079). `diagram` is checked on its own with
+ * `directDiagramSchema`, so an unusable diagram is left out rather than
+ * costing the whole answer.
+ */
+export const directAnswerSchema = z.object({
+	answer: text(4000),
+	diagram: z.unknown().default(null),
+});
+export type DirectAnswer = z.infer<typeof directAnswerSchema>;
+
+const optionalText = (max: number) => z.string().transform((value) => value.trim().slice(0, max));
+
+export const directDiagramSchema = z.object({
+	title: text(120),
+	steps: z
+		.array(
+			z.object({
+				label: text(60),
+				detail: optionalText(240).nullable().default(null),
+			}),
+		)
+		.transform((steps) => steps.slice(0, 10)),
+});
+export type DirectDiagram = z.infer<typeof directDiagramSchema>;
 
 const draftCaseSchema = z.object({
 	targetValue: z.number().finite(),

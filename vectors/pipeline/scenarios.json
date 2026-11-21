@@ -265,6 +265,50 @@
 			"runs": 1
 		},
 		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/answers in one more turn, draws the diagram and labels the answer as not researched",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/labels an English answer in English and publishes no diagram when none was asked for",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/takes a reply in prose as the answer",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/leaves out a diagram that is not a flow of at least two stages, and keeps the answer",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/keeps at most ten stages of a longer diagram",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/fails DIRECT_ANSWER_INVALID when the JSON reply has no answer",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/propagates a provider failure of the answer turn with its retryability and status",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/researches when the plan asks for tools, whatever it says about research",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/researches when the first plan does not say that no research is needed",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/never routes after the first round",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: a question that needs no research is answered directly (ADR-0079)/always researches a news task: its first plan is not offered the choice",
+			"runs": 1
+		},
+		{
 			"name": "/research pipeline: tool-derived records stay referentially sound (DATA-001)/does not store an observation that no identified security backs",
 			"runs": 1
 		},
@@ -341,5 +385,5 @@
 			"runs": 4
 		}
 	],
-	"handWrittenRuns": 96
+	"handWrittenRuns": 107
 }

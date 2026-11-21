@@ -52,6 +52,7 @@ import {
 } from "@research/domain";
 import { agentThrewCode } from "../errors.ts";
 import type { Clock } from "../ports.ts";
+import { directAnswerNote, readDirectAnswer } from "./directAnswer.ts";
 import {
 	type AnalysisDraft,
 	analysisDraftSchema,
@@ -67,6 +68,7 @@ import { buildPresentation, DISCLAIMER, datasetGuide } from "./presentation.ts";
 import {
 	analysisPrompt,
 	cutUtf8Bytes,
+	directAnswerPrompt,
 	PLANNING_CONTEXT_MAX_BYTES,
 	PLANNING_FINAL_ROUND_NOTE,
 	PLANNING_REMINDER,
@@ -572,6 +574,89 @@ export async function runResearchPipeline(
 	const failureStatus = (failure: Exclude<TurnFailure, { kind: "aborted" }>): number | null =>
 		failure.kind === "provider" ? failure.upstreamStatus : null;
 
+	/**
+	 * ADR-0079: the planner judged the question to need no research. One turn
+	 * answers it from general knowledge (with an optional flow diagram); the
+	 * stages are still walked in order, the answer carries the pipeline's
+	 * "not researched" note, and nothing is presented as verified.
+	 */
+	async function answerDirectly(): Promise<PipelineOutcome> {
+		await deps.reporter.note(
+			"The planner judged that this question needs no research; answering from the model's general knowledge.",
+		);
+		await deps.reporter.state("analyzing");
+		const answered = await turn(
+			directAnswerPrompt({
+				request,
+				nowIso: deps.clock.nowIso(),
+				conversationContext: input.conversationContext,
+				fenceToken: deps.newFenceToken(),
+			}),
+		);
+		if (!answered.ok) {
+			if (answered.error.kind === "aborted") return { kind: "cancelled", usage };
+			const pause = spendApproval(answered.error);
+			if (pause !== null) return pause;
+			return failed(
+				failureCode(answered.error),
+				answered.error.kind === "provider" && answered.error.retryable,
+				null,
+				failureStatus(answered.error),
+			);
+		}
+		await deps.reporter.state("verifying");
+		const parts = readDirectAnswer(answered.value.text);
+		if (parts === null) return failed("DIRECT_ANSWER_INVALID", false);
+		for (const note of parts.notes) await deps.reporter.note(note);
+		await deps.reporter.state("publishing");
+		const bundle = researchBundleSchema.safeParse({
+			evidence: [],
+			claims: [],
+			scenarios: [],
+			securities: [],
+			supplierLinks: [],
+			financialObservations: [],
+			positionObservations: [],
+			investorFilings: [],
+			pricingPower: [],
+			datasets: [],
+			uiOperations:
+				parts.diagram === null
+					? []
+					: [
+							{
+								operation: "component.create",
+								componentId: `${runId}_diagram`,
+								componentType: "flow-diagram",
+								schemaVersion: 1,
+								props: parts.diagram,
+							},
+						],
+			answerText: `${parts.answer}\n\n${directAnswerNote(request.question)}`.slice(0, 6000),
+			answerClaimIds: [],
+			verificationStatus: "unverified",
+			provenance: {
+				agentId: deps.agent.agentId,
+				providerModel: request.model ?? probe.capabilities.model ?? null,
+				promptVersion: PROMPT_VERSION,
+				toolVersions: Object.fromEntries(
+					deps.tools.list().map((tool) => [tool.toolId, tool.version]),
+				),
+				dataCutoffAt: deps.clock.nowIso(),
+			},
+		});
+		if (!bundle.success) {
+			await deps.reporter.note(
+				`Bundle failed contract validation at: ${bundle.error.issues
+					.slice(0, 4)
+					.map((issue) => issue.path.join("."))
+					.join("; ")}`,
+			);
+			return failed("BUNDLE_INVALID", false);
+		}
+		return { kind: "completed", bundle: bundle.data, articles: [], usage };
+	}
+
 	/* ----- Planning and collection ----- */
 	await deps.reporter.state("planning");
 	const collected: Collected = {
@@ -632,6 +717,10 @@ export async function runResearchPipeline(
 		if (remainingToolCalls <= 0) break;
 		// No round follows the last one to open search results (ADR-0078).
 		const finalRound = step + 1 >= Math.min(collectionSteps, 3);
+		// ADR-0079: only the first round, before anything was collected, may
+		// decide that the question needs no research. A news task always researches.
+		const routingRound =
+			step === 0 && collected.entries.length === 0 && request.outputType !== "news";
 		const roundReminder =
 			!permittedToolIds.has("web.fetch_page") && permittedToolIds.has("stocks.search")
 				? [
@@ -653,6 +742,7 @@ export async function runResearchPipeline(
 			conversationContext: input.conversationContext,
 			fenceToken: deps.newFenceToken(),
 			promptBudgetBytes: PLANNING_PROMPT_BUDGET_BYTES,
+			routing: routingRound,
 			reminder: finalRound
 				? [roundReminder, PLANNING_FINAL_ROUND_NOTE].filter(Boolean).join(" ")
 				: roundReminder,
@@ -697,7 +787,7 @@ export async function runResearchPipeline(
 			parsedPlan?.success === true
 				? parsedPlan.data
 				: planned.value.toolRequests.length > 0
-					? { toolCalls: [], done: false }
+					? { toolCalls: [], done: false, needsResearch: true }
 					: null;
 		if (plan === null) {
 			invalidPlanCount += 1;
@@ -714,6 +804,9 @@ export async function runResearchPipeline(
 		);
 		validPlanCount += 1;
 		requestedToolCalls += calls.length;
+		if (routingRound && calls.length === 0 && plan.needsResearch === false) {
+			return answerDirectly();
+		}
 		// ADR-0025 reminder: a valid plan that asks for nothing while nothing
 		// has been collected, executed or denied gets one retry with a note.
 		// It consumes the next step of the same collection allowance.

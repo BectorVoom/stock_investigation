@@ -30,6 +30,11 @@ export const rendererMessages = defineMessages({
 		),
 		noStatements: "No statements in this section.",
 		methodology: "Methodology: ",
+		/** Under every flow diagram (ADR-0079): what it was written from. */
+		flowDiagramBasis:
+			"Written by AI from general knowledge — not researched or checked against sources",
+		/** Accessible name of one stage: its position in the flow. */
+		flowDiagramStage: (position: number, total: number) => `Stage ${position} of ${total}`,
 	},
 	ja: {
 		componentLabel: (componentId) => `コンポーネント ${componentId}`,
@@ -52,5 +57,7 @@ export const rendererMessages = defineMessages({
 		),
 		noStatements: "このセクションには記述がありません。",
 		methodology: "算出方法：",
+		flowDiagramBasis: "AI が一般知識から作成 — 調査や出典との照合は行っていません",
+		flowDiagramStage: (position, total) => `全 ${total} 段階中 ${position} 段階目`,
 	},
 });

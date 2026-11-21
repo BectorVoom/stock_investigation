@@ -1,5 +1,9 @@
 import { createToolRegistry, defineTool, EMPTY_TOOL_OUTPUT } from "@research/agent-core";
-import { researchBundleSchema, researchReportPropsSchema } from "@research/contracts";
+import {
+	flowDiagramPropsSchema,
+	researchBundleSchema,
+	researchReportPropsSchema,
+} from "@research/contracts";
 import { EMPTY_USAGE, err, ok, summarizeCost, transitionJob } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -13,7 +17,7 @@ import {
 	type ResearchPipelineInput,
 	runResearchPipeline,
 } from "../src/index.ts";
-import { PLANNING_FINAL_ROUND_NOTE } from "../src/research/prompts.ts";
+import { PLANNING_FINAL_ROUND_NOTE, PLANNING_ROUTING_NOTE } from "../src/research/prompts.ts";
 import {
 	ARTICLE_TEXT,
 	analysis,
@@ -121,7 +125,7 @@ describe("research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)", () =>
 		]);
 		expect(bundle.provenance).toMatchObject({
 			agentId: "scripted",
-			promptVersion: "research-v8",
+			promptVersion: "research-v9",
 			toolVersions: { "news.fetch_feed": "1" },
 		});
 		expect(bundle.evidence.map((item) => item.evidenceId)).toEqual([EV1]);
@@ -1756,6 +1760,214 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 			failureDetail: "PLAN_NOT_JSON",
 		});
 		expect(tools.executed).toEqual([]);
+	});
+});
+
+describe("research pipeline: a question that needs no research is answered directly (ADR-0079)", () => {
+	const QUESTION = "バックグラインド、ダイシング、モールディングを図で説明してください。";
+	const NO_RESEARCH = JSON.stringify({ needsResearch: false, toolCalls: [], done: true });
+	const ANSWER =
+		"半導体の後工程では、まずウェハーを薄く削り（バックグラインド）、次に個々のチップに切り分け（ダイシング）、最後に樹脂で封止します（モールディング）。";
+	const DIAGRAM = {
+		title: "半導体後工程の流れ",
+		steps: [
+			{ label: "バックグラインド", detail: "ウェハーの裏面を研削して薄くする。" },
+			{ label: "ダイシング", detail: "ウェハーを個々のチップに切り分ける。" },
+			{ label: "モールディング", detail: "  " },
+		],
+	};
+	const japanese = (overrides: Partial<ReturnType<typeof request>> = {}) => ({
+		request: request({ question: QUESTION, ...overrides }),
+	});
+
+	it("answers in one more turn, draws the diagram and labels the answer as not researched", async () => {
+		const { run, agent, tools, reporter } = setup(
+			[NO_RESEARCH, JSON.stringify({ answer: ANSWER, diagram: DIAGRAM })],
+			{ input: japanese() },
+		);
+		const { bundle, kind } = expectBundle(await run());
+		expect(kind).toBe("completed");
+		expect(agent.requests).toHaveLength(2);
+		expect(agent.requests[0]?.prompt).toContain(PLANNING_ROUTING_NOTE);
+		expect(agent.requests[0]?.prompt).toContain('Return: {"needsResearch":');
+		expect(agent.requests[1]?.prompt).toContain("You are the answer step of a research assistant.");
+		expect(agent.requests[1]?.prompt).toContain(QUESTION);
+		expect(tools.executed).toEqual([]);
+		expect(researchBundleSchema.safeParse(bundle).success).toBe(true);
+		expect(checkBundleIntegrity(RUN_ID, bundle)).toEqual([]);
+		expect(bundle).toMatchObject({
+			evidence: [],
+			claims: [],
+			answerClaimIds: [],
+			datasets: [],
+			verificationStatus: "unverified",
+			provenance: { promptVersion: "research-v9" },
+		});
+		expect(bundle.answerText).toBe(
+			`${ANSWER}\n\nこの回答は調査を行わず、AI モデルの一般知識から書かれています。出典との照合は行っていません。投資助言ではありません。`,
+		);
+		expect(bundle.uiOperations).toEqual([
+			{
+				operation: "component.create",
+				componentId: `${RUN_ID}_diagram`,
+				componentType: "flow-diagram",
+				schemaVersion: 1,
+				props: {
+					title: "半導体後工程の流れ",
+					steps: [
+						{ label: "バックグラインド", detail: "ウェハーの裏面を研削して薄くする。" },
+						{ label: "ダイシング", detail: "ウェハーを個々のチップに切り分ける。" },
+						// A blank detail is no detail.
+						{ label: "モールディング", detail: null },
+					],
+					basis: "model-knowledge",
+				},
+			},
+		]);
+		const created = bundle.uiOperations[0];
+		expect(
+			created?.operation === "component.create" &&
+				flowDiagramPropsSchema.safeParse(created.props).success,
+		).toBe(true);
+		expect(reporter.recorded.states).toEqual([
+			"planning",
+			"collecting",
+			"analyzing",
+			"verifying",
+			"publishing",
+		]);
+		let state = reporter.recorded.states[0];
+		for (const next of reporter.recorded.states.slice(1)) {
+			if (state === undefined || next === undefined) throw new Error("empty state path");
+			const moved = transitionJob(state, next);
+			expect(moved.ok, `${state} -> ${next}`).toBe(true);
+			if (moved.ok) state = moved.value;
+		}
+		expect(reporter.recorded.notes).toContain(
+			"The planner judged that this question needs no research; answering from the model's general knowledge.",
+		);
+	});
+
+	it("labels an English answer in English and publishes no diagram when none was asked for", async () => {
+		const { run } = setup(
+			[NO_RESEARCH, JSON.stringify({ answer: "Dicing cuts a wafer into chips.", diagram: null })],
+			{ input: { request: request({ question: "What is wafer dicing?" }) } },
+		);
+		const { bundle } = expectBundle(await run());
+		expect(bundle.answerText).toBe(
+			"Dicing cuts a wafer into chips.\n\nAnswered from the AI model's general knowledge without research; nothing here was checked against sources. Not investment advice.",
+		);
+		expect(bundle.uiOperations).toEqual([]);
+	});
+
+	it("takes a reply in prose as the answer", async () => {
+		const { run } = setup([NO_RESEARCH, `  ${ANSWER}\n`], { input: japanese() });
+		const { bundle } = expectBundle(await run());
+		expect(bundle.answerText.startsWith(`${ANSWER}\n\nこの回答は調査を行わず`)).toBe(true);
+		expect(bundle.uiOperations).toEqual([]);
+	});
+
+	it("leaves out a diagram that is not a flow of at least two stages, and keeps the answer", async () => {
+		const oneStep = { title: "工程", steps: [{ label: "ダイシング", detail: null }] };
+		const { run, reporter } = setup(
+			[NO_RESEARCH, JSON.stringify({ answer: ANSWER, diagram: oneStep })],
+			{ input: japanese() },
+		);
+		const { bundle } = expectBundle(await run());
+		expect(bundle.uiOperations).toEqual([]);
+		expect(bundle.answerText.startsWith(ANSWER)).toBe(true);
+		expect(reporter.recorded.notes).toContain(
+			"The proposed diagram was left out: it was not a flow of 2 to 10 labelled stages.",
+		);
+	});
+
+	it("keeps at most ten stages of a longer diagram", async () => {
+		const steps = Array.from({ length: 14 }, (_, index) => ({ label: `工程${index + 1}` }));
+		const { run } = setup(
+			[NO_RESEARCH, JSON.stringify({ answer: ANSWER, diagram: { title: "工程", steps } })],
+			{ input: japanese() },
+		);
+		const { bundle } = expectBundle(await run());
+		const created = bundle.uiOperations[0];
+		const props =
+			created?.operation === "component.create"
+				? flowDiagramPropsSchema.parse(created.props)
+				: null;
+		expect(props?.steps.map((step) => step.label)).toEqual(
+			steps.slice(0, 10).map((step) => step.label),
+		);
+	});
+
+	it("fails DIRECT_ANSWER_INVALID when the JSON reply has no answer", async () => {
+		const { run, reporter } = setup([NO_RESEARCH, JSON.stringify({ diagram: DIAGRAM })], {
+			input: japanese(),
+		});
+		expect(await run()).toMatchObject({
+			kind: "failed",
+			failureCode: "DIRECT_ANSWER_INVALID",
+			retryable: false,
+		});
+		expect(reporter.recorded.states.at(-1)).toBe("verifying");
+	});
+
+	it("propagates a provider failure of the answer turn with its retryability and status", async () => {
+		const { run } = setup(
+			[
+				NO_RESEARCH,
+				[{ type: "failed", code: "PROVIDER_RATE_LIMITED", retryable: true, upstreamStatus: 429 }],
+			],
+			{ input: japanese() },
+		);
+		expect(await run()).toMatchObject({
+			kind: "failed",
+			failureCode: "PROVIDER_RATE_LIMITED",
+			failureUpstreamStatus: 429,
+			retryable: true,
+		});
+	});
+
+	it("researches when the plan asks for tools, whatever it says about research", async () => {
+		const contradictory = JSON.stringify({
+			...z.record(z.string(), z.unknown()).parse(JSON.parse(PLAN)),
+			needsResearch: false,
+		});
+		const { run, agent, tools } = setup([contradictory, analysis(), VERDICT_SUPPORTED]);
+		const { bundle } = expectBundle(await run());
+		expect(tools.executed).toHaveLength(1);
+		expect(agent.requests[1]?.prompt).toContain("You are the analysis step");
+		expect(bundle.claims.length).toBeGreaterThan(0);
+	});
+
+	it("researches when the first plan does not say that no research is needed", async () => {
+		const zero = JSON.stringify({ toolCalls: [], done: true });
+		const { run, agent } = setup([zero, PLAN, analysis(), VERDICT_SUPPORTED], {
+			input: japanese(),
+		});
+		expect((await run()).kind).toBe("completed");
+		// The reminder round is no longer the routing round.
+		expect(agent.requests[1]?.prompt).not.toContain(PLANNING_ROUTING_NOTE);
+		expect(agent.requests[1]?.prompt).toContain('Return: {"toolCalls":');
+	});
+
+	it("never routes after the first round", async () => {
+		const { run, agent } = setup([PLAN, NO_RESEARCH, analysis(), VERDICT_SUPPORTED], {
+			input: { request: request({ budget: { ...request().budget, maxAgentSteps: 8 } }) },
+		});
+		const { bundle } = expectBundle(await run());
+		expect(agent.requests[1]?.prompt).not.toContain(PLANNING_ROUTING_NOTE);
+		expect(agent.requests[2]?.prompt).toContain("You are the analysis step");
+		expect(bundle.claims.length).toBeGreaterThan(0);
+	});
+
+	it("always researches a news task: its first plan is not offered the choice", async () => {
+		const { run, agent, reporter } = setup([NO_RESEARCH, PLAN, analysis(), VERDICT_SUPPORTED], {
+			input: japanese({ outputType: "news" }),
+		});
+		expect((await run()).kind).toBe("completed");
+		expect(agent.requests[0]?.prompt).not.toContain(PLANNING_ROUTING_NOTE);
+		expect(reporter.recorded.notes).toContain(
+			"The plan requested no tools; asking the model again.",
+		);
 	});
 });
 

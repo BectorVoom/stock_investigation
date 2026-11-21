@@ -360,29 +360,34 @@ function planReply(random: Random, step: number): readonly AgentEvent[] | string
 		});
 	const delta = (text: string): AgentEvent => ({ type: "text.delta", text });
 	switch (
-		step === 0 && chance(random, 0.8)
-			? "plan"
-			: pick(random, [
-					"plan",
-					"plan",
-					"plan",
-					"plan",
-					"plan",
-					"plan",
-					"plan",
-					"plan",
-					"plan",
-					"fenced",
-					"fenced",
-					"junk",
-					"native",
-					"native-ui",
-					"failed",
-					"no-complete",
-					"cost",
-					"empty-done",
-					"bad-schema",
-				])
+		step === 0 && chance(random, 0.1)
+			? "no-research"
+			: step === 0 && chance(random, 0.8)
+				? "plan"
+				: pick(random, [
+						"plan",
+						"plan",
+						"plan",
+						"plan",
+						"plan",
+						"plan",
+						"plan",
+						"plan",
+						"plan",
+						"fenced",
+						"fenced",
+						"junk",
+						"native",
+						"native-ui",
+						"failed",
+						"no-complete",
+						"cost",
+						"empty-done",
+						"bad-schema",
+						"no-research",
+						"no-research",
+						"no-research-odd",
+					])
 	) {
 		case "fenced":
 			return `Here is the plan:\n\`\`\`json\n${plan()}\n\`\`\`\nDone.`;
@@ -436,8 +441,79 @@ function planReply(random: Random, step: number): readonly AgentEvent[] | string
 			return JSON.stringify({ toolCalls: [], done: true });
 		case "bad-schema":
 			return JSON.stringify({ toolCalls: [{ toolId: "news.fetch_feed" }] });
+		// ADR-0079: only the first round's empty plan may route to a direct answer.
+		case "no-research":
+			return JSON.stringify({
+				needsResearch: false,
+				toolCalls: chance(random, 0.8) ? [] : [pick(random, good)],
+				...(chance(random, 0.5) ? { done: chance(random, 0.5) } : {}),
+			});
+		case "no-research-odd":
+			return JSON.stringify({ needsResearch: pick(random, ["no", 0, null, true]), toolCalls: [] });
 		default:
 			return plan();
+	}
+}
+
+/** A direct answer's reply (ADR-0079): valid, borderline and broken shapes. */
+function directReply(random: Random): readonly AgentEvent[] | string {
+	const label = () =>
+		pick(random, [
+			"バックグラインド",
+			"  Dicing  ",
+			"",
+			" ",
+			`${"工".repeat(59)}😀`,
+			"x".repeat(70),
+			7,
+		]);
+	const detail = () =>
+		pick(random, [
+			"ウェハーを薄く削る。",
+			null,
+			"   ",
+			`${"説".repeat(239)}😀`,
+			undefined,
+			["not text"],
+		]);
+	const steps = () =>
+		Array.from({ length: pick(random, [0, 1, 2, 3, 10, 11, 14]) }, () => ({
+			label: label(),
+			detail: detail(),
+		}));
+	const diagram = () =>
+		pick(random, [
+			null,
+			undefined,
+			{ title: pick(random, ["後工程", " ", `${"題".repeat(130)}`]), steps: steps() },
+			{ title: "後工程", steps: steps() },
+			{ steps: steps() },
+			"a diagram",
+		]);
+	const answer = () =>
+		pick(random, [
+			"ダイシングはウェハーを個々のチップに切り分ける工程です。",
+			"  Back grinding thins the wafer.  ",
+			"",
+			"答".repeat(4100),
+			42,
+		]);
+	const json = () => JSON.stringify({ answer: answer(), diagram: diagram() });
+	const delta = (text: string): AgentEvent => ({ type: "text.delta", text });
+	switch (pick(random, ["json", "json", "json", "json", "fenced", "prose", "blank", "failed"])) {
+		case "fenced":
+			return `Answer:\n\`\`\`json\n${json()}\n\`\`\``;
+		case "prose":
+			return pick(random, ["  バックグラインドとは、ウェハーを薄くする工程です。\n", "{broken"]);
+		case "blank":
+			return "   ";
+		case "failed":
+			return [
+				delta(json()),
+				{ type: "failed", code: "PROVIDER_DOWN", retryable: chance(random, 0.5) },
+			];
+		default:
+			return json();
 	}
 }
 
@@ -756,9 +832,11 @@ export async function generateRuns(count: number): Promise<void> {
 				const step = turn++;
 				const reply = request.prompt.startsWith("You are the planning step")
 					? planReply(random, step)
-					: request.prompt.startsWith("You are the analysis step")
-						? analysisReply(random, request.prompt, step)
-						: verdictReply(random, request.prompt);
+					: request.prompt.startsWith("You are the answer step")
+						? directReply(random)
+						: request.prompt.startsWith("You are the analysis step")
+							? analysisReply(random, request.prompt, step)
+							: verdictReply(random, request.prompt);
 				const scripted =
 					typeof reply === "string"
 						? textTurn(

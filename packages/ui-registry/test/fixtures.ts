@@ -232,6 +232,7 @@ export const BASELINE_TYPES = [
 	"source-list",
 	"company-profile",
 	"research-report",
+	"flow-diagram",
 ] as const;
 export type BaselineType = (typeof BASELINE_TYPES)[number];
 
@@ -340,5 +341,14 @@ export const VALID_PROPS = {
 			},
 		],
 		disclaimer: "Research aid only; not investment advice.",
+	},
+	"flow-diagram": {
+		title: "Back-end semiconductor steps",
+		steps: [
+			{ label: "Back grinding", detail: "The wafer is ground thin from its back side." },
+			{ label: "Dicing", detail: "The wafer is cut into individual dies." },
+			{ label: "Molding", detail: null },
+		],
+		basis: "model-knowledge",
 	},
 } as const satisfies Record<BaselineType, WorkspaceComponent["props"]>;

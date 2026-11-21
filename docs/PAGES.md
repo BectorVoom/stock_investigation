@@ -657,6 +657,13 @@ Ask research questions and read the answers, with their sources and run progress
   fixed height): the rendered component with item selection plus an "Add to
   Notebook" action ("In notebook" once saved). Results no visible run owns
   are not shown (there is no "Other results" area).
+- A direct answer (ADR-0079), for a question the agent judged to need no
+  research (explaining or illustrating a general concept or process): plain
+  text ending with the pipeline's note that it was written from the AI's
+  general knowledge without research or source checks, no citation chips,
+  and, when a diagram was asked for or the answer is a sequence of stages, a
+  flow-diagram preview under it — numbered stage cards joined by arrows, top
+  to bottom, captioned as not researched.
 - A notebook-assistant reply labelled "Notebook assistant" (never citation
   chips, never a verification badge) with its turn card: one line per change
   (added / updated / moved / resized / duplicated with before → after, long

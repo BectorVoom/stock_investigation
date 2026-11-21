@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { PLANNING_PROMPT_BUDGET_BYTES } from "../src/index.ts";
 import {
 	analysisPrompt,
+	directAnswerPrompt,
 	PLANNING_REMINDER,
+	PLANNING_ROUTING_NOTE,
 	PLANNING_SOURCES_MAX_BYTES,
 	PROMPT_VERSION,
 	planningPrompt,
@@ -38,7 +40,7 @@ function planPrompt(args: Partial<Parameters<typeof planningPrompt>[0]>): string
 
 describe("conversation context in prompts (AGT-007)", () => {
 	it("bumps the prompt version", () => {
-		expect(PROMPT_VERSION).toBe("research-v8");
+		expect(PROMPT_VERSION).toBe("research-v9");
 	});
 
 	it("adds the context block to the planning prompt right after the question", () => {
@@ -116,17 +118,17 @@ describe("conversation context in prompts (AGT-007)", () => {
 	});
 });
 
-describe("planning prompt byte budget (finding 5)", () => {
-	function japaneseSources(count: number): readonly SubscribedSourceRef[] {
-		return Array.from({ length: count }, (_, index) => ({
-			sourceId: `src_${index}`,
-			canonicalUrl: `https://news.example.org/feed${index}.xml`,
-			publisher: "新".repeat(300),
-			title: "日".repeat(300),
-			licensePolicy: "short-excerpt-permitted" as const,
-		}));
-	}
+function japaneseSources(count: number): readonly SubscribedSourceRef[] {
+	return Array.from({ length: count }, (_, index) => ({
+		sourceId: `src_${index}`,
+		canonicalUrl: `https://news.example.org/feed${index}.xml`,
+		publisher: "新".repeat(300),
+		title: "日".repeat(300),
+		licensePolicy: "short-excerpt-permitted" as const,
+	}));
+}
 
+describe("planning prompt byte budget (finding 5)", () => {
 	it("keeps the whole prompt within budget with 100 Japanese-titled sources", () => {
 		const tools = newsTools().registry.list();
 		const prompt = planPrompt({
@@ -261,7 +263,14 @@ describe("withdrawn images are never offered to the model (owner decision 2026-1
 			claims: [{ index: 0, text: "Orders rose.", passages: "Orders rose." }],
 			fenceToken: "fence-v",
 		});
-		for (const prompt of [planning, analysis(), verification]) {
+		const direct = directAnswerPrompt({
+			request: request(),
+			nowIso: "2026-10-11T00:00:00.000Z",
+			conversationContext: CONTEXT,
+			fenceToken: "fence-d",
+		});
+		const routing = planPrompt({ tools: newsTools().registry.list(), routing: true });
+		for (const prompt of [planning, routing, analysis(), verification, direct]) {
 			expect(prompt).not.toMatch(/image|galler|asset|picture|photo/i);
 		}
 	});
@@ -269,6 +278,55 @@ describe("withdrawn images are never offered to the model (owner decision 2026-1
 	it("tells the model it may only add table, chart or source-list components", () => {
 		expect(analysis()).toContain("You may only add table, chart or source-list components");
 		expect(analysis()).not.toContain("image-gallery");
+	});
+});
+
+describe("the first planning round decides whether research is needed (ADR-0079)", () => {
+	it("offers the choice and its Return field only when routing", () => {
+		const routing = planPrompt({ routing: true });
+		expect(routing).toContain(`\n\n${PLANNING_ROUTING_NOTE}\nDecide what evidence is still needed`);
+		expect(routing).toContain(
+			'Return: {"needsResearch":<false only for a general explanation that needs no research>,"toolCalls":',
+		);
+		const later = planPrompt({ routing: false });
+		expect(later).not.toContain(PLANNING_ROUTING_NOTE);
+		expect(later).not.toContain("needsResearch");
+		// Without the routing flag the prompt is exactly the research-v8 planning prompt.
+		expect(planPrompt({})).toBe(later);
+	});
+
+	it("keeps a maxed-out routing prompt within budget", () => {
+		const prompt = planPrompt({
+			request: request({ question: "日".repeat(2000) }),
+			tools: newsTools().registry.list(),
+			sources: japaneseSources(100),
+			routing: true,
+			reminder: PLANNING_REMINDER,
+			conversationContext: Array.from({ length: 6 }, (_, index) => ({
+				role: (index % 2 === 0 ? "owner" : "assistant") as "owner" | "assistant",
+				text: "話".repeat(600),
+			})),
+		});
+		expect(promptBytes(prompt)).toBeLessThanOrEqual(PLANNING_PROMPT_BUDGET_BYTES);
+	});
+
+	it("asks the direct answer for plain text in the question's language, no sourced facts and an optional flow", () => {
+		const prompt = directAnswerPrompt({
+			request: request({ question: "ダイシングを図で説明してください。" }),
+			nowIso: "2026-10-11T00:00:00.000Z",
+			conversationContext: CONTEXT,
+			fenceToken: "fence-d",
+		});
+		expect(prompt).toContain("Research question: ダイシングを図で説明してください。");
+		expect(prompt).toContain("Tell me about grid storage.");
+		expect(prompt).toContain("when the question is in Japanese, write in Japanese");
+		expect(prompt).toContain("do not cite or invent sources");
+		expect(prompt).toContain("an ordered flow of 2 to 10 stages");
+		expect(
+			prompt.endsWith(
+				'Return: {"answer":"...","diagram":{"title":"...","steps":[{"label":"...","detail":"..."}]}}',
+			),
+		).toBe(true);
 	});
 });
 

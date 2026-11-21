@@ -126,6 +126,17 @@ describe("registry components in Japanese (ADR-0032)", () => {
 		expect(text).toContain("価格（JPY）");
 	});
 
+	it("labels a flow diagram's stages and basis in Japanese, and keeps the agent's text", () => {
+		const container = renderIn(ja, component("flow-diagram", VALID_PROPS["flow-diagram"]));
+		expect(container.textContent).toContain(
+			"AI が一般知識から作成 — 調査や出典との照合は行っていません",
+		);
+		expect(container.textContent).toContain("Back grinding");
+		expect(container.querySelector("ol > li")?.getAttribute("aria-label")).toBe(
+			"全 3 段階中 1 段階目",
+		);
+	});
+
 	it("explains a component it cannot render", () => {
 		const container = renderIn(ja, component("crystal-ball", {}));
 		expect(container.querySelector("[data-fallback]")?.textContent).toBe(

@@ -11,6 +11,21 @@
 import { createScriptedAgent } from "../../examples/extensions/scriptedAgent.ts";
 import { HEADLINE, HOSTILE_MARKUP } from "./fixtures.ts";
 
+/** The direct answer to a diagram question (ADR-0079): plain text and a three-stage flow. */
+export const DIRECT_ANSWER_TEXT =
+	"後工程では、ウェハーを薄く削り（バックグラインド）、チップに切り分け（ダイシング）、樹脂で封止します（モールディング）。";
+const DIRECT_ANSWER = JSON.stringify({
+	answer: DIRECT_ANSWER_TEXT,
+	diagram: {
+		title: "半導体後工程の流れ",
+		steps: [
+			{ label: "バックグラインド", detail: "ウェハーの裏面を研削して薄くする。" },
+			{ label: "ダイシング", detail: "ウェハーを個々のチップに切り分ける。" },
+			{ label: "モールディング", detail: "チップを樹脂で封止して保護する。" },
+		],
+	},
+});
+
 /** Replies as a model would: a plan, then an analysis citing what the tool retrieved, then verdicts. */
 export function createE2eScriptedAgent(): ReturnType<typeof createScriptedAgent> {
 	return createScriptedAgent({
@@ -18,6 +33,16 @@ export function createE2eScriptedAgent(): ReturnType<typeof createScriptedAgent>
 		models: ["scripted/alpha", "scripted/beta", "other/gamma"],
 		reply(request) {
 			const { prompt, runId } = request;
+			// ADR-0079: a question asking for a diagram (図) needs no research. Only
+			// the first round offers the choice; the answer step then explains it.
+			if (
+				prompt.includes("planning step") &&
+				prompt.includes('Return: {"needsResearch":') &&
+				/^Research question: [^\n]*図/m.test(prompt)
+			) {
+				return JSON.stringify({ needsResearch: false, toolCalls: [], done: true });
+			}
+			if (prompt.startsWith("You are the answer step")) return DIRECT_ANSWER;
 			if (prompt.includes("planning step")) {
 				if (prompt.includes(HEADLINE)) return JSON.stringify({ toolCalls: [], done: true });
 				const sourceId = /sourceId (\S+):/.exec(prompt)?.[1] ?? "unknown";

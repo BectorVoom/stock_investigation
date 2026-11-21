@@ -6,6 +6,7 @@ import {
 	companyProfilePropsSchema,
 	dataTablePropsSchema,
 	financialTablePropsSchema,
+	flowDiagramPropsSchema,
 	lineChartPropsSchema,
 	newsCardPropsSchema,
 	researchReportPropsSchema,
@@ -22,6 +23,7 @@ import {
 import { BarChart } from "./renderers/BarChart.tsx";
 import { CandlestickChart } from "./renderers/CandlestickChart.tsx";
 import { CompanyProfile, NewsCard, SourceListComponent } from "./renderers/cards.tsx";
+import { FlowDiagram } from "./renderers/FlowDiagram.tsx";
 import { LineChart } from "./renderers/LineChart.tsx";
 import { ResearchReport } from "./renderers/ResearchReport.tsx";
 import { DataTable, FinancialTable } from "./renderers/tables.tsx";
@@ -41,7 +43,7 @@ function baselineEntry<Props extends JsonObject>(
 }
 
 /**
- * The nine V1 component types, each contracts definition paired with its
+ * The nine V1 component types and the flow diagram (ADR-0079), each contracts definition paired with its
  * renderer. Extensions append their own entries at the composition root:
  * `createUiRegistry([...BASELINE_REGISTRY_ENTRIES, myEntry])`.
  */
@@ -55,6 +57,7 @@ export const BASELINE_REGISTRY_ENTRIES: readonly ComponentRegistryEntry[] = [
 	baselineEntry("source-list", sourceListPropsSchema, SourceListComponent),
 	baselineEntry("company-profile", companyProfilePropsSchema, CompanyProfile),
 	baselineEntry("research-report", researchReportPropsSchema, ResearchReport),
+	baselineEntry("flow-diagram", flowDiagramPropsSchema, FlowDiagram),
 ];
 
 export function createBaselineUiRegistry(): UiRegistry {

@@ -1,4 +1,4 @@
-//! Byte-identical research-v8 prompt builders (SEC-001, AGT-007).
+//! Byte-identical research-v9 prompt builders (SEC-001, AGT-007).
 use research_agent_core::{
 	model_text::{EmptyFenceToken, fence_untrusted_text},
 	tools::ToolMeta,
@@ -10,7 +10,7 @@ use research_contracts::jobs::{
 use research_js::{number::to_js_string, utf16};
 
 /// Prompt provenance version.
-pub const PROMPT_VERSION: &str = "research-v8";
+pub const PROMPT_VERSION: &str = "research-v9";
 /// Maximum planning prompt bytes, including all fences and fixed sections.
 pub const PLANNING_PROMPT_BUDGET_BYTES: usize = 76_000;
 /// Reminder after an empty plan, copied verbatim from the TypeScript builder.
@@ -18,6 +18,9 @@ pub const PLANNING_REMINDER: &str = "Nothing has been collected yet. Request at 
 /// Attached to the last planning round's prompt (ADR-0078): no round follows
 /// to open search results, so the pipeline skips search requests there.
 pub const PLANNING_FINAL_ROUND_NOTE: &str = "This is the final collection round. Search results can no longer be opened, so web.search and news.search will not run: request only tools that return citeable evidence, such as reading the most relevant original pages from the leads already found or stored records.";
+/// First round only (ADR-0079): the planner may answer that the question needs
+/// no research, which sends it to `direct_answer_prompt` (`PLANNING_ROUTING_NOTE`).
+pub const PLANNING_ROUTING_NOTE: &str = "First decide whether this question needs research at all. Set \"needsResearch\" to false, with no tool calls, only when the owner asks to explain, define, compare or illustrate general concepts, terms, mechanisms or processes (for example how a manufacturing step works, or a diagram of one) that a careful expert can answer correctly from general knowledge alone. Anything that depends on specific companies, products, markets, prices, statistics, recent events, dates, forecasts or investment decisions needs research: set \"needsResearch\" to true and request tools.";
 const GROUND: &str = include_str!("templates/ground.txt");
 
 fn render(template: &str, slots: &[(&str, &str)]) -> String {
@@ -133,6 +136,8 @@ pub struct PlanningPromptInput<'a> {
 	pub prompt_budget_bytes: usize,
 	/// Optional pipeline reminder.
 	pub reminder: Option<&'a str>,
+	/// First round only: the planner may answer that no research is needed (ADR-0079).
+	pub routing: bool,
 }
 
 /// Builds the planning prompt with bounded catalog, sources, context and output.
@@ -220,9 +225,23 @@ pub fn planning_prompt(input: PlanningPromptInput<'_>) -> Result<String, EmptyFe
 		.filter(|s| !s.is_empty())
 		.map(|s| format!("\nNote from the pipeline: {s}\n"))
 		.unwrap_or_default();
+	let routing = if input.routing {
+		format!("{PLANNING_ROUTING_NOTE}\n")
+	} else {
+		String::new()
+	};
+	let return_open = if input.routing {
+		"{\"needsResearch\":<false only for a general explanation that needs no research>,"
+	} else {
+		"{"
+	};
 	let tail = render(
 		include_str!("templates/planning-tail.txt"),
-		&[("reminder", &reminder)],
+		&[
+			("reminder", &reminder),
+			("routing", &routing),
+			("return_open", return_open),
+		],
 	);
 	let overhead = fence_untrusted_text("collected tool output", "", input.fence_token)?.len();
 	let budget = input
@@ -337,6 +356,35 @@ pub fn analysis_prompt(input: AnalysisPromptInput<'_>) -> Result<String, EmptyFe
 			("datasets", input.dataset_guide),
 			("components", &components),
 			("repair", &repair),
+		],
+	))
+}
+
+/// Direct answer prompt inputs (ADR-0079).
+pub struct DirectAnswerPromptInput<'a> {
+	/// Owner request.
+	pub request: &'a ResearchRequest,
+	/// Fixed current timestamp.
+	pub now_iso: &'a str,
+	/// Earlier conversation, never evidence.
+	pub conversation_context: &'a [ConversationContextMessage],
+	/// Fresh nonempty fence token.
+	pub fence_token: &'a str,
+}
+
+/// The direct answer (ADR-0079): the planner judged the question to need no
+/// research, so the model explains it from general knowledge in one turn,
+/// with an optional flow diagram (`directAnswerPrompt`).
+pub fn direct_answer_prompt(input: DirectAnswerPromptInput<'_>) -> Result<String, EmptyFenceToken> {
+	Ok(render(
+		include_str!("templates/direct-answer.txt"),
+		&[
+			("ground", GROUND),
+			("request", &describe_request(input.request, input.now_iso)),
+			(
+				"conversation",
+				&conversation_section(input.conversation_context, input.fence_token)?,
+			),
 		],
 	))
 }

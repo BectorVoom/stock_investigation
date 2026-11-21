@@ -10,7 +10,7 @@ import { MAX_TOOL_CALLS_PER_REPLY } from "./draft.ts";
 import { NEWS_SENTENCE_FORMAT } from "./newsSentenceFormat.ts";
 
 /** Bump when any prompt text changes; stored with every run for reproducibility (AGT-010). */
-export const PROMPT_VERSION = "research-v8";
+export const PROMPT_VERSION = "research-v9";
 
 /** One planning retry note (ADR-0025): sent once when the first plan asks for no tools. */
 export const PLANNING_REMINDER =
@@ -22,6 +22,14 @@ export const PLANNING_REMINDER =
  */
 export const PLANNING_FINAL_ROUND_NOTE =
 	"This is the final collection round. Search results can no longer be opened, so web.search and news.search will not run: request only tools that return citeable evidence, such as reading the most relevant original pages from the leads already found or stored records.";
+
+/**
+ * The first planning round decides whether the question needs research at all
+ * (ADR-0079). A general explanation goes to `directAnswerPrompt` instead of the
+ * evidence pipeline; anything that needs facts about the world keeps researching.
+ */
+export const PLANNING_ROUTING_NOTE =
+	'First decide whether this question needs research at all. Set "needsResearch" to false, with no tool calls, only when the owner asks to explain, define, compare or illustrate general concepts, terms, mechanisms or processes (for example how a manufacturing step works, or a diagram of one) that a careful expert can answer correctly from general knowledge alone. Anything that depends on specific companies, products, markets, prices, statistics, recent events, dates, forecasts or investment decisions needs research: set "needsResearch" to true and request tools.';
 
 /**
  * UTF-8 byte budgets for the planning prompt's sections. The whole prompt must
@@ -124,6 +132,8 @@ export function planningPrompt(input: {
 	readonly promptBudgetBytes: number;
 	/** Short pipeline note placed just before the Return line (ADR-0025 reminder). */
 	readonly reminder?: string | null;
+	/** First round only: the planner may answer that no research is needed (ADR-0079). */
+	readonly routing?: boolean;
 }): string {
 	const tools = fitToolCatalog(input.tools);
 	const sources = fitSourceList(input.sources);
@@ -144,14 +154,15 @@ Collected so far:
 		input.reminder === null || input.reminder === undefined || input.reminder === ""
 			? ""
 			: `\nNote from the pipeline: ${input.reminder}\n`;
+	const routing = input.routing === true;
 	const tail = `
 
-Decide what evidence is still needed, including evidence that could CONTRADICT the emerging thesis.
+${routing ? `${PLANNING_ROUTING_NOTE}\n` : ""}Decide what evidence is still needed, including evidence that could CONTRADICT the emerging thesis.
 While nothing has been collected, return at least one tool call: done with no calls is only for when evidence has been collected or every listed tool has been tried.
 For stock screening, use stocks.search in stages: first discover candidates with short theme terms (try Japanese and English variants separately, kind "company"), then retrieve each candidate's financials with stocks.search (kind "financials", query "<ticker> 純利益" or "<ticker> profit attributable to owners" only, with no extra words like 通期, 年度, years or percentages; do not call external SEC tools when screening stored records). Its search is literal all-term matching, not a numeric filter; fetch the latest two comparable annual fiscal years per candidate with a sufficient limit. Request missing periods before setting done=true. AI-written themes identify candidates only; verify thematic exposure from source passages or fetch a referenced primary page. A search miss or missing period is not proof that no stock qualifies. State the screened subset and data gaps; do not claim market-wide coverage from a limited search.
 For demand research, prioritize primary measures of orders net of cancellations, shipments, inventories, consumption and customer spending. Retrieve original releases: Census M3 and retail sales (US), METI shipments/inventories and Cabinet Office machinery orders (Japan), EIA electricity consumption, JMTBA machine-tool orders and SIA/WSTS semiconductor shipments as relevant. Pair orders with realized sales/usage and inventory; separate volume from prices, forecasts from actuals and company guidance from independent evidence. News aggregators are discovery tools, not primary evidence. State coverage gaps; never infer demand growth from headline counts or supply expansion alone.
 Use general web search when available for public facts that need external evidence, including industry demand. Search in the market’s language using short keywords. Prefer official statistics, regulators and original releases. Open promising results with the page tool and assess who publishes the page, its date, scope, methodology and incentives. Trace summaries to their original sources, and corroborate consequential claims from interested publishers with independent evidence. Skip anonymous, promotional or unverifiable pages as support for factual claims. Search snippets are leads only. If search is unavailable, fetch known official URLs with the page tool and disclose any remaining coverage gap.${reminderBlock}
-Return: {"toolCalls":[{"toolId":"<id>","args":{...}}],"done":<true when enough evidence is collected or no tool can help>}`;
+Return: {${routing ? '"needsResearch":<false only for a general explanation that needs no research>,' : ""}"toolCalls":[{"toolId":"<id>","args":{...}}],"done":<true when enough evidence is collected or no tool can help>}`;
 	// The collected section gets whatever the fixed sections leave of the
 	// budget, fence wrapper included; it is trimmed from its tail first (with
 	// notice). Terminates: constant string operations. The reminder is part of
@@ -283,6 +294,31 @@ ${components}
 ${input.repairNote === null ? "" : `\nYour previous reply was rejected: ${input.repairNote}\nReturn corrected JSON only.\n`}
 Do not write a narrative answer: the published summary is assembled from the claims that pass verification.
 Return: {"claims":[{"text":"...","claimType":"...","evidence":[{"evidenceId":"...","relation":"supports","quote":"..."}]}],"scenarios":[{"productOrService":"...","quantityKind":"unit-demand","unit":"...","baseYear":2026,"targetYear":2030,"baselineValue":null,"baselineEvidenceId":null,"baselineQuote":null,"bear":{"targetValue":0,"assumptions":["..."]},"base":{"targetValue":0,"assumptions":["..."]},"bull":{"targetValue":0,"assumptions":["..."]},"drivers":["..."],"barriers":["..."],"falsifiers":["..."],"methodology":"...","supportingEvidenceIds":["..."],"contraryEvidenceIds":["..."]}],"suppliers":[{"issuerName":"...","ticker":"...","exchange":"...","country":"US","productsOrServices":["..."],"businessExposure":"...","scenarioIndex":0,"evidence":[{"evidenceId":"...","quote":"..."}]}],"pricingPower":[],"uiOperations":[]}`;
+}
+
+/**
+ * The direct answer (ADR-0079): the planner judged the question to need no
+ * research, so the model explains it from general knowledge in one turn, with
+ * an optional flow diagram. Nothing is cited, and the pipeline labels the
+ * result as unresearched.
+ */
+export function directAnswerPrompt(input: {
+	readonly request: ResearchRequest;
+	readonly nowIso: string;
+	readonly conversationContext: readonly ConversationContextMessage[];
+	readonly fenceToken: string;
+}): string {
+	return `You are the answer step of a research assistant. The planning step judged that this question needs no research: answer it from general knowledge.
+${GROUND_RULES}
+
+${describeRequest(input.request, input.nowIso)}${conversationSection(input.conversationContext, input.fenceToken)}
+
+Requirements:
+- Answer in the question’s language: when the question is in Japanese, write in Japanese.
+- Explain accurately and clearly, as a careful expert would to an investor who is not a specialist: what each concept is, why it matters and how the parts relate. Write plain text in short paragraphs or numbered lines; no Markdown, HTML or ASCII art.
+- Do not state figures, market shares, prices, dates, company-specific facts or recent developments, and do not cite or invent sources: those need research. If part of the question needs them, say which part.
+- When the owner asks for a diagram, figure, chart or illustration (図, 図解, フロー, 流れ), or when the explanation is a sequence of stages, also return "diagram": an ordered flow of 2 to 10 stages, each with a short "label" (at most 60 characters) and a one-sentence "detail" (at most 240 characters), under a short "title". The answer must still read on its own without the diagram. Otherwise set "diagram" to null.
+Return: {"answer":"...","diagram":{"title":"...","steps":[{"label":"...","detail":"..."}]}}`;
 }
 
 export function verificationPrompt(input: {

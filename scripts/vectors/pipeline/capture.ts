@@ -16,6 +16,7 @@ import {
 } from "../../../packages/application/src/research/pipeline.ts";
 import {
 	analysisPrompt,
+	directAnswerPrompt,
 	planningPrompt,
 	verificationPrompt,
 } from "../../../packages/application/src/research/prompts.ts";
@@ -46,6 +47,13 @@ export function capturedPlanningPrompt(input: Parameters<typeof planningPrompt>[
 export function capturedAnalysisPrompt(input: Parameters<typeof analysisPrompt>[0]): string {
 	const output = analysisPrompt(input);
 	prompts.push({ input: { builder: "analysis", ...input }, output });
+	return output;
+}
+export function capturedDirectAnswerPrompt(
+	input: Parameters<typeof directAnswerPrompt>[0],
+): string {
+	const output = directAnswerPrompt(input);
+	prompts.push({ input: { builder: "direct", ...input }, output });
 	return output;
 }
 export function capturedVerificationPrompt(

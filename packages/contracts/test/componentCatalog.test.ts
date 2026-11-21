@@ -21,6 +21,7 @@ import {
 	dataTablePropsSchema,
 	defineComponent,
 	financialTablePropsSchema,
+	flowDiagramPropsSchema,
 	idSchema,
 	lineChartPropsSchema,
 	newsCardPropsSchema,
@@ -43,6 +44,7 @@ const BASELINE_TYPES = [
 	"source-list",
 	"company-profile",
 	"research-report",
+	"flow-diagram",
 ] as const;
 
 type BaselineType = (typeof BASELINE_TYPES)[number];
@@ -504,20 +506,92 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 			],
 		],
 	},
+	"flow-diagram": {
+		valid: {
+			title: "半導体後工程の流れ",
+			steps: [
+				{ label: "バックグラインド", detail: "ウェハーを薄くする。" },
+				{ label: "ダイシング", detail: null },
+			],
+			basis: "model-knowledge",
+		},
+		references: { datasetRefs: [], sourceIds: [] },
+		invalid: [
+			[
+				"a single stage",
+				{ title: "T", steps: [{ label: "A", detail: null }], basis: "model-knowledge" },
+			],
+			[
+				"eleven stages",
+				{
+					title: "T",
+					steps: Array.from({ length: 11 }, (_, index) => ({ label: `S${index}`, detail: null })),
+					basis: "model-knowledge",
+				},
+			],
+			[
+				"a blank label",
+				{
+					title: "T",
+					steps: [
+						{ label: " ", detail: null },
+						{ label: "B", detail: null },
+					],
+					basis: "model-knowledge",
+				},
+			],
+			[
+				"a label over 60 characters",
+				{
+					title: "T",
+					steps: [
+						{ label: "x".repeat(61), detail: null },
+						{ label: "B", detail: null },
+					],
+					basis: "model-knowledge",
+				},
+			],
+			[
+				"a basis other than model knowledge",
+				{
+					title: "T",
+					steps: [
+						{ label: "A", detail: null },
+						{ label: "B", detail: null },
+					],
+					basis: "verified",
+				},
+			],
+			[
+				"raw html beside the steps",
+				{
+					title: "T",
+					steps: [
+						{ label: "A", detail: null },
+						{ label: "B", detail: null },
+					],
+					basis: "model-knowledge",
+					html: "<b>A</b>",
+				},
+			],
+		],
+	},
 };
 
 describe("baseline component catalog", () => {
-	it("registers exactly the nine V1 component types, each at schema version 1", () => {
+	it("registers exactly the nine V1 component types and the flow diagram, each at schema version 1", () => {
 		expect([...catalog.componentTypes()].sort()).toEqual([...BASELINE_TYPES].sort());
 		for (const componentType of BASELINE_TYPES) {
 			expect(catalog.currentSchemaVersion(componentType)).toBe(1);
 		}
 	});
 
-	it("requires the owner permission and declares capabilities for every type", () => {
+	it("requires the owner permission and declares capabilities for every type that has any", () => {
 		for (const definition of BASELINE_COMPONENT_DEFINITIONS) {
 			expect(definition.requiredPermission).toBe("owner");
-			expect(definition.capabilities.length).toBeGreaterThan(0);
+			// A flow diagram binds no dataset, cites no source and has nothing to select (ADR-0079).
+			if (definition.componentType === "flow-diagram") expect(definition.capabilities).toEqual([]);
+			else expect(definition.capabilities.length).toBeGreaterThan(0);
 		}
 	});
 
@@ -597,6 +671,7 @@ describe("exported props schemas", () => {
 		"source-list": sourceListPropsSchema,
 		"company-profile": companyProfilePropsSchema,
 		"research-report": researchReportPropsSchema,
+		"flow-diagram": flowDiagramPropsSchema,
 	};
 
 	it.each(

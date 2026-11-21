@@ -377,6 +377,35 @@ export const researchReportPropsSchema = z.strictObject({
 	disclaimer: z.string().min(1).max(600),
 });
 
+/** Bounds of a flow diagram (ADR-0079): a few stages, each a short label and one sentence. */
+export const FLOW_DIAGRAM_LIMITS = {
+	minSteps: 2,
+	maxSteps: 10,
+	labelChars: 60,
+	detailChars: 240,
+} as const;
+
+/**
+ * An ordered flow of stages drawn as boxes joined by arrows (ADR-0079). Only a
+ * direct answer — a question the planner judged to need no research — creates
+ * one, from the model's general knowledge: `basis` says so, the renderer
+ * always labels it as not checked against sources, and a model can never
+ * create one through display instructions (it is not model-authorable).
+ */
+export const flowDiagramPropsSchema = z.strictObject({
+	title: titleSchema,
+	steps: z
+		.array(
+			z.strictObject({
+				label: z.string().trim().min(1).max(FLOW_DIAGRAM_LIMITS.labelChars),
+				detail: z.string().trim().min(1).max(FLOW_DIAGRAM_LIMITS.detailChars).nullable(),
+			}),
+		)
+		.min(FLOW_DIAGRAM_LIMITS.minSteps)
+		.max(FLOW_DIAGRAM_LIMITS.maxSteps),
+	basis: z.literal("model-knowledge"),
+});
+
 const datasetAndSources = (props: {
 	readonly datasetRef: string;
 	readonly sourceIds: readonly string[];
@@ -387,7 +416,7 @@ const datasetAndSources = (props: {
 
 const chartCapabilities = ["dataset", "sources"] as const;
 
-/** The nine V1 component types. Extensions append their own definitions at the composition roots. */
+/** The V1 component types plus the flow diagram (ADR-0079). Extensions append their own definitions at the composition roots. */
 export const BASELINE_COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = [
 	defineComponent({
 		componentType: "data-table",
@@ -490,6 +519,15 @@ export const BASELINE_COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = [
 		},
 		migrations: {},
 	}),
+	defineComponent({
+		componentType: "flow-diagram",
+		schemaVersion: 1,
+		propsSchema: flowDiagramPropsSchema,
+		capabilities: [],
+		requiredPermission: "owner",
+		references: () => NO_REFERENCES,
+		migrations: {},
+	}),
 ];
 
 export type DataTableProps = z.infer<typeof dataTablePropsSchema>;
@@ -501,3 +539,4 @@ export type NewsCardProps = z.infer<typeof newsCardPropsSchema>;
 export type SourceListProps = z.infer<typeof sourceListPropsSchema>;
 export type CompanyProfileProps = z.infer<typeof companyProfilePropsSchema>;
 export type ResearchReportProps = z.infer<typeof researchReportPropsSchema>;
+export type FlowDiagramProps = z.infer<typeof flowDiagramPropsSchema>;

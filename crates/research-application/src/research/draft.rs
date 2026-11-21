@@ -54,6 +54,15 @@ fn text(max: usize) -> Schema {
 		upper: false,
 	}
 }
+/// Trimmed and cut, and allowed to end up empty (`optionalText`).
+fn optional_text(max: usize) -> Schema {
+	Schema::Text {
+		max: Some(max),
+		transform: true,
+		empty: true,
+		upper: false,
+	}
+}
 fn string(max: Option<usize>) -> Schema {
 	Schema::Text {
 		max,
@@ -63,12 +72,7 @@ fn string(max: Option<usize>) -> Schema {
 	}
 }
 fn quote() -> Schema {
-	Schema::Text {
-		max: Some(400),
-		transform: true,
-		empty: true,
-		upper: false,
-	}
+	optional_text(400)
 }
 fn listing(upper: bool) -> Schema {
 	Schema::Text {
@@ -343,6 +347,23 @@ fn schema(name: &str) -> Schema {
 				.empty_array(8),
 			),
 			("done", Schema::Boolean.default(Value::Bool(false))),
+			// ADR-0079: a missing field means research.
+			("needsResearch", Schema::Boolean.default(Value::Bool(true))),
+		]),
+		"direct" => obj(vec![
+			("answer", text(4000)),
+			("diagram", Schema::Unknown.default(Value::Null)),
+		]),
+		"directDiagram" => obj(vec![
+			("title", text(120)),
+			(
+				"steps",
+				obj(vec![
+					("label", text(60)),
+					("detail", optional_text(240).null()),
+				])
+				.array(10),
+			),
 		]),
 		"analysis" => obj(vec![
 			(
@@ -457,7 +478,8 @@ pub(super) const PRICE_FIELDS: [&str; 8] = [
 	"operatingMarginChangeBps",
 ];
 
-/// Parses a plan, analysis, scenario, supplier, pricingPower or verdicts draft.
+/// Parses a plan, analysis, scenario, supplier, pricingPower, verdicts, direct
+/// or directDiagram draft.
 pub fn parse_draft(name: &str, input: &Value) -> Result<Value, Vec<DraftIssue>> {
 	let mut issues = Vec::new();
 	let value = decode(&schema(name), Some(input), "", &mut issues);
