@@ -25,6 +25,7 @@ import { BUTTON, DisclosureSummary, ErrorNotice, Loading } from "../components/u
 import { commonMessages } from "../i18n/common.messages.ts";
 import { withUpstreamStatus } from "../i18n/upstreamStatus.ts";
 import { formatInstant } from "../lib/format.ts";
+import { ChatMarkdownText, type MarkdownTableNotebookSave } from "./ChatMarkdownText.tsx";
 import { AnswerClaims } from "./Citations.tsx";
 import { citationsMessages, conversationMessages } from "./conversation.messages.ts";
 import { NotebookTurnCard } from "./NotebookTurnCard.tsx";
@@ -147,10 +148,24 @@ function AssistantMessage(props: {
 	readonly onAddToNotebook: (() => void) | null;
 	readonly addPending: boolean;
 	readonly inNotebook: boolean;
+	readonly onAddTableComponent?: ((core: WidgetCore, origin: NotebookWidgetOrigin) => void) | null;
+	readonly componentInNotebook?: (componentId: string) => boolean;
+	readonly savingNotebookIds?: readonly string[];
 }): JSX.Element {
 	const m = useMessages(conversationMessages);
 	const reportText = useMessages(citationsMessages);
 	const citationText = useMessages(citationMessages);
+	const saveScope = (scopeId: string): MarkdownTableNotebookSave | null =>
+		props.onAddTableComponent == null
+			? null
+			: {
+					scopeId,
+					messageId: props.message.messageId,
+					runId: props.message.runId,
+					onAddComponent: props.onAddTableComponent,
+					componentInNotebook: (id) => props.componentInNotebook?.(id) ?? false,
+					savingIds: props.savingNotebookIds ?? [],
+				};
 	const copyText = createMemo(() => {
 		if (!props.withCitations || props.message.claimIds.length === 0) return props.message.text;
 		const claims = props.message.claimIds.flatMap((id) => {
@@ -182,11 +197,14 @@ function AssistantMessage(props: {
 				{" · "}
 				<time datetime={props.message.createdAt}>{formatInstant(props.message.createdAt)}</time>
 			</p>
-			{/* Plain text only: agent output is data, never markup (UI-005). */}
+			{/* Approved structured pipe tables only; all other agent text stays plain text (UI-005). */}
 			<Show when={!props.withCitations || props.message.claimIds.length === 0}>
-				<p class="mt-0.5 whitespace-pre-wrap wrap-anywhere text-sm text-slate-900">
-					{props.message.text}
-				</p>
+				<div class="mt-0.5">
+					<ChatMarkdownText
+						text={props.message.text}
+						notebookSave={saveScope(props.message.messageId)}
+					/>
+				</div>
 			</Show>
 			<Show when={props.withCitations && props.message.claimIds.length > 0}>
 				<AnswerClaims
@@ -194,6 +212,7 @@ function AssistantMessage(props: {
 					claimIds={props.message.claimIds}
 					claims={props.claims}
 					evidence={props.evidence}
+					notebookSaveForClaim={(claimId) => saveScope(claimId)}
 				/>
 				<details class="mt-3 text-xs text-slate-700">
 					<DisclosureSummary>{reportText().researchNotes}</DisclosureSummary>
@@ -760,6 +779,9 @@ export function Conversation(props: {
 																	inNotebook={
 																		props.answerInNotebook?.(current().messageId) ?? false
 																	}
+																	onAddTableComponent={props.onAddComponent ?? null}
+																	componentInNotebook={props.componentInNotebook}
+																	savingNotebookIds={props.savingNotebookIds}
 																/>
 															}
 														>

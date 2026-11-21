@@ -6,7 +6,11 @@ import {
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { notebookModelMessages } from "../../src/notebook/notebook.messages.ts";
-import { widgetFromAnswer, widgetFromComponent } from "../../src/notebook/notebookModel.ts";
+import {
+	widgetFromAnswer,
+	widgetFromComponent,
+	widgetFromMarkdownTable,
+} from "../../src/notebook/notebookModel.ts";
 import {
 	duplicateWidget,
 	moveWidget,
@@ -347,5 +351,41 @@ describe("notebook model", () => {
 		).toEqual(["nb-metric"]);
 		// Unknown ids change nothing.
 		expect(moveWidget(widgets, "nb-missing", "earlier")).toBe(widgets);
+	});
+
+	it("converts a Markdown pipe table into a valid Notebook table widget", () => {
+		const core = widgetFromMarkdownTable(
+			{
+				columns: ["銘柄", "純利益率", "純利益"],
+				alignments: [null, "right", "right"],
+				rows: [
+					["内海造船 (7018)", "4.62%", "2100000000"],
+					["テスト造船", "—", ""],
+				],
+				raw: "| 銘柄 | 純利益率 | 純利益 |",
+			},
+			"日本の造船銘柄の純利益率比較",
+			notebookModelMessages.ja.tableTitle,
+		);
+		expect(core.type).toBe("table");
+		expect(core.title).toBe("日本の造船銘柄の純利益率比較");
+		expect(core.columns).toEqual(["銘柄", "純利益率", "純利益"]);
+		expect(core.rows).toEqual([
+			["内海造船 (7018)", "4.62%", 2_100_000_000],
+			["テスト造船", null, null],
+		]);
+		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
+	});
+
+	it("saves a table-only chat reply as a table widget via widgetFromAnswer", () => {
+		const core = widgetFromAnswer(
+			chatMessage("| Company | Margin |\n| --- | ---: |\n| Example | 12.5% |"),
+			notebookModelMessages.en,
+		);
+		expect(core.type).toBe("table");
+		if (core.type !== "table") throw new Error("expected a table widget");
+		expect(core.columns).toEqual(["Company", "Margin"]);
+		expect(core.rows).toEqual([["Example", "12.5%"]]);
+		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 });

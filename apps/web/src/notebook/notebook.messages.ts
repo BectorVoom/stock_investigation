@@ -61,10 +61,12 @@ export const notebookSessionMessages = defineMessages({
 export const notebookModelMessages = defineMessages({
 	en: {
 		answerTitle: "Answer",
+		tableTitle: "Table",
 		emptyAnswer: "(empty answer)",
 	},
 	ja: {
 		answerTitle: "回答",
+		tableTitle: "表",
 		emptyAnswer: "（空の回答）",
 	},
 });

@@ -408,6 +408,10 @@ pub async fn run_research_pipeline(
 	let mut tool_error_statuses = tool_status::ToolErrorStatuses::default();
 	let mut completed_requests = HashSet::new();
 	let mut unavailable_tools = HashSet::new();
+	let mut security_id_by_listing = HashMap::<String, String>::new();
+	let mut remapped_security_id = HashMap::<String, String>::new();
+	let mut known_collected_security_ids = HashSet::<String>::new();
+	let mut seen_financial_observation_keys = HashSet::<String>::new();
 	let mut collection_limit_reached = false;
 	let mut search_cooldown_encountered = false;
 	let mut found_search_leads = false;
@@ -851,13 +855,55 @@ pub async fn run_research_pipeline(
 						} else {
 							"evidence item(s)"
 						};
-						collected.securities.extend(output.securities);
-						collected
-							.financial_observations
-							.extend(output.financial_observations);
-						collected
-							.position_observations
-							.extend(output.position_observations);
+						for sec in output.securities {
+							let listing_key = format!(
+								"{}:{}:{}",
+								sec.country.as_str(),
+								sec.exchange.to_lowercase(),
+								sec.ticker.to_uppercase()
+							);
+							if let Some(existing_id) = security_id_by_listing.get(&listing_key) {
+								remapped_security_id
+									.insert(sec.security_id.clone(), existing_id.clone());
+							} else {
+								security_id_by_listing.insert(listing_key, sec.security_id.clone());
+								remapped_security_id
+									.insert(sec.security_id.clone(), sec.security_id.clone());
+								known_collected_security_ids.insert(sec.security_id.clone());
+								collected.securities.push(sec);
+							}
+						}
+						for mut obs in output.financial_observations {
+							if let Some(mapped) = remapped_security_id.get(&obs.security_id) {
+								obs.security_id.clone_from(mapped);
+							}
+							if known_collected_security_ids.contains(&obs.security_id) {
+								let period_key = match &obs.period {
+									None => "null".to_owned(),
+									Some(period) => format!(
+										"{}:{}",
+										research_js::number::to_js_string(period.fiscal_year),
+										period.fiscal_period.as_str()
+									),
+								};
+								let obs_key = format!(
+									"{}:{}:{}",
+									obs.security_id,
+									obs.metric_code.as_str(),
+									period_key
+								);
+								if !seen_financial_observation_keys.insert(obs_key) {
+									continue;
+								}
+							}
+							collected.financial_observations.push(obs);
+						}
+						for mut pos in output.position_observations {
+							if let Some(mapped) = remapped_security_id.get(&pos.security_id) {
+								pos.security_id.clone_from(mapped);
+							}
+							collected.position_observations.push(pos);
+						}
 						collected.investor_filings.extend(output.investor_filings);
 						collected.articles.extend(output.articles);
 						deps.reporter
@@ -1364,6 +1410,9 @@ Mark claims unrelated to this question or the requested company as unsupported, 
 	let records = records::build_records(
 		&analysis,
 		list(&json(&collected.securities)?).to_vec(),
+		&claim_values,
+		&shown,
+		&claim_evidence_id,
 		&index,
 		&retain,
 		&input.request.markets,

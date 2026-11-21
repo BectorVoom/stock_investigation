@@ -4410,6 +4410,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -4427,6 +4428,7 @@
 				"scenarios": [],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -4700,6 +4702,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -4976,6 +4979,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -5149,6 +5153,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": [
 					null
 				]
@@ -5381,6 +5386,7 @@
 				],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -5515,6 +5521,7 @@
 				],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -5830,6 +5837,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -6639,6 +6647,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -6901,6 +6910,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -7624,6 +7634,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -7755,6 +7766,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -7926,6 +7938,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -8431,6 +8444,7 @@
 				"pricingPower": [
 					null
 				],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -8650,6 +8664,7 @@
 				],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -8820,6 +8835,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -8984,6 +9000,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -9442,6 +9459,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -9864,6 +9882,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -10011,6 +10030,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -10186,6 +10206,7 @@
 				"pricingPower": [
 					null
 				],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -10371,6 +10392,7 @@
 				],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -11107,6 +11129,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -11239,6 +11262,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -11476,6 +11500,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -11797,6 +11822,7 @@
 					null
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -12028,6 +12054,7 @@
 				],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -12258,6 +12285,7 @@
 				],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -12615,6 +12643,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -12966,6 +12995,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -13051,6 +13081,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -13306,6 +13337,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -13554,6 +13586,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -13808,6 +13841,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -14269,6 +14303,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -14530,6 +14565,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -14955,6 +14991,7 @@
 				],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -15125,6 +15162,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -15816,6 +15854,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -15950,6 +15989,7 @@
 				],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -16644,6 +16684,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -16975,6 +17016,7 @@
 				"pricingPower": [
 					null
 				],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -17314,6 +17356,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -17618,6 +17661,7 @@
 				"pricingPower": [
 					null
 				],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -17789,6 +17833,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -18134,6 +18179,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -18430,6 +18476,7 @@
 				],
 				"suppliers": [],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -18561,6 +18608,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -19622,6 +19670,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -20055,6 +20104,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": [
 					null
 				]
@@ -20326,6 +20376,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": [
 					null
 				]
@@ -20550,6 +20601,7 @@
 					}
 				],
 				"pricingPower": [],
+				"comparisonTables": [],
 				"uiOperations": []
 			}
 		}
@@ -51519,6 +51571,7095 @@
 					"message": "Invalid input: expected string, received array"
 				}
 			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": null
+		},
+		"output": {
+			"err": [
+				{
+					"path": "",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": 0
+		},
+		"output": {
+			"err": [
+				{
+					"path": "",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": true
+		},
+		"output": {
+			"err": [
+				{
+					"path": "",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received boolean"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": ""
+		},
+		"output": {
+			"err": [
+				{
+					"path": "",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": []
+		},
+		"output": {
+			"err": [
+				{
+					"path": "",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				},
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				},
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"claims": [
+					{
+						"text": "Grid storage orders reached 100 GWh in 2026.",
+						"claimType": "observation",
+						"evidence": [
+							{
+								"evidenceId": "run_test_ev1",
+								"relation": "supports",
+								"quote": "Orders for grid storage reached 100 GWh in 2026"
+							}
+						]
+					}
+				],
+				"scenarios": [
+					{
+						"productOrService": "Grid-scale battery storage",
+						"quantityKind": "unit-demand",
+						"unit": "GWh per year",
+						"baseYear": 2026,
+						"targetYear": 2030,
+						"baselineValue": 100,
+						"baselineEvidenceId": "run_test_ev1",
+						"baselineQuote": "Orders for grid storage reached 100 GWh in 2026",
+						"bear": {
+							"targetValue": 146.41,
+							"assumptions": [
+								"Permitting delays persist"
+							]
+						},
+						"base": {
+							"targetValue": 207.36,
+							"assumptions": [
+								"Order trend continues"
+							]
+						},
+						"bull": {
+							"targetValue": 285.61,
+							"assumptions": [
+								"Subsidies are extended"
+							]
+						},
+						"drivers": [
+							"Renewable build-out"
+						],
+						"barriers": [
+							"Interconnection queues"
+						],
+						"falsifiers": [
+							"Orders fall for two consecutive years"
+						],
+						"methodology": "Order-book extrapolation from the cited baseline.",
+						"supportingEvidenceIds": [
+							"run_test_ev1"
+						],
+						"contraryEvidenceIds": [
+							"run_test_ev1"
+						]
+					}
+				],
+				"suppliers": [
+					{
+						"issuerName": "Example Storage Corp",
+						"ticker": "EXMP",
+						"exchange": "NASDAQ",
+						"country": "US",
+						"productsOrServices": [
+							"Battery systems"
+						],
+						"businessExposure": "Supplies battery systems to utilities.",
+						"scenarioIndex": 0,
+						"evidence": [
+							{
+								"evidenceId": "run_test_ev1",
+								"quote": "Example Storage Corp supplies battery systems to utilities"
+							}
+						]
+					}
+				],
+				"pricingPower": [],
+				"uiOperations": []
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				},
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				},
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"claims": []
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				},
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				},
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"toolCalls": [
+					{
+						"toolId": "x"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				},
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				},
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"done": true
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				},
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				},
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"verdicts": [
+					{
+						"claimIndex": 0,
+						"verdict": "supported"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				},
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				},
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"needsResearch": "no"
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				},
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				},
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"answer": " ",
+				"diagram": {
+					"title": "t",
+					"steps": [
+						{
+							"label": " "
+						}
+					]
+				}
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				},
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				},
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					null
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns.0",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": 0.5
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": null,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": 0.5
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": 0.5,
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": 0.5,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": -1,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					null
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows.0",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": " ﻿ 😀 text  ",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": -1
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": null
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": {},
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": {}
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": 0.5,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": -1,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": 0.5,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": [
+					null
+				],
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": null,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": 0.5,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": [],
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": -1,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": -1,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					null
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows.0",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": -1
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": null,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": " ﻿ 😀 text  ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "😀 text ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": {},
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": [],
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					null
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows.0",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": {}
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": {}
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": -1,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": null,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": null,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": {},
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": " ﻿ 😀 text  "
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": " ﻿ 😀 text  "
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": [],
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": " ﻿ 😀 text  ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "😀 text ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": -1,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": null,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": [],
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": {}
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": null,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": " ﻿ 😀 text  ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "😀 text ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": -1
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": {},
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": [
+					null
+				],
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": 0.5,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": " ﻿ 😀 text  ",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": null,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": 0.5
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": null,
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": -1,
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": " ﻿ 😀 text  ",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "😀 text ",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": 0.5,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": {},
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": " ﻿ 😀 text  "
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": 0.5,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": null,
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": [],
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": -1,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": " ﻿ 😀 text  ",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "😀 text ",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": 0.5
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": [],
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": null,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": [],
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": {},
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": -1,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					null
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns.0",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": -1
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": null,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": {},
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					null
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns.0",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": [],
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": " ﻿ 😀 text  ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "😀 text ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": -1,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": null,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": [
+					null
+				],
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": null
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": " ﻿ 😀 text  ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "😀 text ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": null,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": " ﻿ 😀 text  ",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "😀 text ",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": {},
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": " ﻿ 😀 text  ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "😀 text ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					null
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows.0",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": null,
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": " ﻿ 😀 text  ",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": " ﻿ 😀 text  "
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": [],
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": null,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					null
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns.0",
+					"code": "invalid_type",
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": {},
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": [],
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": {},
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": {},
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": -1,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": " ﻿ 😀 text  "
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": {}
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": -1,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": -1,
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": -1,
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": -1,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": [],
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": " ﻿ 😀 text  ",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "😀 text ",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": " ﻿ 😀 text  ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "😀 text ",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": [
+					null
+				],
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": " ﻿ 😀 text  ",
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "columns",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": [
+					null
+				],
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "caption",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "rows",
+					"code": "invalid_type",
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": null,
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": [],
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": [
+					{
+						"values": [
+							"7018 内海造船",
+							4.62
+						],
+						"claimIndices": [
+							0
+						],
+						"evidence": []
+					}
+				]
+			}
+		},
+		"output": {
+			"err": [
+				{
+					"path": "title",
+					"code": "invalid_type",
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"schema": "comparisonTable",
+			"value": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
+		},
+		"output": {
+			"ok": {
+				"title": "純利益率の比較",
+				"caption": "2026年3月期",
+				"columns": [
+					{
+						"label": "銘柄",
+						"kind": "text",
+						"unit": null
+					},
+					{
+						"label": "純利益率",
+						"kind": "number",
+						"unit": "%"
+					}
+				],
+				"rows": []
+			}
 		}
 	}
 ]

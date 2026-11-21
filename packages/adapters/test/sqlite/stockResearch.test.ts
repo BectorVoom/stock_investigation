@@ -84,6 +84,7 @@ for (const layout of ["canonical", "migrated"] as const)
 				expect(await repository.search("other-owner", { query: "solar", limit: 6 })).toEqual({
 					hits: [],
 					truncated: false,
+					jpFinancials: [],
 				});
 			} finally {
 				db.close();
@@ -192,6 +193,29 @@ for (const layout of ["canonical", "migrated"] as const)
 					limit: 6,
 				});
 				expect(byPrefixedTicker.hits).toHaveLength(2);
+				expect(byPrefixedTicker.jpFinancials).toMatchObject([
+					{
+						symbol: "7018",
+						issuerName: "Synthetic Zosen Corporation",
+						exchange: "TSE",
+						listingVerification: "source-verified",
+						fiscalYear: 2025,
+						revenue: null,
+						revenueUnavailableReason: "not reported",
+						netIncome: {
+							value: 4_200_000_000,
+							currency: "JPY",
+							periodStart: "2024-04-01",
+							periodEnd: "2025-03-31",
+							sourceUrl: "https://api.jquants.com/v2/fins/summary?code=70180",
+						},
+					},
+					{
+						symbol: "7018",
+						fiscalYear: 2024,
+						netIncome: { value: 3_100_000_000, currency: "JPY" },
+					},
+				]);
 			} finally {
 				db.close();
 			}

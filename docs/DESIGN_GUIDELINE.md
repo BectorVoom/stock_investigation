@@ -27,10 +27,12 @@ What the test cannot check is listed in section 11 and remains a review item.
    fields, badges and tables come from the shared parts, not from hand-written
    class strings. Consequence: a repeated pattern earns a shared part instead
    of a third copy.
-6. **Plain text for anything a model or a web page wrote.** Agent output,
-   article excerpts and feed content render as text, never as markup
-   (UI-005, SEC-001). Consequence: no new HTML rendering path for untrusted
-   content.
+6. **Plain text and approved structured tables for anything a model or a web
+   page wrote.** Agent output, article excerpts and feed content never render as
+   HTML markup (UI-005, SEC-001): GitHub-style Markdown pipe tables in chat
+   replies parse into approved table components with plain-text cells (saveable
+   to the Notebook as `table` widgets), and everything else renders as literal
+   text. Consequence: no new HTML rendering path for untrusted content.
 
 ## 2. Colour roles
 

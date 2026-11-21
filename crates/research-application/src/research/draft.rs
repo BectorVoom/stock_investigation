@@ -392,7 +392,40 @@ fn schema(name: &str) -> Schema {
 			("scenarios", Schema::Unknown.empty_array(8)),
 			("suppliers", Schema::Unknown.empty_array(20)),
 			("pricingPower", Schema::Unknown.empty_array(12)),
+			("comparisonTables", Schema::Unknown.empty_array(2)),
 			("uiOperations", Schema::Unknown.empty_array(12)),
+		]),
+		"comparisonTable" => obj(vec![
+			("title", text(160)),
+			("caption", optional_text(400).null()),
+			(
+				"columns",
+				obj(vec![
+					("label", text(80)),
+					(
+						"kind",
+						Schema::Enum(&["text", "number"]).default(Value::String("text".to_owned())),
+					),
+					("unit", optional_text(40).null()),
+				])
+				.array(12),
+			),
+			(
+				"rows",
+				obj(vec![
+					("values", Schema::Unknown.array(12)),
+					("claimIndices", integer(true).empty_array(8)),
+					(
+						"evidence",
+						obj(vec![
+							("evidenceId", string(Some(120))),
+							("quote", quote().null()),
+						])
+						.empty_array(8),
+					),
+				])
+				.array(30),
+			),
 		]),
 		"scenario" => obj(vec![
 			("productOrService", text(300)),

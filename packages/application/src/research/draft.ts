@@ -125,6 +125,41 @@ export const draftPricingPowerSchema = z.object({
 });
 export type DraftPricingPower = z.infer<typeof draftPricingPowerSchema>;
 
+export const draftComparisonTableSchema = z.object({
+	title: text(160),
+	caption: optionalText(400).nullable().default(null),
+	columns: z
+		.array(
+			z.object({
+				label: text(80),
+				kind: z.enum(["text", "number"]).default("text"),
+				unit: optionalText(40).nullable().default(null),
+			}),
+		)
+		.transform((items) => items.slice(0, 12)),
+	rows: z
+		.array(
+			z.object({
+				values: z.array(z.unknown()).transform((items) => items.slice(0, 12)),
+				claimIndices: z
+					.array(z.number().int().nonnegative())
+					.transform((items) => items.slice(0, 8))
+					.default([]),
+				evidence: z
+					.array(
+						z.object({
+							evidenceId: z.string().max(120),
+							quote: quote.nullable().default(null),
+						}),
+					)
+					.transform((items) => items.slice(0, 8))
+					.default([]),
+			}),
+		)
+		.transform((items) => items.slice(0, 30)),
+});
+export type DraftComparisonTable = z.infer<typeof draftComparisonTableSchema>;
+
 export const analysisDraftSchema = z.object({
 	// Required, with no default: a reply that is not an analysis at all (a plan, a refusal
 	// wrapped in JSON) must fail validation rather than pass as "an analysis with nothing in it".
@@ -157,6 +192,10 @@ export const analysisDraftSchema = z.object({
 	pricingPower: z
 		.array(z.unknown())
 		.transform((items) => items.slice(0, 12))
+		.default([]),
+	comparisonTables: z
+		.array(z.unknown())
+		.transform((items) => items.slice(0, 2))
 		.default([]),
 	/** Optional display instructions; each is validated against the UI protocol later. */
 	uiOperations: z

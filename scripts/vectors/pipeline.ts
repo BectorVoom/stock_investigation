@@ -8,6 +8,7 @@ import {
 	analysisDraftSchema,
 	directAnswerSchema,
 	directDiagramSchema,
+	draftComparisonTableSchema,
 	draftPricingPowerSchema,
 	draftScenarioSchema,
 	draftSupplierSchema,
@@ -88,6 +89,7 @@ export const pipelineExporter: VectorExporter = {
 			verdicts: verdictsSchema,
 			direct: directAnswerSchema,
 			directDiagram: directDiagramSchema,
+			comparisonTable: draftComparisonTableSchema,
 		};
 		const drafts = [];
 		const seeds: unknown[] = [
@@ -139,7 +141,23 @@ export const pipelineExporter: VectorExporter = {
 													periodEnd: "2026-12-31",
 													evidenceIds: [],
 												}
-											: { verdicts: [] };
+											: name === "comparisonTable"
+												? {
+														title: "純利益率の比較",
+														caption: "2026年3月期",
+														columns: [
+															{ label: "銘柄", kind: "text", unit: null },
+															{ label: "純利益率", kind: "number", unit: "%" },
+														],
+														rows: [
+															{
+																values: ["7018 内海造船", 4.62],
+																claimIndices: [0],
+																evidence: [],
+															},
+														],
+													}
+												: { verdicts: [] };
 			const inputs = [...seeds, base];
 			for (let i = 0; i < 160; i++) {
 				const value = structuredClone(base) as Record<string, unknown>;

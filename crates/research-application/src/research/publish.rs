@@ -62,6 +62,7 @@ pub(super) async fn publish(args: PublishInput<'_>) -> Result<PipelineOutcome, P
 		securities,
 		supplier_links,
 		pricing_power,
+		comparison_tables,
 	} = records;
 	let count = |status: &str| {
 		claims
@@ -138,6 +139,9 @@ pub(super) async fn publish(args: PublishInput<'_>) -> Result<PipelineOutcome, P
 			"managementCommentaryEvidenceIds",
 		)));
 	}
+	for v in &comparison_tables {
+		cited.extend(strings(get(v, "sourceIds")));
+	}
 	for v in financial.iter().chain(&positions) {
 		if let Some(id) = get(v, "sourceEvidenceId").as_str() {
 			cited.insert(id.to_owned());
@@ -210,6 +214,7 @@ pub(super) async fn publish(args: PublishInput<'_>) -> Result<PipelineOutcome, P
 		("financialObservations", a(financial)),
 		("positionObservations", a(positions)),
 		("evidence", json(&evidence)?),
+		("comparisonTables", a(comparison_tables)),
 	]);
 	let presentation = build_presentation(&data);
 	let mut accepted = Vec::new();
@@ -293,7 +298,13 @@ pub(super) async fn publish(args: PublishInput<'_>) -> Result<PipelineOutcome, P
 	);
 	// ResearchBundle is strict; the presentation-only inputs must not be sent.
 	if let Value::Object(o) = &mut data {
-		for key in ["runId", "question", "nowIso", "dataCutoffAt"] {
+		for key in [
+			"runId",
+			"question",
+			"nowIso",
+			"dataCutoffAt",
+			"comparisonTables",
+		] {
 			o.remove(key);
 		}
 	}

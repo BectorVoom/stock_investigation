@@ -643,5 +643,71 @@ pub fn build_presentation(input: &Value) -> Value {
 			]),
 		);
 	}
+	let evidence_ids: std::collections::HashSet<&str> =
+		evidence.iter().map(|e| field(e, "evidenceId")).collect();
+	let mut total_cells: usize = datasets
+		.iter()
+		.flat_map(|ds| items(ds, "rows"))
+		.map(|row| match row {
+			Value::Object(map) => map.len(),
+			_ => 0,
+		})
+		.sum();
+	let mut comparison_slot = 0usize;
+	for table in items(input, "comparisonTables") {
+		if datasets.len() >= 8 {
+			break;
+		}
+		let kept_rows = items(table, "rows")
+			.iter()
+			.filter(|row| match row {
+				Value::Object(map) => map.iter().all(|(_, cell)| {
+					get(cell, "sourceId")
+						.as_str()
+						.is_none_or(|id| evidence_ids.contains(id))
+				}),
+				_ => false,
+			})
+			.cloned()
+			.collect::<Vec<_>>();
+		if kept_rows.is_empty() {
+			continue;
+		}
+		let table_cells: usize = kept_rows
+			.iter()
+			.map(|row| match row {
+				Value::Object(map) => map.len(),
+				_ => 0,
+			})
+			.sum();
+		if total_cells + table_cells > 3000 {
+			continue;
+		}
+		let suffix = format!("comparison{comparison_slot}");
+		let mut source_ids_vec = strings(get(table, "sourceIds"))
+			.into_iter()
+			.filter(|id| evidence_ids.contains(id.as_str()))
+			.collect::<Vec<_>>();
+		source_ids_vec.truncate(40);
+		datasets.push(dataset(
+			run,
+			&suffix,
+			field(table, "title"),
+			items(table, "columns").to_vec(),
+			kept_rows,
+			now,
+		));
+		let mut props = o([
+			("title", get(table, "title").clone()),
+			("datasetRef", s(format!("{run}_ds_{suffix}"))),
+			("sourceIds", a(source_ids_vec.into_iter().map(s))),
+		]);
+		if let Some(caption) = get(table, "caption").as_str() {
+			set(&mut props, "caption", s(caption));
+		}
+		create(&mut operations, run, &suffix, "data-table", props);
+		total_cells += table_cells;
+		comparison_slot += 1;
+	}
 	o([("datasets", a(datasets)), ("uiOperations", a(operations))])
 }

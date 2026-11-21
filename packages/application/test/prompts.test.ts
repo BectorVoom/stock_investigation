@@ -42,7 +42,7 @@ function planPrompt(args: Partial<Parameters<typeof planningPrompt>[0]>): string
 
 describe("conversation context in prompts (AGT-007)", () => {
 	it("bumps the prompt version", () => {
-		expect(PROMPT_VERSION).toBe("research-v11");
+		expect(PROMPT_VERSION).toBe("research-v12");
 	});
 
 	it("adds the context block to the planning prompt right after the question", () => {

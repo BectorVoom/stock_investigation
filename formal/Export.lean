@@ -90,6 +90,52 @@ def citationReferenceVectors : List String := Id.run do
           ("result", jsonStr (CitationReference.resolve runId reference shown))]]
   return output
 
+def tableRectangularizeVectors : List String := Id.run do
+  let mut output := []
+  let sampleRows : List (List (List Nat)) := [
+    [],
+    [[1]],
+    [[1, 2, 3], [4]],
+    [[1, 2], [3, 4, 5], []]
+  ]
+  for cols in [0, 1, 2, 3] do
+    for maxCols in [0, 1, 2, 4] do
+      for maxRows in [0, 1, 2, 4] do
+        for rows in sampleRows do
+          let res := ComparisonTable.rectangularizeRows cols maxCols maxRows 0 rows
+          output := output ++ [jsonObj [
+            ("cols", jsonNat cols),
+            ("maxCols", jsonNat maxCols),
+            ("maxRows", jsonNat maxRows),
+            ("rows", jsonArr (rows.map jsonNatList)),
+            ("result", jsonArr (res.map jsonNatList))]]
+  return output
+
+def comparisonRowSelectVectors : List String := Id.run do
+  let mut output := []
+  let states : List ComparisonTable.RowCandidate := [
+    { hasVerifiedSupport := false, hasStrayNumber := false },
+    { hasVerifiedSupport := false, hasStrayNumber := true },
+    { hasVerifiedSupport := true, hasStrayNumber := false },
+    { hasVerifiedSupport := true, hasStrayNumber := true }
+  ]
+  let mut lists : List (List ComparisonTable.RowCandidate) := [[]]
+  for s1 in states do
+    lists := lists ++ [[s1]]
+    for s2 in states do
+      lists := lists ++ [[s1, s2]]
+      for s3 in [states[0]!, states[2]!] do
+        lists := lists ++ [[s1, s2, s3]]
+  for candidates in lists do
+    for maxRows in [0, 1, 2, 3] do
+      output := output ++ [jsonObj [
+        ("candidates", jsonArr (candidates.map fun c => jsonObj [
+          ("hasVerifiedSupport", jsonBool c.hasVerifiedSupport),
+          ("hasStrayNumber", jsonBool c.hasStrayNumber)])),
+        ("maxRows", jsonNat maxRows),
+        ("result", jsonNatList (ComparisonTable.selectComparisonRows candidates maxRows))]]
+  return output
+
 def transitionsJson : String :=
   jsonObj (JobState.all.map fun s => (JobState.name s, jsonArr ((JobState.next s).map (jsonStr ∘ JobState.name))))
 
@@ -1865,5 +1911,7 @@ def main : IO Unit := do
   IO.println ("\"demandKind\": " ++ jsonArr demandKindVectors ++ ",")
   IO.println ("\"demandFilter\": " ++ jsonArr demandFilterVectors ++ ",")
   IO.println ("\"citationReference\": [\n" ++ ",\n".intercalate citationReferenceVectors ++ "\n],")
+  IO.println ("\"tableRectangularize\": [\n" ++ ",\n".intercalate tableRectangularizeVectors ++ "\n],")
+  IO.println ("\"comparisonRowSelect\": [\n" ++ ",\n".intercalate comparisonRowSelectVectors ++ "\n],")
   IO.println ("\"stockMentions\": " ++ StockMentionsVectors.vectorsJson)
   IO.println "}"

@@ -52,6 +52,7 @@ import {
 } from "@research/domain";
 import { agentThrewCode } from "../errors.ts";
 import type { Clock } from "../ports.ts";
+import { buildComparisonTables } from "./comparisonTables.ts";
 import { directAnswerNote, readDirectAnswer } from "./directAnswer.ts";
 import {
 	type AnalysisDraft,
@@ -743,6 +744,10 @@ export async function runResearchPipeline(
 	const toolErrorStatuses = new Map<string, Map<number, { count: number; last: number }>>();
 	const completedRequests = new Set<string>();
 	const unavailableTools = new Set<string>();
+	const securityIdByListing = new Map<string, string>();
+	const remappedSecurityId = new Map<string, string>();
+	const knownCollectedSecurityIds = new Set<string>();
+	const seenFinancialObservationKeys = new Set<string>();
 	let collectionLimitReached = false;
 	let searchCooldownEncountered = false;
 	let foundSearchLeads = false;
@@ -1061,9 +1066,37 @@ export async function runResearchPipeline(
 				const discovery = DISCOVERY_TOOL_IDS.has(call.toolId);
 				if (discovery) foundSearchLeads ||= output.evidence.length > 0;
 				else collected.evidence.push(...output.evidence);
-				collected.securities.push(...output.securities);
-				collected.financialObservations.push(...output.financialObservations);
-				collected.positionObservations.push(...output.positionObservations);
+				for (const sec of output.securities) {
+					const listingKey = `${sec.country}:${sec.exchange.toLowerCase()}:${sec.ticker.toUpperCase()}`;
+					const existingId = securityIdByListing.get(listingKey);
+					if (existingId !== undefined) {
+						remappedSecurityId.set(sec.securityId, existingId);
+					} else {
+						securityIdByListing.set(listingKey, sec.securityId);
+						remappedSecurityId.set(sec.securityId, sec.securityId);
+						knownCollectedSecurityIds.add(sec.securityId);
+						collected.securities.push(sec);
+					}
+				}
+				for (const obs of output.financialObservations) {
+					const mappedSecId = remappedSecurityId.get(obs.securityId) ?? obs.securityId;
+					if (knownCollectedSecurityIds.has(mappedSecId)) {
+						const periodKey =
+							obs.period === null ? "null" : `${obs.period.fiscalYear}:${obs.period.fiscalPeriod}`;
+						const obsKey = `${mappedSecId}:${obs.metricCode}:${periodKey}`;
+						if (seenFinancialObservationKeys.has(obsKey)) continue;
+						seenFinancialObservationKeys.add(obsKey);
+					}
+					collected.financialObservations.push(
+						mappedSecId === obs.securityId ? obs : { ...obs, securityId: mappedSecId },
+					);
+				}
+				for (const pos of output.positionObservations) {
+					const mappedSecId = remappedSecurityId.get(pos.securityId) ?? pos.securityId;
+					collected.positionObservations.push(
+						mappedSecId === pos.securityId ? pos : { ...pos, securityId: mappedSecId },
+					);
+				}
 				collected.investorFilings.push(...output.investorFilings);
 				collected.articles.push(...output.articles);
 				collected.entries.push({
@@ -1616,6 +1649,23 @@ export async function runResearchPipeline(
 		else notes.push(`Pricing-power entry ${index + 1} was dropped: invalid period.`);
 	});
 
+	const shownEvidenceForTables = new Map(
+		shown.map((item) => [
+			item.evidence.evidenceId,
+			{
+				evidence: item.evidence,
+				shownText: `${item.evidence.title}\n${item.retrievedText.slice(0, EVIDENCE_ITEM_MAX)}`,
+			},
+		]),
+	);
+	const comparisonTables = buildComparisonTables({
+		runId,
+		rawTables: analysis?.comparisonTables ?? [],
+		claims,
+		shownEvidenceById: shownEvidenceForTables,
+		notes,
+	});
+
 	/* ----- Publishing: assemble the bundle from verified pieces only ----- */
 	await deps.reporter.state("publishing");
 	const supportedCount = claims.filter((claim) => claim.status === "supported").length;
@@ -1659,6 +1709,7 @@ export async function runResearchPipeline(
 		]),
 		...supplierLinks.flatMap((link) => link.evidenceIds),
 		...pricingPower.flatMap((p) => [...p.evidenceIds, ...p.inputs.managementCommentaryEvidenceIds]),
+		...comparisonTables.flatMap((table) => table.sourceIds),
 		...financialObservations.flatMap((o) =>
 			o.sourceEvidenceId === null ? [] : [o.sourceEvidenceId],
 		),
@@ -1716,6 +1767,7 @@ export async function runResearchPipeline(
 		financialObservations,
 		positionObservations,
 		evidence,
+		comparisonTables,
 	});
 	const accepted: UiOperation[] = [];
 	let rejectedProposals = 0;

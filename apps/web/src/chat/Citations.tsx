@@ -18,6 +18,7 @@ import {
 } from "@research/ui-registry";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { DisclosureSummary } from "../components/ui.tsx";
+import { ChatMarkdownText, type MarkdownTableNotebookSave } from "./ChatMarkdownText.tsx";
 import { citationsMessages } from "./conversation.messages.ts";
 
 /** Key of the card a chip opens: one chip per (claim, evidence) pair. */
@@ -33,6 +34,7 @@ function ClaimItem(props: {
 	readonly interaction: CitationInteraction;
 	readonly prose?: boolean;
 	readonly lead?: boolean;
+	readonly notebookSaveForClaim?: (claimId: string) => MarkdownTableNotebookSave | null;
 }): JSX.Element {
 	const m = useMessages(citationsMessages);
 	const cm = useMessages(citationMessages);
@@ -121,21 +123,23 @@ function ClaimItem(props: {
 						onMouseLeave={() => props.interaction.hoverEnd()}
 						onFocusOut={(event) => citationGroupFocusOut(event, props.interaction.hoverEnd)}
 					>
-						{/* Plain text only: agent output is data, never markup (UI-005). */}
-						<p
-							class={
+						{/* Approved structured pipe tables only; all other agent text stays plain text (UI-005). */}
+						<ChatMarkdownText
+							text={current().text}
+							textClass={
 								props.lead
 									? "text-base font-medium leading-relaxed text-slate-900"
 									: "text-sm leading-relaxed text-slate-900"
 							}
-						>
-							{current().text}
-							<Show when={props.prose}>
-								<span class="ml-1 inline-flex flex-wrap gap-1 align-baseline">
-									{referenceChips()}
-								</span>
-							</Show>
-						</p>
+							trailing={
+								<Show when={props.prose}>
+									<span class="ml-1 inline-flex flex-wrap gap-1 align-baseline">
+										{referenceChips()}
+									</span>
+								</Show>
+							}
+							notebookSave={props.notebookSaveForClaim?.(props.claimId) ?? null}
+						/>
 						<Show when={!props.prose || current().status !== "supported"}>
 							<p class="mt-0.5 flex flex-wrap items-center gap-1">
 								<ClaimStatusBadge status={current().status} />
@@ -185,6 +189,7 @@ export function AnswerClaims(props: {
 	readonly claims: ReadonlyMap<string, Claim>;
 	readonly evidence: ReadonlyMap<string, Evidence>;
 	readonly variant?: "news" | "investigation";
+	readonly notebookSaveForClaim?: (claimId: string) => MarkdownTableNotebookSave | null;
 }): JSX.Element {
 	const m = useMessages(citationsMessages);
 	const cm = useMessages(citationMessages);
@@ -249,6 +254,7 @@ export function AnswerClaims(props: {
 			interaction={interaction}
 			prose={props.variant !== undefined}
 			lead={lead}
+			notebookSaveForClaim={props.notebookSaveForClaim}
 		/>
 	);
 	return (

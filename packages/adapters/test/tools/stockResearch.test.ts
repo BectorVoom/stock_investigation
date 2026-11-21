@@ -205,4 +205,81 @@ describe("stocks.search", () => {
 			"More results exist. Narrow the query or select a kind.",
 		);
 	});
+	it("populates structured Security and revenue/net-income/net-profit-margin FinancialObservations for Japanese stocks", async () => {
+		const tool = createStockResearchTool({
+			hasher,
+			search: async () =>
+				ok({
+					hits: [],
+					truncated: false,
+					jpFinancials: [
+						{
+							symbol: "7018",
+							issuerName: "内海造船",
+							exchange: "TSE",
+							listingVerification: "source-verified",
+							fiscalYear: 2026,
+							revenue: {
+								value: 45_465_000_000,
+								currency: "JPY",
+								accountingStandard: "JGAAP",
+								periodStart: "2025-04-01",
+								periodEnd: "2026-03-31",
+								sourceUrl: "https://api.jquants.com/v2/fins/summary?code=70180",
+								filedOn: "2026-05-08",
+								retrievedAt: "2026-11-05T00:00:00Z",
+								concept: "jquants:NetSales",
+							},
+							revenueUnavailableReason: null,
+							netIncome: {
+								value: 2_100_000_000,
+								currency: "JPY",
+								accountingStandard: "JGAAP",
+								periodStart: "2025-04-01",
+								periodEnd: "2026-03-31",
+								sourceUrl: "https://api.jquants.com/v2/fins/summary?code=70180",
+								filedOn: "2026-05-08",
+								retrievedAt: "2026-11-05T00:00:00Z",
+								concept: "jquants:Profit",
+							},
+							netIncomeUnavailableReason: null,
+						},
+					],
+				}),
+		});
+		const result = await tool.execute({ query: "7018", kind: "financials" }, createToolContext());
+		if (!result.ok) throw new Error("Expected retrieval");
+		expect(result.value.securities).toEqual([
+			{
+				securityId: "run_test_sec1",
+				country: "JP",
+				ticker: "7018",
+				exchange: "TSE",
+				issuerName: "内海造船",
+				issuerIdentifier: null,
+				listingCurrency: "JPY",
+				reportingCurrency: "JPY",
+				formerTickers: [],
+				listingVerification: "source-verified",
+			},
+		]);
+		expect(result.value.financialObservations.map((obs) => obs.metricCode)).toEqual([
+			"revenue",
+			"net-income",
+			"net-profit-margin",
+		]);
+		expect(result.value.financialObservations[2]).toMatchObject({
+			securityId: "run_test_sec1",
+			metricCode: "net-profit-margin",
+			unit: "ratio",
+			accountingStandard: "JGAAP",
+			formula:
+				"net income / revenue: jquants:Profit (profit attributable to owners) / jquants:NetSales, same fiscal year",
+			sourceEvidenceId: result.value.evidence[0]?.evidence.evidenceId,
+		});
+		expect(result.value.financialObservations[2]?.value).toBeCloseTo(
+			2_100_000_000 / 45_465_000_000,
+			10,
+		);
+	});
 });

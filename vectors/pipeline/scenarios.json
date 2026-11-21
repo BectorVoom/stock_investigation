@@ -407,7 +407,11 @@
 		{
 			"name": "/stock screening repeat and pre-final search guidance/reaches analysis with J-Quants evidence when a planner follows the repeat note to request candidate financials",
 			"runs": 1
+		},
+		{
+			"name": "/Japanese financial observations and cited comparison tables/deduplicates Japanese securities and financial observations across repeated stocks.search calls and emits financial-table plus verified comparisonTables",
+			"runs": 1
 		}
 	],
-	"handWrittenRuns": 113
+	"handWrittenRuns": 114
 }

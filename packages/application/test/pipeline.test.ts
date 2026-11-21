@@ -143,7 +143,7 @@ describe("research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)", () =>
 		]);
 		expect(bundle.provenance).toMatchObject({
 			agentId: "scripted",
-			promptVersion: "research-v11",
+			promptVersion: "research-v12",
 			toolVersions: { "news.fetch_feed": "1" },
 		});
 		expect(bundle.evidence.map((item) => item.evidenceId)).toEqual([EV1]);
@@ -1842,7 +1842,7 @@ describe("research pipeline: a question that needs no research is answered direc
 			answerClaimIds: [],
 			datasets: [],
 			verificationStatus: "unverified",
-			provenance: { promptVersion: "research-v11" },
+			provenance: { promptVersion: "research-v12" },
 		});
 		expect(bundle.answerText).toBe(
 			`${ANSWER}\n\nこの回答は調査を行わず、AI モデルの一般知識から書かれています。出典との照合は行っていません。投資助言ではありません。`,
@@ -2684,7 +2684,7 @@ it("keeps context-only candidate leads in round-3 planning digests without turni
 	const baseTools = newsTools();
 	const stockTool = defineTool({
 		toolId: "stocks.search",
-		version: "1.1.0",
+		version: "1.2.0",
 		description: "Search stored stock records.",
 		argsHint: '{"query": string}',
 		argsSchema: z.object({ query: z.string() }),
@@ -2744,7 +2744,7 @@ describe("stock screening repeat and pre-final search guidance", () => {
 		const baseTools = newsTools();
 		const stockTool = defineTool({
 			toolId: "stocks.search",
-			version: "1.1.0",
+			version: "1.2.0",
 			description: "Search stored stock records.",
 			argsHint: '{"query": string, "kind"?: "company" | "financials" | "news", "limit"?: number}',
 			argsSchema: z.object({
@@ -2943,5 +2943,216 @@ describe("stock screening repeat and pre-final search guidance", () => {
 			publisher: "J-Quants",
 		});
 		expect(outcome.bundle.claims[0]).toMatchObject({ status: "supported" });
+	});
+});
+
+describe("Japanese financial observations and cited comparison tables", () => {
+	it("deduplicates Japanese securities and financial observations across repeated stocks.search calls and emits financial-table plus verified comparisonTables", async () => {
+		const baseTools = newsTools();
+		const jpStockTool = defineTool({
+			toolId: "stocks.search",
+			version: "1.2.0",
+			description: "Search stored stock records.",
+			argsHint: '{"query": string, "kind"?: "company" | "financials" | "news"}',
+			argsSchema: z.object({
+				query: z.string(),
+				kind: z.enum(["company", "financials", "news"]).optional(),
+			}),
+			timeoutMs: 5_000,
+			permission: "research-read",
+			costCategory: "free",
+			sideEffect: "none",
+			networkAllowlist: { kind: "none" },
+			async execute(args, context) {
+				const evId = context.nextId("ev");
+				const secId = context.nextId("sec");
+				const passage = `Stored source metadata:\nTitle: JP:7018 内海造船 financials\nPublisher: J-Quants\nPublished at: 2026-05-08T00:00:00Z\nRetrieved at: 2026-11-05T00:00:00Z\nEffective at: 2026-03-31T00:00:00Z\n\nPassage:\nissuer=JP:7018 内海造船; query=${args.query}; revenue=45465000000; profit=2100000000; fiscalYear=2026; currency=JPY`;
+				return ok({
+					...EMPTY_TOOL_OUTPUT,
+					modelText: passage,
+					evidence: [
+						{
+							evidence: {
+								evidenceId: evId,
+								sourceUrl: "https://api.jquants.com/v2/fins/summary?code=70180",
+								title: "JP:7018 内海造船 financials",
+								publisher: "J-Quants",
+								publishedAt: "2026-05-08T00:00:00Z",
+								retrievedAt: "2026-11-05T00:00:00Z",
+								effectiveAt: "2026-03-31T00:00:00Z",
+								excerpt: null,
+								checksum: (args.query === "7018 売上高" ? "1" : "2").repeat(64),
+								sourceClass: "regulatory-filing",
+							},
+							retrievedText: passage,
+							retainQuotes: false,
+						},
+					],
+					securities: [
+						{
+							securityId: secId,
+							country: "JP",
+							ticker: "7018",
+							exchange: "TSE",
+							issuerName: "内海造船",
+							issuerIdentifier: null,
+							listingCurrency: "JPY",
+							reportingCurrency: "JPY",
+							formerTickers: [],
+							listingVerification: "source-verified",
+						},
+					],
+					financialObservations: [
+						{
+							observationId: context.nextId("fo"),
+							securityId: secId,
+							metricCode: "revenue",
+							value: 45_465_000_000,
+							unavailableReason: null,
+							unit: "currency",
+							currency: "JPY",
+							accountingStandard: "JGAAP",
+							period: {
+								fiscalYear: 2026,
+								fiscalPeriod: "FY",
+								periodStart: "2025-04-01",
+								periodEnd: "2026-03-31",
+							},
+							actualOrEstimate: "actual",
+							marketDataAsOf: null,
+							formula: null,
+							sourceEvidenceId: evId,
+						},
+						{
+							observationId: context.nextId("fo"),
+							securityId: secId,
+							metricCode: "net-income",
+							value: 2_100_000_000,
+							unavailableReason: null,
+							unit: "currency",
+							currency: "JPY",
+							accountingStandard: "JGAAP",
+							period: {
+								fiscalYear: 2026,
+								fiscalPeriod: "FY",
+								periodStart: "2025-04-01",
+								periodEnd: "2026-03-31",
+							},
+							actualOrEstimate: "actual",
+							marketDataAsOf: null,
+							formula: null,
+							sourceEvidenceId: evId,
+						},
+						{
+							observationId: context.nextId("fo"),
+							securityId: secId,
+							metricCode: "net-profit-margin",
+							value: 2_100_000_000 / 45_465_000_000,
+							unavailableReason: null,
+							unit: "ratio",
+							currency: null,
+							accountingStandard: "JGAAP",
+							period: {
+								fiscalYear: 2026,
+								fiscalPeriod: "FY",
+								periodStart: "2025-04-01",
+								periodEnd: "2026-03-31",
+							},
+							actualOrEstimate: "actual",
+							marketDataAsOf: null,
+							formula: "netIncome / revenue",
+							sourceEvidenceId: evId,
+						},
+					],
+				});
+			},
+		});
+		const registry = createToolRegistry([...baseTools.registry.list(), jpStockTool]);
+		const plan = JSON.stringify({
+			toolCalls: [
+				{ toolId: "stocks.search", args: { query: "7018 売上高", kind: "financials" } },
+				{ toolId: "stocks.search", args: { query: "7018 純利益", kind: "financials" } },
+			],
+			done: true,
+		});
+		const draft = JSON.stringify({
+			claims: [
+				{
+					text: "内海造船（7018）の2026年度の売上高は45,465,000,000円、純利益は2,100,000,000円であり、純利益率は約4.62%である。",
+					claimType: "inference",
+					evidence: [
+						{
+							evidenceId: EV1,
+							relation: "supports",
+							quote:
+								"issuer=JP:7018 内海造船; query=7018 売上高; revenue=45465000000; profit=2100000000; fiscalYear=2026",
+						},
+					],
+				},
+			],
+			comparisonTables: [
+				{
+					title: "日本の造船銘柄の純利益率比較",
+					caption: "2026年3月期（J-Quants）",
+					columns: [
+						{ label: "銘柄", kind: "text", unit: null },
+						{ label: "売上高", kind: "number", unit: "JPY" },
+						{ label: "純利益", kind: "number", unit: "JPY" },
+						{ label: "純利益率", kind: "number", unit: "%" },
+					],
+					rows: [
+						{
+							values: ["内海造船 (7018)", 45_465_000_000, "2,100,000,000", "4.62%"],
+							claimIndices: [0],
+							evidence: [],
+						},
+						{
+							// Unverified stray figure 99.9% must be omitted cleanly.
+							values: ["架空造船 (9999)", null, null, "99.9%"],
+							claimIndices: [0],
+							evidence: [],
+						},
+					],
+				},
+			],
+		});
+		const { run } = setup([plan, draft, VERDICT_SUPPORTED], {
+			tools: { ...baseTools, registry },
+			input: {
+				request: request({
+					question: "日本の造船銘柄の純利益率を比較する表を作成してください。",
+					markets: ["JP"],
+				}),
+			},
+		});
+		const outcome = expectBundle(await run());
+		expect(checkBundleIntegrity(RUN_ID, outcome.bundle)).toEqual([]);
+		expect(outcome.bundle.securities).toHaveLength(1);
+		expect(outcome.bundle.financialObservations).toHaveLength(3);
+		const dsIds = outcome.bundle.datasets.map((ds) => ds.datasetId);
+		expect(dsIds).toEqual([`${RUN_ID}_ds_financials`, `${RUN_ID}_ds_comparison0`]);
+		const compDs = outcome.bundle.datasets.find(
+			(ds) => ds.datasetId === `${RUN_ID}_ds_comparison0`,
+		);
+		expect(compDs?.rows).toHaveLength(1);
+		expect(compDs?.rows[0]).toEqual({
+			col0: { v: "内海造船 (7018)", sourceId: EV1 },
+			col1: { v: 45_465_000_000, sourceId: EV1, asOf: "2026-03-31T00:00:00Z" },
+			col2: { v: 2_100_000_000, sourceId: EV1, asOf: "2026-03-31T00:00:00Z" },
+			col3: { v: 4.62, sourceId: EV1, asOf: "2026-03-31T00:00:00Z", basis: "derived" },
+		});
+		expect(outcome.bundle.answerText).toContain(
+			"Comparison table 1: 1 row(s) without verified backing were omitted.",
+		);
+		expect(
+			outcome.bundle.uiOperations.some(
+				(op) => op.operation === "component.create" && op.componentId === `${RUN_ID}_financials`,
+			),
+		).toBe(true);
+		expect(
+			outcome.bundle.uiOperations.some(
+				(op) => op.operation === "component.create" && op.componentId === `${RUN_ID}_comparison0`,
+			),
+		).toBe(true);
 	});
 });

@@ -1,4 +1,11 @@
-import { createResearchRunRequestSchema, type ResearchRun, RUN_LIMITS } from "@research/contracts";
+import {
+	createResearchRunRequestSchema,
+	type NotebookWidgetOrigin,
+	type ResearchRun,
+	RUN_LIMITS,
+	type WidgetCore,
+	widgetCoreSchema,
+} from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1892,5 +1899,91 @@ describe("conversation status announcements (finding 9)", () => {
 		await waitFor(() =>
 			expect(region.textContent).toBe("Failed: PROVIDER_UNAVAILABLE, service answered HTTP 503."),
 		);
+	});
+});
+
+describe("chat Markdown pipe tables and Notebook saving (UI-005)", () => {
+	it("renders Markdown pipe tables as structured tables, keeps raw HTML literal, and saves tables to the Notebook", async () => {
+		const saved: { core: WidgetCore; origin: NotebookWidgetOrigin }[] = [];
+		const [savedIds, setSavedIds] = createSignal<readonly string[]>([]);
+		const conversationWithTable = {
+			...CONVERSATION,
+			messages: [
+				{
+					messageId: "msg_q_tbl",
+					seq: 1,
+					role: "owner" as const,
+					text: "日本の造船銘柄の純利益率を比較する表を作成してください。",
+					runId: "run_tbl",
+					claimIds: [],
+					createdAt: "2026-10-04T00:00:00Z",
+				},
+				{
+					messageId: "msg_a_tbl",
+					seq: 2,
+					role: "assistant" as const,
+					text: [
+						"日本の造船銘柄の純利益率比較:",
+						"",
+						"| 銘柄 | 純利益率 | メモ |",
+						"| --- | ---: | --- |",
+						'| 内海造船 (7018) | 4.62% | <img src=x onerror="alert(1)"> |',
+						"| 名村造船所 (7014) | 13.58% | 21590000000 |",
+						"",
+						"<script>window.__xss = true;</script>",
+					].join("\n"),
+					runId: "run_tbl",
+					claimIds: [],
+					createdAt: "2026-10-04T00:01:00Z",
+				},
+			],
+		};
+
+		render(() => (
+			<Conversation
+				conversation={conversationWithTable}
+				onOpenRecords={() => {}}
+				onAddComponent={(core, origin) => {
+					saved.push({ core, origin });
+					if (origin.componentId !== null) {
+						setSavedIds((prev) => [...prev, origin.componentId ?? ""]);
+					}
+				}}
+				componentInNotebook={(id) => savedIds().includes(id)}
+			/>
+		));
+
+		const table = document.querySelector("table");
+		expect(table).not.toBeNull();
+		const headers = [...(table?.querySelectorAll("th") ?? [])].map((th) => th.textContent);
+		expect(headers).toEqual(["銘柄", "純利益率", "メモ"]);
+		expect(table?.textContent).toContain("内海造船 (7018)");
+		expect(table?.textContent).toContain("4.62%");
+		// Raw HTML inside or outside the table never becomes live DOM elements (UI-005).
+		expect(document.querySelector("script")).toBeNull();
+		expect(document.querySelector("img")).toBeNull();
+		expect(table?.textContent).toContain('<img src=x onerror="alert(1)">');
+		expect(document.body.textContent).toContain("<script>window.__xss = true;</script>");
+
+		const saveBtn = screen.getByRole("button", { name: "Add table to Notebook" });
+		fireEvent.click(saveBtn);
+
+		expect(saved).toHaveLength(1);
+		expect(saved[0]?.origin).toEqual({
+			kind: "chat",
+			messageId: "msg_a_tbl",
+			runId: "run_tbl",
+			componentId: "msg_a_tbl_mdtable_0",
+		});
+		expect(saved[0]?.core.type).toBe("table");
+		if (saved[0]?.core.type !== "table") throw new Error("expected a table widget");
+		expect(saved[0].core.title).toBe("日本の造船銘柄の純利益率比較");
+		expect(saved[0].core.columns).toEqual(["銘柄", "純利益率", "メモ"]);
+		expect(saved[0].core.rows).toEqual([
+			["内海造船 (7018)", "4.62%", '<img src=x onerror="alert(1)">'],
+			["名村造船所 (7014)", "13.58%", 21_590_000_000],
+		]);
+		expect(widgetCoreSchema.safeParse(saved[0].core).success).toBe(true);
+		await waitFor(() => expect(screen.getByText("In notebook")).toBeDefined());
 	});
 });

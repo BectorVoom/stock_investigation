@@ -8,6 +8,12 @@ import {
 	type WidgetCore,
 	widgetCoreSchema,
 } from "@research/contracts";
+import {
+	type MarkdownTextSegment,
+	type ParsedMarkdownTable,
+	parseMarkdownTables,
+	rectangularizeTableRows,
+} from "@research/domain";
 import type { MessagesOf } from "@research/i18n";
 import {
 	chartWidgetToGuardedDataset,
@@ -342,15 +348,77 @@ export function widgetFromComponent(
 	}
 }
 
+function parsePlainCellNumber(raw: string): number | null {
+	if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)) return null;
+	const parsed = Number(raw);
+	if (!Number.isFinite(parsed)) return null;
+	return parsed === 0 ? 0 : parsed;
+}
+
+function markdownCellToNotebookCell(raw: string): string | number | null {
+	const trimmed = raw.trim();
+	if (trimmed === "" || trimmed === "—") return null;
+	const num = parsePlainCellNumber(trimmed);
+	if (num !== null) return num;
+	return truncateText(trimmed, NOTEBOOK_LIMITS.maxCellChars);
+}
+
 /**
- * An editable text widget from an assistant answer (citation chips become
- * `[n]` text). The answer is content and stays as written; `words` (English
- * by default) name only what the UI makes up for an empty answer.
+ * Converts a parsed GFM Markdown pipe table from a chat reply into an editable
+ * Notebook `table` widget bounded by `NOTEBOOK_LIMITS`.
+ */
+export function widgetFromMarkdownTable(
+	table: ParsedMarkdownTable,
+	titleHint: string,
+	fallbackTitle: string,
+): Extract<WidgetCore, { readonly type: "table" }> {
+	const rawColumns = table.columns.slice(0, NOTEBOOK_LIMITS.maxTableColumns).map((column) => {
+		const trimmed = column.trim();
+		return truncateText(trimmed.length > 0 ? trimmed : "—", NOTEBOOK_LIMITS.maxCellChars);
+	});
+	const columns = rawColumns.length > 0 ? rawColumns : ["—"];
+	const normalizedRows = rectangularizeTableRows(
+		columns.length,
+		table.rows,
+		"",
+		columns.length,
+		NOTEBOOK_LIMITS.maxTableRows,
+	);
+	const rows = normalizedRows.map((row) => row.map((cell) => markdownCellToNotebookCell(cell)));
+	return {
+		widgetId: newWidgetId(),
+		type: "table",
+		title: titleFromText(titleHint, fallbackTitle),
+		size: WIDGET_TYPE_META.table.defaultSize,
+		columns,
+		rows,
+	};
+}
+
+/**
+ * An editable widget from an assistant answer: when the reply is a single
+ * Markdown pipe table with no surrounding prose, saves it as a structured
+ * `table` widget; otherwise saves an editable `text` widget.
  */
 export function widgetFromAnswer(
 	message: ChatMessage,
 	words: MessagesOf<typeof notebookModelMessages>,
 ): WidgetCore {
+	const segments = parseMarkdownTables(message.text);
+	const tableSegments = segments.filter(
+		(segment): segment is Extract<MarkdownTextSegment, { readonly kind: "table" }> =>
+			segment.kind === "table",
+	);
+	if (tableSegments.length === 1 && segments.length === 1) {
+		const singleTable = tableSegments[0];
+		if (singleTable !== undefined) {
+			return widgetFromMarkdownTable(
+				singleTable,
+				singleTable.columns.join(" · "),
+				words.tableTitle,
+			);
+		}
+	}
 	const text =
 		message.text.trim().length > 0
 			? truncateText(message.text.trim(), NOTEBOOK_LIMITS.maxTextChars)

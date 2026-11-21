@@ -10,7 +10,7 @@ import { MAX_TOOL_CALLS_PER_REPLY } from "./draft.ts";
 import { NEWS_SENTENCE_FORMAT } from "./newsSentenceFormat.ts";
 
 /** Bump when any prompt text changes; stored with every run for reproducibility (AGT-010). */
-export const PROMPT_VERSION = "research-v11";
+export const PROMPT_VERSION = "research-v12";
 
 /** One planning retry note (ADR-0025): sent once when the first plan asks for no tools. */
 export const PLANNING_REMINDER =
@@ -292,7 +292,8 @@ ${input.request.outputType === "news" ? `${NEWS_SENTENCE_FORMAT}\n${NEWS_ANALYSI
 - Every claim needs at least one evidence link with relation "supports" and a verbatim contiguous quote (at least 12 characters, never skipping lines in the middle, and never quoting the "[id] ... — ...; ...; published ...; retrieved ..." header line). Independent verification sees only the attached quotes, not the evidence pack header or unquoted metadata: do not mention a publisher (such as SEC EDGAR) or publication date unless you also quote the line that states it. When a claim states both a news passage and its headline/publisher/publication date from "Stored source metadata:", attach two "supports" links to that evidenceId: one quoting the contiguous "Title: ...\\nPublisher: ...\\nPublished at: ..." lines and one quoting the "Passage:" lines. Add "contradicts" links for counter-evidence; do not omit evidence because it disagrees.
 - If the claim gives a stored headline and publication date, copy the full contiguous Title, Publisher and Published at lines into the supports quote. Keep the labels and line breaks.
 - Preserve the exact digits, dates and units in observations. Classify conversions and calculations as inferences and quote the original inputs.
-- Include scenarios, suppliers, pricingPower and uiOperations only when directly needed to answer the question. Omit unused keys.
+- Include scenarios, suppliers, pricingPower, comparisonTables and uiOperations only when directly needed to answer the question. Omit unused keys.
+- Comparison tables: when the owner asks for a table or to compare figures across multiple entities (表, 比較, table, compare), return "comparisonTables" (at most 2 tables) with a short title, columns (each with label, kind "text" or "number", and unit required when kind is "number") and rows whose values match the columns and whose 0-based claimIndices reference the supporting claims (or evidence entries with verbatim quotes). Every number in a row must come from its verified claims or quoted evidence; use null for unavailable figures. Concise GitHub-style Markdown pipe tables are also permitted inside a comparison claim when every figure comes from its quoted supporting passages.
 - Demand scenarios: forecast horizon ${input.request.horizonYears} years (targetYear - baseYear between 3 and 5). State what is measured (unit demand vs revenue vs price) and its unit. Give bear/base/bull target values with assumptions, drivers, barriers and falsifying observations. Set "baselineValue" only when an evidence item states it: give "baselineEvidenceId" and "baselineQuote", a verbatim passage containing that number; otherwise null. Do NOT compute growth rates; they are derived from your values.
 - Suppliers: only companies listed in ${input.request.markets.join(" or ")} with ticker AND exchange (JP: TSE, NSE, FSE, SSE; US: NYSE, NASDAQ, NYSE American, NYSE Arca, Cboe BZX, TXSE), and, for the supplier relationship itself, "evidence" entries each with a verbatim "quote" from a passage that names the company. Do not state figures about a supplier that the quoted evidence does not contain.
 - Pricing power: report price realization separately from volume, mix, FX and input costs, in percent; give only figures that appear in the cited evidence and null for everything else. A margin improvement alone is not evidence of pricing power.
@@ -307,7 +308,8 @@ ${input.repairNote === null ? "" : `\nYour previous reply was rejected: ${input.
 Do not write a narrative answer: the published summary is assembled from the claims that pass verification.
 Return only JSON. The default answer shape is {"claims":[{"text":"...","claimType":"observation","evidence":[{"evidenceId":"...","relation":"supports","quote":"..."}]}]}.
 Optional scenarios array, each item: productOrService, quantityKind ("unit-demand", "revenue" or "price"), unit, baseYear, targetYear, baselineValue, baselineEvidenceId, baselineQuote, bear/base/bull (each has targetValue and assumptions), drivers, barriers, falsifiers, methodology, supportingEvidenceIds and contraryEvidenceIds.
-Optional suppliers array, each item: issuerName, ticker, exchange, country, productsOrServices, businessExposure, scenarioIndex and evidence (each link has evidenceId and quote).`;
+Optional suppliers array, each item: issuerName, ticker, exchange, country, productsOrServices, businessExposure, scenarioIndex and evidence (each link has evidenceId and quote).
+Optional comparisonTables array, each item: title, caption (optional), columns (each has label, kind "text" or "number", and unit when kind is "number") and rows (each has values, claimIndices and optional evidence).`;
 }
 
 /**
@@ -329,7 +331,7 @@ ${describeRequest(input.request, input.nowIso)}${conversationSection(input.conve
 
 Requirements:
 - Answer in the question’s language: when the question is in Japanese, write in Japanese.
-- Explain accurately and clearly, as a careful expert would to an investor who is not a specialist: what each concept is, why it matters and how the parts relate. Write plain text in short paragraphs or numbered lines; no Markdown, HTML or ASCII art.
+- Explain accurately and clearly, as a careful expert would to an investor who is not a specialist: what each concept is, why it matters and how the parts relate. Write plain text in short paragraphs or numbered lines; GitHub-style Markdown pipe tables are allowed when comparing items, with no other Markdown, HTML or ASCII art.
 - Do not state figures, market shares, prices, dates, company-specific facts or recent developments, and do not cite or invent sources: those need research. If part of the question needs them, say which part.
 - When the owner asks for a diagram, figure, chart or illustration (図, 図解, フロー, 流れ), or when the explanation is a sequence of stages, also return "diagram": an ordered flow of 2 to 10 stages, each with a short "label" (at most 60 characters) and a one-sentence "detail" (at most 240 characters), under a short "title". The answer must still read on its own without the diagram. Otherwise set "diagram" to null.
 Return: {"answer":"...","diagram":{"title":"...","steps":[{"label":"...","detail":"..."}]}}`;

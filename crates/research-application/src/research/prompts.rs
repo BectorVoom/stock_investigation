@@ -1,4 +1,4 @@
-//! Byte-identical research-v11 prompt builders (SEC-001, AGT-007).
+//! Byte-identical research-v12 prompt builders (SEC-001, AGT-007).
 use research_agent_core::{
 	model_text::{EmptyFenceToken, fence_untrusted_text},
 	tools::ToolMeta,
@@ -10,7 +10,7 @@ use research_contracts::jobs::{
 use research_js::{number::to_js_string, utf16};
 
 /// Prompt provenance version.
-pub const PROMPT_VERSION: &str = "research-v11";
+pub const PROMPT_VERSION: &str = "research-v12";
 /// Maximum planning prompt bytes, including all fences and fixed sections.
 pub const PLANNING_PROMPT_BUDGET_BYTES: usize = 76_000;
 /// Reminder after an empty plan, copied verbatim from the TypeScript builder.

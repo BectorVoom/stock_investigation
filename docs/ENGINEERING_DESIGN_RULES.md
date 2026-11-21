@@ -139,7 +139,7 @@ The runner is a Cargo workspace (`crates/*`, binary `research-runner`); the Work
 | UI-002 | Prefer `createMemo` for pure derived state; reserve `createEffect` for synchronization with external effects |
 | UI-003 | Keep workspace domain state separate from ephemeral hover/dialog/scroll state |
 | UI-004 | Agent-origin UI operations MUST match a versioned discriminated-union schema and registered type |
-| UI-005 | Render data via approved components; never eval JavaScript/JSX or render unsanitized agent HTML |
+| UI-005 | Render data via approved components (including structured GFM pipe tables parsed into plain-text cells); never eval JavaScript/JSX or render unsanitized agent HTML |
 | UI-006 | Component updates MUST enforce workspace version, command ID uniqueness and dataset ownership |
 | UI-007 | Use appropriate chart axis labels, financial units, as-of dates, source links and unavailable states |
 | UI-008 | Every new registry component MUST include valid/invalid props fixtures, accessibility and regression tests |

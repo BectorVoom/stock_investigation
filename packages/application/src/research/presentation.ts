@@ -1,15 +1,17 @@
-import type {
-	Claim,
-	Dataset,
-	DatasetCell,
-	DemandScenario,
-	Evidence,
-	FinancialObservation,
-	PositionObservation,
-	Security,
-	SupplierLink,
+import {
+	BUNDLE_LIMITS,
+	type Claim,
+	type Dataset,
+	type DatasetCell,
+	type DemandScenario,
+	type Evidence,
+	type FinancialObservation,
+	type PositionObservation,
+	type Security,
+	type SupplierLink,
 } from "@research/contracts";
 import { type JsonObject, positionLabels, type UiOperation } from "@research/domain";
+import type { ComparisonTable } from "./comparisonTables.ts";
 
 /**
  * Deterministic presentation of verified results: the same records always
@@ -27,6 +29,7 @@ export interface PresentationInput {
 	readonly financialObservations: readonly FinancialObservation[];
 	readonly positionObservations: readonly PositionObservation[];
 	readonly evidence: readonly Evidence[];
+	readonly comparisonTables?: readonly ComparisonTable[];
 }
 
 export interface Presentation {
@@ -446,6 +449,42 @@ export function buildPresentation(input: PresentationInput): Presentation {
 			],
 			caption: labels.caveat,
 		});
+	}
+
+	/* ----- Verified comparison tables ----- */
+	let totalCells = datasets.reduce(
+		(sum, ds) => sum + ds.rows.reduce((rowSum, row) => rowSum + Object.keys(row).length, 0),
+		0,
+	);
+	let comparisonSlot = 0;
+	for (const table of input.comparisonTables ?? []) {
+		if (datasets.length >= BUNDLE_LIMITS.datasets) break;
+		const keptRows = table.rows.filter((row) =>
+			Object.values(row).every(
+				(cell) => cell.sourceId === undefined || evidenceById.has(cell.sourceId),
+			),
+		);
+		if (keptRows.length === 0) continue;
+		const tableCells = keptRows.reduce((sum, row) => sum + Object.keys(row).length, 0);
+		if (totalCells + tableCells > BUNDLE_LIMITS.datasetCells) continue;
+		const suffix = `comparison${comparisonSlot}`;
+		const datasetId = `${input.runId}_ds_${suffix}`;
+		const sourceIds = table.sourceIds.filter((id) => evidenceById.has(id)).slice(0, 40);
+		datasets.push({
+			datasetId,
+			title: table.title,
+			columns: table.columns,
+			rows: keptRows,
+			createdAt: input.nowIso,
+		});
+		create(suffix, "data-table", {
+			title: table.title,
+			datasetRef: datasetId,
+			sourceIds,
+			...(table.caption === null ? {} : { caption: table.caption }),
+		});
+		totalCells += tableCells;
+		comparisonSlot += 1;
 	}
 
 	return { datasets, uiOperations: operations };
