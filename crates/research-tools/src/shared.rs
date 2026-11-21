@@ -18,6 +18,8 @@ pub const MAX_TITLE_CHARS: usize = 300;
 pub const MAX_RETRIEVED_TEXT_CHARS: usize = 20_000;
 
 const TRUNCATION_NOTE: &str = "[output truncated]";
+/// Usable UTF-8 byte budget for lines before `bound_model_text` must append `[output truncated]`.
+pub const MODEL_TEXT_BUDGET_BYTES: usize = MAX_MODEL_TEXT_BYTES - (1 + TRUNCATION_NOTE.len());
 
 /// The longest prefix of whole characters within `max_bytes` UTF-8 bytes.
 fn cut_to_bytes(text: &str, max_bytes: usize) -> &str {
@@ -34,7 +36,7 @@ fn cut_to_bytes(text: &str, max_bytes: usize) -> &str {
 /// and the model is told that it happened.
 #[must_use]
 pub fn bound_model_text<S: AsRef<str>>(lines: &[S]) -> String {
-	let budget_bytes = MAX_MODEL_TEXT_BYTES - (1 + TRUNCATION_NOTE.len());
+	let budget_bytes = MODEL_TEXT_BUDGET_BYTES;
 	let mut kept: Vec<&str> = Vec::with_capacity(lines.len());
 	let mut used_bytes = 0usize;
 	for line in lines {

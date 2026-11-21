@@ -19,7 +19,7 @@ export const MAX_RETRIEVED_TEXT_CHARS = 20_000;
 const TRUNCATION_NOTE = "[output truncated]";
 const encoder = new TextEncoder();
 
-const MODEL_TEXT_BUDGET_BYTES = MAX_MODEL_TEXT_BYTES - TRUNCATION_NOTE.length - 1;
+export const MODEL_TEXT_BUDGET_BYTES = MAX_MODEL_TEXT_BYTES - TRUNCATION_NOTE.length - 1;
 const modelTextBuffer = new Uint8Array(MODEL_TEXT_BUDGET_BYTES);
 
 /**

@@ -135,4 +135,70 @@ describe("stocks.search", () => {
 		expect(result.value.evidence).toEqual([]);
 		expect(result.value.modelText).toContain("does not establish");
 	});
+	it("fits all 12 Japanese AI-overview candidates within 6,000 UTF-8 bytes", async () => {
+		const hits: StockResearchHit[] = Array.from({ length: 12 }, (_, index) => ({
+			...hit,
+			recordId: `JP:${7000 + index}`,
+			title: `JP:${7000 + index} 合成造船${index} (Synthetic Zosen ${index}) AI-written company overview`,
+			text: `${"あ".repeat(900)}\n造船および舶用機器を手掛ける企業${index}。\n${"い".repeat(900)}`,
+			sourceUrl: null,
+			publisher: "AI-written stored context",
+			publishedAt: null,
+			effectiveAt: null,
+			sourceClass: "other",
+			retainQuotes: false,
+			aiGenerated: true,
+		}));
+		const tool = createStockResearchTool({
+			hasher,
+			search: async () => ok({ hits, truncated: true }),
+		});
+		const result = await tool.execute(
+			{ query: "造船", kind: "company", limit: 12 },
+			createToolContext(),
+		);
+		if (!result.ok) throw new Error("Expected retrieval");
+		expect(new TextEncoder().encode(result.value.modelText).byteLength).toBeLessThanOrEqual(6_000);
+		expect(result.value.modelText).not.toContain("[output truncated]");
+		expect(result.value.modelText).not.toContain("\nPassage:\n");
+		for (let index = 0; index < 12; index += 1) {
+			expect(result.value.modelText).toContain(`"recordId":"JP:${7000 + index}"`);
+			expect(result.value.modelText).toContain(`造船および舶用機器を手掛ける企業${index}`);
+		}
+	});
+	it("keeps citeable passages whole while they fit and compacts later citeable hits", async () => {
+		const longPassage = `Solar module shipments grew. ${"詳細データと注記。".repeat(120)}`;
+		const hits: StockResearchHit[] = [
+			{ ...hit, recordId: "cite:0", text: longPassage },
+			{ ...hit, recordId: "cite:1", text: longPassage },
+			{ ...hit, recordId: "cite:2", text: longPassage },
+			{
+				...hit,
+				recordId: "ctx:3",
+				text: `${"前文。".repeat(30)}\nSolar themes and overview.`,
+				sourceUrl: null,
+				aiGenerated: true,
+				retainQuotes: false,
+			},
+		];
+		const tool = createStockResearchTool({
+			hasher,
+			search: async () => ok({ hits, truncated: true }),
+		});
+		const result = await tool.execute({ query: "SOLAR", limit: 6 }, createToolContext());
+		if (!result.ok) throw new Error("Expected retrieval");
+		expect(new TextEncoder().encode(result.value.modelText).byteLength).toBeLessThanOrEqual(6_000);
+		expect(result.value.modelText).not.toContain("[output truncated]");
+		expect(result.value.evidence).toHaveLength(3);
+		for (const id of ["cite:0", "cite:1", "cite:2", "ctx:3"]) {
+			expect(result.value.modelText).toContain(`"recordId":"${id}"`);
+		}
+		expect(result.value.modelText).toContain(longPassage);
+		expect(result.value.modelText).toContain(
+			"(passage not shown in full; narrow the query or select a kind)",
+		);
+		expect(result.value.modelText).toContain(
+			"More results exist. Narrow the query or select a kind.",
+		);
+	});
 });

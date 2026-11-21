@@ -25,26 +25,90 @@ export const stockResearchExporter: VectorExporter = {
 		const hasher = {
 			sha256Hex: async (text: string) => createHash("sha256").update(text).digest("hex"),
 		};
-		const responses = [
-			{ hits: [], truncated: false },
-			{ hits: [base], truncated: false },
+		const scenarios: {
+			readonly query: StockResearchQuery;
+			readonly response: { readonly hits: StockResearchHit[]; readonly truncated: boolean };
+		}[] = [
+			{ query: { query: "solar", limit: 6 }, response: { hits: [], truncated: false } },
+			{ query: { query: "solar", limit: 6 }, response: { hits: [base], truncated: false } },
 			{
-				hits: [base, { ...base, aiGenerated: true, sourceUrl: null, retainQuotes: false }],
-				truncated: true,
+				query: { query: "solar", limit: 6 },
+				response: {
+					hits: [base, { ...base, aiGenerated: true, sourceUrl: null, retainQuotes: false }],
+					truncated: true,
+				},
 			},
-			{ hits: [{ ...base, kind: "news" as const, retainQuotes: false }], truncated: false },
 			{
-				hits: Array.from({ length: 12 }, (_, i) => ({
-					...base,
-					recordId: `row:${i}`,
-					text: "太陽光 batteries. ".repeat(100),
-				})),
-				truncated: true,
+				query: { query: "solar", limit: 6 },
+				response: {
+					hits: [{ ...base, kind: "news" as const, retainQuotes: false }],
+					truncated: false,
+				},
+			},
+			{
+				query: { query: "solar", limit: 6 },
+				response: {
+					hits: Array.from({ length: 12 }, (_, i) => ({
+						...base,
+						recordId: `row:${i}`,
+						text: "太陽光 batteries. ".repeat(100),
+					})),
+					truncated: true,
+				},
+			},
+			{
+				query: { query: "造船", kind: "company", limit: 12 },
+				response: {
+					hits: Array.from({ length: 12 }, (_, i) => ({
+						...base,
+						recordId: `JP:${7000 + i}`,
+						title: `JP:${7000 + i} 合成造船${i} (Synthetic Zosen ${i}) AI-written company overview`,
+						text: `${"あ".repeat(900)}\n造船および舶用機器を手掛ける企業${i}。\n${"い".repeat(900)}`,
+						sourceUrl: null,
+						publisher: "AI-written stored context",
+						publishedAt: null,
+						effectiveAt: null,
+						sourceClass: "other" as const,
+						retainQuotes: false,
+						aiGenerated: true,
+					})),
+					truncated: true,
+				},
+			},
+			{
+				query: { query: "SOLAR 蓄電池", limit: 6 },
+				response: {
+					hits: [
+						{
+							...base,
+							recordId: "cite:0",
+							text: `Solar battery storage. ${"詳細データ。".repeat(120)}`,
+						},
+						{
+							...base,
+							recordId: "cite:1",
+							text: `Solar battery storage. ${"詳細データ。".repeat(120)}`,
+						},
+						{
+							...base,
+							recordId: "cite:2",
+							text: `Solar battery storage. ${"詳細データ。".repeat(120)}`,
+						},
+						{
+							...base,
+							recordId: "ctx:3",
+							text: `${"前文🔋".repeat(15)}\r\nSolar 蓄電池 overview.`,
+							sourceUrl: null,
+							aiGenerated: true,
+							retainQuotes: false,
+						},
+					],
+					truncated: true,
+				},
 			},
 		];
 		const cases = [];
-		const query: StockResearchQuery = { query: "solar", limit: 6 };
-		for (const response of responses) {
+		for (const { query, response } of scenarios) {
 			const tool = createStockResearchTool({ hasher, search: async () => ok(response) });
 			const output = await tool.execute(query, createToolContext());
 			cases.push({ query, response, output });
