@@ -357,7 +357,9 @@ Watchlist to get its data.
 - Financial statements tab: read the next earnings date (次回決算発表日) at
   the top — date, weekday, time of day, days away, fiscal period and source
   — for every listed stock: the Watchlist's own date first, else the
-  market's earnings calendar the server syncs daily (ADR-0067, ADR-0068). Switch the statement (income statement, balance
+  market's earnings calendar the server syncs daily (ADR-0067, ADR-0068). The income
+  statement shows annual basic EPS and P/E based on the latest stored close,
+  with the close date and fiscal period end. Switch the statement (income statement, balance
   sheet, cash flow) and 5 or 10 years; open a value's revision history;
   open "Filings (n)" to list the annual filings with links to SEC or to
   the J-Quants record (it needs a J-Quants API key to open).

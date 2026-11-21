@@ -121,3 +121,8 @@ still apply. The new demandCoverage vectors exhaust its Boolean combinations.
 This is a selection invariant, not a claim that useful demand information exists
 for each theme. Browser-search URL construction is tested separately; the app
 neither retrieves nor assesses the external search response.
+
+`StockValuation.lean` proves the availability conditions and quotient for
+P/E over exact inputs. Exported cases check the Stocks UI's calculation for
+both matching and mismatched currencies and for positive, zero and negative
+inputs.

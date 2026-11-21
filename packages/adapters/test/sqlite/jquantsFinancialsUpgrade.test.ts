@@ -201,9 +201,10 @@ it("moves Japanese companies to J-Quants, never checked and due now, and keeps e
 		const before = await read();
 		const startedAt = new Date().toISOString();
 
-		applySqlMigrations(db, migrations);
+		const throughDirectoryUpgrade = migrations.filter((migration) => migration.name < "0039_");
+		applySqlMigrations(db, throughDirectoryUpgrade);
 		// A second run is a no-op (the launcher applies on every start).
-		applySqlMigrations(db, migrations);
+		applySqlMigrations(db, throughDirectoryUpgrade);
 		const endedAt = new Date().toISOString();
 
 		// Every US row unchanged.
@@ -368,6 +369,15 @@ it("moves Japanese companies to J-Quants, never checked and due now, and keeps e
 			{ name: "uq_equity_company__owner_id_market_symbol" },
 			{ name: "uq_equity_company__owner_id_provider_source_company_id" },
 		]);
+		applySqlMigrations(db, migrations);
+		expect(
+			await all("SELECT provider, facts_status FROM equity_report_filing ORDER BY provider"),
+		).toEqual([
+			{ provider: "jquants", facts_status: "pending" },
+			{ provider: "sec", facts_status: "pending" },
+		]);
+		expect(await all(US_TABLES.facts)).toEqual(before.facts);
+		expect(await all(US_TABLES.values)).toEqual(before.values);
 	} finally {
 		db.close();
 	}

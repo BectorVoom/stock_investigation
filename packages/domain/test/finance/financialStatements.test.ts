@@ -71,6 +71,7 @@ describe("metric registry", () => {
 			"jquants:CFI",
 			"jquants:CFO",
 			"jquants:CashEq",
+			"jquants:EPS",
 			"jquants:Eq",
 			"jquants:NP",
 			"jquants:OP",

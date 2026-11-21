@@ -378,7 +378,7 @@ describe("financial history widget (ADR-0048 §8)", () => {
 		await chart();
 		const picker = within(root()).getByLabelText("Metric");
 		if (!(picker instanceof HTMLSelectElement)) throw new Error("no picker");
-		expect(picker.querySelectorAll("option")).toHaveLength(14);
+		expect(picker.querySelectorAll("option")).toHaveLength(15);
 		expect([...picker.querySelectorAll("optgroup")].map((group) => group.label)).toEqual([
 			"Income statement",
 			"Balance sheet",

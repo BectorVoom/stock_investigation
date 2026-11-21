@@ -54735,7 +54735,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54748,7 +54748,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54761,7 +54761,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54774,7 +54774,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54787,7 +54787,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54800,7 +54800,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54813,7 +54813,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54826,7 +54826,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54839,7 +54839,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54852,7 +54852,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54865,7 +54865,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54878,7 +54878,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54891,7 +54891,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54904,7 +54904,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54917,7 +54917,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54930,7 +54930,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54943,7 +54943,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54956,7 +54956,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54969,7 +54969,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54982,7 +54982,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -54995,7 +54995,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55008,7 +55008,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55021,7 +55021,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55034,7 +55034,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55047,7 +55047,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55060,7 +55060,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55073,7 +55073,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55086,7 +55086,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55099,7 +55099,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55112,7 +55112,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55125,7 +55125,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55138,7 +55138,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -55161,6 +55161,11 @@
 			"input": "{\"widgetId\":\"w-20\",\"type\":\"financial-history\",\"title\":\"Revenue\",\"size\":\"small\",\"companyId\":\"eqc_1\",\"metric\":\"profit-attributable-to-owners\",\"years\":15}",
 			"valid": true,
 			"output": "{\"widgetId\":\"w-20\",\"title\":\"Revenue\",\"size\":\"small\",\"type\":\"financial-history\",\"companyId\":\"eqc_1\",\"metric\":\"profit-attributable-to-owners\",\"years\":15}"
+		},
+		{
+			"input": "{\"widgetId\":\"w-20\",\"type\":\"financial-history\",\"title\":\"Revenue\",\"size\":\"small\",\"companyId\":\"eqc_1\",\"metric\":\"basic-eps\",\"years\":15}",
+			"valid": true,
+			"output": "{\"widgetId\":\"w-20\",\"title\":\"Revenue\",\"size\":\"small\",\"type\":\"financial-history\",\"companyId\":\"eqc_1\",\"metric\":\"basic-eps\",\"years\":15}"
 		},
 		{
 			"input": "{\"widgetId\":\"w-20\",\"type\":\"financial-history\",\"title\":\"Revenue\",\"size\":\"small\",\"companyId\":\"eqc_1\",\"metric\":\"total-assets\",\"years\":15}",
@@ -57557,7 +57562,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57570,7 +57575,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57583,7 +57588,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57596,7 +57601,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57609,7 +57614,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57622,7 +57627,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57635,7 +57640,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57648,7 +57653,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57661,7 +57666,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57674,7 +57679,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57687,7 +57692,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57700,7 +57705,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57713,7 +57718,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57726,7 +57731,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57739,7 +57744,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57752,7 +57757,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57765,7 +57770,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57778,7 +57783,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57791,7 +57796,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57804,7 +57809,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57817,7 +57822,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57830,7 +57835,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57843,7 +57848,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57856,7 +57861,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57869,7 +57874,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57882,7 +57887,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57895,7 +57900,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57908,7 +57913,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57921,7 +57926,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57934,7 +57939,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57947,7 +57952,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57960,7 +57965,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -57983,6 +57988,11 @@
 			"input": "{\"widgetId\":\"w-21\",\"type\":\"financial-history\",\"title\":\"Ordinary income\",\"size\":\"medium\",\"companyId\":\"eqc_2\",\"metric\":\"profit-attributable-to-owners\",\"years\":2}",
 			"valid": true,
 			"output": "{\"widgetId\":\"w-21\",\"title\":\"Ordinary income\",\"size\":\"medium\",\"type\":\"financial-history\",\"companyId\":\"eqc_2\",\"metric\":\"profit-attributable-to-owners\",\"years\":2}"
+		},
+		{
+			"input": "{\"widgetId\":\"w-21\",\"type\":\"financial-history\",\"title\":\"Ordinary income\",\"size\":\"medium\",\"companyId\":\"eqc_2\",\"metric\":\"basic-eps\",\"years\":2}",
+			"valid": true,
+			"output": "{\"widgetId\":\"w-21\",\"title\":\"Ordinary income\",\"size\":\"medium\",\"type\":\"financial-history\",\"companyId\":\"eqc_2\",\"metric\":\"basic-eps\",\"years\":2}"
 		},
 		{
 			"input": "{\"widgetId\":\"w-21\",\"type\":\"financial-history\",\"title\":\"Ordinary income\",\"size\":\"medium\",\"companyId\":\"eqc_2\",\"metric\":\"total-assets\",\"years\":2}",
@@ -58819,7 +58829,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},
@@ -58845,7 +58855,7 @@
 					"path": [
 						"metric"
 					],
-					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
+					"message": "Invalid option: expected one of \"revenue\"|\"gross-profit\"|\"operating-income\"|\"ordinary-income\"|\"profit-attributable-to-owners\"|\"basic-eps\"|\"total-assets\"|\"total-liabilities\"|\"total-equity\"|\"cash-and-cash-equivalents\"|\"net-cash-from-operating-activities\"|\"net-cash-from-investing-activities\"|\"net-cash-from-financing-activities\"|\"capital-expenditures\"|\"free-cash-flow\""
 				}
 			]
 		},

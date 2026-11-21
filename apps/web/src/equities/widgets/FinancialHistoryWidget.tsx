@@ -180,18 +180,25 @@ export function FinancialHistoryWidget(props: {
 	};
 	/** The one currency of the values; null when they differ, "" when none has a value. */
 	const currency = createMemo(() => sharedCurrency(cells()));
-	/** The data table's unit: millions, like the statement tables. */
-	const tableUnit = () => unitCaption(currency(), m());
+	/** The data table uses base units for EPS and millions for statement amounts. */
+	const tableUnit = () =>
+		metric() === "basic-eps" ? m().metric("basic-eps") : unitCaption(currency(), m());
 	const exponent = createMemo(() =>
-		chartScaleExponent(
-			cells().flatMap((cell) => (cell.valueDecimal === null ? [] : [cell.valueDecimal])),
-			locale(),
-		),
+		metric() === "basic-eps"
+			? 0
+			: chartScaleExponent(
+					cells().flatMap((cell) => (cell.valueDecimal === null ? [] : [cell.valueDecimal])),
+					locale(),
+				),
 	);
 	/** The chart axis's unit, in the scale the values are drawn in. */
 	const chartUnit = () => {
 		const shared = currency();
-		return shared === null || shared === "" ? tableUnit() : m().scaledUnitOf(shared, exponent());
+		return metric() === "basic-eps"
+			? `${shared ?? ""} ${tableUnit()}`.trim()
+			: shared === null || shared === ""
+				? tableUnit()
+				: m().scaledUnitOf(shared, exponent());
 	};
 	/** A separate-only series of the profit metric is net income, not "attributable to owners". */
 	const scope = createMemo(() => valuesScope(cells()));
@@ -287,14 +294,24 @@ export function FinancialHistoryWidget(props: {
 									</td>
 									<td class="py-1 pr-2 text-right whitespace-nowrap tabular-nums">
 										<Show
-											when={cell.valueDecimal === null ? null : formatMillions(cell.valueDecimal)}
+											when={
+												cell.valueDecimal === null
+													? null
+													: metric() === "basic-eps"
+														? cell.valueDecimal
+														: formatMillions(cell.valueDecimal)
+											}
 											fallback={<UnavailableValue reason={cell.unavailableReason} />}
 										>
 											{(text) => (
 												<>
 													{text()}
 													{/* With mixed currencies the caption cannot name one: each value does. */}
-													<Show when={currency() === null ? cell.currency : null}>
+													<Show
+														when={
+															currency() === null || metric() === "basic-eps" ? cell.currency : null
+														}
+													>
 														{(code) => ` ${code()}`}
 													</Show>
 													<Show when={cell.derived}>

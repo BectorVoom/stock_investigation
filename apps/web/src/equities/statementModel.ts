@@ -130,16 +130,17 @@ export function statementTableModel(response: EquityStatementResponse): Statemen
 		}),
 	);
 	const allCells = rows.flatMap((row) => row.cells);
+	const amountCells = rows.filter((row) => row.metric !== "basic-eps").flatMap((row) => row.cells);
 	return {
 		columns,
 		rows,
-		currency: sharedCurrency(allCells),
+		currency: sharedCurrency(amountCells),
 		anyDerived: allCells.some((cell) => cell?.derived === true && cell.valueDecimal !== null),
 		anyRevised: allCells.some((cell) => cell !== null && isRevised(cell)),
 		anySeparateMarked: rows.some((row) =>
 			row.cells.some((cell) => cell !== null && isMarkedSeparate(cell, row.scope)),
 		),
-		anyUnderOne: allCells.some((cell) => cell !== null && showsUnderOne(cell)),
+		anyUnderOne: amountCells.some((cell) => cell !== null && showsUnderOne(cell)),
 		filingsById: new Map(response.filings.map((filing) => [filing.filingId, filing] as const)),
 		newestPeriodEnd: columns.at(-1)?.periodEnd ?? null,
 	};

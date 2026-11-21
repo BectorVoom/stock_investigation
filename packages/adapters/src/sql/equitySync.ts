@@ -1268,13 +1268,24 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			// plain JOIN the planner, which has no statistics, put the keys
 			// innermost and read every fact of the company once per key
 			// (33 ms instead of 0.13 ms at 9,000 facts a company).
+			// Recover the scope from known facts only while a backfill has
+			// temporarily reopened their filing.
 			const { results } = await db
 				.prepare(
 					`SELECT
 						${FACT_COLUMNS},
 						erf.filed_on AS filing_filed_on,
 						erf.accounting_standard AS filing_accounting_standard,
-						erf.primary_scope AS filing_primary_scope
+						COALESCE(erf.primary_scope, CASE
+							WHEN EXISTS (
+								SELECT 1
+								FROM equity_reported_fact AS consolidated_fact
+								WHERE consolidated_fact.owner_id = erf.owner_id
+									AND consolidated_fact.filing_id = erf.filing_id
+									AND consolidated_fact.scope = 'consolidated'
+							) THEN 'consolidated'
+							ELSE 'separate'
+						END) AS filing_primary_scope
 					FROM json_each(?) AS touched_keys
 					CROSS JOIN equity_reported_fact AS erp
 						ON erp.owner_id = ?

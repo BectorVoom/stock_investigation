@@ -148,6 +148,7 @@ once and resumes syncing).
 | | Operating income | `OperatingIncomeLoss` | `jquants:OP` |
 | | Ordinary income (経常利益) | — (Japanese only) | `jquants:OdP` (JGAAP filers only) |
 | | Profit attributable to owners | `NetIncomeLoss` | `jquants:NP` |
+| | Basic EPS | `EarningsPerShareBasic` | `jquants:EPS` (yen per share) |
 | Balance sheet | Total assets | `Assets` | `jquants:TA` |
 | | Total liabilities | `Liabilities` | — (not in the summary) |
 | | Total equity | `StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest`, else `StockholdersEquity` | `jquants:Eq` (純資産 / 資本合計) |
@@ -269,11 +270,12 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
   deliberate — the latest presentation wins, as for a restatement — and the
   revision dialog (`/revisions`) still shows every as-filed value with its
   concept and filing.
-- **Stored filings are not re-read when the mapping registry grows.** A
+- **A mapping change by itself does not re-read stored filings.** A
   filing's facts are fetched once, for the concept list of that day, and each
   fact's `metric_code` is fixed when it is stored. A new mapping (a concept,
   or a standard such as IFRS) therefore applies to filings synced afterwards
-  only. To apply it to a company's stored filings, re-extract them — an
+  only. Migration 0039 queues a one-time re-extraction for basic EPS. For other
+  mappings, applying them to a company's stored filings is an
   administrative operation; export first (`wrangler d1 export`, see
   [operations](../operations.md)):
 
@@ -299,3 +301,30 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
   statements are empty until that sync completes. The as-filed history comes
   back from the source unchanged (`apps/api/test/equitySync.test.ts`,
   "re-extracts stored filings by the documented procedure").
+
+### Basic EPS and P/E
+
+Annual basic earnings per share is an income statement metric. SEC facts use
+`us-gaap:EarningsPerShareBasic` or `ifrs-full:BasicEarningsLossPerShare`.
+J-Quants uses `EPS` and, for separate statements, `NCEPS`. Facts keep their
+per-share unit. The current-value projection exposes the currency and the
+metric identifies the per-share basis.
+
+Migration 0039 schedules re-extraction of previously synced annual filings.
+It retains stored facts and current values while the ordinary runners read
+the available history. Japanese backfill is limited to the history returned
+by the configured J-Quants plan.
+
+The Stocks income statement displays P/E using the latest stored close and
+basic EPS for the newest stored fiscal year. It gives both dates and requires
+a positive close and EPS in the same currency. The calculation uses reported
+EPS and the stored price directly, without adjusting for intervening splits
+or ADR share ratios.
+
+The research agent can screen stored stocks with `stocks.search`,
+`kind: "financials"`. Add comparison terms such as
+`jp per<=15 eps>=100 currency=JPY` or `us:AAPL per>0`. Comparisons are
+inclusive with `<=` and `>=`. Multiple comparisons must all match. EPS
+screens use the newest stored fiscal year and the reporting currency.
+P/E screens require a positive same-currency close and EPS, and the
+returned passage includes the close date and its provider.

@@ -5,7 +5,7 @@ import {
 	type StockProfileResponse,
 } from "@research/contracts";
 import { EQUITY_STATEMENTS } from "@research/domain";
-import { useMessages } from "@research/i18n/solid";
+import { useLocale, useMessages } from "@research/i18n/solid";
 import { createEffect, createMemo, createSignal, type JSX, onCleanup, Show } from "solid-js";
 import { DisclosureSummary, Empty, ErrorNotice, Loading } from "../components/ui.tsx";
 import { equitiesMessages } from "../equities/equities.messages.ts";
@@ -20,9 +20,10 @@ import { SegmentedControl } from "../equities/SegmentedControl.tsx";
 import { StatementTable } from "../equities/StatementTable.tsx";
 import { FilingsTable } from "./FilingsTable.tsx";
 import { NextEarnings } from "./NextEarnings.tsx";
-import { rereadWhileAwaiting, stockProfileEntryFor } from "./stockReads.ts";
+import { rereadWhileAwaiting, stockPricesEntryFor, stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import type { StockTabProps } from "./stockTabs.ts";
+import { priceEarningsRatio } from "./stockValuation.ts";
 
 /**
  * The Financial statements tab (ADR-0049 §5): the Equities page's company
@@ -102,6 +103,9 @@ export function FinancialsTab(props: StockTabProps): JSX.Element {
 						{listed() ? s().notStoredYetBody : s().notListedBody}
 					</p>
 					<p class="text-2xs text-slate-600">{s().sourceHint}</p>
+					<p class="text-xs text-slate-700" data-field="stock-per">
+						{s().perNeedsEps}
+					</p>
 				</div>
 			</Show>
 			<Show when={stored()}>
@@ -175,6 +179,40 @@ function Statements(
 		const current = entry();
 		if (props.active()) onCleanup(current.attach(props.visibility));
 	});
+	const locale = useLocale();
+	const s = useMessages(stocksMessages);
+	const eps = createMemo(() => {
+		const current = entry().value();
+		if (current?.statement !== "income-statement") return null;
+		const latest = current.rows.find((row) => row.metric === "basic-eps")?.cells.at(-1);
+		return latest?.valueDecimal != null && latest.currency !== null && latest.periodEnd !== null
+			? {
+					value: Number(latest.valueDecimal),
+					currency: latest.currency,
+					periodEnd: latest.periodEnd,
+				}
+			: null;
+	});
+	const prices = createMemo(() => stockPricesEntryFor(props.api, props.stock().stockId));
+	createEffect(() => {
+		if (props.active() && (eps()?.value ?? 0) > 0) {
+			onCleanup(prices().attach(props.visibility));
+		}
+	});
+	const valuation = createMemo(() => {
+		const annual = eps();
+		const series = prices().value()?.series;
+		const close = series?.observations.at(-1);
+		if (annual === null || series == null || close === undefined || close[0] < annual.periodEnd) {
+			return null;
+		}
+		const ratio = priceEarningsRatio(close[1], series.unit, annual.value, annual.currency);
+		return ratio === null ? null : { ratio, pricedOn: close[0], periodEnd: annual.periodEnd };
+	});
+	const ratioFormat = createMemo(
+		() => new Intl.NumberFormat(locale(), { maximumFractionDigits: 2 }),
+	);
+
 	// A read that says the company is no longer the owner's: read the
 	// profile now, which drops it, rather than waiting up to five minutes for
 	// its next re-check.
@@ -229,6 +267,30 @@ function Statements(
 				>
 					{(current) => (
 						<Show when={current().fiscalYears.length > 0} fallback={<Empty>{f().noDataYet}</Empty>}>
+							<Show when={statement() === "income-statement"}>
+								<Show
+									when={valuation()}
+									fallback={
+										<p class="text-xs text-slate-700" data-field="stock-per">
+											{eps() === null
+												? s().perNeedsEps
+												: (eps()?.value ?? 0) <= 0
+													? s().perNeedsPositiveEps
+													: s().perNeedsPrice}
+										</p>
+									}
+								>
+									{(value) => (
+										<p class="text-xs text-slate-700" data-field="stock-per">
+											{s().reportedPer(
+												ratioFormat().format(value().ratio),
+												value().pricedOn,
+												value().periodEnd,
+											)}
+										</p>
+									)}
+								</Show>
+							</Show>
 							<StatementTable api={props.api} response={current()} />
 						</Show>
 					)}

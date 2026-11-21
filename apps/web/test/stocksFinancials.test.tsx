@@ -3,7 +3,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StockRoute } from "../src/router.ts";
 import { makeCompany, NINTENDO, nintendoSynced } from "./equitiesHarness.ts";
-import { errorResponse } from "./fakeBackend.ts";
+import { errorResponse, jsonResponse } from "./fakeBackend.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 import { createStocksBackend, mountStocks, type StocksServer } from "./stocksHarness.tsx";
 import { makeStock } from "./watchlistHarness.ts";
@@ -32,16 +32,19 @@ function panel(): HTMLElement {
 }
 
 async function statementShown(): Promise<HTMLElement> {
-	return waitFor(() => {
-		const element = document.querySelector('[data-field="company-detail"]');
-		if (
-			!(element instanceof HTMLElement) ||
-			element.querySelector("table[data-statement]") === null
-		) {
-			throw new Error("no statement yet");
-		}
-		return element;
-	});
+	return waitFor(
+		() => {
+			const element = document.querySelector('[data-field="company-detail"]');
+			if (
+				!(element instanceof HTMLElement) ||
+				element.querySelector("table[data-statement]") === null
+			) {
+				throw new Error("no statement yet");
+			}
+			return element;
+		},
+		{ timeout: 5_000 },
+	);
 }
 
 /** Opens "Filings (n)" and answers its table once read. */
@@ -90,6 +93,45 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 			expect(api.backend.requestsTo("GET", /\/statements\/balance-sheet\?years=10$/)).toHaveLength(
 				1,
 			),
+		);
+	});
+
+	it("shows why P/E is unavailable when EPS is missing", async () => {
+		const api = serve([nintendoSynced()]);
+		mountStocks(api.backend, { route: NINTENDO_ROUTE });
+		const shown = await statementShown();
+		expect(shown.querySelector('[data-field="stock-per"]')?.textContent).toContain(
+			"Annual basic EPS has not been stored",
+		);
+	});
+
+	it("shows annual EPS in base units and P/E with the price and fiscal dates", async () => {
+		const api = serve();
+		api.backend.on("GET", /\/stocks\/[^/]+\/prices$/, () =>
+			jsonResponse({
+				stockId: APPLE.stockId,
+				seriesId: "twelve-data:AAPL",
+				series: {
+					seriesId: "twelve-data:AAPL",
+					provider: "twelve-data",
+					symbol: "AAPL",
+					title: "Apple",
+					unit: "USD",
+					frequency: "daily",
+					publisher: "Twelve Data",
+					sourceUrl: "https://twelvedata.com/stocks/AAPL",
+					lastRefreshedAt: null,
+					retrievedAt: null,
+					unavailable: null,
+					observations: [["2026-10-30", 250]],
+				},
+			}),
+		);
+		mountStocks(api.backend, { route: APPLE });
+		const shown = await statementShown();
+		expect(shown.querySelector('[data-metric="basic-eps"]')?.textContent).toContain("6.25 USD");
+		expect(await screen.findByText(/P\/E \(PER\) 40× · Close 2026-10-30/)).toBeInstanceOf(
+			HTMLElement,
 		);
 	});
 

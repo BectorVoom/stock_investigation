@@ -890,6 +890,9 @@ export function equityCompletionDelayMs(
 	if (context.filings.length === 0 && plan.newFilings.length === 0) {
 		return EQUITY_NOT_FOUND_RETRY_MS;
 	}
+	// J-Quants returns its available history on every read, even for disclosures
+	// that have already aged out of its response window.
+	if (context.company.provider === "jquants") return equitySyncIntervalMs(context.onWatchlist);
 	const finalized = new Set(plan.finalizedFilings.map((filing) => filing.filingId));
 	const pendingAfter =
 		plan.newFilings.some((filing) => filing.factsStatus === "pending") ||
@@ -958,7 +961,10 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 	const knownDisclosures: string[] = [];
 	for (const filing of filings) {
 		if (knownDisclosures.length === EQUITY_FINANCIAL_LIMITS.maxKnownFilings) break;
-		if (jquantsDisclosureNumberSchema.safeParse(filing.sourceDocumentId).success) {
+		if (
+			filing.factsStatus !== "pending" &&
+			jquantsDisclosureNumberSchema.safeParse(filing.sourceDocumentId).success
+		) {
 			knownDisclosures.push(filing.sourceDocumentId);
 		}
 	}

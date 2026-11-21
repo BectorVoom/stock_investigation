@@ -79,6 +79,7 @@ const JQUANTS_ITEMS: readonly {
 	readonly period: "duration" | "instant";
 	readonly separateItem: string | null;
 }[] = [
+	{ item: "EPS", period: "duration", separateItem: "NCEPS" },
 	{ item: "Sales", period: "duration", separateItem: "NCSales" },
 	{ item: "OP", period: "duration", separateItem: "NCOP" },
 	{ item: "OdP", period: "duration", separateItem: "NCOdP" },
@@ -241,7 +242,7 @@ function summaryFacts(summary: FullYearSummary): EquityExtractedFact[] {
 		if (valueDecimal === null) return;
 		facts.push({
 			concept,
-			unit: JQUANTS_UNIT,
+			unit: concept === "jquants:EPS" ? `${JQUANTS_UNIT}/shares` : JQUANTS_UNIT,
 			valueDecimal,
 			periodType: period,
 			periodStart: period === "duration" ? summary.periodStart : null,

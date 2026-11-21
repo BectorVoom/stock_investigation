@@ -293,7 +293,21 @@ describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 		await sync(
 			harness,
 			token,
-			US_YEARS.map((year) => tenK(year)),
+			US_YEARS.map((year) => {
+				const filing = tenK(year);
+				if (year === 2025) {
+					filing.facts.push({
+						concept: "us-gaap:EarningsPerShareBasic",
+						unit: "USD/shares",
+						valueDecimal: "6.25",
+						periodType: "duration",
+						periodStart: filing.periodStart,
+						periodEnd: filing.periodEnd,
+						scope: "consolidated",
+					});
+				}
+				return filing;
+			}),
 		);
 		const view = await company(harness, tracked.companyId);
 		expect(view).toMatchObject({
@@ -306,6 +320,11 @@ describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 		expect(view.sync.status).toBe("succeeded");
 
 		const income = await statement(harness, tracked.companyId, "income-statement");
+		expect(cellOf(income, "basic-eps", 2025)).toMatchObject({
+			valueDecimal: "6.25",
+			currency: "USD",
+			concept: "us-gaap:EarningsPerShareBasic",
+		});
 		expect(income.fiscalYears).toEqual([2021, 2022, 2023, 2024, 2025]);
 		expect(income.rows.map((row) => row.metric)).toEqual([
 			"revenue",
@@ -313,6 +332,7 @@ describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 			"operating-income",
 			"ordinary-income",
 			"profit-attributable-to-owners",
+			"basic-eps",
 		]);
 		for (const year of income.fiscalYears) {
 			expect(cellOf(income, "revenue", year)).toMatchObject({
@@ -378,10 +398,29 @@ describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 		const lease = await sync(
 			harness,
 			token,
-			JP_YEARS.map((year) => earningsReport(year)),
+			JP_YEARS.map((year) => {
+				const filing = earningsReport(year);
+				if (year === 2026) {
+					filing.facts.push({
+						concept: "jquants:EPS",
+						unit: "JPY/shares",
+						valueDecimal: "6.25",
+						periodType: "duration",
+						periodStart: filing.periodStart,
+						periodEnd: filing.periodEnd,
+						scope: "consolidated",
+					});
+				}
+				return filing;
+			}),
 		);
 		expect(lease.source.provider).toBe("jquants");
 		const income = await statement(harness, nintendo.companyId, "income-statement");
+		expect(cellOf(income, "basic-eps", 2026)).toMatchObject({
+			valueDecimal: "6.25",
+			currency: "JPY",
+			concept: "jquants:EPS",
+		});
 		expect(income.fiscalYears).toEqual([2025, 2026]);
 		for (const year of income.fiscalYears) {
 			// The non-consolidated sales' "1" never displaces the consolidated value.
@@ -1720,7 +1759,7 @@ describe("financial sync: owner API (ADR-0048 §7, ADR-0054 §1)", () => {
 		// An empty statement before the first sync: no years, every row present.
 		const empty = await statement(harness, tracked.companyId, "income-statement");
 		expect(empty.fiscalYears).toEqual([]);
-		expect(empty.rows).toHaveLength(5);
+		expect(empty.rows).toHaveLength(6);
 		expect(empty.dataUpdatedAt).toBeNull();
 	});
 });

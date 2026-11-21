@@ -316,3 +316,9 @@ idx_equity_metric_value__owner_id_metric_code_fiscal_year_value_real`, then
 `ALTER TABLE equity_metric_value DROP COLUMN value_real` (SQLite 3.35+; an
 older release never names the column). Applying this to the owner's database
 is a separate operation.
+
+### Migration 0039 — backfill annual basic EPS
+
+The migration queues re-extraction through the regular financial sync. It
+retains existing facts and current values. J-Quants can backfill only the
+disclosures still available under the configured plan. The schema is unchanged.

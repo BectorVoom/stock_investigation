@@ -133,6 +133,7 @@ function filingOf(year: number, amended = false): EquityFilingView {
 
 /** Base-unit values per metric and year; null = not reported. */
 const VALUES: { readonly [M in EquityMetricCode]?: Readonly<Record<number, string | null>> } = {
+	"basic-eps": { 2024: "6.25" },
 	revenue: {
 		2020: "274515000000",
 		2021: "365817000000",

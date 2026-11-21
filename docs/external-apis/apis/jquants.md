@@ -97,6 +97,7 @@ The fetch core sets `Accept` and `User-Agent` on every hop, redirect hops includ
 | `$.data[].CurFYSt`, `.CurFYEn` | string | No | No | Yes | The fiscal year; with `CurFYSt` the key that groups a summary with its corrections. Not calendar dates, or start after end → record skipped. |
 | `$.data[].Sales`, `.OP`, `.OdP`, `.NP`, `.CFO`, `.CFI`, `.CFF` | string | No | No | Yes | Net sales, operating profit, ordinary profit (JGAAP only; `""` for IFRS and US-GAAP), profit attributable to owners of the parent, the three cash flows, for `CurPerSt`–`CurPerEn`. `""` or not a plain decimal → no fact. |
 | `$.data[].TA`, `.Eq`, `.CashEq` | string | No | No | Yes | Total assets, equity, cash and equivalents at `CurPerEn`. |
+| `$.data[].EPS`, `.NCEPS` | string | No | No | Yes | Annual basic EPS, consolidated or separate respectively, in yen per share. |
 | `$.data[].NCSales`, `.NCOP`, `.NCOdP`, `.NCNP`, `.NCTA`, `.NCEq` | string | No | No | Yes | The non-consolidated values of a consolidated filer; `""` for a non-consolidated filer (not read for its `_NonConsolidated_` records). |
 | `$.pagination_key` | string | No | Yes | Yes | Present when more pages follow. |
 
@@ -596,6 +597,7 @@ Contract types: `StockDayBar`, `StockHistoryBar`, `StockPriceDayResult`, `StockH
 | — | `extracted` (the answer holds the figures) | `factsStatus` | `equity_report_filing` |
 | `Sales`, `OP`, `OdP`, `NP`, `CFO`, `CFI`, `CFF` | One fact per stated item: concept `jquants:<Item>`, unit `JPY`, duration `CurPerSt`–`CurPerEn`. Value: a plain decimal (`[+-]?digits[.digits]`), a leading `+` and leading zeros dropped, trailing fractional zeros dropped, `-0` → `0`; `""` or anything else → no fact. Scope `consolidated`, or `separate` in a `_NonConsolidated_` record | `EquityExtractedFact` | [`equity_reported_fact`](../../database/tables/equity_reported_fact.md) |
 | `TA`, `Eq`, `CashEq` | As above, instant at `CurPerEn` | `EquityExtractedFact` | `equity_reported_fact` |
+| `EPS`, `NCEPS` | Annual duration fact with concept `jquants:EPS` and unit `JPY/shares`. Uses the same scope and decimal parsing rules as other summary facts. | `EquityExtractedFact` and metric `basic-eps` | `equity_reported_fact`, `equity_metric_value` |
 | `NCSales`, `NCOP`, `NCOdP`, `NCNP`, `NCTA`, `NCEq` | Of a consolidated record only: the same concept without `NC` (`NCSales` → `jquants:Sales`), scope `separate`, period as its plain item | `EquityExtractedFact` | `equity_reported_fact` |
 | (the facts) | Canonical order (`compareFacts`); the completion caps keep the newest filings (`fitCompletionCaps`: 60 filings, 3,000 facts), `more` when any was cut | `filings`, `more` | — |
 | `Code`, newest `CurFYEn` | `sourceCompanyId` = the asked code, `name` null, `fiscalYearEnd` = `MM-DD` of the greatest `CurFYEn` of the kept records; the identity is null when there is none | `identity` | [`equity_company`](../../database/tables/equity_company.md) `source_company_id`, `fiscal_year_end` |

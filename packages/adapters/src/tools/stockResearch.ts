@@ -350,7 +350,7 @@ export function createStockResearchTool(deps: {
 		toolId: "stocks.search",
 		version: "1.2.0",
 		description:
-			"Search stored company descriptions, financial statements and news. Use company names/tickers and metric keywords; all terms must match. AI-written context is not primary evidence. No live fetch.",
+			"Search stored company descriptions, financial statements and news. Use company names/tickers and metric keywords; all terms must match. AI-written context is not primary evidence. No live fetch. For numeric screening, use kind financials with query terms like jp per<=15 eps>=100 currency=JPY or us:AAPL per>0. EPS is annual basic EPS in the reporting currency. P/E uses the latest stored close. Use a currency for comparable EPS thresholds.",
 		argsHint:
 			'{"query": string (1–128 chars, at most 8 terms), "kind"?: "company" | "financials" | "news", "limit"?: 1..12 (default 6)}',
 		argsSchema: toolQuerySchema,

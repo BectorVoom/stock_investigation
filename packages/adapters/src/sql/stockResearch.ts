@@ -19,6 +19,7 @@ import {
 	parseCompanySearchQuery,
 	parseJsonOrNull,
 	stemEnglishToken,
+	stockPriceSeriesId,
 	type ThemeName,
 	textMatchesTermDirect,
 	textMatchesTermRelated,
@@ -32,6 +33,7 @@ import { decode } from "./rows.ts";
 const METRIC_TERMS = {
 	revenue: "売上高 売上収益 営業収益 sales",
 	"gross-profit": "売上総利益 gross profit",
+	"basic-eps": "基本EPS 1株当たり利益 basic earnings per share EPS",
 	"operating-income": "営業利益 operating profit",
 	"ordinary-income": "経常利益",
 	"profit-attributable-to-owners":
@@ -80,13 +82,13 @@ const KNOWN_FINANCIAL_ENGLISH_WORDS = [
 	"flow",
 ] as const;
 
-const FINANCIAL_DOCUMENTS_SQL = `SELECT 'financials' AS kind,
+const financialDocumentsSql = (extraColumns = "") => `SELECT 'financials' AS kind,
 	emv.company_id || ':' || emv.fiscal_year || ':' || emv.metric_code AS record_id,
 	eco.market || ':' || eco.symbol || ' ' || coalesce(eco.name, '') || ' ' || coalesce(sd.local_name, '') || ' ' || replace(emv.metric_code, '-', ' ') || ' ' || (${METRIC_CASE}) AS title,
 	'issuer=' || eco.market || ':' || eco.symbol || CASE WHEN eco.name IS NOT NULL AND eco.name <> '' THEN ' ' || eco.name ELSE '' END ||
 	'; metric=' || emv.metric_code || '; fiscalYear=' || emv.fiscal_year ||
 	'; value=' || coalesce(emv.value_decimal, 'unavailable') || '; currency=' || coalesce(emv.currency, 'unavailable') ||
-	'; unit=base currency units; periodStart=' || coalesce(emv.period_start, 'unavailable') ||
+	'; unit=' || CASE WHEN emv.metric_code = 'basic-eps' THEN 'currency per share' ELSE 'base currency units' END || '; periodStart=' || coalesce(emv.period_start, 'unavailable') ||
 	'; periodEnd=' || coalesce(emv.period_end, 'unavailable') || '; scope=' || coalesce(emv.scope, 'unavailable') ||
 	'; derived=' || emv.derived || '; reportedValueCount=' || emv.reported_value_count ||
 	'; unavailableReason=' || coalesce(emv.unavailable_reason, 'none') ||
@@ -95,7 +97,7 @@ const FINANCIAL_DOCUMENTS_SQL = `SELECT 'financials' AS kind,
 	erf.filed_on || 'T00:00:00Z' AS published_at, emv.updated_at AS retrieved_at,
 	emv.period_end || 'T00:00:00Z' AS effective_at, 'regulatory-filing' AS source_class,
 	CASE eco.provider WHEN 'sec' THEN 1 ELSE 0 END AS retain_quotes, 0 AS ai_generated,
-	eco.market AS market, eco.symbol AS symbol
+	eco.market AS market, eco.symbol AS symbol${extraColumns}
 	FROM equity_company AS eco
 	JOIN equity_metric_value AS emv ON emv.owner_id = eco.owner_id AND emv.company_id = eco.company_id
 	LEFT JOIN equity_report_filing AS erf ON erf.owner_id = emv.owner_id AND erf.filing_id = emv.filing_id
@@ -806,7 +808,7 @@ async function searchFinancialsCorpus(
 	const limitSlot = params.bindValue(limit + 1);
 
 	const result = await db
-		.prepare(`WITH documents AS (${FINANCIAL_DOCUMENTS_SQL} WHERE eco.owner_id = ${ownerSlot})
+		.prepare(`WITH documents AS (${financialDocumentsSql()} WHERE eco.owner_id = ${ownerSlot})
 			SELECT d.kind, d.record_id, d.title, d.text, d.source_url, d.publisher, d.published_at, d.retrieved_at, d.effective_at, d.source_class, d.retain_quotes, d.ai_generated, d.market
 			FROM documents AS d
 			WHERE ${whereSql}
@@ -1022,10 +1024,117 @@ async function loadJpFinancials(
 	return entries;
 }
 
+const VALUATION_CURRENCY = /^currency=([a-z]{3})$/;
+const VALUATION_FILTER = /^(eps|per|pe|p\/e)(<=|>=|=|<|>)(-?\d+(?:\.\d+)?)$/;
+
+async function screenStockValuations(
+	db: SqlDatabase,
+	ownerId: string,
+	rawQuery: string,
+	limit: number,
+): Promise<StockResearchHit[] | null> {
+	const terms = foldSqlQueryText(rawQuery).split(/\s+/u);
+	const filters = terms.flatMap((term) => {
+		const match = VALUATION_FILTER.exec(term);
+		return match === null
+			? []
+			: [{ metric: match[1], operator: match[2], value: Number(match[3]) }];
+	});
+	if (filters.length === 0) return null;
+	const needsPrice = filters.some((filter) => filter.metric !== "eps");
+	const params = new SqlParams();
+	const owner = params.bindString(ownerId);
+	const bounds = filters.map(
+		(filter) =>
+			`${filter.metric === "eps" ? "d.eps_value" : "d.per"} ${filter.operator} ${params.bindValue(filter.value)}`,
+	);
+	const textTerms = terms.filter((term) => !VALUATION_FILTER.test(term));
+	const matches = textTerms.map((term) => {
+		if (term === "jp" || term === "us")
+			return `d.market = ${params.bindString(term.toUpperCase())}`;
+		const currency = VALUATION_CURRENCY.exec(term)?.[1];
+		if (currency !== undefined)
+			return `d.eps_currency = ${params.bindString(currency.toUpperCase())}`;
+		return financialTermWhereSql(params, "lower(d.title)", term);
+	});
+	// Use the same series identifiers and the same annual period as the Stocks page.
+	const stockMarker = "_ticker_";
+	const usSeries = needsPrice ? params.bindString(stockPriceSeriesId("US", stockMarker)) : "";
+	const jpSeries = needsPrice ? params.bindString(stockPriceSeriesId("JP", stockMarker)) : "";
+	const priceJoins = needsPrice
+		? `JOIN market_series AS ms
+			ON ms.owner_id = eco.owner_id AND ms.unit = emv.currency
+			AND ms.series_id = replace(CASE eco.market WHEN 'JP' THEN ${jpSeries} ELSE ${usSeries} END, '${stockMarker}', eco.symbol)
+		JOIN market_observations AS mo
+			ON mo.owner_id = ms.owner_id AND mo.series_id = ms.series_id
+			AND mo.observed_on = (
+				SELECT max(latest.observed_on)
+				FROM market_observations AS latest
+				WHERE latest.owner_id = ms.owner_id AND latest.series_id = ms.series_id
+			)
+			AND mo.observed_on >= emv.period_end AND mo.value > 0`
+		: "";
+	const priceColumns = needsPrice
+		? ", mo.value / emv.value_real AS per, mo.value AS close, mo.observed_on AS close_date, ms.publisher AS close_publisher, ms.source_url AS close_url"
+		: "";
+	const limitSlot = params.bindValue(limit + 1);
+	const result = await db
+		.prepare(`WITH documents AS (
+		${financialDocumentsSql(`, emv.value_real AS eps_value, emv.currency AS eps_currency${priceColumns}`)}
+		${priceJoins}
+		WHERE eco.owner_id = ${owner}
+			AND emv.metric_code = 'basic-eps' AND emv.value_real IS NOT NULL
+			${needsPrice ? "AND emv.value_real > 0" : ""}
+			AND emv.fiscal_year = (
+				SELECT recent.fiscal_year FROM equity_metric_value AS recent
+				WHERE recent.owner_id = eco.owner_id AND recent.company_id = eco.company_id
+					AND (recent.value_decimal IS NOT NULL OR recent.unavailable_reason <> 'not-reported')
+				ORDER BY recent.fiscal_year DESC LIMIT 1
+			)
+	)
+	SELECT d.* FROM documents AS d
+	WHERE ${[...bounds, ...matches].join(" AND ")}
+	ORDER BY ${needsPrice ? "d.per ASC" : "d.eps_value DESC"}, d.record_id ASC
+	LIMIT ${limitSlot}`)
+		.bind(...params.values)
+		.all();
+	return result.results.map((raw) => {
+		const { hit } = decode("stock valuation screening", rowSchema, raw);
+		if (!needsPrice) {
+			return stockResearchHitSchema.parse({ ...hit, title: truncateText(hit.title, 300) });
+		}
+		const price = decode("stock valuation close", valuationPriceSchema, raw);
+		const details = `Calculated P/E (PER)=${price.per}; close=${price.close}; closeDate=${price.close_date}; pricePublisher=${price.close_publisher}; priceSource=${price.close_url}. P/E uses reported basic EPS and the stored close.`;
+		return stockResearchHitSchema.parse({
+			...hit,
+			title: truncateText(hit.title, 300),
+			text: truncateText(hit.text.replace("; metric=", `; ${details}\nmetric=`), 2400),
+		});
+	});
+}
+
+const valuationPriceSchema = z.object({
+	per: z.number().positive(),
+	close: z.number().positive(),
+	close_date: z.string(),
+	close_publisher: z.string(),
+	close_url: z.string(),
+});
+
 export function createStockResearchRepository(db: SqlDatabase): StockResearchRepository {
 	return {
 		async search(ownerId, input) {
 			const query = stockResearchQuerySchema.parse(input);
+			if (query.kind === undefined || query.kind === "financials") {
+				const screen = await screenStockValuations(db, ownerId, query.query, query.limit);
+				if (screen !== null) {
+					return {
+						hits: screen.slice(0, query.limit),
+						truncated: screen.length > query.limit,
+						jpFinancials: [],
+					};
+				}
+			}
 			const parsedCompanyQuery = parseCompanySearchQuery(query.query);
 			const kinds =
 				query.kind === undefined ? (["company", "financials", "news"] as const) : [query.kind];

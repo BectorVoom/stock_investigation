@@ -99,7 +99,7 @@ export type EquityBusinessForm = (typeof EQUITY_BUSINESS_FORMS)[number];
 
 /**
  * Normalized annual metrics, named for their exact definition. Every value
- * is a currency amount in the filing's reporting currency, in base units.
+ * uses the filing's reporting currency and base units, per share for basic EPS.
  */
 export const EQUITY_METRIC_CODES = [
 	"revenue",
@@ -107,6 +107,7 @@ export const EQUITY_METRIC_CODES = [
 	"operating-income",
 	"ordinary-income",
 	"profit-attributable-to-owners",
+	"basic-eps",
 	"total-assets",
 	"total-liabilities",
 	"total-equity",
@@ -150,6 +151,7 @@ const METRIC_TABLE: { readonly [C in EquityMetricCode]: MetricShape } = {
 	"operating-income": shape("income-statement", "duration"),
 	"ordinary-income": shape("income-statement", "duration"),
 	"profit-attributable-to-owners": shape("income-statement", "duration"),
+	"basic-eps": shape("income-statement", "duration"),
 	"total-assets": shape("balance-sheet", "instant", { nonNegative: true }),
 	"total-liabilities": shape("balance-sheet", "instant", { nonNegative: true }),
 	"total-equity": shape("balance-sheet", "instant"),
@@ -237,6 +239,8 @@ export const EQUITY_CONCEPT_MAPPINGS: readonly EquityConceptMapping[] = [
 	...candidates("sec", "gross-profit", "US-GAAP", ["us-gaap:GrossProfit"]),
 	...candidates("sec", "operating-income", "US-GAAP", ["us-gaap:OperatingIncomeLoss"]),
 	...candidates("sec", "profit-attributable-to-owners", "US-GAAP", ["us-gaap:NetIncomeLoss"]),
+	...candidates("sec", "basic-eps", "US-GAAP", ["us-gaap:EarningsPerShareBasic"]),
+	...candidates("sec", "basic-eps", "IFRS", ["ifrs-full:BasicEarningsLossPerShare"]),
 	...candidates("sec", "total-assets", "US-GAAP", ["us-gaap:Assets"]),
 	...candidates("sec", "total-liabilities", "US-GAAP", ["us-gaap:Liabilities"]),
 	...candidates("sec", "total-equity", "US-GAAP", [
@@ -309,6 +313,7 @@ export const EQUITY_CONCEPT_MAPPINGS: readonly EquityConceptMapping[] = [
 		...candidates("jquants", "revenue", standard, ["jquants:Sales"]),
 		...candidates("jquants", "operating-income", standard, ["jquants:OP"]),
 		...candidates("jquants", "profit-attributable-to-owners", standard, ["jquants:NP"]),
+		...candidates("jquants", "basic-eps", standard, ["jquants:EPS"]),
 		...candidates("jquants", "total-assets", standard, ["jquants:TA"]),
 		...candidates("jquants", "total-equity", standard, ["jquants:Eq"]),
 		...candidates("jquants", "cash-and-cash-equivalents", standard, ["jquants:CashEq"]),
@@ -604,6 +609,7 @@ interface Candidate {
 }
 
 const CURRENCY_UNIT = /^[A-Z]{3}$/;
+const CURRENCY_PER_SHARE = /^[A-Z]{3}(?=\/shares$)/;
 
 function laterFiling(a: EquityReportedFact, b: EquityReportedFact): boolean {
 	return a.filedOn > b.filedOn || (a.filedOn === b.filedOn && a.filingId > b.filingId);
@@ -703,8 +709,9 @@ export function selectMetricValue(
 	const chosen = bestOfFiling(byFiling.get(latest.filingId) ?? []);
 	if (chosen === null) return { kind: "unavailable", reason: "not-reported" };
 	if (chosen === "ambiguous") return { kind: "unavailable", reason: "ambiguous" };
-	if (!CURRENCY_UNIT.test(chosen.fact.unit))
-		return { kind: "unavailable", reason: "unsupported-unit" };
+	const unit = chosen.fact.unit;
+	const currency = metricCode === "basic-eps" ? (CURRENCY_PER_SHARE.exec(unit)?.[0] ?? "") : unit;
+	if (!CURRENCY_UNIT.test(currency)) return { kind: "unavailable", reason: "unsupported-unit" };
 	const valueDecimal = normalized(chosen);
 	if (definition.nonNegative && decimalIsNegative(valueDecimal)) {
 		return { kind: "unavailable", reason: "unexpected-sign" };
@@ -719,7 +726,7 @@ export function selectMetricValue(
 	return {
 		kind: "value",
 		valueDecimal,
-		currency: chosen.fact.unit,
+		currency,
 		filingId: chosen.fact.filingId,
 		filedOn: chosen.fact.filedOn,
 		concept: chosen.fact.concept,

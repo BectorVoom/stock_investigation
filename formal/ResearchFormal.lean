@@ -34,3 +34,5 @@ import ResearchFormal.CitationReference
 import ResearchFormal.CompanyScreening
 import ResearchFormal.ComparisonTable
 import ResearchFormal.DemandSignals
+
+import ResearchFormal.StockValuation

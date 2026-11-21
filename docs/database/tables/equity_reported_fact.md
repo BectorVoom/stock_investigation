@@ -28,7 +28,7 @@ The raw history the authoritative values (`equity_metric_value`) are computed fr
 | `period_type` | TEXT | No | - | `'duration'` or `'instant'`. |
 | `period_start` | TEXT | No | - | Duration start, YYYY-MM-DD; `''` for an instant (part of the key, so not NULL). |
 | `period_end` | TEXT | No | - | Duration end or instant date, YYYY-MM-DD. |
-| `unit` | TEXT | No | - | The source's unit: an ISO 4217 currency for monetary facts (`USD`, `JPY`). |
+| `unit` | TEXT | No | - | The source's unit: an ISO 4217 currency for monetary amounts (`USD`, `JPY`), or currency per share for basic EPS (`USD/shares`, `JPY/shares`). |
 | `company_id` | TEXT | No | - | The filing's company, denormalized for the metric-year index. |
 | `fiscal_year` | INTEGER | No | - | Fiscal year label, the year `period_end` falls in (`fiscalYearOfPeriodEnd`, computed by the API; 1-7 January ends belong to the year before). |
 | `metric_code` | TEXT | Yes | - | The normalized metric the concept maps to under the filing's provider, standard and scope; NULL when unmapped (e.g. an IFRS filer). |

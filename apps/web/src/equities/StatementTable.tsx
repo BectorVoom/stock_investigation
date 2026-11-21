@@ -131,7 +131,10 @@ export function StatementTable(props: {
 		});
 	};
 
-	const valueText = (cell: EquityMetricCell): string => {
+	const valueText = (metric: EquityMetricCode, cell: EquityMetricCell): string => {
+		if (metric === "basic-eps" && cell.valueDecimal !== null) {
+			return `${cell.valueDecimal} ${cell.currency}`;
+		}
 		const value = cell.valueDecimal === null ? null : formatMillions(cell.valueDecimal);
 		if (value === null) return "";
 		// With mixed currencies the caption cannot name one: each value does.
@@ -153,8 +156,8 @@ export function StatementTable(props: {
 		const label = m().valueLabel(
 			rowLabel(row),
 			m().fiscalYear(cell.fiscalYear),
-			valueText(cell),
-			unit(),
+			valueText(row.metric, cell),
+			row.metric === "basic-eps" ? "" : unit(),
 		);
 		return marks.length === 0 ? label : `${label} (${marks.join(", ")})`;
 	};
@@ -221,7 +224,7 @@ export function StatementTable(props: {
 														data-value-button=""
 														onClick={(event) => open(row.metric, value(), event.currentTarget)}
 													>
-														<span>{valueText(value())}</span>
+														<span>{valueText(row.metric, value())}</span>
 														<Show when={value().derived}>
 															<span class="text-2xs text-slate-600" data-mark="derived">
 																{m().derivedMark}

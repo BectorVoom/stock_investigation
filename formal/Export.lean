@@ -1965,8 +1965,22 @@ def retrievalVectors : List String := Id.run do
             ("limit", jsonNat limit), ("result", jsonNatList (Research.Retrieval.interleave groups limit))]]
   return out
 
+def stockValuationVectors : List String := Id.run do
+  let mut vectors := []
+  for price in [-1, 0, 5, 250] do
+    for eps in [-1, 0, 2, 25] do
+      for same in [false, true] do
+        let result := match StockValuation.per price eps same with
+          | none => "null"
+          | some r => jsonArr [jsonInt r.num, jsonNat r.den]
+        vectors := vectors ++ [jsonObj [
+          ("price", jsonInt price), ("eps", jsonInt eps),
+          ("sameCurrency", jsonBool same), ("result", result)]]
+  return vectors
+
 def main : IO Unit := do
   IO.println "{"
+  IO.println ("\"stockValuation\": " ++ jsonArr stockValuationVectors ++ ",")
   IO.println ("\"researchRetrieval\": " ++ jsonArr retrievalVectors ++ ",")
   IO.println ("\"materialSeries\": " ++ jsonArr materialSeriesVectors ++ ",")
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")

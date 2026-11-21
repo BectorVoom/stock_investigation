@@ -90,7 +90,8 @@ const DURATION: EquityPeriodType = EquityPeriodType::Duration;
 const INSTANT: EquityPeriodType = EquityPeriodType::Instant;
 
 /// `JQUANTS_ITEMS`, in the TypeScript's order (the facts are sorted after).
-const JQUANTS_ITEMS: [JquantsItem; 10] = [
+const JQUANTS_ITEMS: [JquantsItem; 11] = [
+	item("EPS", "jquants:EPS", DURATION, Some("NCEPS")),
 	item("Sales", "jquants:Sales", DURATION, Some("NCSales")),
 	item("OP", "jquants:OP", DURATION, Some("NCOP")),
 	item("OdP", "jquants:OdP", DURATION, Some("NCOdP")),
@@ -264,7 +265,7 @@ fn compare_disclosures(a: &FullYearSummary<'_>, b: &FullYearSummary<'_>) -> Orde
 }
 
 /// `summaryFacts`: one fact per stated item in canonical order
-/// (`compare_facts`), unit JPY. A `_Consolidated_` summary's items are
+/// (`compare_facts`), in JPY or JPY/shares for EPS. A `_Consolidated_` summary's items are
 /// `consolidated` and its `NC…` items `separate` under the same concept; a
 /// `_NonConsolidated_` summary's items are `separate` and its `NC…` items
 /// are not read.
@@ -279,7 +280,12 @@ fn summary_facts(summary: &FullYearSummary<'_>) -> Vec<EquityExtractedFact> {
 		};
 		facts.push(EquityExtractedFact {
 			concept: concept.to_owned(),
-			unit: JQUANTS_UNIT.to_owned(),
+			unit: if concept == "jquants:EPS" {
+				"JPY/shares"
+			} else {
+				JQUANTS_UNIT
+			}
+			.to_owned(),
 			value_decimal,
 			period_type: period,
 			period_start: (period == EquityPeriodType::Duration)

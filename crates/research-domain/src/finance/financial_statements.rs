@@ -156,6 +156,8 @@ js_literal_enum! {
 		OrdinaryIncome = "ordinary-income",
 		/// Profit attributable to owners of the parent.
 		ProfitAttributableToOwners = "profit-attributable-to-owners",
+		/// Basic earnings per share.
+		BasicEps = "basic-eps",
 		/// Total assets.
 		TotalAssets = "total-assets",
 		/// Total liabilities.
@@ -260,7 +262,7 @@ pub const JQUANTS_STANDARDS: [EquityAccountingStandard; 3] = [
 /// concept, and whether the mapping holds under JGAAP only (`OdP`, ordinary
 /// profit, exists only under JGAAP); every other item maps under every
 /// `JQUANTS_STANDARDS` standard. Rank 0, sign +1, any scope.
-pub const JQUANTS_CONCEPT_MAPPINGS: [(EquityMetricCode, &str, bool); 10] = [
+pub const JQUANTS_CONCEPT_MAPPINGS: [(EquityMetricCode, &str, bool); 11] = [
 	(EquityMetricCode::Revenue, "jquants:Sales", false),
 	(EquityMetricCode::OperatingIncome, "jquants:OP", false),
 	(
@@ -268,6 +270,7 @@ pub const JQUANTS_CONCEPT_MAPPINGS: [(EquityMetricCode, &str, bool); 10] = [
 		"jquants:NP",
 		false,
 	),
+	(EquityMetricCode::BasicEps, "jquants:EPS", false),
 	(EquityMetricCode::TotalAssets, "jquants:TA", false),
 	(EquityMetricCode::TotalEquity, "jquants:Eq", false),
 	(

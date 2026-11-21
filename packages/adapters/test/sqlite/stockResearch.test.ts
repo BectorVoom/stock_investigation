@@ -34,6 +34,47 @@ for (const layout of ["canonical", "migrated"] as const)
 			await seedStockResearch(db, "owner");
 			return { db, repository: createStockResearchRepository(db) };
 		}
+		it("screens latest annual EPS and P/E from the latest same-currency close", async () => {
+			const { db, repository } = await setup();
+			try {
+				await db
+					.prepare(`INSERT INTO equity_metric_value
+					(owner_id, company_id, metric_code, fiscal_year, value_decimal, value_real, currency,
+					 filing_id, concept, scope, period_start, period_end, reported_value_count, updated_at)
+					SELECT owner_id, company_id, 'basic-eps', fiscal_year, '5', 5, currency,
+					 filing_id, 'us-gaap:EarningsPerShareBasic', scope, period_start, period_end, 1, updated_at
+					FROM equity_metric_value WHERE owner_id = 'owner' AND company_id = 'eqc_retrieval'`)
+					.run();
+				await db
+					.prepare(`INSERT INTO market_series
+					(owner_id, series_id, provider, symbol, title, unit, frequency, publisher, source_url)
+					VALUES ('owner', 'twelve-data:SYNTH', 'twelve-data', 'SYNTH', 'Synthetic Solar',
+					 'USD', 'daily', 'Fixture prices', 'https://prices.example.org/synth')`)
+					.run();
+				await db
+					.prepare(`INSERT INTO market_observations (owner_id, series_id, observed_on, value)
+					VALUES ('owner', 'twelve-data:SYNTH', '2026-10-01', 100),
+					 ('owner', 'twelve-data:SYNTH', '2026-10-02', 50)`)
+					.run();
+				const search = (query: string) =>
+					repository.search("owner", { query, kind: "financials", limit: 6 });
+				const passes = await search("us eps>=5 per<=10 currency=USD");
+				expect(passes.hits).toHaveLength(1);
+				expect(passes.hits[0]?.text).toContain(
+					"Calculated P/E (PER)=10; close=50; closeDate=2026-10-02",
+				);
+				expect(passes.hits[0]?.text).toContain("priceSource=https://prices.example.org/synth");
+				expect((await search("us:SYNTH per<10")).hits).toEqual([]);
+				expect((await search("jp eps>=5")).hits).toEqual([]);
+				expect((await search("eps>=5 currency=JPY")).hits).toEqual([]);
+				await db.prepare("UPDATE market_series SET unit = 'JPY'").run();
+				expect((await search("per<=10")).hits).toEqual([]);
+				expect((await search("eps>=5")).hits[0]?.text).toContain("unit=currency per share");
+			} finally {
+				db.close();
+			}
+		});
+
 		it("retrieves thematic candidates and both annual profit periods for staged agent screening", async () => {
 			const { db, repository } = await setup();
 			try {

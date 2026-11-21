@@ -28,6 +28,11 @@ const JA_TABS: { readonly [T in StockTab]: string } = {
  */
 export const stocksMessages = defineMessages({
 	en: {
+		perNeedsEps: "P/E (PER) unavailable · Annual basic EPS has not been stored.",
+		perNeedsPositiveEps: "P/E (PER) unavailable · Annual basic EPS must be positive.",
+		perNeedsPrice: "P/E (PER) unavailable · A matching close is needed in the EPS currency.",
+		reportedPer: (ratio: string, priceDate: string, periodEnd: string): string =>
+			`P/E (PER) ${ratio}× · Close ${priceDate} / basic EPS for the year ended ${periodEnd}`,
 		/** A row's name link when no stored name is known yet. */
 		showUnnamed: (symbol: string): string => `Show ${symbol}`,
 		addToWatchlist: "Add to Watchlist",
@@ -140,6 +145,11 @@ export const stocksMessages = defineMessages({
 			"No description is written yet. The server asks the AI agent chosen in Settings → AI agent to write one for each Watchlist stock; it appears here once written.",
 	},
 	ja: {
+		perNeedsEps: "実績PER — 年次の基本EPSが保存されていません。",
+		perNeedsPositiveEps: "実績PER — 年次の基本EPSが正の場合に表示します。",
+		perNeedsPrice: "実績PER — EPSと同じ通貨の終値が必要です。",
+		reportedPer: (ratio, priceDate, periodEnd) =>
+			`実績PER ${ratio}倍 · ${priceDate}の終値 ÷ ${periodEnd}期の基本EPS`,
 		showUnnamed: (symbol) => `${symbol} を表示`,
 		addToWatchlist: "ウォッチリストに追加",
 		addToWatchlistNamed: (symbol) => `${symbol} をウォッチリストに追加`,

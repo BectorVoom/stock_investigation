@@ -102,6 +102,35 @@ describe("jquantsSummariesToSync (ADR-0059 §2)", () => {
 		expect(completeJobRequestSchema.safeParse(completion).success).toBe(true);
 	});
 
+	it("extracts annual basic EPS with its per-share unit and keeps scopes distinct", () => {
+		const records = summaries("7203").map((row) =>
+			typeof row === "object" && row !== null
+				? { ...row, EPS: "-12.30", NCEPS: "4.50", FEPS: "99" }
+				: row,
+		);
+		const [latest] = jquantsSummariesToSync("72030", [], records).filings;
+		expect(latest?.facts.filter((fact) => fact.concept === "jquants:EPS")).toEqual([
+			{
+				concept: "jquants:EPS",
+				unit: "JPY/shares",
+				valueDecimal: "-12.3",
+				periodType: "duration",
+				periodStart: "2025-04-01",
+				periodEnd: "2026-03-31",
+				scope: "consolidated",
+			},
+			{
+				concept: "jquants:EPS",
+				unit: "JPY/shares",
+				valueDecimal: "4.5",
+				periodType: "duration",
+				periodStart: "2025-04-01",
+				periodEnd: "2026-03-31",
+				scope: "separate",
+			},
+		]);
+	});
+
 	it("reads a correction as an amendment of the summary before it, stored or not", () => {
 		const records = summaries("2914");
 		const all = jquantsSummariesToSync("29140", [], records);
