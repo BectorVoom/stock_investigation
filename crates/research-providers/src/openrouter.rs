@@ -172,8 +172,17 @@ fn object_fields(fields: Vec<(&str, Value)>) -> Value {
 		fields.into_iter().map(|(k, v)| (k.to_owned(), v)).collect(),
 	))
 }
-/// Exact model profile: allow thinking plus structured output without increasing
-/// paid-model allowances or sending an oversized limit to unrelated models.
+/// Free reasoning models that answer with thinking switched off (ADR-0077):
+/// measured live, Dots Note thought for minutes per analysis turn, ignoring
+/// `reasoning.effort` and `reasoning.max_tokens`, and cited as well without
+/// thinking; Nemotron did not, so it keeps the effort. Exact ids keep paid
+/// models and near-matches on the owner's effort (`answersWithoutThinking`).
+pub fn answers_without_thinking(model: &str) -> bool {
+	model == "dots-studio/dots-3-note-preview:free"
+}
+/// Exact model profile: allow thinking plus structured output (answer room for
+/// Dots Note) without increasing paid-model allowances or sending an oversized
+/// limit to unrelated models.
 fn completion_token_limit(model: &str) -> f64 {
 	if matches!(
 		model,
@@ -182,6 +191,14 @@ fn completion_token_limit(model: &str) -> f64 {
 		32768.0
 	} else {
 		8192.0
+	}
+}
+/// Thinking off for the profiled free models, otherwise the run's effort.
+fn reasoning_field(model: &str, effort: Effort) -> Value {
+	if answers_without_thinking(model) {
+		object_fields(vec![("enabled", false.into())])
+	} else {
+		object_fields(vec![("effort", effort.as_str().into())])
 	}
 }
 
@@ -202,10 +219,7 @@ pub fn build_request_body(model: &str, prompt: &str, effort: Effort) -> String {
 			completion_token_limit(model).into(),
 		),
 		("usage", object_fields(vec![("include", true.into())])),
-		(
-			"reasoning",
-			object_fields(vec![("effort", effort.as_str().into())]),
-		),
+		("reasoning", reasoning_field(model, effort)),
 	]))
 }
 fn read_key(env: &Environment) -> Option<String> {
@@ -506,21 +520,26 @@ mod completion_budget_tests {
 	use super::*;
 
 	#[test]
-	fn exact_free_model_allowance_preserves_effort_and_other_model_caps() {
-		for (model, cap) in [
-			("nvidia/nemotron-3.5-lightning:free", 32768),
-			("dots-studio/dots-3-note-preview:free", 32768),
-			("dots-studio/dots-3-note-preview", 8192),
-			("dots-studio/dots-3-note-preview:free-extra", 8192),
-			("nvidia/nemotron-3.5-lightning", 8192),
-			("nvidia/nemotron-3.5-lightning:free-extra", 8192),
-			("other/model:free", 8192),
+	fn exact_free_models_answer_without_thinking_and_others_keep_effort_and_caps() {
+		for (model, cap, thinking_off) in [
+			("nvidia/nemotron-3.5-lightning:free", 32768, false),
+			("dots-studio/dots-3-note-preview:free", 32768, true),
+			("dots-studio/dots-3-note-preview", 8192, false),
+			("dots-studio/dots-3-note-preview:free-extra", 8192, false),
+			("nvidia/nemotron-3.5-lightning", 8192, false),
+			("nvidia/nemotron-3.5-lightning:free-extra", 8192, false),
+			("other/model:free", 8192, false),
 		] {
 			for effort in [Effort::Low, Effort::Medium, Effort::High] {
 				let body: serde_json::Value =
 					serde_json::from_str(&build_request_body(model, "prompt", effort)).unwrap();
 				assert_eq!(body["max_completion_tokens"], cap);
-				assert_eq!(body["reasoning"]["effort"], effort.as_str());
+				let expected = if thinking_off {
+					serde_json::json!({ "enabled": false })
+				} else {
+					serde_json::json!({ "effort": effort.as_str() })
+				};
+				assert_eq!(body["reasoning"], expected, "{model}");
 				assert_eq!(body["model"], model);
 				assert!(body.get("tools").is_none());
 				assert!(body.get("models").is_none());

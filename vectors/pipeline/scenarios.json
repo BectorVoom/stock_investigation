@@ -269,7 +269,23 @@
 			"runs": 1
 		},
 		{
-			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/opens an original page before analysis and excludes the search snippet",
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/opens an original page after an empty or blocked follow-up (blocked: %s) [0]",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/opens an original page after an empty or blocked follow-up (blocked: %s) [1]",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/tells the final round that searches cannot be opened and runs none there (ADR-0078)",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/reads consecutive pages of one round concurrently and records them in plan order (ADR-0078)",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/records the reads already started when the tool-call budget ends a batch (ADR-0078)",
 			"runs": 1
 		},
 		{
@@ -325,5 +341,5 @@
 			"runs": 4
 		}
 	],
-	"handWrittenRuns": 92
+	"handWrittenRuns": 96
 }

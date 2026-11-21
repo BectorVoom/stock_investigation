@@ -4467,7 +4467,7 @@
 			"output": null
 		},
 		{
-			"input": "reserves the model-specific completion allowance for %s without changing effort",
+			"input": "sends %s its completion allowance, with thinking off only for the exact Dots Note free id (ADR-0077)",
 			"output": null
 		},
 		{

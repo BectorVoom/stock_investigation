@@ -1,3 +1,11 @@
+import type { SafeFetcher } from "@research/application";
+
+export interface AgentWebSearch {
+	readonly endpoint: string;
+	readonly apiKey: string;
+	readonly fetcher: SafeFetcher;
+}
+
 /** Operator configuration only: literal loopback HTTP, no DNS or redirects. */
 export const DEFAULT_AGENT_WEB_SEARCH_URL = "http://127.0.0.1:8090";
 export function agentSearchEndpoint(base: string): string | null {

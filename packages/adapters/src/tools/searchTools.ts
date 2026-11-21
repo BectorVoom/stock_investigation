@@ -1,16 +1,8 @@
 /**
- * The search research tools (ADR-0025, amended 2026-10-25). The model had no
- * way to find pages outside the subscribed feeds — `web.fetch_page` fetches a
- * URL it is given and "cannot search", and inventing URLs is forbidden — so
- * runs about anything else ended with zero tool calls and
- * `NO_EVIDENCE_COLLECTED`. These tools discover pages; `web.fetch_page` then
- * reads them.
+ * Search tools discover URLs to inspect with Agent Web Search extraction.
  *
- * - `web.search` searches the whole web through the Tavily API. It needs the
- *   owner's `TAVILY_API_KEY` and is registered only when one is set. The key
- *   travels in a header of a request pinned to `api.tavily.com`, never in a
- *   URL or a log line. Each result keeps the provider's short page snippet as
- *   its retrieved text.
+ * - `web.search` uses the configured Agent Web Search endpoint. A legacy
+ *   Tavily client remains available to historical callers and fixtures.
  * - `news.search` searches recent news through the key-free GDELT DOC 2.0
  *   API (pinned to `api.gdeltproject.org`, request starts spaced within the
  *   process per GDELT's fair-use rule). Headlines only.
@@ -19,8 +11,7 @@
  * docs/external-apis/apis/gdelt-doc.md
  *
  * Evidence is never stored as quotes (`retainQuotes` false, `excerpt` null, as
- * for web pages, DATA-010), and the model text tells the model to read
- * promising results with `web.fetch_page` before relying on them.
+ * for web pages, DATA-010), and the model text directs the agent to retrieve the original source before relying on a lead.
  *
  * Everything retrieved is untrusted publisher text (SEC-001). It is passed on
  * as inert data in `modelText` / evidence; no part of it is interpreted, and
@@ -66,6 +57,8 @@ import {
 import { err, ok, parseJson, type Result, validateFetchUrl } from "@research/domain";
 import { z } from "zod";
 import { parseRetryAfterMs } from "../runtime/retryAfter.ts";
+import { createAgentExtractTool } from "./agentExtract.ts";
+import type { AgentWebSearch } from "./agentSearchEndpoint.ts";
 import {
 	boundModelText,
 	collectEvidence,
@@ -74,11 +67,8 @@ import {
 	truncateText,
 } from "./shared.ts";
 
-export interface AgentWebSearch {
-	readonly endpoint: string;
-	readonly apiKey: string;
-	readonly fetcher: SafeFetcher;
-}
+export type { AgentWebSearch } from "./agentSearchEndpoint.ts";
+
 export interface SearchToolDeps {
 	/** Local service takes precedence; legacy provider remains for replay compatibility. */
 	readonly agentWebSearch?: AgentWebSearch;
@@ -442,7 +432,11 @@ async function searchOutput(
 			modelText: boundModelText([`No results for ${query}. Try shorter or different keywords.`]),
 		});
 	}
-	lines.push("Read a promising result with web.fetch_page before relying on it.");
+	lines.push(
+		deps.agentWebSearch === undefined
+			? "Read the original with a listed source retrieval tool before relying on it."
+			: "Use web.extract on relevant results to collect source evidence.",
+	);
 	return ok({ ...EMPTY_TOOL_OUTPUT, modelText: boundModelText(lines), evidence });
 }
 
@@ -675,8 +669,8 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 				version: service === undefined ? "2.0.0" : "3.0.0",
 				description:
 					service === undefined
-						? "Searches the whole web (Tavily) for short keywords and returns result titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page."
-						: "Searches the configured Agent Web Search index for short keywords and returns titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page.",
+						? "Searches the whole web (Tavily) for short keywords and returns result titles, URLs and snippets with evidence ids; read the original with a listed source retrieval tool."
+						: "Searches the configured Agent Web Search index for short keywords and returns titles, URLs and snippets with evidence ids; read the original with a listed source retrieval tool.",
 				argsSchema: queryArgs,
 				argsHint:
 					'{ "query": "<2–200 characters of keywords, e.g. Apple quarterly revenue 2026>" }',
@@ -698,19 +692,22 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 			}),
 		);
 	}
+	if (service !== undefined) tools.push(createAgentExtractTool(service, deps.hasher));
 	tools.push(
 		defineTool({
 			toolId: "news.search",
 			version: "1.0.0",
 			description:
-				"Searches recent news articles (GDELT) for short keywords and returns headlines and URLs with evidence ids; read a promising result with web.fetch_page.",
+				service !== undefined
+					? "Searches GDELT news for keywords of at least three characters. Returns headline leads; use web.extract for source text."
+					: "Searches recent news articles (GDELT) for short keywords and returns headlines and URLs with evidence ids; read the original with a listed source retrieval tool.",
 			argsSchema: queryArgs,
 			argsHint: '{ "query": "<2–200 characters of keywords, e.g. gold price 2026>" }',
 			// Covers the 5 s GDELT spacing plus the 15 s request with margin (AGT-008).
 			timeoutMs: 40_000,
 			permission: "research-read",
 			costCategory: "rate-limited",
-			// Reads the public web; unlike web.fetch_page it writes nothing to disk.
+			// Searches public news without writing to disk.
 			sideEffect: "external-read",
 			networkAllowlist: { kind: "public-web" },
 			async execute({ query }, context: ToolContext) {

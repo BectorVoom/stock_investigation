@@ -5,14 +5,14 @@
 | Property | Value |
 |---|---|
 | Provider | Independently implemented Rust Agent Web Search service |
-| Purpose | `web.search` discovery leads for research and Notebook turns; read original pages with `web.fetch_page`. Replaces Tavily in normal runner composition. |
+| Purpose | `web.search` discovery leads for research and Notebook turns. `web.extract` retrieves original page text for citeable evidence in research turns. Replaces Tavily in normal runner composition. |
 | Hosts | `127.0.0.1`, `::1` (operator-configured literal loopback only) |
-| Endpoints | `POST /search` — ranked source titles, URLs and snippets |
+| Endpoints | `POST /search` — ranked source titles, URLs and snippets. `POST /extract` — original page text, subject to the service’s public URL and robots policy |
 | Authentication | `Authorization: Bearer <AGENT_WEB_SEARCH_API_KEY>`, from `apps/runner/.env`; must match the service's `SEARCH_API_KEY`. 16–256 printable nonspace ASCII characters. Never a model argument, URL parameter or log field. |
 | Configuration | `AGENT_WEB_SEARCH_URL`, default `http://127.0.0.1:8090`; only HTTP origins with literal loopback addresses, no credentials/query/path/fragment. Public web access must be enabled in the research request. |
 | Usage Limits | Service:16 requests and8fetches concurrently; runner:30s request,40s tool,1MiB response,64KiB request; successful query cache15minutes,200entries. Search depth basic,10results. |
 | Called By | Rust runner default and TypeScript rollback runner; company-overview script's Agent Web Search mode |
-| Code | `crates/research-tools/src/agent_search.rs`, `crates/research-tools/src/search.rs`, `crates/research-tools/src/catalogue.rs`, `crates/research-runner/src/config.rs`, `crates/research-runner/src/composition.rs`, `packages/adapters/src/node/agentSearch.ts`, `packages/adapters/src/tools/agentSearchEndpoint.ts`, `packages/adapters/src/tools/searchTools.ts`, `packages/adapters/src/tools/index.ts`, `apps/runner/src/config.ts`, `apps/runner/src/main.ts`, `scripts/agentWebSearch.ts`, `scripts/poc/companyDescription/webSources.ts` |
+| Code | `crates/research-tools/src/agent_search.rs`, `packages/adapters/src/tools/agentExtract.ts`, `crates/research-tools/src/search.rs`, `crates/research-tools/src/catalogue.rs`, `crates/research-runner/src/config.rs`, `crates/research-runner/src/composition.rs`, `packages/adapters/src/node/agentSearch.ts`, `packages/adapters/src/tools/agentSearchEndpoint.ts`, `packages/adapters/src/tools/searchTools.ts`, `packages/adapters/src/tools/index.ts`, `apps/runner/src/config.ts`, `apps/runner/src/main.ts`, `scripts/agentWebSearch.ts`, `scripts/poc/companyDescription/webSources.ts` |
 | Official Documentation | Local service specification in sibling repository `../agent-web-search/docs/SPECIFICATION.md`; [SearXNG API](https://docs.searxng.org/dev/search_api.html) |
 | Last Verified |2026-11-12,live local Rust service backed by local SearXNG |
 
@@ -42,6 +42,17 @@ retained solely for historical contract replay/explicit compatibility callers.
 No other service options are sent. Content-Length is the serialized UTF-8 body's
 byte count. The service uses its own search-engine configuration.
 
+### POST /extract
+
+The runner validates one public HTTPS URL and sends it to the configured loopback
+service with the same bearer credential and transport limits.
+
+| Field | In | Type | Required | Value |
+|---|---|---|---|---|
+| `urls` | body | array of string | Yes | One validated HTTPS URL |
+| `format` | body | string | Yes | `text` |
+| `timeout` | body | number | Yes | 25 seconds for the service, 30 seconds for the runner request |
+
 ## 3. Output Parameters
 
 ### POST /search
@@ -68,6 +79,18 @@ The compatibility parser accepts absent/null snippet or date and ignores extra
 fields, but results/title/url remain required. Results with unsafe URLs or empty
 titles are discarded. Empty arrays are an honest no-match,never invented evidence.
 
+### POST /extract
+
+| Field | Type | Nullable | Optional | Read | Description |
+|---|---|---|---|---|---|
+| `$.results[]` | object | No | No | Yes | Successful extraction, with `url`, `title` and `raw_content` |
+| `$.failed_results[]` | object | No | No | Yes | Failed extraction, with `url`, `error`, `code` and `status` |
+
+The runner expects one item across the two arrays. It validates the returned URL
+and uses the text in memory for claim verification. The evidence record retains
+the source URL, title, retrieval time and checksum. Extracted passages are
+discarded after verification.
+
 ## 4. Error Handling
 
 One POST per cache miss; no immediate retry. Cancellation or30sdeadline closes the
@@ -84,6 +107,10 @@ There is no automatic Tavily fallback. news.search (GDELT) remains separate.
 Error body: `detail:{code,error,status}` plus request_id. The runner intentionally
 uses status and fixed safe wording instead of forwarding provider text. UTF-8 and
 body-size failures have stable local codes without inventing an upstream status.
+
+A per-page `ROBOTS_DENIED` result maps to `ROBOTS_DISALLOWED`. The runner prompts
+the agent to use another source. Request-level HTTP failures retain the service’s
+HTTP status. Empty text and invalid response shapes produce explicit tool failures.
 
 ## 5. Examples
 
@@ -149,6 +176,30 @@ Content-Type: application/json
 ```
 Verified: live, 2026-11-12, deliberately invalid test credential. No edits.
 
+### POST /extract
+
+```http
+POST /extract HTTP/1.1
+Host: 127.0.0.1:8090
+Authorization: Bearer <AGENT_WEB_SEARCH_API_KEY>
+Accept: application/json
+Accept-Encoding: identity
+Content-Type: application/json
+
+{"urls":["https://example.com/"],"format":"text","timeout":25}
+```
+Verified: live, 2026-11-21, authenticated POST to the local service.
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+<!-- example: agent-web-search-extract -->
+```json
+{"failed_results":[],"request_id":"48461da0-777c-4d47-a985-6a13a77013b3","response_time":0.000077208,"results":[{"raw_content":"This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.","title":"Example Domain","url":"https://example.com/"}]}
+```
+Verified: live, 2026-11-21, local Rust service extracted the public example page.
+
 ## 6. Data Mapping
 
 | External field | Transformation | Internal field | Storage |
@@ -158,6 +209,7 @@ Verified: live, 2026-11-12, deliberately invalid test credential. No edits.
 | results[].title | Whitespace normalized, <=300characters | Evidence.title | evidence.title |
 | results[].content | Snippet <=1000characters; title+snippet hashed; preview <=300 | CollectedEvidence.retrievedText/checksum | Text is discovery-only,in memory; checksum in evidence |
 | results[].published_date | Valid ISO bare date or explicit-zone timestamp to UTC; unknown stays null | Evidence.publishedAt | evidence.published_at |
+| Extract results[].raw_content | Bounded text hashed for verification | CollectedEvidence.retrievedText/checksum | Text is in memory only. Evidence retains the checksum. |
 | response completion clock | Original time retained on cache reuse | Evidence.retrievedAt | evidence.retrieved_at |
 | HTTP status | Unchanged | ToolFailure.upstreamStatus | Run failure_upstream_status when a run fails |
 
@@ -169,7 +221,7 @@ page before supporting a factual claim.
 ### Known differences between the runners
 
 The Rust transport uses hyper and literal SocketAddr; TypeScript uses node:http.
-Both accept one configured loopback endpoint,POST only,no redirects,identity encoding,
+Both accept only the configured loopback origin’s search and extraction routes, POST only, with no redirects and identity encoding,
 1MiBresponse cap,30sdeadline,cancellation and unchanged error status.
 
 ### Open issues
@@ -184,4 +236,5 @@ callers; application composition always supplies Agent Web Search instead.
 
 | Date | Method | What was checked | By |
 |---|---|---|---|
+|2026-11-21|live|Authenticated extraction of the public example page|Codex|
 |2026-11-12|live|Authenticated local service search with10results;401negative path; Rust/Node client and evidence tests|Codex|

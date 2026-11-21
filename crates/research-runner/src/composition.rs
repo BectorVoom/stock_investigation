@@ -10,7 +10,7 @@ use std::sync::Arc;
 use research_agent_core::authorize::{DuplicateToolId, ToolRegistry};
 use research_agent_core::registry::{AgentRegistry, DuplicateAgentId};
 use research_application::ingest::IngestDeps;
-use research_application::ports::{Clock, Hasher, PageArchive, SafeBinaryFetcher, SafeFetcher};
+use research_application::ports::{Clock, Hasher, SafeBinaryFetcher, SafeFetcher};
 use research_contracts::equity_financials::EquityProvider;
 use research_contracts::market::{
 	MarketProviderId, MarketUnavailableCode, market_unavailable_reason,
@@ -42,7 +42,7 @@ use research_finance::stock_prices::StockPriceSource;
 use research_finance::twelve_data::TwelveDataSeriesSource;
 use research_google::http::PinnedGoogleHttp;
 use research_google::oauth::OAuthClient;
-use research_net::{FilePageArchive, create_node_safe_fetcher};
+use research_net::create_node_safe_fetcher;
 use research_providers::create_agent_runtimes;
 use research_providers::environment::ProviderEnvironment;
 use research_providers::external::ExternalConfigError;
@@ -378,9 +378,6 @@ pub fn compose(
 	let feed_parser = Arc::new(FastXmlFeedParser);
 	let sleeper: Arc<dyn Sleeper> = Arc::new(TokioSleeper);
 
-	let page_archive = config.pages_directory.as_ref().map(|directory| {
-		Arc::new(FilePageArchive::new(directory, Arc::clone(&hasher))) as Arc<dyn PageArchive>
-	});
 	let tools = ToolRegistry::new(create_research_tools(ResearchToolDeps {
 		fetcher: Arc::clone(&fetcher),
 		feed_parser: feed_parser.clone(),
@@ -407,7 +404,7 @@ pub fn compose(
 				})
 			})
 			.transpose()?,
-		page_archive,
+		page_archive: None,
 		sleep: Arc::new(TokioSleep),
 		sec_sleep: Arc::clone(&sleeper),
 	}))?;

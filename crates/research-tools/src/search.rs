@@ -270,7 +270,7 @@ pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 	{
 		let mut web = meta(
 			"web.search",
-			"Searches the whole web (Tavily) for short keywords and returns result titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page.",
+			"Searches the whole web (Tavily) for short keywords and returns result titles, URLs and snippets with evidence ids; read the original with a listed source retrieval tool.",
 			r#"{ "query": "<2–200 characters of keywords, e.g. Apple quarterly revenue 2026>" }"#,
 			20_000,
 			ToolCostCategory::Metered,
@@ -280,7 +280,7 @@ pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 		web.version = "2.0.0";
 		if deps.agent_web_search.is_some() {
 			web.version = "3.0.0";
-			web.description = "Searches the configured Agent Web Search index for short keywords and returns titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page.";
+			web.description = "Searches the configured Agent Web Search index for short keywords and returns titles, URLs and snippets with evidence ids; read the original with a listed source retrieval tool.";
 			web.timeout_ms = 40_000;
 			web.cost_category = ToolCostCategory::RateLimited;
 		}
@@ -295,11 +295,21 @@ pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 			cache: Arc::clone(&cache),
 		}));
 	}
+	if let Some(extract) = deps.agent_web_search.as_ref().and_then(|service| {
+		crate::agent_search::create_extract_tool(service, Arc::clone(&deps.hasher))
+	}) {
+		tools.push(extract);
+	}
+	let news_description = if deps.agent_web_search.is_some() {
+		"Searches GDELT news for keywords of at least three characters. Returns headline leads; use web.extract for source text."
+	} else {
+		"Searches recent news articles (GDELT) for short keywords and returns headlines and URLs with evidence ids; read the original with a listed source retrieval tool."
+	};
 	tools.push(Arc::new(SearchTool {
 		deps,
 		meta: meta(
 			"news.search",
-			"Searches recent news articles (GDELT) for short keywords and returns headlines and URLs with evidence ids; read a promising result with web.fetch_page.",
+			news_description,
 			r#"{ "query": "<2–200 characters of keywords, e.g. gold price 2026>" }"#,
 			40_000,
 			ToolCostCategory::RateLimited,
@@ -756,7 +766,14 @@ impl Tool for SearchTool {
 				"No results for {query}. Try shorter or different keywords."
 			)];
 		} else {
-			lines.push("Read a promising result with web.fetch_page before relying on it.".into());
+			lines.push(
+				if self.deps.agent_web_search.is_some() {
+					"Use web.extract on relevant results to collect source evidence."
+				} else {
+					"Read the original with a listed source retrieval tool before relying on it."
+				}
+				.into(),
+			);
 		}
 		Ok(ToolOutput {
 			model_text: bound_model_text(&lines),

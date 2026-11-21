@@ -111,7 +111,7 @@ describe("news.search: registration", () => {
 		expect(tool.networkAllowlist).toEqual({ kind: "public-web" });
 		expect(tool.timeoutMs).toBe(40_000);
 		expect(tool.description.length).toBeLessThanOrEqual(200);
-		expect(tool.description).toContain("web.fetch_page");
+		expect(tool.description).toContain("listed source retrieval tool");
 	});
 });
 
@@ -180,7 +180,7 @@ describe("news.search: happy path", () => {
 		expect(output.modelText).toContain("undated — https://markets.synthetic-wire.org/gold-outlook");
 		expect(output.modelText).toContain("untrusted publisher content");
 		expect(output.modelText).toContain(
-			"Read a promising result with web.fetch_page before relying on it.",
+			"Read the original with a listed source retrieval tool before relying on it.",
 		);
 		expect(new TextEncoder().encode(output.modelText).byteLength).toBeLessThanOrEqual(
 			MAX_MODEL_TEXT_BYTES,
@@ -742,7 +742,7 @@ describe("web.search: Tavily", () => {
 		expect(result.value.modelText).toContain(
 			"\n  Apple posted revenue of $102.5 billion, up 8 percent year over year.\n",
 		);
-		expect(result.value.modelText).toContain("web.fetch_page");
+		expect(result.value.modelText).toContain("listed source retrieval tool");
 	});
 
 	it("pauses after a bad key or quota error, but not after a rejected query", async () => {

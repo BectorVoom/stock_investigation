@@ -58,7 +58,10 @@ describe("job execution under a lease", () => {
 			{
 				replies: [
 					JSON.stringify({
-						toolCalls: [{ toolId: "stocks.search", args: { query: "grid storage", kind: "news" } }],
+						toolCalls: [
+							{ toolId: "web.fetch_page", args: { url: "https://example.org/" } },
+							{ toolId: "stocks.search", args: { query: "grid storage", kind: "news" } },
+						],
 						done: true,
 					}),
 					analysis(),
@@ -66,7 +69,23 @@ describe("job execution under a lease", () => {
 				],
 			},
 		);
-		await executeJob(RESEARCH_JOB, harness.deps, never);
+		const tools = harness.deps.tools;
+		const page = tools.list()[0];
+		if (page === undefined) throw new Error("Missing test tool");
+		const directPageTool = { ...page, toolId: "web.fetch_page" };
+		await executeJob(
+			RESEARCH_JOB,
+			{
+				...harness.deps,
+				tools: {
+					get: (id) => (id === directPageTool.toolId ? directPageTool : tools.get(id)),
+					list: () => [...tools.list(), directPageTool],
+				},
+			},
+			never,
+		);
+		expect(harness.agent.requests[0]?.permittedToolIds).not.toContain("web.fetch_page");
+		expect(harness.agent.requests[0]?.prompt).toContain("Direct page fetching is unavailable.");
 		expect(searches).toEqual([
 			{
 				runId: RESEARCH_JOB.runId,

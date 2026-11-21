@@ -21,7 +21,6 @@ import {
 } from "@research/adapters/finance";
 import { createGoogleHttp } from "@research/adapters/google";
 import {
-	createFilePageArchive,
 	createLoopbackSearchFetcher,
 	createNodeSafeBinaryFetcher,
 	createNodeSafeFetcher,
@@ -218,13 +217,7 @@ function runnerProgram(
 											fetcher: createLoopbackSearchFetcher(value.agentWebSearchUrl),
 										},
 									}),
-							pageArchive:
-								value.pagesDirectory === null
-									? null
-									: createFilePageArchive({
-											directory: value.pagesDirectory,
-											hasher: webCryptoHasher,
-										}),
+							pageArchive: null,
 							sleep,
 						}),
 					),

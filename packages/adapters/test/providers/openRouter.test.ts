@@ -56,7 +56,10 @@ const requestBodySchema = z.strictObject({
 	stream: z.literal(true),
 	max_completion_tokens: z.number().int().positive(),
 	usage: z.strictObject({ include: z.literal(true) }),
-	reasoning: z.strictObject({ effort: z.string() }),
+	reasoning: z.union([
+		z.strictObject({ effort: z.string() }),
+		z.strictObject({ enabled: z.literal(false) }),
+	]),
 });
 
 describe("openrouter runtime metadata", () => {
@@ -70,20 +73,20 @@ describe("openrouter runtime metadata", () => {
 
 describe("openrouter request", () => {
 	it.each([
-		["nvidia/nemotron-3.5-lightning:free", 32768],
-		["dots-studio/dots-3-note-preview:free", 32768],
-		["dots-studio/dots-3-note-preview", 8192],
-		["dots-studio/dots-3-note-preview:free-extra", 8192],
-		["nvidia/nemotron-3.5-lightning", 8192],
-		["nvidia/nemotron-3.5-lightning:free-extra", 8192],
-		["other/model:free", 8192],
-	])("reserves the model-specific completion allowance for %s without changing effort", async (model, cap) => {
+		["nvidia/nemotron-3.5-lightning:free", 32768, false],
+		["dots-studio/dots-3-note-preview:free", 32768, true],
+		["dots-studio/dots-3-note-preview", 8192, false],
+		["dots-studio/dots-3-note-preview:free-extra", 8192, false],
+		["nvidia/nemotron-3.5-lightning", 8192, false],
+		["nvidia/nemotron-3.5-lightning:free-extra", 8192, false],
+		["other/model:free", 8192, false],
+	])("sends %s its completion allowance, with thinking off only for the exact Dots Note free id (ADR-0077)", async (model, cap, thinkingOff) => {
 		for (const effort of ["low", "medium", "high"] as const) {
 			const fake = recordingFetch(() => sseResponse(fixtureText("openrouter/ok.sse")));
 			await collect(runtimeWith(fake).run(makeRequest(), makeContext({ model, effort })));
 			const body = requestBodySchema.parse(JSON.parse(String(itemAt(fake.calls, 0).init.body)));
 			expect(body.max_completion_tokens).toBe(cap);
-			expect(body.reasoning).toEqual({ effort });
+			expect(body.reasoning).toEqual(thinkingOff ? { enabled: false } : { effort });
 			expect(body.model).toBe(model);
 		}
 	});

@@ -17,6 +17,13 @@ export const PLANNING_REMINDER =
 	"Nothing has been collected yet. Request at least one tool call; if no subscribed source fits, search.";
 
 /**
+ * Attached to the last planning round's prompt (ADR-0078): no round follows to
+ * open search results, so the pipeline skips search requests there.
+ */
+export const PLANNING_FINAL_ROUND_NOTE =
+	"This is the final collection round. Search results can no longer be opened, so web.search and news.search will not run: request only tools that return citeable evidence, such as reading the most relevant original pages from the leads already found or stored records.";
+
+/**
  * UTF-8 byte budgets for the planning prompt's sections. The whole prompt must
  * fit `PLANNING_PROMPT_BUDGET_BYTES` (defined in `pipeline.ts` beside the
  * collected-section budgets it sums with); each section is bounded BEFORE the
@@ -285,6 +292,7 @@ export function verificationPrompt(input: {
 		readonly passages: string;
 	}[];
 	readonly fenceToken: string;
+	readonly question?: string;
 }): string {
 	const items = input.claims
 		.map(
@@ -292,6 +300,13 @@ export function verificationPrompt(input: {
 				`Claim ${claim.index}: ${claim.text}\n${fenceUntrustedText(`passages for claim ${claim.index}`, claim.passages, input.fenceToken)}`,
 		)
 		.join("\n\n");
+	const relevance =
+		input.question === undefined
+			? ""
+			: `
+
+Mark claims unrelated to this question or the requested company as unsupported, even when a passage supports the claim.
+${fenceUntrustedText("research question", input.question, input.fenceToken)}`;
 	return `You are an independent verification step. You did not write these claims.
 ${GROUND_RULES}
 
@@ -304,5 +319,5 @@ Be strict; when in doubt answer "unsupported".
 
 ${items}
 
-Return: {"verdicts":[{"claimIndex":<number>,"verdict":"supported"|"unsupported"|"contradicted"}]}`;
+Return: {"verdicts":[{"claimIndex":<number>,"verdict":"supported"|"unsupported"|"contradicted"}]}${relevance}`;
 }

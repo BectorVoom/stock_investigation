@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { expect, it } from "vitest";
+import { createAgentExtractTool } from "../../src/tools/agentExtract.ts";
 import { createSearchTools } from "../../src/tools/searchTools.ts";
 import { docExampleJson } from "../docExamples.ts";
 import { createScriptedFetcher, createToolContext, fixedClock } from "./support.ts";
@@ -27,4 +28,24 @@ it("parses the captured Agent Web Search response through the production evidenc
 	if (result?.ok) expect(result.value.evidence).toHaveLength(1);
 	const failure = docExampleJson("agent-web-search", "agent-web-search-unauthorized");
 	expect(failure).toMatchObject({ detail: { code: "UNAUTHORIZED", status: 401 } });
+});
+
+it("uses the documented extraction response as citeable page evidence", async () => {
+	const body = docExampleJson("agent-web-search", "agent-web-search-extract");
+	const endpoint = "http://127.0.0.1:8090/search";
+	const fetcher = createScriptedFetcher({
+		"http://127.0.0.1:8090/extract": { text: JSON.stringify(body) },
+	});
+	const tool = createAgentExtractTool(
+		{ endpoint, apiKey: "agent-search-example-key", fetcher },
+		{ sha256Hex: async (text) => createHash("sha256").update(text).digest("hex") },
+	);
+	expect(await tool.execute({ url: "https://example.com/" }, createToolContext())).toMatchObject({
+		ok: true,
+		value: {
+			evidence: [
+				{ evidence: { sourceUrl: "https://example.com/", title: "Example Domain", excerpt: null } },
+			],
+		},
+	});
 });

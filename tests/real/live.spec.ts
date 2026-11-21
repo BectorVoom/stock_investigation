@@ -38,14 +38,7 @@ import {
  *    access allowed), a real recommended source (EIA Today in Energy) is
  *    subscribed, a question is asked, and the run completes with at least
  *    one claim and one source link.
- * 2. A second question naming a public page (overridable through
- *    `RESEARCH_REAL_PAGE_URL`, default `https://example.com/`) completes,
- *    and a Markdown file for that page exists in the development pages
- *    directory, beginning with the page's heading rather than site
- *    navigation.
- * 2b. A question no subscribed source covers (the gold price) completes
- *    through a search tool (`web.search` with `TAVILY_API_KEY`, else
- *    `news.search`) instead of failing with NO_EVIDENCE_COLLECTED (ADR-0025).
+ * 2. A question uses Agent Web Search for discovery and extraction.
  * 3. Upgraded state: after a restart with a fresh database that has a run
  *    but no saved settings (created through the API), a question can be
  *    sent without visiting Settings.
@@ -69,7 +62,6 @@ const MODEL =
 	AGENT_ID === "opencode"
 		? (process.env.OPENCODE_MODEL ?? "").trim()
 		: (process.env.RUN_LIVE_MODEL ?? "").trim();
-const PAGE_URL = (process.env.RESEARCH_REAL_PAGE_URL ?? "https://example.com/").trim();
 /**
  * Backends that bill per use (ADR-0031): this live suite sets an optional maximum spend,
  * and the runner needs
@@ -125,18 +117,9 @@ const QUESTION_1 =
 	"What did EIA Today in Energy report about US energy supply or demand this week, " +
 		"and which products or services could see demand growth over the next 3 to 5 years as a result?";
 const QUESTION_2 =
-	"Use the web.fetch_page tool to open the public web page at " +
-	PAGE_URL +
-	" and quote its main heading, then say in one sentence what the page is about.";
-/**
- * A research question no subscribed source covers (ADR-0025): the owner's
- * gold questions failed with NO_EVIDENCE_COLLECTED because the model had
- * nothing to ask for, so it must now search. ("Please create gold chart."
- * itself goes to the notebook assistant, see `composerTarget.ts`.)
- */
+	"Use finance.sec_company_financials for MSFT. State Microsoft’s latest available annual revenue and cite the SEC evidence.";
 const QUESTION_SEARCH =
-	"Use web.search to investigate how the gold price has moved this year and what is driving it. " +
-	"Open relevant original pages with web.fetch_page and cite their passages. Do not substitute news.search or unrelated energy feeds.";
+	"Use web.search to discover the Example Domain documentation site. Then use web.extract on https://example.com/ to read the original page. State its purpose and cite the extracted evidence.";
 
 let pristine: PristineCopy | null = null;
 let service: LaunchedService | null = null;
@@ -333,6 +316,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 			"http://127.0.0.1:8090"
 		).trim();
 		runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
+			...(process.env.SEC_USER_AGENT ? { SEC_USER_AGENT: process.env.SEC_USER_AGENT } : {}),
 			...(searchKey === ""
 				? {}
 				: { AGENT_WEB_SEARCH_API_KEY: searchKey, AGENT_WEB_SEARCH_URL: searchUrl }),
@@ -544,65 +528,6 @@ test.describe("live positive path through the real backend (spends real quota)",
 		).toBeVisible();
 	});
 
-	test("a question naming a public page archives it as Markdown starting with its heading", async () => {
-		test.setTimeout(900_000);
-		const page = activePage();
-		try {
-			const composer = page.getByRole("form", { name: "Research composer" });
-			const completedBefore = await page
-				.getByRole("list", { name: "Messages" })
-				.locator('[data-run-state="completed"]')
-				.count();
-			await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_2);
-			await composer.getByRole("button", { name: "Send question" }).click();
-			const thread = page.getByRole("list", { name: "Messages" });
-			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(
-				completedBefore + 1,
-				{
-					timeout: 720_000,
-				},
-			);
-		} catch (error) {
-			await dumpDiagnostics("public-page question", dataDirA);
-			throw error;
-		}
-		// A Markdown file for that page exists in the development pages
-		// directory, carrying the page's heading and starting with article
-		// text rather than site navigation. Note on the default page: it has
-		// no `h1` (one paragraph and a script), so the converter drops
-		// nothing of the article — the heading comes from `<title>` into the
-		// front matter (`title: "Example Domain"`), navigation is omitted
-		// and the article text is kept, which is the requirement's intent
-		// (article content, not nav). The spec pins that observed contract
-		// (title + article-first body) instead of asserting a `#` heading
-		// the converter never emits here.
-		const pagesDir = join(dataDirA, "pages");
-		const files = readdirSync(pagesDir).filter((name) => name.endsWith(".md"));
-		expect(files.length).toBeGreaterThan(0);
-		const bodies = files.map((name) => readFileSync(join(pagesDir, name), "utf8"));
-		const archived = bodies.find((text) => text.includes(PAGE_URL.replace(/\/$/, "")));
-		expect(
-			archived,
-			`no archived page mentions ${PAGE_URL} (files: ${files.join(", ")})`,
-		).toBeDefined();
-		if (archived === undefined) return;
-		// Front matter sits between the first two `---` lines; the Markdown
-		// follows it (the earlier revision wrongly asserted on the two joined).
-		const segments = archived.split("---");
-		const frontMatter = segments[1] ?? "";
-		const markdown = segments.slice(2).join("---").trim();
-		expect(markdown.length).toBeGreaterThan(0);
-		const titleLine = frontMatter.split("\n").find((line) => line.startsWith("title:"));
-		expect(titleLine, "the archived file has no title in its front matter").toBeDefined();
-		if (PAGE_URL.replace(/\/$/, "") === "https://example.com") {
-			expect(titleLine).toContain("Example Domain");
-			expect(
-				markdown.startsWith("This domain is for use in documentation examples"),
-				`the archived body does not start with article text:\n${markdown.slice(0, 300)}`,
-			).toBe(true);
-		}
-	});
-
 	test("a question no subscribed source covers searches the web and completes", async () => {
 		test.setTimeout(900_000);
 		const page = activePage();
@@ -622,8 +547,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 			await dumpDiagnostics("search question", dataDirA);
 			throw error;
 		}
-		// The evidence came from the search tool: its executed step is in the
-		// run's progress (the list leaves progress out; the run itself has it).
+		// Confirm both service calls through the run's progress.
 		const runs = (await apiJson("GET", "/api/v1/research-runs")) as { runs: unknown };
 		const list = Array.isArray(runs.runs) ? runs.runs : [];
 		const searchRun = list.find(
@@ -634,7 +558,10 @@ test.describe("live positive path through the real backend (spends real quota)",
 		);
 		expect(searchRun, "the search question's run is not listed").toBeDefined();
 		const detail = await apiJson("GET", `/api/v1/research-runs/${stringField(searchRun, "runId")}`);
-		expect(JSON.stringify(detail)).toMatch(/web\.search: executed/);
+		const recorded = JSON.stringify(detail);
+		expect(recorded).toMatch(/web\.search: executed/);
+		expect(recorded).toMatch(/web\.extract: executed/);
+		expect(recorded).not.toContain("web.fetch_page");
 		await expectCostsWithinCeiling();
 	});
 

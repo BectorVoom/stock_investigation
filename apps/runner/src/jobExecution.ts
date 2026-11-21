@@ -85,7 +85,7 @@ import {
 	STOCK_PRICE_RATE_LIMIT_HOLD_MS,
 } from "./marketPacing.ts";
 
-/** Overlay the run-bound tool without replacing the injected registry's lookup behavior. */
+/** Add stored retrieval and keep direct page fetching out of research jobs. */
 function researchToolsForJob(
 	deps: JobExecutionDeps,
 	job: Extract<ClaimedJob, { kind: "research" }>,
@@ -106,8 +106,11 @@ function researchToolsForJob(
 		},
 	});
 	return {
-		get: (id) => (id === stored.toolId ? stored : deps.tools.get(id)),
-		list: () => [...deps.tools.list(), stored],
+		get: (id) => {
+			if (id === "web.fetch_page") return undefined;
+			return id === stored.toolId ? stored : deps.tools.get(id);
+		},
+		list: () => [...deps.tools.list().filter((tool) => tool.toolId !== "web.fetch_page"), stored],
 	};
 }
 

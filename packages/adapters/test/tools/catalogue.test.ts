@@ -272,6 +272,10 @@ describe("shared tool helpers", () => {
 		expect(long).not.toContain("never shown");
 		// No replacement character from a split multi-byte sequence.
 		expect(long).not.toContain("�");
+
+		const prefix = "a".repeat(MAX_MODEL_TEXT_BYTES - "\n[output truncated]".length - 1);
+		expect(boundModelText([`${prefix.slice(1)}🔋`])).toBe(`${prefix.slice(1)}\n[output truncated]`);
+		expect(boundModelText([prefix, ""])).toBe(`${prefix}\n[output truncated]`);
 	});
 
 	it("truncates on code points and never exceeds the limit", () => {

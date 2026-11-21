@@ -1127,7 +1127,13 @@ async fn dispatch(
 				ResearchPipelineDeps {
 					agent: Arc::clone(agent),
 					tools: {
-						let mut tools = deps.tools.list().to_vec();
+						let mut tools: Vec<_> = deps
+							.tools
+							.list()
+							.iter()
+							.filter(|tool| tool.meta().tool_id != "web.fetch_page")
+							.cloned()
+							.collect();
 						tools.push(Arc::new(crate::stock_research::StockResearchTool::new(
 							Arc::clone(&deps.api),
 							research.lease.run_id.clone(),

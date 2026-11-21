@@ -35,6 +35,9 @@
  *   `finish_reason: "length"`. A turn that ends that way is reported as
  *   PROVIDER_OUTPUT_TRUNCATED (not retryable: the same cap would cut it off
  *   again), never as a completed answer.
+ * - Reasoning: `reasoning.effort` carries the run's effort, except for the
+ *   exact free ids of `answersWithoutThinking`, which get
+ *   `reasoning.enabled: false` (ADR-0077).
  * - No fallback: the request names exactly one model and no `models` list
  *   (AGT-012). OpenRouter may still route the SAME model to another upstream
  *   provider, at that provider's price.
@@ -105,7 +108,21 @@ export const OPENROUTER_CHAT_COMPLETIONS_URL = "https://openrouter.ai/api/v1/cha
  */
 export const MAX_COMPLETION_TOKENS = 8_192;
 
-/** These free reasoning models need room for thinking plus the structured answer.
+/**
+ * Free reasoning models that answer with thinking switched off (ADR-0077).
+ * Measured live on 2026-11-21 on one production analysis turn: Dots Note
+ * thought for 75–230 s (8k–24k hidden tokens), ignoring `reasoning.effort` and
+ * `reasoning.max_tokens`; with `reasoning.enabled: false` it answered in
+ * 6–25 s with every claim's quote verified. Nemotron is not listed: without
+ * thinking it cited evidence ids that do not exist. Exact id matching keeps
+ * paid models, near-matches and every other model on the owner's effort.
+ */
+export function answersWithoutThinking(model: string): boolean {
+	return model === "dots-studio/dots-3-note-preview:free";
+}
+
+/** These free reasoning models need room for thinking plus the structured answer
+ * (Dots Note keeps it as answer room should a provider think anyway).
  * Their catalogue maxima exceed this bounded 32,768-token allowance.
  * Exact id matching keeps paid models and other providers' smaller limits unchanged.
  */
@@ -114,6 +131,14 @@ export function completionTokenLimit(model: string): number {
 		model === "dots-studio/dots-3-note-preview:free"
 		? 32_768
 		: MAX_COMPLETION_TOKENS;
+}
+
+/** The `reasoning` request field: thinking off for the profiled free models, else the run's effort. */
+export function reasoningField(
+	model: string,
+	effort: AgentRunContext["effort"],
+): { readonly enabled: false } | { readonly effort: AgentRunContext["effort"] } {
+	return answersWithoutThinking(model) ? { enabled: false } : { effort };
 }
 
 interface OpenRouterConfig {
@@ -300,7 +325,7 @@ async function* attemptChatCompletion(
 				stream: true,
 				max_completion_tokens: completionTokenLimit(config.model),
 				usage: { include: true },
-				reasoning: { effort: context.effort },
+				reasoning: reasoningField(config.model, context.effort),
 			}),
 			failureForStatus: failureForOpenRouterRejection,
 		},

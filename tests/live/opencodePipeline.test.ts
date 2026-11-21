@@ -215,8 +215,13 @@ describe.skipIf(!LIVE)("live OpenCode research pipeline (spends real quota)", ()
 			expect(researchBundleSchema.safeParse(outcome.bundle).success).toBe(true);
 
 			// The fixed news tool ran; nothing was refused outside the model (AGT-006).
+			// A search skipped in the final round is the pipeline's rule, not a refusal (ADR-0078).
 			expect(reporter.recorded.tools.map((entry) => entry.toolId)).toContain("news.fetch_feed");
-			expect(reporter.recorded.tools.filter((entry) => entry.outcome === "denied")).toEqual([]);
+			expect(
+				reporter.recorded.tools.filter(
+					(entry) => entry.outcome === "denied" && entry.detail !== "FINAL_ROUND_NO_SEARCH",
+				),
+			).toEqual([]);
 
 			// Evidence and claims are structural: wording varies, the protocol does not.
 			expect(outcome.bundle.evidence.some((item) => item.title === HEADLINE)).toBe(true);

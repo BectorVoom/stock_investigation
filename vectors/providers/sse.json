@@ -7835,9 +7835,18 @@
 		}
 	},
 	{
-		"input": "data:reserves the model-specific completion allowance for %s without changing effort",
+		"input": "data:sends %s its completion allowance, with thinking off only for the exact Dots Note free id (ADR-0077)",
 		"output": {
 			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"enabled\":false}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
 		}
 	},
 	{

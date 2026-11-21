@@ -68,6 +68,7 @@ import {
 	analysisPrompt,
 	cutUtf8Bytes,
 	PLANNING_CONTEXT_MAX_BYTES,
+	PLANNING_FINAL_ROUND_NOTE,
 	PLANNING_REMINDER,
 	PLANNING_SOURCES_MAX_BYTES,
 	PLANNING_TOOL_CATALOG_MAX_BYTES,
@@ -88,6 +89,10 @@ export const PLANNING_DIGEST_MAX = 8_000;
 export const PLANNING_DIGEST_MAX_LINES = 400;
 /** Template, request, fence and headers: measured near 2 KiB, budgeted with margin. */
 const PLANNING_FIXED_OVERHEAD_MAX_BYTES = 4_000;
+/** Tools whose results are planning leads, not evidence. */
+const DISCOVERY_TOOL_IDS: ReadonlySet<string> = new Set(["web.search", "news.search"]);
+/** Tools that read one page each; consecutive requests of a round run concurrently (ADR-0078). */
+const PAGE_READ_TOOL_IDS: ReadonlySet<string> = new Set(["web.extract", "web.fetch_page"]);
 /**
  * Absolute ceiling for any planning prompt, in UTF-8 bytes: fixed overhead +
  * tool catalog + source list + conversation context (each bounded in
@@ -221,8 +226,10 @@ interface Collected {
 	readonly entries: CollectedEntry[];
 }
 
+const utf8Encoder = new TextEncoder();
+
 function byteLength(text: string): number {
-	return new TextEncoder().encode(text).length;
+	return utf8Encoder.encode(text).length;
 }
 
 /**
@@ -281,7 +288,8 @@ function collectedSoFarText(entries: readonly CollectedEntry[], step: number): s
 			: `${cutUtf8Bytes(fresh, PLANNING_FRESH_TEXT_MAX)}\n[older output truncated to the planning budget]`;
 	const older = entries.filter((entry) => entry.step < step).flatMap((entry) => entry.digestLines);
 	if (boundedFresh === "" && older.length === 0) return "";
-	const sizes = older.map((line) => byteLength(line));
+	// Lines beyond the item cap cannot be selected, and their byte sizes are valid by construction.
+	const sizes = older.slice(-PLANNING_DIGEST_MAX_LINES).map(byteLength);
 	const keep = recentCountWithinBudget(sizes, PLANNING_DIGEST_MAX, PLANNING_DIGEST_MAX_LINES);
 	const kept = older.slice(older.length - keep);
 	const omitted = older.length - keep;
@@ -415,9 +423,9 @@ export async function runResearchPipeline(
 	}
 
 	/** One model turn under the run's budget. Never throws for provider failures. */
-	async function turn(prompt: string): Promise<Result<Turn, TurnFailure>> {
+	async function turn(prompt: string, measuredBytes?: number): Promise<Result<Turn, TurnFailure>> {
 		if (input.signal.aborted) return err({ kind: "aborted" });
-		const inputBytes = byteLength(prompt);
+		const inputBytes = measuredBytes ?? byteLength(prompt);
 		// On a metered backend an unreported cost means the running total is unknown: stop
 		// and ask, rather than keep spending against a ceiling that can no longer be checked.
 		if (metered && budget.maxSpendUsd !== null && usage.hasUnmeteredUsage)
@@ -610,9 +618,9 @@ export async function runResearchPipeline(
 	const unavailableTools = new Set<string>();
 	let collectionLimitReached = false;
 	let searchCooldownEncountered = false;
+	let foundSearchLeads = false;
 
 	collection: for (let step = 0; step < collectionSteps; step += 1) {
-		let foundSearchLeads = false;
 		// Spend the remaining model turns on analysis and verification instead
 		// of an open-ended search for more sources.
 		if (step >= 3) {
@@ -622,6 +630,19 @@ export async function runResearchPipeline(
 		}
 		const remainingToolCalls = budget.maxToolCalls - usage.toolCalls;
 		if (remainingToolCalls <= 0) break;
+		// No round follows the last one to open search results (ADR-0078).
+		const finalRound = step + 1 >= Math.min(collectionSteps, 3);
+		const roundReminder =
+			!permittedToolIds.has("web.fetch_page") && permittedToolIds.has("stocks.search")
+				? [
+						permittedToolIds.has("web.extract")
+							? "Use web.search for discovery and web.extract to read relevant original pages. For news.search, use keywords of at least three characters, e.g. artificial intelligence. Use the exact company name alone when searching stored records before adding topic terms. A general feed is a recent snapshot. Use only sources relevant to the requested company and state when evidence is missing."
+							: "Use web.search for discovery when listed. Direct page fetching is unavailable. Use listed stored-record, subscribed-feed, or official-data tools to collect citeable evidence, and disclose remaining gaps.",
+						reminderPending,
+					]
+						.filter(Boolean)
+						.join(" ")
+				: reminderPending;
 		const prompt = planningPrompt({
 			request,
 			nowIso: deps.clock.nowIso(),
@@ -632,18 +653,21 @@ export async function runResearchPipeline(
 			conversationContext: input.conversationContext,
 			fenceToken: deps.newFenceToken(),
 			promptBudgetBytes: PLANNING_PROMPT_BUDGET_BYTES,
-			reminder: reminderPending,
+			reminder: finalRound
+				? [roundReminder, PLANNING_FINAL_ROUND_NOTE].filter(Boolean).join(" ")
+				: roundReminder,
 		});
 		// The reminder is consumed by the prompt it was attached to.
 		reminderPending = null;
 		// Fail closed: the builder guarantees the ceiling, so reaching it means
 		// a bug — stop collecting rather than send an over-budget prompt.
-		if (byteLength(prompt) > PLANNING_PROMPT_BUDGET_BYTES) {
+		const promptBytes = byteLength(prompt);
+		if (promptBytes > PLANNING_PROMPT_BUDGET_BYTES) {
 			await deps.reporter.note("Planning stopped early: the prompt would exceed its byte budget.");
 			stoppedBy = "MAX_INPUT_BYTES";
 			break;
 		}
-		const planned = await turn(prompt);
+		const planned = await turn(prompt, promptBytes);
 		if (!planned.ok) {
 			if (planned.error.kind === "aborted") return { kind: "cancelled", usage };
 			const pause = spendApproval(planned.error);
@@ -709,107 +733,162 @@ export async function runResearchPipeline(
 				continue;
 			}
 		}
-		for (const call of calls) {
-			if (input.signal.aborted) return { kind: "cancelled", usage };
-			const label = call.toolId.slice(0, 80);
-			const authorized = authorizeToolCall(
-				deps.tools,
-				{ permittedToolIds, remainingToolCalls: budget.maxToolCalls - usage.toolCalls },
-				call,
-			);
-			if (!authorized.ok) {
-				deniedToolCalls += 1;
-				await deps.reporter.tool(label, "denied", authorized.error);
-				const note = `Tool request ${label} was denied: ${authorized.error}.`;
-				collected.entries.push({ step, fullText: note, digestLines: [note] });
-				if (authorized.error === "TOOL_CALL_BUDGET_EXHAUSTED") {
-					stoppedBy = "MAX_TOOL_CALLS";
-					break collection;
+		// ADR-0078: a run of consecutive page reads executes concurrently; every
+		// other call runs alone. Authorization, de-duplication, the final-round
+		// rule and budgets are still decided call by call in plan order, and
+		// results are recorded in plan order.
+		let callIndex = 0;
+		while (callIndex < calls.length) {
+			let batchEnd = callIndex + 1;
+			if (PAGE_READ_TOOL_IDS.has(calls[callIndex]?.toolId ?? "")) {
+				while (batchEnd < calls.length && PAGE_READ_TOOL_IDS.has(calls[batchEnd]?.toolId ?? "")) {
+					batchEnd += 1;
 				}
-				continue;
 			}
-			const requestKey = `${call.toolId}\n${JSON.stringify(authorized.value.args)}`;
-			if (completedRequests.has(requestKey) || unavailableTools.has(call.toolId)) {
-				const note = `Tool ${label} was not repeated; use its earlier result or another tool.`;
-				collected.entries.push({ step, fullText: note, digestLines: [note] });
-				continue;
-			}
-			const withinBudget = checkBudget(budget, usage, elapsedMs(), { toolCalls: 1 });
-			if (!withinBudget.ok) {
-				stoppedBy = withinBudget.error;
-				break collection;
-			}
-			usage = addUsage(usage, { toolCalls: 1 });
-			// A tool may not outlive the run: its signal also fires at the run's wall-clock deadline.
-			const runDeadline = AbortSignal.timeout(Math.max(1, budget.maxWallClockMs - elapsedMs()));
-			const result = await executeToolCall(authorized.value, {
-				...toolContext,
-				signal: AbortSignal.any([input.signal, runDeadline]),
-			});
-			if (runDeadline.aborted && !input.signal.aborted) {
-				executedToolCalls += 1;
-				toolErrorCounts.set("MAX_WALL_CLOCK", (toolErrorCounts.get("MAX_WALL_CLOCK") ?? 0) + 1);
-				await deps.reporter.tool(label, "failed", "MAX_WALL_CLOCK");
-				stoppedBy = "MAX_WALL_CLOCK";
-				break collection;
-			}
-			executedToolCalls += 1;
-			if (!result.ok) {
+			const batch: {
+				readonly call: (typeof calls)[number];
+				readonly label: string;
+				readonly requestKey: string;
+				readonly start: () => ReturnType<typeof executeToolCall>;
+				readonly runDeadline: AbortSignal;
+			}[] = [];
+			const batchKeys = new Set<string>();
+			// A limit reached while preparing stops collection once the calls
+			// already started have been recorded, as when they ran one by one.
+			let stopAfterBatch = false;
+			for (; callIndex < batchEnd; callIndex += 1) {
+				const call = calls[callIndex];
+				if (call === undefined) break;
+				if (input.signal.aborted) return { kind: "cancelled", usage };
+				const label = call.toolId.slice(0, 80);
+				const authorized = authorizeToolCall(
+					deps.tools,
+					{ permittedToolIds, remainingToolCalls: budget.maxToolCalls - usage.toolCalls },
+					call,
+				);
+				if (!authorized.ok) {
+					deniedToolCalls += 1;
+					await deps.reporter.tool(label, "denied", authorized.error);
+					const note = `Tool request ${label} was denied: ${authorized.error}.`;
+					collected.entries.push({ step, fullText: note, digestLines: [note] });
+					if (authorized.error === "TOOL_CALL_BUDGET_EXHAUSTED") {
+						stoppedBy = "MAX_TOOL_CALLS";
+						stopAfterBatch = true;
+						break;
+					}
+					continue;
+				}
+				const requestKey = `${call.toolId}\n${JSON.stringify(authorized.value.args)}`;
 				if (
-					call.toolId === "web.search" &&
-					(result.error.upstreamStatus === 432 || result.error.code === "SEARCH_PLAN_LIMIT")
+					completedRequests.has(requestKey) ||
+					batchKeys.has(requestKey) ||
+					unavailableTools.has(call.toolId)
 				) {
-					unavailableTools.add(call.toolId);
-					searchCooldownEncountered = true;
-					const note = "General web search is unavailable for this run.";
+					const note = `Tool ${label} was not repeated; use its earlier result or another tool.`;
 					collected.entries.push({ step, fullText: note, digestLines: [note] });
 					continue;
 				}
-				if (result.error.code === "NOT_CONFIGURED" || result.error.code === "SEARCH_COOLDOWN") {
-					unavailableTools.add(call.toolId);
+				if (finalRound && DISCOVERY_TOOL_IDS.has(call.toolId)) {
+					// Leads are only evidence once a page is read, and no round follows to read them.
+					await deps.reporter.tool(label, "denied", "FINAL_ROUND_NO_SEARCH");
+					const note = `Tool ${label} was not run: search results cannot be opened after the final collection round.`;
+					collected.entries.push({ step, fullText: note, digestLines: [note] });
+					continue;
 				}
-				if (result.error.code === "SEARCH_COOLDOWN") searchCooldownEncountered = true;
-				const code = sanitizeToolErrorCode(result.error.code.slice(0, 80));
-				toolErrorCounts.set(code, (toolErrorCounts.get(code) ?? 0) + 1);
-				const upstreamStatus = result.error.upstreamStatus;
-				if (upstreamStatus !== undefined) {
-					const statuses =
-						toolErrorStatuses.get(code) ?? new Map<number, { count: number; last: number }>();
-					const seen = statuses.get(upstreamStatus);
-					statuses.set(upstreamStatus, {
-						count: (seen?.count ?? 0) + 1,
-						last: executedToolCalls,
-					});
-					toolErrorStatuses.set(code, statuses);
+				const withinBudget = checkBudget(budget, usage, elapsedMs(), { toolCalls: 1 });
+				if (!withinBudget.ok) {
+					stoppedBy = withinBudget.error;
+					stopAfterBatch = true;
+					break;
 				}
-				const detail = result.error.code.slice(0, 300);
-				await deps.reporter.tool(label, "failed", detail);
-				const note = `Tool ${label} failed: ${detail}.`;
-				collected.entries.push({ step, fullText: note, digestLines: [note] });
-				continue;
+				usage = addUsage(usage, { toolCalls: 1 });
+				// A tool may not outlive the run: its signal also fires at the run's wall-clock deadline.
+				const runDeadline = AbortSignal.timeout(Math.max(1, budget.maxWallClockMs - elapsedMs()));
+				batchKeys.add(requestKey);
+				batch.push({
+					call,
+					label,
+					requestKey,
+					runDeadline,
+					// Started together once the batch is prepared, in plan order.
+					start: () =>
+						executeToolCall(authorized.value, {
+							...toolContext,
+							signal: AbortSignal.any([input.signal, runDeadline]),
+						}),
+				});
 			}
-			succeededToolCalls += 1;
-			completedRequests.add(requestKey);
-			const output = result.value;
-			// Search snippets are planning leads. Only the fetched original can support a claim.
-			const discovery = call.toolId === "web.search" || call.toolId === "news.search";
-			if (discovery) foundSearchLeads ||= output.evidence.length > 0;
-			else collected.evidence.push(...output.evidence);
-			collected.securities.push(...output.securities);
-			collected.financialObservations.push(...output.financialObservations);
-			collected.positionObservations.push(...output.positionObservations);
-			collected.investorFilings.push(...output.investorFilings);
-			collected.articles.push(...output.articles);
-			collected.entries.push({
-				step,
-				fullText: `Result of ${label}:\n${output.modelText}`,
-				digestLines: digestLinesFor(call.toolId, output),
-			});
-			await deps.reporter.tool(
-				label,
-				"executed",
-				`${output.evidence.length} ${discovery ? "search lead(s)" : "evidence item(s)"}`,
-			);
+			const results = await Promise.all(batch.map((prepared) => prepared.start()));
+			for (const [position, started] of batch.entries()) {
+				const { call, label, requestKey, runDeadline } = started;
+				const result = results[position];
+				if (result === undefined) continue;
+				if (runDeadline.aborted && !input.signal.aborted) {
+					executedToolCalls += 1;
+					toolErrorCounts.set("MAX_WALL_CLOCK", (toolErrorCounts.get("MAX_WALL_CLOCK") ?? 0) + 1);
+					await deps.reporter.tool(label, "failed", "MAX_WALL_CLOCK");
+					stoppedBy = "MAX_WALL_CLOCK";
+					break collection;
+				}
+				executedToolCalls += 1;
+				if (!result.ok) {
+					if (
+						call.toolId === "web.search" &&
+						(result.error.upstreamStatus === 432 || result.error.code === "SEARCH_PLAN_LIMIT")
+					) {
+						unavailableTools.add(call.toolId);
+						searchCooldownEncountered = true;
+						const note = "General web search is unavailable for this run.";
+						collected.entries.push({ step, fullText: note, digestLines: [note] });
+						continue;
+					}
+					if (result.error.code === "NOT_CONFIGURED" || result.error.code === "SEARCH_COOLDOWN") {
+						unavailableTools.add(call.toolId);
+					}
+					if (result.error.code === "SEARCH_COOLDOWN") searchCooldownEncountered = true;
+					const code = sanitizeToolErrorCode(result.error.code.slice(0, 80));
+					toolErrorCounts.set(code, (toolErrorCounts.get(code) ?? 0) + 1);
+					const upstreamStatus = result.error.upstreamStatus;
+					if (upstreamStatus !== undefined) {
+						const statuses =
+							toolErrorStatuses.get(code) ?? new Map<number, { count: number; last: number }>();
+						const seen = statuses.get(upstreamStatus);
+						statuses.set(upstreamStatus, {
+							count: (seen?.count ?? 0) + 1,
+							last: executedToolCalls,
+						});
+						toolErrorStatuses.set(code, statuses);
+					}
+					const detail = result.error.code.slice(0, 300);
+					await deps.reporter.tool(label, "failed", detail);
+					const note = `Tool ${label} failed: ${detail}.`;
+					collected.entries.push({ step, fullText: note, digestLines: [note] });
+					continue;
+				}
+				succeededToolCalls += 1;
+				completedRequests.add(requestKey);
+				const output = result.value;
+				// Search snippets are planning leads. Only the fetched original can support a claim.
+				const discovery = DISCOVERY_TOOL_IDS.has(call.toolId);
+				if (discovery) foundSearchLeads ||= output.evidence.length > 0;
+				else collected.evidence.push(...output.evidence);
+				collected.securities.push(...output.securities);
+				collected.financialObservations.push(...output.financialObservations);
+				collected.positionObservations.push(...output.positionObservations);
+				collected.investorFilings.push(...output.investorFilings);
+				collected.articles.push(...output.articles);
+				collected.entries.push({
+					step,
+					fullText: `Result of ${label}:\n${output.modelText}`,
+					digestLines: digestLinesFor(call.toolId, output),
+				});
+				await deps.reporter.tool(
+					label,
+					"executed",
+					`${output.evidence.length} ${discovery ? "search lead(s)" : "evidence item(s)"}`,
+				);
+			}
+			if (stopAfterBatch) break collection;
 		}
 		await deps.reporter.usage(usage);
 		// A plan's done flag predates its tool results. A paused search with
@@ -825,9 +904,17 @@ export async function runResearchPipeline(
 			continue;
 		}
 		if (
+			(toolErrorCounts.has("ROBOTS_DISALLOWED") || toolErrorCounts.has("EXTRACT_NO_CONTENT")) &&
+			collected.evidence.length === 0
+		) {
+			reminderPending =
+				"A page blocked automated access. Use an accessible original page from a different publisher, an official API, or stored records. In the final collection round, fetch an available source before requesting more search leads.";
+			continue;
+		}
+		if (
 			foundSearchLeads &&
 			collected.evidence.length === 0 &&
-			permittedTools.some((tool) => tool.toolId === "web.fetch_page")
+			(permittedToolIds.has("web.extract") || permittedToolIds.has("web.fetch_page"))
 		) {
 			reminderPending =
 				"Open relevant original pages from the search leads and assess the sources before ending collection.";
@@ -870,6 +957,7 @@ export async function runResearchPipeline(
 		Math.max(0, budget.maxInputBytes - usage.inputBytes - PROMPT_OVERHEAD_BYTES),
 	);
 	let evidencePack = "";
+	let evidencePackBytes = 0;
 	// Only evidence the model is actually shown may be cited: ids are guessable,
 	// so an id outside the pack would be a citation of something it never read.
 	const shown: CollectedEvidence[] = [];
@@ -884,7 +972,10 @@ export async function runResearchPipeline(
 		}
 		const e = item.evidence;
 		const entry = `[${e.evidenceId}] ${e.title} — ${e.publisher}; ${e.sourceUrl}; published ${e.publishedAt ?? "undated"}; retrieved ${e.retrievedAt}\n${item.retrievedText.slice(0, EVIDENCE_ITEM_MAX)}\n\n`;
-		if (byteLength(evidencePack) + byteLength(entry) > packBudget) break;
+		const entryBytes = byteLength(entry);
+		if (evidencePackBytes + entryBytes > packBudget) break;
+		// Each entry ends with a newline, so UTF-8 byte counts add across entries.
+		evidencePackBytes += entryBytes;
 		evidencePack += entry;
 		packedChecksums.add(item.evidence.checksum);
 		shown.push(item);
@@ -933,6 +1024,7 @@ export async function runResearchPipeline(
 		0;
 	let repairNote: string | null = null;
 	let draft: ReturnType<typeof analysisDraftSchema.safeParse> | null = null;
+	let checkedClaims: ReturnType<typeof verifyClaims> | undefined;
 	let analysisFailure: string | null = null;
 	// The provider's status behind `analysisFailure`, unchanged (§4a); null when none.
 	let analysisFailureStatus: number | null = null;
@@ -986,20 +1078,20 @@ export async function runResearchPipeline(
 			draft = null;
 			analysisFailure = "ANALYSIS_OUTPUT_INVALID";
 			analysisFailureStatus = null;
-		} else if (
-			attempt === 0 &&
-			draft.data.claims.length > 0 &&
-			verifyClaims(claimDrafts(draft.data.claims), evidenceTexts).every(
-				(claim) => claim.status === "unsupported",
-			)
-		) {
-			repairNote =
-				"none of the claims has usable quoted support from a shown evidence id. Return at most 6 short atomic claims. Use only the exact ids printed in square brackets in the Evidence section; never invent ids or use an article id. Copy each supporting quote word-for-word from that evidence, including original dates and numbers, and use a passage at least 12 characters long. Never paraphrase a quote, change a year, or join nonadjacent passages. Omit claims you cannot quote. Observation numbers must retain the source digits and units (for example $108.5 billion, not 1085億ドル). A unit conversion is a calculation: use inference and quote the original inputs. Never change source years. Leave unrelated scenarios, suppliers and pricingPower empty. Valid evidence ids: " +
-				JSON.stringify([...shownEvidenceIds].slice(0, 12));
-			draft = null;
-			analysisFailure = "ANALYSIS_OUTPUT_INVALID";
-			analysisFailureStatus = null;
 		} else {
+			if (attempt === 0 && draft.data.claims.length > 0) {
+				const checked = verifyClaims(claimDrafts(draft.data.claims), evidenceTexts);
+				if (checked.every((claim) => claim.status === "unsupported")) {
+					repairNote =
+						"none of the claims has usable quoted support from a shown evidence id. Return at most 6 short atomic claims. Use only the exact ids printed in square brackets in the Evidence section; never invent ids or use an article id. Copy each supporting quote word-for-word from that evidence, including original dates and numbers, and use a passage at least 12 characters long. Never paraphrase a quote, change a year, or join nonadjacent passages. Omit claims you cannot quote. Observation numbers must retain the source digits and units (for example $108.5 billion, not 1085億ドル). A unit conversion is a calculation: use inference and quote the original inputs. Never change source years. Leave unrelated scenarios, suppliers and pricingPower empty. Valid evidence ids: " +
+						JSON.stringify([...shownEvidenceIds].slice(0, 12));
+					draft = null;
+					analysisFailure = "ANALYSIS_OUTPUT_INVALID";
+					analysisFailureStatus = null;
+					continue;
+				}
+				checkedClaims = checked;
+			}
 			analysisFailure = null;
 			analysisFailureStatus = null;
 		}
@@ -1033,12 +1125,13 @@ export async function runResearchPipeline(
 		...new Set(ids.filter((id) => evidenceById.has(id))),
 	];
 
-	const verified = verifyClaims(
-		claimDrafts(analysis?.claims ?? []).map((claim) => ({ ...claim, claimId: nextId("cl") })),
-		evidenceTexts,
-	);
+	// Claim IDs label the results, so allocate them only for the accepted draft.
+	const acceptedClaims = analysis?.claims ?? [];
+	const verified =
+		checkedClaims ??
+		(acceptedClaims.length === 0 ? [] : verifyClaims(claimDrafts(acceptedClaims), evidenceTexts));
 	let claims: Claim[] = verified.map((claim) => ({
-		claimId: claim.claimId,
+		claimId: nextId("cl"),
 		text: claim.text,
 		claimType: claim.claimType,
 		status: claim.status,
@@ -1065,6 +1158,7 @@ export async function runResearchPipeline(
 						.join("\n"),
 				})),
 				fenceToken: deps.newFenceToken(),
+				...(permittedToolIds.has("web.extract") ? { question: request.question } : {}),
 			}),
 		);
 		if (!checked.ok) {

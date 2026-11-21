@@ -73,11 +73,15 @@ pub(super) fn collected_so_far_text(entries: &[CollectedEntry], step: u64) -> St
 	if fresh.is_empty() && older.is_empty() {
 		return String::new();
 	}
+	const MAX_DIGEST_LINES: usize = 400;
+	// The start never exceeds the length, so `get` always yields the tail.
 	let sizes = older
+		.get(older.len().saturating_sub(MAX_DIGEST_LINES)..)
+		.unwrap_or_default()
 		.iter()
 		.map(|line| u64::try_from(line.len()).unwrap_or(u64::MAX))
 		.collect::<Vec<_>>();
-	let count = recent_count_within_budget(&sizes, 8000, 400);
+	let count = recent_count_within_budget(&sizes, 8000, MAX_DIGEST_LINES as u64);
 	let omitted = older.len().saturating_sub(count);
 	let digest = if count == 0 {
 		"(no earlier output)".to_owned()

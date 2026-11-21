@@ -13,6 +13,7 @@ import {
 	type ResearchPipelineInput,
 	runResearchPipeline,
 } from "../src/index.ts";
+import { PLANNING_FINAL_ROUND_NOTE } from "../src/research/prompts.ts";
 import {
 	ARTICLE_TEXT,
 	analysis,
@@ -1848,7 +1849,14 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 			costCategory: "rate-limited",
 			sideEffect: "external-read+archive-write",
 			networkAllowlist: { kind: "public-web" },
-			async execute(_args, context) {
+			async execute({ url }, context) {
+				if (url === "https://example.net/blocked") {
+					return err({
+						code: "ROBOTS_DISALLOWED",
+						detail: "The page disallows automated access.",
+						retryable: false,
+					});
+				}
 				executed.push("web.fetch_page");
 				const item = evidenceItem(context.nextId("ev"), "A public page", ARTICLE_TEXT);
 				return ok({
@@ -1860,7 +1868,10 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 		});
 	}
 
-	it("opens an original page before analysis and excludes the search snippet", async () => {
+	it.each([
+		false,
+		true,
+	])("opens an original page after an empty or blocked follow-up (blocked: %s)", async (blocked) => {
 		const opened: string[] = [];
 		const search = defineTool({
 			toolId: "web.search",
@@ -1890,7 +1901,18 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 			done: true,
 		});
 		const { run, agent, reporter } = setup(
-			[searchPlan, pagePlan, analysis().replaceAll(EV1, `${RUN_ID}_ev2`), VERDICT_SUPPORTED],
+			[
+				searchPlan,
+				JSON.stringify({
+					toolCalls: blocked
+						? [{ toolId: "web.fetch_page", args: { url: "https://example.net/blocked" } }]
+						: [],
+					done: true,
+				}),
+				pagePlan,
+				analysis().replaceAll(EV1, `${RUN_ID}_ev2`),
+				VERDICT_SUPPORTED,
+			],
 			{
 				tools: newsTools(ARTICLE_TEXT, [search, webFetchTool(opened)]),
 				input: { request: request({ webAccess: "public-web" }) },
@@ -1905,8 +1927,186 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 			detail: "1 search lead(s)",
 		});
 		expect(agent.requests[1]?.prompt).toContain("Search lead https://example.org/study");
-		expect(agent.requests[2]?.prompt).toContain("A public page");
-		expect(agent.requests[2]?.prompt).not.toContain("Unverified snippet");
+		expect(agent.requests[2]?.prompt).toContain(
+			blocked
+				? "Use an accessible original page from a different publisher"
+				: "Open relevant original pages",
+		);
+		expect(agent.requests[3]?.prompt).toContain("A public page");
+		expect(agent.requests[3]?.prompt).not.toContain("Unverified snippet");
+	});
+
+	function leadSearch(queries: string[]) {
+		return defineTool({
+			toolId: "web.search",
+			version: "1",
+			description: "Find public pages.",
+			argsSchema: z.strictObject({ query: z.string() }),
+			argsHint: '{"query": string}',
+			timeoutMs: 1000,
+			permission: "research-read",
+			costCategory: "free",
+			sideEffect: "external-read",
+			networkAllowlist: { kind: "public-web" },
+			async execute({ query }, context) {
+				queries.push(query);
+				return ok({
+					...EMPTY_TOOL_OUTPUT,
+					modelText: "Search lead https://example.org/study",
+					evidence: [evidenceItem(context.nextId("ev"), "Unverified snippet", ARTICLE_TEXT)],
+				});
+			},
+		});
+	}
+
+	it("tells the final round that searches cannot be opened and runs none there (ADR-0078)", async () => {
+		const queries: string[] = [];
+		const opened: string[] = [];
+		const searchPlan = (query: string) =>
+			JSON.stringify({ toolCalls: [{ toolId: "web.search", args: { query } }], done: false });
+		const { run, agent, reporter } = setup(
+			[
+				searchPlan("training survey"),
+				searchPlan("training spending"),
+				JSON.stringify({
+					toolCalls: [
+						{ toolId: "web.search", args: { query: "training budget" } },
+						{ toolId: "web.fetch_page", args: { url: "https://example.org/study" } },
+					],
+					done: true,
+				}),
+				analysis().replaceAll(EV1, `${RUN_ID}_ev3`),
+				VERDICT_SUPPORTED,
+			],
+			{
+				tools: newsTools(ARTICLE_TEXT, [leadSearch(queries), webFetchTool(opened)]),
+				input: { request: request({ webAccess: "public-web" }) },
+			},
+		);
+		const outcome = expectBundle(await run());
+		expect(queries).toEqual(["training survey", "training spending"]);
+		expect(opened).toEqual(["web.fetch_page"]);
+		expect(reporter.recorded.tools).toContainEqual({
+			toolId: "web.search",
+			outcome: "denied",
+			detail: "FINAL_ROUND_NO_SEARCH",
+		});
+		expect(agent.requests[0]?.prompt).not.toContain(PLANNING_FINAL_ROUND_NOTE);
+		expect(agent.requests[1]?.prompt).not.toContain(PLANNING_FINAL_ROUND_NOTE);
+		expect(agent.requests[2]?.prompt).toContain(PLANNING_FINAL_ROUND_NOTE);
+		expect(outcome.bundle.evidence.map((item) => item.title)).toEqual(["A public page"]);
+	});
+
+	function pageTool(onStart: (url: string) => Promise<void>) {
+		return defineTool({
+			toolId: "web.fetch_page",
+			version: "1.0.0",
+			description: "Retrieve one public web page.",
+			argsSchema: z.strictObject({ url: z.string() }),
+			argsHint: '{"url": string}',
+			timeoutMs: 5_000,
+			permission: "research-read",
+			costCategory: "rate-limited",
+			sideEffect: "external-read+archive-write",
+			networkAllowlist: { kind: "public-web" },
+			async execute({ url }, context) {
+				const id = context.nextId("ev");
+				await onStart(url);
+				const page = evidenceItem(
+					id,
+					`Page ${url.slice(-1)}`,
+					`${ARTICLE_TEXT} Page ${url.slice(-1)}.`,
+				);
+				// Distinct pages: the analysis pack drops exact duplicates by checksum.
+				const item = {
+					...page,
+					evidence: { ...page.evidence, checksum: url.slice(-1).repeat(64) },
+				};
+				return ok({
+					...EMPTY_TOOL_OUTPUT,
+					modelText: `[${item.evidence.evidenceId}] Page ${url.slice(-1)}`,
+					evidence: [item],
+				});
+			},
+		});
+	}
+	const pagePlan = (urls: readonly string[]) =>
+		JSON.stringify({
+			toolCalls: urls.map((url) => ({ toolId: "web.fetch_page", args: { url } })),
+			done: true,
+		});
+
+	it("reads consecutive pages of one round concurrently and records them in plan order (ADR-0078)", async () => {
+		// Each read waits until both have started; run one after another, the
+		// first would wait in vain and report that it ran alone.
+		let started = 0;
+		let release: () => void = () => undefined;
+		const bothStarted = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		const overlap: string[] = [];
+		const tool = pageTool(async (url) => {
+			started += 1;
+			if (started === 2) release();
+			const seen = await Promise.race([
+				bothStarted.then(() => "together"),
+				new Promise<string>((resolve) => setTimeout(() => resolve("alone"), 1_000)),
+			]);
+			// The later-planned page finishes first, so recording follows the plan, not completion.
+			if (url.endsWith("a")) await new Promise((resolve) => setTimeout(resolve, 20));
+			overlap.push(seen);
+		});
+		const { run, agent, reporter } = setup(
+			[
+				pagePlan(["https://example.org/a", "https://example.org/b"]),
+				analysis().replaceAll(EV1, `${RUN_ID}_ev1`),
+				VERDICT_SUPPORTED,
+			],
+			{
+				tools: newsTools(ARTICLE_TEXT, [tool]),
+				input: { request: request({ webAccess: "public-web" }) },
+			},
+		);
+		expectBundle(await run());
+		expect(overlap).toEqual(["together", "together"]);
+		const analysisPrompt = agent.requests[1]?.prompt ?? "";
+		expect(analysisPrompt.indexOf("Page a")).toBeGreaterThan(-1);
+		expect(analysisPrompt.indexOf("Page a")).toBeLessThan(analysisPrompt.indexOf("Page b"));
+		expect(reporter.recorded.tools.map((entry) => entry.outcome)).toEqual(["executed", "executed"]);
+	});
+
+	it("records the reads already started when the tool-call budget ends a batch (ADR-0078)", async () => {
+		const reads: string[] = [];
+		const { run, agent, reporter } = setup(
+			[
+				pagePlan(["https://example.org/a", "https://example.org/b", "https://example.org/c"]),
+				analysis().replaceAll(EV1, `${RUN_ID}_ev1`),
+				VERDICT_SUPPORTED,
+			],
+			{
+				tools: newsTools(ARTICLE_TEXT, [
+					pageTool(async (url) => {
+						reads.push(url.slice(-1));
+					}),
+				]),
+				input: {
+					request: request({
+						webAccess: "public-web",
+						budget: { ...request().budget, maxToolCalls: 2 },
+					}),
+				},
+			},
+		);
+		expectBundle(await run());
+		expect(reads).toEqual(["a", "b"]);
+		const analysisPrompt = agent.requests[1]?.prompt ?? "";
+		expect(analysisPrompt).toContain("Page b");
+		expect(analysisPrompt).not.toContain("Page c");
+		expect(reporter.recorded.tools).toEqual([
+			{ toolId: "web.fetch_page", outcome: "denied", detail: "TOOL_CALL_BUDGET_EXHAUSTED" },
+			{ toolId: "web.fetch_page", outcome: "executed", detail: "1 evidence item(s)" },
+			{ toolId: "web.fetch_page", outcome: "executed", detail: "1 evidence item(s)" },
+		]);
 	});
 
 	async function gatedRun(webAccess: "off" | "public-web", plan: string) {

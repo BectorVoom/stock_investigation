@@ -21,17 +21,12 @@ const TRUNCATION_NOTE: &str = "[output truncated]";
 
 /// The longest prefix of whole characters within `max_bytes` UTF-8 bytes.
 fn cut_to_bytes(text: &str, max_bytes: usize) -> &str {
-	if text.len() <= max_bytes {
-		return text;
+	let mut end = text.len().min(max_bytes);
+	// UTF-8 code points are at most four bytes, so at most three bytes are skipped.
+	while !text.is_char_boundary(end) {
+		end -= 1;
 	}
-	let mut end = 0;
-	for (index, character) in text.char_indices() {
-		if index + character.len_utf8() > max_bytes {
-			break;
-		}
-		end = index + character.len_utf8();
-	}
-	text.get(..end).unwrap_or("")
+	&text[..end]
 }
 
 /// Joins lines into model text of at most [`MAX_MODEL_TEXT_BYTES`] UTF-8
@@ -193,6 +188,17 @@ mod tests {
 		assert!(bounded.starts_with("head\né"));
 		assert!(bounded.ends_with("\n[output truncated]"));
 		assert!(!bounded.contains("dropped"));
+
+		let prefix = "a".repeat(MAX_MODEL_TEXT_BYTES - TRUNCATION_NOTE.len() - 2);
+		let partial = &prefix[1..];
+		assert_eq!(
+			bound_model_text(&[format!("{partial}🔋")]),
+			format!("{partial}\n{TRUNCATION_NOTE}")
+		);
+		assert_eq!(
+			bound_model_text(&[prefix.as_str(), ""]),
+			format!("{prefix}\n{TRUNCATION_NOTE}")
+		);
 	}
 
 	#[test]

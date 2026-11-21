@@ -69,4 +69,8 @@ Settings → AI agent offers the Sarashina API (`sarashina-api`, SB Intuitions' 
 
 Settings → AI agent also offers the Gemini API (`gemini-api`, Google's OpenAI-compatible chat completions, `GEMINI_API_KEY`): plan-limited (cost always unknown), 16,000 output tokens, in both runners: [ADR-0075](docs/adr/0075-gemini-api-backend.md), [API reference](docs/external-apis/apis/gemini-api.md).
 
+The `openrouter-free` backend sends `reasoning.enabled: false` (thinking off, Settings → effort ignored) for exactly `dots-studio/dots-3-note-preview:free`, which ignored the effort hint, thought for minutes per analysis turn and cites as well without thinking; Nemotron keeps the effort (without thinking it cites nonexistent evidence): [ADR-0077](docs/adr/0077-free-reasoning-models-answer-without-thinking.md).
+
+The research collection loop's last planning round runs no `web.search` / `news.search` (its leads could not be opened; the planner is told so) and a round's consecutive page reads (`web.extract`, `web.fetch_page`) run concurrently, recorded in plan order: [ADR-0078](docs/adr/0078-final-round-reads-pages-and-parallel-page-reads.md).
+
 Home and Notebook market widgets also offer JPX's public short-selling ratio (`jpx:SHORT_SELLING_RATIO`, daily PDF) and Tokyo & Nagoya weekly margin buying balance value and margin ratio (`jpx:MARGIN_BUYING_VALUE`, `jpx:MARGIN_RATIO`, `.xlsx` workbooks; no key needed, merged without replacing history; 信用評価損益率 omitted for lack of a free source): [ADR-0076](docs/adr/0076-jpx-margin-and-short-selling-series.md), [API reference](docs/external-apis/apis/jpx.md).

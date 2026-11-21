@@ -5,22 +5,20 @@ import { agentSearchEndpoint } from "../tools/agentSearchEndpoint.ts";
 
 /** Private transport for one configured loopback POST. Never a public URL fetcher. */
 export function createLoopbackSearchFetcher(base: string): SafeFetcher {
-	const endpoint = agentSearchEndpoint(base);
-	if (endpoint === null)
+	const searchEndpoint = agentSearchEndpoint(base);
+	if (searchEndpoint === null)
 		throw new Error("AGENT_WEB_SEARCH_URL must be a literal loopback HTTP origin");
+	const extractEndpoint = new URL("/extract", searchEndpoint).href;
 	return {
 		async fetchText(url, options) {
 			if (options.signal?.aborted)
 				return err({ code: "TIMEOUT", detail: "Agent Web Search request was cancelled" });
-			if (url !== endpoint)
+			if (url !== searchEndpoint && url !== extractEndpoint)
 				return err({
 					code: "UNSAFE_URL",
-					detail: "Only the configured search endpoint is permitted",
+					detail: "Only configured search and extraction endpoints are permitted",
 				});
-			if (
-				options.allowedHosts !== undefined &&
-				!options.allowedHosts.has(new URL(endpoint).hostname)
-			)
+			if (options.allowedHosts !== undefined && !options.allowedHosts.has(new URL(url).hostname))
 				return err({
 					code: "HOST_NOT_ALLOWED",
 					detail: "Configured search host is not on the caller allowlist",
@@ -42,13 +40,13 @@ export function createLoopbackSearchFetcher(base: string): SafeFetcher {
 					options.signal?.removeEventListener("abort", abort);
 					resolve(
 						failure === null
-							? ok({ finalUrl: endpoint, contentType: "application/json", text })
+							? ok({ finalUrl: url, contentType: "application/json", text })
 							: err(failure),
 					);
 					outgoing.destroy();
 				};
 				const outgoing = request(
-					endpoint,
+					url,
 					{
 						method: "POST",
 						headers: {

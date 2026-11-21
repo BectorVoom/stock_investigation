@@ -19,21 +19,8 @@ export const MAX_RETRIEVED_TEXT_CHARS = 20_000;
 const TRUNCATION_NOTE = "[output truncated]";
 const encoder = new TextEncoder();
 
-function utf8Bytes(text: string): number {
-	return encoder.encode(text).byteLength;
-}
-
-function cutToBytes(text: string, maxBytes: number): string {
-	let kept = "";
-	let usedBytes = 0;
-	for (const character of text) {
-		const characterBytes = utf8Bytes(character);
-		if (usedBytes + characterBytes > maxBytes) break;
-		kept += character;
-		usedBytes += characterBytes;
-	}
-	return kept;
-}
+const MODEL_TEXT_BUDGET_BYTES = MAX_MODEL_TEXT_BYTES - TRUNCATION_NOTE.length - 1;
+const modelTextBuffer = new Uint8Array(MODEL_TEXT_BUDGET_BYTES);
 
 /**
  * Joins lines into model text of at most `MAX_MODEL_TEXT_BYTES` UTF-8 bytes.
@@ -41,18 +28,21 @@ function cutToBytes(text: string, maxBytes: number): string {
  * model is told that it happened.
  */
 export function boundModelText(lines: readonly string[]): string {
-	const budgetBytes = MAX_MODEL_TEXT_BYTES - utf8Bytes(`\n${TRUNCATION_NOTE}`);
 	const kept: string[] = [];
 	let usedBytes = 0;
 	for (const line of lines) {
-		const lineBytes = utf8Bytes(line) + 1;
-		if (usedBytes + lineBytes <= budgetBytes) {
+		const room = MODEL_TEXT_BUDGET_BYTES - usedBytes - 1;
+		// encodeInto stops at the budget and reports a whole-code-point prefix in UTF-16 units.
+		const { read, written } = encoder.encodeInto(
+			line,
+			modelTextBuffer.subarray(0, Math.max(0, room)),
+		);
+		if (room >= 0 && read === line.length) {
 			kept.push(line);
-			usedBytes += lineBytes;
+			usedBytes += written + 1;
 			continue;
 		}
-		const partial = cutToBytes(line, budgetBytes - usedBytes - 1);
-		if (partial !== "") kept.push(partial);
+		if (read > 0) kept.push(line.slice(0, read));
 		kept.push(TRUNCATION_NOTE);
 		break;
 	}

@@ -15,6 +15,9 @@ pub const PROMPT_VERSION: &str = "research-v8";
 pub const PLANNING_PROMPT_BUDGET_BYTES: usize = 76_000;
 /// Reminder after an empty plan, copied verbatim from the TypeScript builder.
 pub const PLANNING_REMINDER: &str = "Nothing has been collected yet. Request at least one tool call; if no subscribed source fits, search.";
+/// Attached to the last planning round's prompt (ADR-0078): no round follows
+/// to open search results, so the pipeline skips search requests there.
+pub const PLANNING_FINAL_ROUND_NOTE: &str = "This is the final collection round. Search results can no longer be opened, so web.search and news.search will not run: request only tools that return citeable evidence, such as reading the most relevant original pages from the leads already found or stored records.";
 const GROUND: &str = include_str!("templates/ground.txt");
 
 fn render(template: &str, slots: &[(&str, &str)]) -> String {

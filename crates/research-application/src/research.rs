@@ -14,8 +14,9 @@ use self::{
 	collect::{CollectedEntry, collected_so_far_text, digest_lines_for},
 	draft::parse_draft,
 	prompts::{
-		AnalysisPromptInput, PLANNING_PROMPT_BUDGET_BYTES, PLANNING_REMINDER, PlanningPromptInput,
-		analysis_prompt, planning_prompt, verification_prompt,
+		AnalysisPromptInput, PLANNING_FINAL_ROUND_NOTE, PLANNING_PROMPT_BUDGET_BYTES,
+		PLANNING_REMINDER, PlanningPromptInput, analysis_prompt, planning_prompt,
+		verification_prompt,
 	},
 	turn::{Session, TurnFailure},
 	value::*,
@@ -29,7 +30,7 @@ use research_agent_core::{
 		ToolDenialCode, ToolPolicy, ToolRegistry, ToolRequest, authorize_tool_call,
 		execute_tool_call,
 	},
-	model_text::extract_json_object,
+	model_text::{extract_json_object, fence_untrusted_text},
 	runtime::AgentRuntime,
 	tools::{
 		CollectedEvidence, IdAllocator, ToolContext, ToolFailure, ToolNetworkAllowlist, ToolOutput,
@@ -106,6 +107,15 @@ pub struct ResearchPipelineInput {
 	pub cancel: tokio_util::sync::CancellationToken,
 	/// Explicit owner opt-in for unverified backend isolation.
 	pub allow_unverified_tool_isolation: bool,
+}
+
+/// Tools whose results are planning leads, not evidence.
+fn is_discovery(tool_id: &str) -> bool {
+	matches!(tool_id, "web.search" | "news.search")
+}
+/// Tools that read one page each; consecutive requests of a round run concurrently (ADR-0078).
+fn is_page_read(tool_id: &str) -> bool {
+	matches!(tool_id, "web.extract" | "web.fetch_page")
 }
 
 /// All effects and nondeterminism are injected (ARCH-002).
@@ -368,8 +378,8 @@ pub async fn run_research_pipeline(
 	let mut unavailable_tools = HashSet::new();
 	let mut collection_limit_reached = false;
 	let mut search_cooldown_encountered = false;
+	let mut found_search_leads = false;
 	'collection: for step in 0..collection_steps {
-		let mut found_search_leads = false;
 		if step >= 3 {
 			collection_limit_reached = true;
 			deps.reporter
@@ -388,6 +398,25 @@ pub async fn run_research_pipeline(
 			.filter(|tool| !unavailable_tools.contains(tool.tool_id))
 			.cloned()
 			.collect();
+		let pending_reminder = reminder.take();
+		let search_guidance =
+			(!permitted_ids.contains("web.fetch_page") && permitted_ids.contains("stocks.search"))
+				.then(|| {
+					let guidance = if permitted_ids.contains("web.extract") { "Use web.search for discovery and web.extract to read relevant original pages. For news.search, use keywords of at least three characters, e.g. artificial intelligence. Use the exact company name alone when searching stored records before adding topic terms. A general feed is a recent snapshot. Use only sources relevant to the requested company and state when evidence is missing." } else { "Use web.search for discovery when listed. Direct page fetching is unavailable. Use listed stored-record, subscribed-feed, or official-data tools to collect citeable evidence, and disclose remaining gaps." };
+					match pending_reminder {
+						Some(note) => format!("{guidance} {note}"),
+						None => guidance.to_owned(),
+					}
+				});
+		// No round follows the last one to open search results (ADR-0078).
+		let final_round = step + 1 >= collection_steps.min(3);
+		let round_reminder = search_guidance.as_deref().or(pending_reminder);
+		let final_reminder = final_round.then(|| {
+			round_reminder.map_or_else(
+				|| PLANNING_FINAL_ROUND_NOTE.to_owned(),
+				|note| format!("{note} {PLANNING_FINAL_ROUND_NOTE}"),
+			)
+		});
 		let prompt = planning_prompt(PlanningPromptInput {
 			request: &input.request,
 			now_iso: &deps.clock.now_iso(),
@@ -398,7 +427,7 @@ pub async fn run_research_pipeline(
 			conversation_context: &input.conversation_context,
 			fence_token: &(deps.new_fence_token)(),
 			prompt_budget_bytes: PLANNING_PROMPT_BUDGET_BYTES,
-			reminder: reminder.take(),
+			reminder: final_reminder.as_deref().or(round_reminder),
 		})?;
 		if prompt.len() > PLANNING_PROMPT_BUDGET_BYTES {
 			deps.reporter
@@ -490,177 +519,238 @@ pub async fn run_research_pipeline(
 			deps.reporter.usage(&session.usage).await;
 			continue;
 		}
-		for call in &calls {
-			if input.cancel.is_cancelled() {
-				return Ok(PipelineOutcome::Cancelled {
-					usage: session.usage,
-				});
-			}
-			let label = utf16::truncate(&call.tool_id, 80);
-			let authorized = match authorize_tool_call(
-				&deps.tools,
-				ToolPolicy {
-					permitted_tool_ids: &permitted_ids,
-					remaining_tool_calls: i128::from(budget.max_tool_calls)
-						- i128::from(session.usage.tool_calls),
-				},
-				call,
-			) {
-				Ok(call) => call,
-				Err(code) => {
-					denied += 1;
-					deps.reporter
-						.tool(&label, ToolCallOutcome::Denied, &code.to_string())
-						.await;
-					let note = format!("Tool request {label} was denied: {code}.");
-					entries.push(CollectedEntry {
-						step,
-						full_text: note.clone(),
-						digest_lines: vec![note],
-					});
-					if code == ToolDenialCode::ToolCallBudgetExhausted {
-						stopped = Some(BudgetLimit::MaxToolCalls);
-						break 'collection;
-					}
-					continue;
-				}
-			};
-			let request_key = format!(
-				"{}\n{}",
-				call.tool_id,
-				research_js::json::stringify(&authorized.args)
-			);
-			if completed_requests.contains(&request_key)
-				|| unavailable_tools.contains(&call.tool_id)
+		// ADR-0078: a run of consecutive page reads executes concurrently; every
+		// other call runs alone. Authorization, de-duplication, the final-round
+		// rule and budgets are still decided call by call in plan order, and
+		// results are recorded in plan order (`runResearchPipeline`).
+		let mut call_index = 0;
+		while call_index < calls.len() {
+			let mut batch_end = call_index + 1;
+			if calls
+				.get(call_index)
+				.is_some_and(|call| is_page_read(&call.tool_id))
 			{
-				let note = format!(
-					"Tool {label} was not repeated; use its earlier result or another tool."
-				);
-				entries.push(CollectedEntry {
-					step,
-					full_text: note.clone(),
-					digest_lines: vec![note],
-				});
-				continue;
-			}
-			let delta = UsageDelta {
-				tool_calls: 1,
-				..UsageDelta::default()
-			};
-			if let Err(limit) = check_budget(budget, &session.usage, session.elapsed(), &delta) {
-				stopped = Some(limit);
-				break 'collection;
-			}
-			session.usage = add_usage(&session.usage, &delta);
-			let remaining_ms = i128::from(budget.max_wall_clock_ms) - i128::from(session.elapsed());
-			let remaining_ms = u64::try_from(remaining_ms.max(1)).unwrap_or(u64::MAX);
-			let call_cancel = input.cancel.child_token();
-			let _guard = call_cancel.clone().drop_guard();
-			let mut context = tool_context.clone();
-			context.cancel = call_cancel;
-			// Biased: when the run's deadline and the tool finish together, the deadline wins.
-			// Losing the race drops the tool's future (ADR-0030 C3).
-			let raced = tokio::select! {
-				biased;
-				() = tokio::time::sleep(Duration::from_millis(remaining_ms)) => None,
-				result = execute_tool_call(authorized, context) => Some(result),
-			};
-			executed += 1;
-			let result = match raced {
-				Some(result) => result,
-				// The TypeScript combines the owner's signal with the run deadline, so a
-				// deadline that coincides with a cancellation reaches the tool as the
-				// owner's abort: TOOL_ABORTED, an ordinary tool failure. The pipeline
-				// notices the cancellation at the next call or turn.
-				None if input.cancel.is_cancelled() => Err(ToolFailure {
-					code: "TOOL_ABORTED".to_owned(),
-					detail: "run was cancelled".to_owned(),
-					retryable: false,
-					upstream_status: None,
-				}),
-				None => {
-					*tool_errors.entry("MAX_WALL_CLOCK".to_owned()).or_default() += 1;
-					deps.reporter
-						.tool(&label, ToolCallOutcome::Failed, "MAX_WALL_CLOCK")
-						.await;
-					stopped = Some(BudgetLimit::MaxWallClock);
-					break 'collection;
+				while calls
+					.get(batch_end)
+					.is_some_and(|call| is_page_read(&call.tool_id))
+				{
+					batch_end += 1;
 				}
-			};
-			match result {
-				Err(error) => {
-					if call.tool_id == "web.search"
-						&& (error.upstream_status == Some(432) || error.code == "SEARCH_PLAN_LIMIT")
-					{
-						unavailable_tools.insert(call.tool_id.clone());
-						search_cooldown_encountered = true;
-						let note = "General web search is unavailable for this run.".to_owned();
+			}
+			let mut prepared = Vec::new();
+			let mut runs = Vec::new();
+			let mut batch_keys = HashSet::new();
+			// A limit reached while preparing stops collection once the calls
+			// already started have been recorded, as when they ran one by one.
+			let mut stop_after_batch = false;
+			while call_index < batch_end {
+				let Some(call) = calls.get(call_index) else {
+					break;
+				};
+				call_index += 1;
+				if input.cancel.is_cancelled() {
+					return Ok(PipelineOutcome::Cancelled {
+						usage: session.usage,
+					});
+				}
+				let label = utf16::truncate(&call.tool_id, 80);
+				let authorized = match authorize_tool_call(
+					&deps.tools,
+					ToolPolicy {
+						permitted_tool_ids: &permitted_ids,
+						remaining_tool_calls: i128::from(budget.max_tool_calls)
+							- i128::from(session.usage.tool_calls),
+					},
+					call,
+				) {
+					Ok(call) => call,
+					Err(code) => {
+						denied += 1;
+						deps.reporter
+							.tool(&label, ToolCallOutcome::Denied, &code.to_string())
+							.await;
+						let note = format!("Tool request {label} was denied: {code}.");
 						entries.push(CollectedEntry {
 							step,
 							full_text: note.clone(),
 							digest_lines: vec![note],
 						});
+						if code == ToolDenialCode::ToolCallBudgetExhausted {
+							stopped = Some(BudgetLimit::MaxToolCalls);
+							stop_after_batch = true;
+							break;
+						}
 						continue;
 					}
-					if matches!(error.code.as_str(), "NOT_CONFIGURED" | "SEARCH_COOLDOWN") {
-						unavailable_tools.insert(call.tool_id.clone());
-					}
-					if error.code == "SEARCH_COOLDOWN" {
-						search_cooldown_encountered = true;
-					}
-					let code =
-						sanitize_tool_error_code(&utf16::truncate(&error.code, 80)).to_owned();
-					tool_error_statuses.record(&code, error.upstream_status, executed);
-					*tool_errors.entry(code).or_default() += 1;
-					let detail = utf16::truncate(&error.code, 300);
-					deps.reporter
-						.tool(&label, ToolCallOutcome::Failed, &detail)
-						.await;
-					let note = format!("Tool {label} failed: {detail}.");
+				};
+				let request_key = format!(
+					"{}\n{}",
+					call.tool_id,
+					research_js::json::stringify(&authorized.args)
+				);
+				if completed_requests.contains(&request_key)
+					|| batch_keys.contains(&request_key)
+					|| unavailable_tools.contains(&call.tool_id)
+				{
+					let note = format!(
+						"Tool {label} was not repeated; use its earlier result or another tool."
+					);
 					entries.push(CollectedEntry {
 						step,
 						full_text: note.clone(),
 						digest_lines: vec![note],
 					});
+					continue;
 				}
-				Ok(output) => {
-					succeeded += 1;
-					completed_requests.insert(request_key);
+				if final_round && is_discovery(&call.tool_id) {
+					// Leads are only evidence once a page is read, and no round follows to read them.
+					deps.reporter
+						.tool(&label, ToolCallOutcome::Denied, "FINAL_ROUND_NO_SEARCH")
+						.await;
+					let note = format!(
+						"Tool {label} was not run: search results cannot be opened after the final collection round."
+					);
 					entries.push(CollectedEntry {
 						step,
-						full_text: format!("Result of {label}:\n{}", output.model_text),
-						digest_lines: digest_lines_for(&call.tool_id, &output),
+						full_text: note.clone(),
+						digest_lines: vec![note],
 					});
-					let count = output.evidence.len();
-					// Search snippets are planning leads. Only the fetched original can support a claim.
-					let discovery = matches!(call.tool_id.as_str(), "web.search" | "news.search");
-					if discovery {
-						found_search_leads |= count > 0;
-					} else {
-						collected.evidence.extend(output.evidence);
-					}
-					let item_kind = if discovery {
-						"search lead(s)"
-					} else {
-						"evidence item(s)"
-					};
-					collected.securities.extend(output.securities);
-					collected
-						.financial_observations
-						.extend(output.financial_observations);
-					collected
-						.position_observations
-						.extend(output.position_observations);
-					collected.investor_filings.extend(output.investor_filings);
-					collected.articles.extend(output.articles);
-					deps.reporter
-						.tool(
-							&label,
-							ToolCallOutcome::Executed,
-							&format!("{count} {item_kind}"),
-						)
-						.await;
+					continue;
 				}
+				let delta = UsageDelta {
+					tool_calls: 1,
+					..UsageDelta::default()
+				};
+				if let Err(limit) = check_budget(budget, &session.usage, session.elapsed(), &delta)
+				{
+					stopped = Some(limit);
+					stop_after_batch = true;
+					break;
+				}
+				session.usage = add_usage(&session.usage, &delta);
+				let remaining_ms =
+					i128::from(budget.max_wall_clock_ms) - i128::from(session.elapsed());
+				let remaining_ms = u64::try_from(remaining_ms.max(1)).unwrap_or(u64::MAX);
+				let call_cancel = input.cancel.child_token();
+				let mut context = tool_context.clone();
+				context.cancel = call_cancel.clone();
+				batch_keys.insert(request_key.clone());
+				prepared.push((call, label, request_key));
+				// Started together once the batch is prepared, in plan order.
+				runs.push(async move {
+					let _guard = call_cancel.drop_guard();
+					// Biased: when the run's deadline and the tool finish together, the deadline wins.
+					// Losing the race drops the tool's future (ADR-0030 C3).
+					tokio::select! {
+						biased;
+						() = tokio::time::sleep(Duration::from_millis(remaining_ms)) => None,
+						result = execute_tool_call(authorized, context) => Some(result),
+					}
+				});
+			}
+			let results = futures_util::future::join_all(runs).await;
+			for ((call, label, request_key), raced) in prepared.into_iter().zip(results) {
+				executed += 1;
+				let result = match raced {
+					Some(result) => result,
+					// The TypeScript combines the owner's signal with the run deadline, so a
+					// deadline that coincides with a cancellation reaches the tool as the
+					// owner's abort: TOOL_ABORTED, an ordinary tool failure. The pipeline
+					// notices the cancellation at the next call or turn.
+					None if input.cancel.is_cancelled() => Err(ToolFailure {
+						code: "TOOL_ABORTED".to_owned(),
+						detail: "run was cancelled".to_owned(),
+						retryable: false,
+						upstream_status: None,
+					}),
+					None => {
+						*tool_errors.entry("MAX_WALL_CLOCK".to_owned()).or_default() += 1;
+						deps.reporter
+							.tool(&label, ToolCallOutcome::Failed, "MAX_WALL_CLOCK")
+							.await;
+						stopped = Some(BudgetLimit::MaxWallClock);
+						break 'collection;
+					}
+				};
+				match result {
+					Err(error) => {
+						if call.tool_id == "web.search"
+							&& (error.upstream_status == Some(432)
+								|| error.code == "SEARCH_PLAN_LIMIT")
+						{
+							unavailable_tools.insert(call.tool_id.clone());
+							search_cooldown_encountered = true;
+							let note = "General web search is unavailable for this run.".to_owned();
+							entries.push(CollectedEntry {
+								step,
+								full_text: note.clone(),
+								digest_lines: vec![note],
+							});
+							continue;
+						}
+						if matches!(error.code.as_str(), "NOT_CONFIGURED" | "SEARCH_COOLDOWN") {
+							unavailable_tools.insert(call.tool_id.clone());
+						}
+						if error.code == "SEARCH_COOLDOWN" {
+							search_cooldown_encountered = true;
+						}
+						let code =
+							sanitize_tool_error_code(&utf16::truncate(&error.code, 80)).to_owned();
+						tool_error_statuses.record(&code, error.upstream_status, executed);
+						*tool_errors.entry(code).or_default() += 1;
+						let detail = utf16::truncate(&error.code, 300);
+						deps.reporter
+							.tool(&label, ToolCallOutcome::Failed, &detail)
+							.await;
+						let note = format!("Tool {label} failed: {detail}.");
+						entries.push(CollectedEntry {
+							step,
+							full_text: note.clone(),
+							digest_lines: vec![note],
+						});
+					}
+					Ok(output) => {
+						succeeded += 1;
+						completed_requests.insert(request_key);
+						entries.push(CollectedEntry {
+							step,
+							full_text: format!("Result of {label}:\n{}", output.model_text),
+							digest_lines: digest_lines_for(&call.tool_id, &output),
+						});
+						let count = output.evidence.len();
+						// Search snippets are planning leads. Only the fetched original can support a claim.
+						let discovery = is_discovery(&call.tool_id);
+						if discovery {
+							found_search_leads |= count > 0;
+						} else {
+							collected.evidence.extend(output.evidence);
+						}
+						let item_kind = if discovery {
+							"search lead(s)"
+						} else {
+							"evidence item(s)"
+						};
+						collected.securities.extend(output.securities);
+						collected
+							.financial_observations
+							.extend(output.financial_observations);
+						collected
+							.position_observations
+							.extend(output.position_observations);
+						collected.investor_filings.extend(output.investor_filings);
+						collected.articles.extend(output.articles);
+						deps.reporter
+							.tool(
+								&label,
+								ToolCallOutcome::Executed,
+								&format!("{count} {item_kind}"),
+							)
+							.await;
+					}
+				}
+			}
+			if stop_after_batch {
+				break 'collection;
 			}
 		}
 		deps.reporter.usage(&session.usage).await;
@@ -676,9 +766,18 @@ pub async fn run_research_pipeline(
 			}
 			continue;
 		}
+		if (tool_errors.contains_key("ROBOTS_DISALLOWED")
+			|| tool_errors.contains_key("EXTRACT_NO_CONTENT"))
+			&& collected.evidence.is_empty()
+		{
+			reminder = Some(
+				"A page blocked automated access. Use an accessible original page from a different publisher, an official API, or stored records. In the final collection round, fetch an available source before requesting more search leads.",
+			);
+			continue;
+		}
 		if found_search_leads
 			&& collected.evidence.is_empty()
-			&& permitted_ids.contains("web.fetch_page")
+			&& (permitted_ids.contains("web.extract") || permitted_ids.contains("web.fetch_page"))
 		{
 			reminder = Some(
 				"Open relevant original pages from the search leads and assess the sources before ending collection.",
@@ -847,6 +946,7 @@ pub async fn run_research_pipeline(
 	let now = deps.clock.now_iso();
 	let mut repair = None;
 	let mut analysis = None;
+	let mut checked_claims = None;
 	let mut analysis_failure = None;
 	// The provider's status behind `analysis_failure`, unchanged (§4a); `None` when none.
 	let mut analysis_failure_status = None;
@@ -898,17 +998,14 @@ pub async fn run_research_pipeline(
 				analysis_failure_status = None;
 			}
 			Ok(value) => {
-				if attempt == 0 {
+				if attempt == 0 && !items(&value, "claims").is_empty() {
 					let drafts = claim_drafts(&value, claim_evidence_id)?;
 					let index = Arc::clone(&quote_index);
-					let needs_repair = on_cpu(move || {
-						!drafts.is_empty()
-							&& verify_claims_with(&drafts, &index)
-								.iter()
-								.all(|claim| claim.status == ClaimStatus::Unsupported)
-					})
-					.await?;
-					if needs_repair {
+					let checked = on_cpu(move || verify_claims_with(&drafts, &index)).await?;
+					if checked
+						.iter()
+						.all(|claim| claim.status == ClaimStatus::Unsupported)
+					{
 						repair = Some(format!(
 							"none of the claims has usable quoted support from a shown evidence id. Return at most 6 short atomic claims. Use only the exact ids printed in square brackets in the Evidence section; never invent ids or use an article id. Copy each supporting quote word-for-word from that evidence, including original dates and numbers, and use a passage at least 12 characters long. Never paraphrase a quote, change a year, or join nonadjacent passages. Omit claims you cannot quote. Observation numbers must retain the source digits and units (for example $108.5 billion, not 1085億ドル). A unit conversion is a calculation: use inference and quote the original inputs. Never change source years. Leave unrelated scenarios, suppliers and pricingPower empty. Valid evidence ids: {}",
 							research_js::json::stringify(&a(shown
@@ -921,6 +1018,7 @@ pub async fn run_research_pipeline(
 						analysis_failure_status = None;
 						continue;
 					}
+					checked_claims = Some(checked);
 				}
 				analysis = Some(value);
 				analysis_failure = None;
@@ -969,18 +1067,19 @@ pub async fn run_research_pipeline(
 	deps.reporter.state(JobState::Verifying).await;
 	let analysis = analysis.unwrap_or(Value::Null);
 
-	let mut drafts = claim_drafts(&analysis, claim_evidence_id)?;
-	for draft in &mut drafts {
-		draft.claim_id = ids_.next_id("cl");
-	}
-	// CPU work leaves the tokio worker; a panic is an error, not a process abort.
-	let (index, mut claims) = on_cpu(move || {
-		let index = quote_index;
-		let claims = verify_claims_with(&drafts, &index);
-		(index, claims)
-	})
-	.await?;
+	let mut claims = match checked_claims {
+		Some(checked) => checked,
+		None if items(&analysis, "claims").is_empty() => Vec::new(),
+		None => {
+			let drafts = claim_drafts(&analysis, claim_evidence_id)?;
+			let index = Arc::clone(&quote_index);
+			on_cpu(move || verify_claims_with(&drafts, &index)).await?
+		}
+	};
+	let index = quote_index;
 	for claim in &mut claims {
+		// Claim IDs label the results, so allocate them only for the accepted draft.
+		claim.claim_id = ids_.next_id("cl");
 		claim.issues.truncate(24);
 	}
 	let candidates = claims
@@ -1002,7 +1101,16 @@ pub async fn run_research_pipeline(
 		.collect::<Vec<_>>();
 	let mut verdicts = None;
 	if !candidates.is_empty() {
-		let prompt = verification_prompt(&candidates, &(deps.new_fence_token)())?;
+		let token = (deps.new_fence_token)();
+		let mut prompt = verification_prompt(&candidates, &token)?;
+		if permitted_ids.contains("web.extract") {
+			let question =
+				fence_untrusted_text("research question", &input.request.question, &token)?;
+			prompt.push_str(&format!("
+
+Mark claims unrelated to this question or the requested company as unsupported, even when a passage supports the claim.
+{question}"));
+		}
 		match session.turn(prompt).await {
 			Err(error) => {
 				if let Some(outcome) = session.terminal(&error) {
