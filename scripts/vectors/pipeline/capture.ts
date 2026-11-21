@@ -222,6 +222,9 @@ export async function capturedRunResearchPipeline(
 		},
 	};
 	const reporter = {
+		...(deps.reporter.planningRound === undefined
+			? {}
+			: { planningRound: deps.reporter.planningRound.bind(deps.reporter) }),
 		...(deps.reporter.analysisAttempt === undefined
 			? {}
 			: { analysisAttempt: deps.reporter.analysisAttempt.bind(deps.reporter) }),

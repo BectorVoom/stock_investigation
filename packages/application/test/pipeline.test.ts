@@ -53,10 +53,15 @@ function setup(
 ) {
 	const time = fixedClock();
 	const tools = options.tools ?? newsTools(options.articleText);
+	const planningRounds: Parameters<NonNullable<PipelineReporter["planningRound"]>>[0][] = [];
 	const analysisAttempts: Parameters<NonNullable<PipelineReporter["analysisAttempt"]>>[0][] = [];
 	const reporter = {
 		...recordingReporter(),
+		planningRounds,
 		analysisAttempts,
+		planningRound(fields: (typeof planningRounds)[number]) {
+			planningRounds.push(fields);
+		},
 		analysisAttempt(fields: (typeof analysisAttempts)[number]) {
 			analysisAttempts.push(fields);
 		},
@@ -2858,6 +2863,35 @@ describe("stock screening repeat and pre-final search guidance", () => {
 		expect(reporter.recorded.notes).not.toContain(
 			"Collection stopped after three planning rounds.",
 		);
+		expect(reporter.planningRounds).toEqual([
+			{
+				round: 1,
+				finalRound: false,
+				requestedToolIds: "stocks.search",
+				executed: 1,
+				repeated: 0,
+				denied: 0,
+				refusedFinalRoundSearch: 0,
+			},
+			{
+				round: 2,
+				finalRound: false,
+				requestedToolIds: "stocks.search",
+				executed: 0,
+				repeated: 1,
+				denied: 0,
+				refusedFinalRoundSearch: 0,
+			},
+			{
+				round: 3,
+				finalRound: true,
+				requestedToolIds: "web.search",
+				executed: 0,
+				repeated: 0,
+				denied: 0,
+				refusedFinalRoundSearch: 1,
+			},
+		]);
 	});
 
 	it("reaches analysis with J-Quants evidence when a planner follows the repeat note to request candidate financials", async () => {

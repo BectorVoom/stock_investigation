@@ -30,7 +30,9 @@ use research_application::notebook::{
 	run_notebook_assist_turn,
 };
 use research_application::ports::Clock;
-use research_application::reporter::{AnalysisAttempt, PipelineReporter, ToolCallOutcome};
+use research_application::reporter::{
+	AnalysisAttempt, PipelineReporter, PlanningRound, ToolCallOutcome,
+};
 use research_application::research::prompts::PROMPT_VERSION;
 use research_application::research::{
 	PipelineOutcome, ResearchPipelineDeps, ResearchPipelineInput, run_research_pipeline,
@@ -351,6 +353,28 @@ struct JobReporter {
 
 #[async_trait]
 impl PipelineReporter for JobReporter {
+	fn planning_round(&self, round: PlanningRound) {
+		self.core.logger.info(
+			"research_planning_round",
+			&[
+				("runId", self.core.run_id.as_str().into()),
+				(
+					"leaseGeneration",
+					LogValue::Num(self.core.lease_generation as f64),
+				),
+				("round", LogValue::Int(round.round)),
+				("finalRound", LogValue::Bool(round.final_round)),
+				("requestedToolIds", round.requested_tool_ids.as_str().into()),
+				("executed", LogValue::Int(round.executed)),
+				("repeated", LogValue::Int(round.repeated)),
+				("denied", LogValue::Int(round.denied)),
+				(
+					"refusedFinalRoundSearch",
+					LogValue::Int(round.refused_final_round_search),
+				),
+			],
+		);
+	}
 	fn analysis_attempt(&self, attempt: AnalysisAttempt) {
 		self.core.logger.info(
 			"research_analysis_attempt",

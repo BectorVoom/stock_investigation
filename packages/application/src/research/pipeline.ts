@@ -121,6 +121,15 @@ export const PLANNING_PROMPT_BUDGET_BYTES =
 
 /** Progress sink. Implementations may reject when the lease is lost; the pipeline then stops. */
 export interface PipelineReporter {
+	planningRound?(fields: {
+		readonly round: number;
+		readonly finalRound: boolean;
+		readonly requestedToolIds: string;
+		readonly executed: number;
+		readonly repeated: number;
+		readonly denied: number;
+		readonly refusedFinalRoundSearch: number;
+	}): void;
 	analysisAttempt?(fields: {
 		readonly analysisAttempt: number;
 		readonly durationSeconds: number;
@@ -246,6 +255,14 @@ interface Collected {
 }
 
 const utf8Encoder = new TextEncoder();
+const SAFE_TOOL_ID_PATTERN = /^[a-z][a-z0-9._-]{0,39}$/;
+
+function formatRequestedToolIds(calls: readonly { readonly toolId: string }[]): string {
+	return calls
+		.map((call) => (SAFE_TOOL_ID_PATTERN.test(call.toolId) ? call.toolId : "invalid"))
+		.join(",")
+		.slice(0, 200);
+}
 
 function byteLength(text: string): number {
 	return utf8Encoder.encode(text).length;
@@ -847,7 +864,23 @@ export async function runResearchPipeline(
 		if (calls.some((call) => call.toolId === "web.search")) {
 			webSearchRequested = true;
 		}
+		let executedInRound = 0;
+		let repeatedInRound = 0;
+		let deniedInRound = 0;
+		let refusedFinalRoundSearchInRound = 0;
+		const logPlanningRound = () => {
+			deps.reporter.planningRound?.({
+				round: step + 1,
+				finalRound,
+				requestedToolIds: formatRequestedToolIds(calls),
+				executed: executedInRound,
+				repeated: repeatedInRound,
+				denied: deniedInRound,
+				refusedFinalRoundSearch: refusedFinalRoundSearchInRound,
+			});
+		};
 		if (routingRound && calls.length === 0 && plan.needsResearch === false) {
+			logPlanningRound();
 			return answerDirectly();
 		}
 		// ADR-0025 reminder: a valid plan that asks for nothing while nothing
@@ -864,6 +897,7 @@ export async function runResearchPipeline(
 			if (step + 1 < collectionSteps) {
 				reminderSent = true;
 				reminderPending = PLANNING_REMINDER;
+				logPlanningRound();
 				await deps.reporter.note("The plan requested no tools; asking the model again.");
 				await deps.reporter.usage(usage);
 				continue;
@@ -872,7 +906,6 @@ export async function runResearchPipeline(
 		// Batch consecutive page reads or stock and SEC financial reads.
 		// Authorization, de-duplication, final-round rules, and budgets are
 		// checked in plan order, and results are recorded in that order.
-		let repeatedInRound = 0;
 		let callIndex = 0;
 		while (callIndex < calls.length) {
 			let batchEnd = callIndex + 1;
@@ -914,6 +947,7 @@ export async function runResearchPipeline(
 				);
 				if (!authorized.ok) {
 					deniedToolCalls += 1;
+					deniedInRound += 1;
 					await deps.reporter.tool(label, "denied", authorized.error);
 					const note = `Tool request ${label} was denied: ${authorized.error}.`;
 					collected.entries.push({ step, fullText: note, digestLines: [note] });
@@ -939,6 +973,7 @@ export async function runResearchPipeline(
 				}
 				if (finalRound && DISCOVERY_TOOL_IDS.has(call.toolId)) {
 					// Leads are only evidence once a page is read, and no round follows to read them.
+					refusedFinalRoundSearchInRound += 1;
 					await deps.reporter.tool(label, "denied", "FINAL_ROUND_NO_SEARCH");
 					const note = `Tool ${label} was not run: search results cannot be opened after the final collection round.`;
 					collected.entries.push({ step, fullText: note, digestLines: [note] });
@@ -976,12 +1011,15 @@ export async function runResearchPipeline(
 				const { result, deadlineReached } = completed;
 				if (deadlineReached) {
 					executedToolCalls += 1;
+					executedInRound += 1;
 					toolErrorCounts.set("MAX_WALL_CLOCK", (toolErrorCounts.get("MAX_WALL_CLOCK") ?? 0) + 1);
 					await deps.reporter.tool(label, "failed", "MAX_WALL_CLOCK");
 					stoppedBy = "MAX_WALL_CLOCK";
+					logPlanningRound();
 					break collection;
 				}
 				executedToolCalls += 1;
+				executedInRound += 1;
 				if (!result.ok) {
 					if (
 						call.toolId === "web.search" &&
@@ -1039,8 +1077,12 @@ export async function runResearchPipeline(
 					`${output.evidence.length} ${discovery ? "search lead(s)" : "evidence item(s)"}`,
 				);
 			}
-			if (stopAfterBatch) break collection;
+			if (stopAfterBatch) {
+				logPlanningRound();
+				break collection;
+			}
 		}
+		logPlanningRound();
 		await deps.reporter.usage(usage);
 		if (calls.length > 0 && repeatedInRound === calls.length) {
 			reminderPending = PLANNING_REPEAT_NOTE;

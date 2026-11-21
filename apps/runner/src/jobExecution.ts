@@ -319,6 +319,15 @@ export async function executeJob(
 		}
 	};
 	const reporter: PipelineReporter = {
+		planningRound(fields) {
+			logIsolated(() =>
+				deps.logger.info("research_planning_round", {
+					runId: job.runId,
+					leaseGeneration: job.leaseGeneration,
+					...fields,
+				}),
+			);
+		},
 		analysisAttempt(fields) {
 			logIsolated(() =>
 				deps.logger.info("research_analysis_attempt", {

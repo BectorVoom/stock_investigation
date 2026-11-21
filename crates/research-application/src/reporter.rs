@@ -31,6 +31,24 @@ impl ToolCallOutcome {
 	}
 }
 
+/// Safe tool-selection summary for one planning round in the runner's operational log.
+pub struct PlanningRound {
+	/// One-based collection round number within this run lease.
+	pub round: i64,
+	/// Whether this was the final collection round.
+	pub final_round: bool,
+	/// Comma-separated requested tool ids in plan order, duplicates kept; never arguments.
+	pub requested_tool_ids: String,
+	/// Calls that ran in this round.
+	pub executed: i64,
+	/// Calls dropped as repeats in this round.
+	pub repeated: i64,
+	/// Calls denied by authorization in this round.
+	pub denied: i64,
+	/// Discovery calls refused in the final round.
+	pub refused_final_round_search: i64,
+}
+
 /// Safe analysis timing and size diagnostics for the runner's operational log.
 pub struct AnalysisAttempt {
 	/// One-based attempt number within this run lease.
@@ -52,6 +70,8 @@ pub struct AnalysisAttempt {
 /// Receives a job's progress.
 #[async_trait]
 pub trait PipelineReporter: Send + Sync {
+	/// Records a planning round's tool requests and outcomes in the runner's operational log.
+	fn planning_round(&self, _round: PlanningRound) {}
 	/// Records an analysis attempt in the runner's operational log.
 	fn analysis_attempt(&self, _attempt: AnalysisAttempt) {}
 	/// A lifecycle state was entered (only leased states are legal here).

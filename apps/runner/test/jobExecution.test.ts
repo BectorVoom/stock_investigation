@@ -1,7 +1,7 @@
 import type { ClaimedJob, CompleteJobRequest, StockResearchRequest } from "@research/contracts";
 import { EMPTY_USAGE, ok } from "@research/domain";
 import type { EventLogger, LogFields } from "@research/effects";
-import { silentEventLogger } from "@research/effects";
+import { createEventLogger, silentEventLogger } from "@research/effects";
 import { describe, expect, it } from "vitest";
 import { analysis, VERDICT_SUPPORTED } from "../../../packages/application/test/support.ts";
 import { executeJob, runFinishedFields, toCompletion } from "../src/jobExecution.ts";
@@ -637,8 +637,52 @@ describe("job_finished carries the removed run-card facts (identifiers/codes/cou
 	it("never carries prompts, question text, progress text or error messages", async () => {
 		const { api } = createFakeApi();
 		const harness = createDeps(api);
+		const lines: string[] = [];
 		const records: { event: string; fields?: LogFields }[] = [];
-		await executeJob(RESEARCH_JOB, { ...harness.deps, logger: recordingLogger(records) }, never);
+		const realLogger = createEventLogger(
+			(line) => {
+				lines.push(line);
+			},
+			() => new Date("2026-10-12T00:00:00.000Z"),
+		);
+		const logger: EventLogger = {
+			info(event, fields) {
+				records.push({ event, fields });
+				realLogger.info(event, fields);
+			},
+			warn(event, fields) {
+				records.push({ event, fields });
+				realLogger.warn(event, fields);
+			},
+			error(event, fields) {
+				records.push({ event, fields });
+				realLogger.error(event, fields);
+			},
+			logFailures: () => realLogger.logFailures(),
+		};
+		await executeJob(RESEARCH_JOB, { ...harness.deps, logger }, never);
+		const planning = records.filter((entry) => entry.event === "research_planning_round");
+		expect(planning).toEqual([
+			{
+				event: "research_planning_round",
+				fields: {
+					runId: RUN_ID,
+					leaseGeneration: RESEARCH_JOB.leaseGeneration,
+					round: 1,
+					finalRound: false,
+					requestedToolIds: "news.fetch_feed",
+					executed: 1,
+					repeated: 0,
+					denied: 0,
+					refusedFinalRoundSearch: 0,
+				},
+			},
+		]);
+		const planningLine = lines.find((line) => line.includes('"event":"research_planning_round"'));
+		expect(planningLine).toContain('"requestedToolIds":"news.fetch_feed"');
+		expect(planningLine).not.toContain("redacted_fields");
+		expect(planningLine).not.toContain("src_news");
+		expect(planningLine).not.toContain(RESEARCH_JOB.request.question);
 		const finished = records.find((entry) => entry.event === "job_finished");
 		const line = JSON.stringify(finished?.fields ?? {});
 		expect(line).not.toContain("Which storage products");

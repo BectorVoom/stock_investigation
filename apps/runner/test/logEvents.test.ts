@@ -109,6 +109,15 @@ describe("the stock price sync events (ADR-0058, docs/OPERATIONS.md)", () => {
 	});
 });
 
+describe("the research pipeline diagnostic events", () => {
+	it("are logged by the TypeScript runner under the documented names", () => {
+		const names = collectProductionEventNames();
+		for (const event of ["research_planning_round", "research_analysis_attempt"]) {
+			expect(names, event).toContain(event);
+		}
+	});
+});
+
 describe("existing production events still log unchanged (A1-1)", () => {
 	it("every event name in apps/api and apps/runner matches the pattern and logs as-is", () => {
 		const names = collectProductionEventNames();

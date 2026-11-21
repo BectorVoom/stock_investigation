@@ -24,7 +24,7 @@ use self::{
 };
 use crate::{
 	ports::Clock,
-	reporter::{AnalysisAttempt, PipelineReporter, ToolCallOutcome},
+	reporter::{AnalysisAttempt, PipelineReporter, PlanningRound, ToolCallOutcome},
 };
 use research_agent_core::{
 	authorize::{
@@ -277,6 +277,30 @@ fn claim_drafts(
 		});
 	}
 	Ok(drafts)
+}
+
+fn is_safe_tool_id(id: &str) -> bool {
+	let bytes = id.as_bytes();
+	matches!(bytes.first(), Some(b'a'..=b'z'))
+		&& (1..=40).contains(&bytes.len())
+		&& bytes
+			.iter()
+			.all(|b| matches!(b, b'a'..=b'z' | b'0'..=b'9' | b'.' | b'_' | b'-'))
+}
+
+fn format_requested_tool_ids(calls: &[ToolRequest]) -> String {
+	let joined = calls
+		.iter()
+		.map(|call| {
+			if is_safe_tool_id(&call.tool_id) {
+				call.tool_id.as_str()
+			} else {
+				"invalid"
+			}
+		})
+		.collect::<Vec<_>>()
+		.join(",");
+	joined[..joined.len().min(200)].to_owned()
 }
 
 /// Runs the entire research lifecycle without persistence. Provider and tool
@@ -533,12 +557,27 @@ pub async fn run_research_pipeline(
 		if calls.iter().any(|call| call.tool_id == "web.search") {
 			web_search_requested = true;
 		}
+		let requested_tool_ids = format_requested_tool_ids(&calls);
+		let round_number = i64::try_from(step.saturating_add(1)).unwrap_or(i64::MAX);
+		let mut executed_in_round = 0i64;
+		let mut repeated_in_round = 0usize;
+		let mut denied_in_round = 0i64;
+		let mut refused_final_round_search_in_round = 0i64;
 		if routing_round
 			&& calls.is_empty()
 			&& plan
 				.as_ref()
 				.is_some_and(|p| get(p, "needsResearch").as_bool() == Some(false))
 		{
+			deps.reporter.planning_round(PlanningRound {
+				round: round_number,
+				final_round,
+				requested_tool_ids,
+				executed: 0,
+				repeated: 0,
+				denied: 0,
+				refused_final_round_search: 0,
+			});
 			return direct::answer_directly(&mut session, &input, &deps, &probe).await;
 		}
 		if calls.is_empty()
@@ -551,6 +590,15 @@ pub async fn run_research_pipeline(
 		{
 			reminder_sent = true;
 			reminder = Some(PLANNING_REMINDER);
+			deps.reporter.planning_round(PlanningRound {
+				round: round_number,
+				final_round,
+				requested_tool_ids,
+				executed: 0,
+				repeated: 0,
+				denied: 0,
+				refused_final_round_search: 0,
+			});
 			deps.reporter
 				.note("The plan requested no tools; asking the model again.")
 				.await;
@@ -560,7 +608,6 @@ pub async fn run_research_pipeline(
 		// Batch consecutive page reads or stock and SEC financial reads.
 		// Authorization, de-duplication, final-round rules, and budgets are
 		// checked in plan order, and results are recorded in that order.
-		let mut repeated_in_round = 0usize;
 		let mut call_index = 0;
 		while call_index < calls.len() {
 			let mut batch_end = call_index + 1;
@@ -616,6 +663,7 @@ pub async fn run_research_pipeline(
 					Ok(call) => call,
 					Err(code) => {
 						denied += 1;
+						denied_in_round += 1;
 						deps.reporter
 							.tool(&label, ToolCallOutcome::Denied, &code.to_string())
 							.await;
@@ -666,6 +714,7 @@ pub async fn run_research_pipeline(
 				}
 				if final_round && is_discovery(&call.tool_id) {
 					// Leads are only evidence once a page is read, and no round follows to read them.
+					refused_final_round_search_in_round += 1;
 					deps.reporter
 						.tool(&label, ToolCallOutcome::Denied, "FINAL_ROUND_NO_SEARCH")
 						.await;
@@ -713,6 +762,7 @@ pub async fn run_research_pipeline(
 			let results = futures_util::future::join_all(runs).await;
 			for ((call, label, request_key), raced) in prepared.into_iter().zip(results) {
 				executed += 1;
+				executed_in_round += 1;
 				let result = match raced {
 					Some(result) => result,
 					// The TypeScript combines the owner's signal with the run deadline, so a
@@ -731,6 +781,15 @@ pub async fn run_research_pipeline(
 							.tool(&label, ToolCallOutcome::Failed, "MAX_WALL_CLOCK")
 							.await;
 						stopped = Some(BudgetLimit::MaxWallClock);
+						deps.reporter.planning_round(PlanningRound {
+							round: round_number,
+							final_round,
+							requested_tool_ids,
+							executed: executed_in_round,
+							repeated: i64::try_from(repeated_in_round).unwrap_or(i64::MAX),
+							denied: denied_in_round,
+							refused_final_round_search: refused_final_round_search_in_round,
+						});
 						break 'collection;
 					}
 				};
@@ -812,9 +871,27 @@ pub async fn run_research_pipeline(
 				}
 			}
 			if stop_after_batch {
+				deps.reporter.planning_round(PlanningRound {
+					round: round_number,
+					final_round,
+					requested_tool_ids,
+					executed: executed_in_round,
+					repeated: i64::try_from(repeated_in_round).unwrap_or(i64::MAX),
+					denied: denied_in_round,
+					refused_final_round_search: refused_final_round_search_in_round,
+				});
 				break 'collection;
 			}
 		}
+		deps.reporter.planning_round(PlanningRound {
+			round: round_number,
+			final_round,
+			requested_tool_ids,
+			executed: executed_in_round,
+			repeated: i64::try_from(repeated_in_round).unwrap_or(i64::MAX),
+			denied: denied_in_round,
+			refused_final_round_search: refused_final_round_search_in_round,
+		});
 		deps.reporter.usage(&session.usage).await;
 		if !calls.is_empty() && repeated_in_round == calls.len() {
 			reminder = Some(PLANNING_REPEAT_NOTE);

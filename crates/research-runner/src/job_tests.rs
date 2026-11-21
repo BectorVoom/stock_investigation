@@ -1559,6 +1559,33 @@ async fn job_finished_carries_attempt_budget_usage_cost_verification_and_progres
 	] {
 		assert!(finished.contains(expected), "{expected} in {finished}");
 	}
+	let planning_rounds: Vec<_> = harness
+		.log
+		.lines()
+		.into_iter()
+		.filter_map(|line| serde_json::from_str::<serde_json::Value>(&line).ok())
+		.filter(|line| line["event"] == "research_planning_round")
+		.collect();
+	assert_eq!(planning_rounds.len(), 1);
+	let planning_round = &planning_rounds[0];
+	assert_eq!(planning_round["runId"], "run_test");
+	assert_eq!(planning_round["leaseGeneration"], 3);
+	assert_eq!(planning_round["round"], 1);
+	assert_eq!(planning_round["finalRound"], false);
+	assert_eq!(planning_round["requestedToolIds"], "news.fetch_feed");
+	assert_eq!(planning_round["executed"], 1);
+	assert_eq!(planning_round["repeated"], 0);
+	assert_eq!(planning_round["denied"], 0);
+	assert_eq!(planning_round["refusedFinalRoundSearch"], 0);
+	assert!(planning_round.get("redacted_fields").is_none());
+	let planning_raw = harness
+		.log
+		.lines()
+		.into_iter()
+		.find(|line| line.contains(r#""event":"research_planning_round""#))
+		.unwrap();
+	assert!(!planning_raw.contains("src_news"));
+	assert!(!planning_raw.contains("Which storage products"));
 	let attempts: Vec<_> = harness
 		.log
 		.lines()
