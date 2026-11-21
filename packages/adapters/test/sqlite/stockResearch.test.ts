@@ -149,4 +149,50 @@ for (const layout of ["canonical", "migrated"] as const)
 				db.close();
 			}
 		});
+		it("orders company hits by name, then theme, then body mention, and includes Japanese local names", async () => {
+			const { db, repository } = await setup();
+			try {
+				const result = await repository.search("owner", {
+					query: "造船",
+					kind: "company",
+					limit: 6,
+				});
+				expect(result.hits.map((hit) => hit.recordId)).toEqual(["JP:7018", "JP:7003", "JP:3168"]);
+				expect(result.hits[0]?.title).toBe(
+					"JP:7018 合成造船 (Synthetic Zosen Corporation) AI-written company overview",
+				);
+			} finally {
+				db.close();
+			}
+		});
+		it("bounds numeric and ticker terms to whole tokens without breaking fiscal years", async () => {
+			const { db, repository } = await setup();
+			try {
+				const byTicker = await repository.search("owner", {
+					query: "7018 純利益",
+					kind: "financials",
+					limit: 6,
+				});
+				expect(byTicker.hits.map((hit) => hit.recordId)).toEqual([
+					"eqc_jp_7018:2025:profit-attributable-to-owners",
+					"eqc_jp_7018:2024:profit-attributable-to-owners",
+				]);
+				const byTickerAndYear = await repository.search("owner", {
+					query: "7018 2025 純利益",
+					kind: "financials",
+					limit: 6,
+				});
+				expect(byTickerAndYear.hits.map((hit) => hit.recordId)).toEqual([
+					"eqc_jp_7018:2025:profit-attributable-to-owners",
+				]);
+				const byPrefixedTicker = await repository.search("owner", {
+					query: "JP:7018 純利益",
+					kind: "financials",
+					limit: 6,
+				});
+				expect(byPrefixedTicker.hits).toHaveLength(2);
+			} finally {
+				db.close();
+			}
+		});
 	});

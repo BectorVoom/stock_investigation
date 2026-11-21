@@ -38,17 +38,26 @@ const DOCUMENTS = {
 		json_extract(p.value, '$.text') AS text, ebd.source_url AS source_url,
 		'SEC EDGAR' AS publisher, ebd.filed_on || 'T00:00:00Z' AS published_at,
 		ebd.fetched_at AS retrieved_at, ebd.period_end || 'T00:00:00Z' AS effective_at,
-		'regulatory-filing' AS source_class, 1 AS retain_quotes, 0 AS ai_generated
+		'regulatory-filing' AS source_class, 1 AS retain_quotes, 0 AS ai_generated,
+		eco.market AS market, eco.symbol AS symbol, eco.name AS name_text, NULL AS theme_text
 		FROM equity_company AS eco
 		JOIN equity_business_description AS ebd ON ebd.owner_id = eco.owner_id AND ebd.company_id = eco.company_id
 		JOIN json_each(ebd.paragraphs_json) AS p
 		WHERE eco.owner_id = ? AND ebd.status = 'extracted'
 		UNION ALL
 		SELECT 'company', scs.market || ':' || scs.symbol,
-			scs.market || ':' || scs.symbol || ' ' || coalesce(sd.name, '') || ' AI-written company overview',
+			scs.market || ':' || scs.symbol || ' ' || CASE
+				WHEN sd.local_name IS NOT NULL AND sd.local_name <> '' THEN
+					CASE
+						WHEN sd.name IS NOT NULL AND sd.name <> '' THEN sd.local_name || ' (' || sd.name || ')'
+						ELSE sd.local_name
+					END
+				ELSE coalesce(sd.name, '')
+			END || ' AI-written company overview',
 			coalesce(scs.description_en, '') || char(10) || coalesce(scs.description_ja, '') || char(10) || coalesce(scs.overview_json, '') || char(10) || coalesce(scs.themes_json, ''),
 			NULL, 'AI-written stored context', NULL,
-			coalesce(scs.overview_generated_at, scs.generated_at), NULL, 'other', 0, 1
+			coalesce(scs.overview_generated_at, scs.generated_at), NULL, 'other', 0, 1,
+			scs.market, scs.symbol, coalesce(sd.local_name, '') || ' ' || coalesce(sd.name, ''), scs.theme_names
 		FROM stock_company_summary AS scs
 		LEFT JOIN stock_directory AS sd ON sd.owner_id = scs.owner_id AND sd.market = scs.market AND sd.symbol = scs.symbol
 		WHERE scs.owner_id = ? AND (scs.generated_at IS NOT NULL OR scs.overview_generated_at IS NOT NULL)`,
@@ -64,7 +73,8 @@ const DOCUMENTS = {
 		erf.source_url AS source_url, CASE eco.provider WHEN 'sec' THEN 'SEC EDGAR' ELSE 'J-Quants' END AS publisher,
 		erf.filed_on || 'T00:00:00Z' AS published_at, emv.updated_at AS retrieved_at,
 		emv.period_end || 'T00:00:00Z' AS effective_at, 'regulatory-filing' AS source_class,
-		CASE eco.provider WHEN 'sec' THEN 1 ELSE 0 END AS retain_quotes, 0 AS ai_generated
+		CASE eco.provider WHEN 'sec' THEN 1 ELSE 0 END AS retain_quotes, 0 AS ai_generated,
+		eco.market AS market, eco.symbol AS symbol, NULL AS name_text, NULL AS theme_text
 		FROM equity_company AS eco
 		JOIN equity_metric_value AS emv ON emv.owner_id = eco.owner_id AND emv.company_id = eco.company_id
 		LEFT JOIN equity_report_filing AS erf ON erf.owner_id = emv.owner_id AND erf.filing_id = emv.filing_id
@@ -73,7 +83,8 @@ const DOCUMENTS = {
 		a.title || char(10) || CASE WHEN ns.license_policy = 'short-excerpt-permitted' THEN coalesce(a.excerpt, '') ELSE '' END AS text,
 		a.canonical_url AS source_url, a.publisher AS publisher, a.published_at AS published_at,
 		a.retrieved_at AS retrieved_at, NULL AS effective_at, 'news' AS source_class,
-		CASE WHEN ns.license_policy = 'short-excerpt-permitted' THEN 1 ELSE 0 END AS retain_quotes, 0 AS ai_generated
+		CASE WHEN ns.license_policy = 'short-excerpt-permitted' THEN 1 ELSE 0 END AS retain_quotes, 0 AS ai_generated,
+		NULL AS market, NULL AS symbol, NULL AS name_text, NULL AS theme_text
 		FROM articles AS a
 		LEFT JOIN news_sources AS ns ON ns.owner_id = a.owner_id AND ns.source_id = a.source_id
 		WHERE a.owner_id = ?`,
@@ -111,6 +122,9 @@ const rowSchema = z
 		aiGenerated: row.ai_generated,
 	}));
 
+const HAYSTACK = "lower(d.title || char(10) || d.text)";
+const TOKEN_BOUNDED_TERM = /^(?=.*[0-9])[0-9a-z:.-]+$/;
+
 /** SQLite lower() folds ASCII only; keep the query's fold identical, including Japanese. */
 function termsOf(query: string): readonly string[] {
 	return query
@@ -118,24 +132,49 @@ function termsOf(query: string): readonly string[] {
 		.map((term) => term.replace(/[A-Z]/g, (letter) => letter.toLowerCase()));
 }
 
+function termClause(term: string): { readonly sql: string; readonly bindings: readonly string[] } {
+	if (!TOKEN_BOUNDED_TERM.test(term)) {
+		return { sql: `instr(${HAYSTACK}, ?) > 0`, bindings: [term] };
+	}
+	return {
+		sql: `(instr(${HAYSTACK}, ?) > 0 AND substr(${HAYSTACK}, instr(${HAYSTACK}, ?) - 1, 1) NOT GLOB '[0-9a-z]' AND substr(${HAYSTACK}, instr(${HAYSTACK}, ?) + length(?), 1) NOT GLOB '[0-9a-z]')`,
+		bindings: [term, term, term, term],
+	};
+}
+
 export function createStockResearchRepository(db: SqlDatabase): StockResearchRepository {
 	return {
 		async search(ownerId, input) {
 			const query = stockResearchQuerySchema.parse(input);
 			const terms = termsOf(query.query);
+			const clauses = terms.map(termClause);
+			const whereSql = clauses.map((clause) => clause.sql).join(" AND ");
+			const whereBindings = clauses.flatMap((clause) => clause.bindings);
+			const nameSql = terms.map(() => "instr(lower(d.name_text), ?) > 0").join(" AND ");
+			const themeSql = terms.map(() => "instr(lower(d.theme_text), ?) > 0").join(" AND ");
 			const kinds =
 				query.kind === undefined ? (["company", "financials", "news"] as const) : [query.kind];
 			// One bounded result query per corpus; no per-stock or per-result queries.
 			const groups: StockResearchHit[][] = [];
 			for (const kind of kinds) {
+				const orderSql =
+					kind === "company"
+						? `CASE WHEN ${nameSql} THEN 0 WHEN ${themeSql} THEN 1 ELSE 2 END, d.retrieved_at DESC, d.record_id DESC`
+						: "d.retrieved_at DESC, d.record_id DESC";
+				const orderBindings = kind === "company" ? [...terms, ...terms] : [];
 				const result = await db
 					.prepare(`WITH documents AS (${DOCUMENTS[kind]})
 					SELECT d.kind, d.record_id, d.title, d.text, d.source_url, d.publisher, d.published_at, d.retrieved_at, d.effective_at, d.source_class, d.retain_quotes, d.ai_generated
 					FROM documents AS d
-					WHERE ${terms.map(() => "instr(lower(d.title || char(10) || d.text), ?) > 0").join(" AND ")}
-					ORDER BY d.retrieved_at DESC, d.record_id DESC
+					WHERE ${whereSql}
+					ORDER BY ${orderSql}
 					LIMIT ?`)
-					.bind(...(kind === "company" ? [ownerId, ownerId] : [ownerId]), ...terms, query.limit + 1)
+					.bind(
+						...(kind === "company" ? [ownerId, ownerId] : [ownerId]),
+						...whereBindings,
+						...orderBindings,
+						query.limit + 1,
+					)
 					.all();
 				groups.push(
 					result.results.map((raw) => {

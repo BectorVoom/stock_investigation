@@ -56,6 +56,103 @@ export async function seedStockResearch(db: SeedDatabase, ownerId: string): Prom
 		VALUES (?, 'article_retrieval', 'source_retrieval', 'https://news.example.org/solar', 'Synthetic Wire', 'Synthetic Solar expands', ?, ?, 'synthetic-solar-fingerprint', 'Solar battery production increased. 太陽光の蓄電池。')`,
 		[ownerId, RETRIEVAL_TIME, RETRIEVAL_TIME],
 	);
+	for (const [symbol, name, localName, themesJson, descriptionEn, descriptionJa, generatedAt] of [
+		[
+			"7018",
+			"Synthetic Zosen Corporation",
+			"合成造船",
+			'[{"en":"Shipbuilding","ja":"造船"}]',
+			"Synthetic Zosen Corporation builds vessels.",
+			"合成造船は船舶を建造する。",
+			"2026-11-01T00:00:00Z",
+		],
+		[
+			"7003",
+			"Synthetic Marine Engineering",
+			"合成マリンエンジニアリング",
+			'[{"en":"Shipbuilding","ja":"造船"}]',
+			"Synthetic Marine Engineering builds marine engines.",
+			"舶用エンジンと造船関連機器を製造。",
+			"2026-11-03T00:00:00Z",
+		],
+		[
+			"3168",
+			"Synthetic Copper Recycling",
+			"合成カッパーリサイクル",
+			'[{"en":"Metal Recycling","ja":"金属リサイクル"}]',
+			"Synthetic Copper Recycling processes copper scrap.",
+			"銅スクラップを再生し、造船向け部材にも供給。",
+			RETRIEVAL_TIME,
+		],
+	] as const) {
+		await run(
+			`INSERT INTO stock_directory (owner_id, market, symbol, name, local_name, listing, symbol_key, name_key, local_name_key, search_key)
+			VALUES (?, 'JP', ?, ?, ?, 'prime', ?, ?, ?, ?)`,
+			[
+				ownerId,
+				symbol,
+				name,
+				localName,
+				symbol.toLowerCase(),
+				name.toLowerCase(),
+				localName,
+				`${symbol.toLowerCase()} ${name.toLowerCase()} ${localName}`,
+			],
+		);
+		await run(
+			`INSERT INTO stock_company_summary (owner_id, market, symbol, queued_at, description_en, description_ja, themes_json, agent_id, generated_at)
+			VALUES (?, 'JP', ?, ?, ?, ?, ?, 'claude-code', ?)`,
+			[ownerId, symbol, generatedAt, descriptionEn, descriptionJa, themesJson, generatedAt],
+		);
+	}
+	for (const [companyId, symbol, name, filingId, sourceUrl, rows] of [
+		[
+			"eqc_jp_7018",
+			"7018",
+			"Synthetic Zosen Corporation",
+			"filing_jp_7018",
+			"https://api.jquants.com/v2/fins/summary?code=70180",
+			[
+				[2024, "3100000000"],
+				[2025, "4200000000"],
+			],
+		],
+		[
+			"eqc_jp_3168",
+			"3168",
+			"Synthetic Copper Recycling",
+			"filing_jp_3168",
+			"https://api.jquants.com/v2/fins/summary?code=31680",
+			[[2025, "97018000"]],
+		],
+	] as const) {
+		await run(
+			`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name, tracked_at)
+			VALUES (?, ?, 'JP', ?, 'jquants', ?, ?)`,
+			[ownerId, companyId, symbol, name, RETRIEVAL_TIME],
+		);
+		await run(
+			`INSERT INTO equity_report_filing (owner_id, filing_id, company_id, provider, source_document_id, form, filed_on, period_end, source_url, facts_status, primary_scope, first_seen_at, recorded_at)
+			VALUES (?, ?, ?, 'jquants', ?, 'earnings-report', '2026-05-08', '2025-03-31', ?, 'extracted', 'consolidated', ?, ?)`,
+			[ownerId, filingId, companyId, filingId, sourceUrl, RETRIEVAL_TIME, RETRIEVAL_TIME],
+		);
+		for (const [year, value] of rows) {
+			await run(
+				`INSERT INTO equity_metric_value (owner_id, company_id, metric_code, fiscal_year, value_decimal, currency, filing_id, concept, scope, period_start, period_end, reported_value_count, updated_at)
+				VALUES (?, ?, 'profit-attributable-to-owners', ?, ?, 'JPY', ?, 'jquants:Profit', 'consolidated', ?, ?, 1, ?)`,
+				[
+					ownerId,
+					companyId,
+					year,
+					value,
+					filingId,
+					`${year - 1}-04-01`,
+					`${year}-03-31`,
+					RETRIEVAL_TIME,
+				],
+			);
+		}
+	}
 }
 
 /** Explicitly synthetic annual screening data: one match (25%), one exclusion (10%). */

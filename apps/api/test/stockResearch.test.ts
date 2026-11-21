@@ -34,6 +34,38 @@ describe("runner stored stock retrieval", () => {
 			new Set(["company", "financials", "news"]),
 		);
 		expect(harness.fetchCalls).toEqual([]);
+		const shipbuilders = await body(
+			await harness.runner(token, `/jobs/${job.runId}/stock-search`, {
+				query: "造船",
+				kind: "company",
+				leaseGeneration: job.leaseGeneration,
+			}),
+			stockResearchResponseSchema,
+		);
+		expect(shipbuilders.hits.map((hit) => hit.recordId)).toEqual(["JP:7018", "JP:7003", "JP:3168"]);
+		expect(shipbuilders.hits[0]?.title).toBe(
+			"JP:7018 合成造船 (Synthetic Zosen Corporation) AI-written company overview",
+		);
+		const tickerFinancials = await body(
+			await harness.runner(token, `/jobs/${job.runId}/stock-search`, {
+				query: "7018 2025 純利益",
+				kind: "financials",
+				leaseGeneration: job.leaseGeneration,
+			}),
+			stockResearchResponseSchema,
+		);
+		expect(tickerFinancials.hits.map((hit) => hit.recordId)).toEqual([
+			"eqc_jp_7018:2025:profit-attributable-to-owners",
+		]);
+		const allYearsForTicker = await body(
+			await harness.runner(token, `/jobs/${job.runId}/stock-search`, {
+				query: "7018 純利益",
+				kind: "financials",
+				leaseGeneration: job.leaseGeneration,
+			}),
+			stockResearchResponseSchema,
+		);
+		expect(allYearsForTicker.hits).toHaveLength(2);
 		const { harness: other, token: otherToken, job: otherJob } = await setup();
 		const otherResult = await other.runner(otherToken, `/jobs/${otherJob.runId}/stock-search`, {
 			query: "solar",

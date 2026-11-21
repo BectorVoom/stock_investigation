@@ -1683,6 +1683,82 @@ await NEWS_BENCH_DB.prepare(
 		),
 	)
 	.run();
+
+const COMPANY_SEARCH_BENCH_OWNER = "owner_bench_company_search";
+const COMPANY_SEARCH_BENCH_DB = openNodeSqlite(":memory:");
+applySqlMigrations(COMPANY_SEARCH_BENCH_DB, MARKET_BENCH_MIGRATIONS);
+{
+	const benchRows = [
+		...Array.from({ length: 7_700 }, (_, index) => {
+			const symbol = `U${String(index).padStart(5, "0")}`;
+			return {
+				market: "US",
+				symbol,
+				name: `US Industrial Corporation ${index}`,
+				localName: null,
+				descriptionEn: `US Industrial Corporation ${index} manufactures heavy machinery and fleet equipment.`,
+				descriptionJa: `米国の重機械・産業機器メーカー${index}。工場設備や発電向け部品を供給する。`,
+				themesJson: JSON.stringify([
+					{ en: "Industrial Machinery", ja: "産業機械" },
+					index % 400 === 0
+						? { en: "Shipbuilding", ja: "造船" }
+						: { en: "Power Equipment", ja: "発電設備" },
+				]),
+			};
+		}),
+		...Array.from({ length: 3_700 }, (_, index) => {
+			const symbol = String(1300 + index);
+			const localName = index < 5 ? `合成造船${index}` : `合成工業${index}`;
+			return {
+				market: "JP",
+				symbol,
+				name: `Japan Manufacturing ${index} Co., Ltd.`,
+				localName,
+				descriptionEn: `Japan Manufacturing ${index} Co., Ltd. produces precision industrial components.`,
+				descriptionJa:
+					index % 100 === 0
+						? `金属加工および造船向け部材の供給を手掛ける日本の製造企業${index}。`
+						: `自動車部品および電子部品の精密加工を手掛ける日本の製造企業${index}。`,
+				themesJson: JSON.stringify(
+					index < 20
+						? [
+								{ en: "Shipbuilding", ja: "造船" },
+								{ en: "Heavy Industry", ja: "重工業" },
+							]
+						: [
+								{ en: "Auto Parts", ja: "自動車部品" },
+								{ en: "Electronic Components", ja: "電子部品" },
+							],
+				),
+			};
+		}),
+	];
+	const rowsJson = JSON.stringify(benchRows);
+	await COMPANY_SEARCH_BENCH_DB.prepare(
+		`INSERT INTO stock_directory (owner_id, market, symbol, name, local_name, listing,
+			symbol_key, name_key, local_name_key, search_key)
+		SELECT ?1, json_extract(bench.value, '$.market'), json_extract(bench.value, '$.symbol'),
+			json_extract(bench.value, '$.name'), json_extract(bench.value, '$.localName'), 'prime',
+			lower(json_extract(bench.value, '$.symbol')), lower(json_extract(bench.value, '$.name')),
+			coalesce(json_extract(bench.value, '$.localName'), ''),
+			lower(json_extract(bench.value, '$.symbol'))
+		FROM json_each(?2) AS bench`,
+	)
+		.bind(COMPANY_SEARCH_BENCH_OWNER, rowsJson)
+		.run();
+	await COMPANY_SEARCH_BENCH_DB.prepare(
+		`INSERT INTO stock_company_summary (owner_id, market, symbol, queued_at, description_en,
+			description_ja, themes_json, agent_id, generated_at)
+		SELECT ?1, json_extract(bench.value, '$.market'), json_extract(bench.value, '$.symbol'),
+			'2026-10-31T00:00:00.000Z', json_extract(bench.value, '$.descriptionEn'),
+			json_extract(bench.value, '$.descriptionJa'), json_extract(bench.value, '$.themesJson'),
+			'claude-code', strftime('%Y-%m-%dT%H:%M:%fZ', '2026-10-31', '-' || bench.key || ' minutes')
+		FROM json_each(?2) AS bench`,
+	)
+		.bind(COMPANY_SEARCH_BENCH_OWNER, rowsJson)
+		.run();
+}
+const COMPANY_SEARCH_BENCH_REPOSITORY = createStockResearchRepository(COMPANY_SEARCH_BENCH_DB);
 const NEWS_BENCH_SERVICE = createStockPageService({
 	stockDirectory: {
 		getEntry: async (_owner, market, symbol) => ({
@@ -2005,6 +2081,17 @@ const cases: Case[] = [
 			createStockResearchRepository(NEWS_BENCH_DB).search(NEWS_BENCH_OWNER, {
 				query: "growers",
 				limit: 6,
+			}),
+	},
+	{
+		// Measured 23.4 ms (2026-11-21): 11,400 AI summaries + directory join + 3-tier rank.
+		name: "stocks.search company corpus over 11,400 AI summaries with Japanese themes (node:sqlite)",
+		budgetMs: 50,
+		run: () =>
+			COMPANY_SEARCH_BENCH_REPOSITORY.search(COMPANY_SEARCH_BENCH_OWNER, {
+				query: "造船",
+				kind: "company",
+				limit: 12,
 			}),
 	},
 	{
