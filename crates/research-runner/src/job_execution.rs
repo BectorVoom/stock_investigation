@@ -30,7 +30,7 @@ use research_application::notebook::{
 	run_notebook_assist_turn,
 };
 use research_application::ports::Clock;
-use research_application::reporter::{PipelineReporter, ToolCallOutcome};
+use research_application::reporter::{AnalysisAttempt, PipelineReporter, ToolCallOutcome};
 use research_application::research::prompts::PROMPT_VERSION;
 use research_application::research::{
 	PipelineOutcome, ResearchPipelineDeps, ResearchPipelineInput, run_research_pipeline,
@@ -351,6 +351,34 @@ struct JobReporter {
 
 #[async_trait]
 impl PipelineReporter for JobReporter {
+	fn analysis_attempt(&self, attempt: AnalysisAttempt) {
+		self.core.logger.info(
+			"research_analysis_attempt",
+			&[
+				("runId", self.core.run_id.as_str().into()),
+				(
+					"leaseGeneration",
+					LogValue::Num(self.core.lease_generation as f64),
+				),
+				("promptVersion", PROMPT_VERSION.into()),
+				("analysisAttempt", LogValue::Int(attempt.attempt)),
+				("durationSeconds", LogValue::Num(attempt.duration_seconds)),
+				(
+					"modelTurnSeconds",
+					LogValue::Num(attempt.model_turn_seconds),
+				),
+				("inputBytes", LogValue::Num(attempt.input_bytes as f64)),
+				(
+					"outputBytes",
+					attempt
+						.output_bytes
+						.map_or(LogValue::Null, |bytes| LogValue::Num(bytes as f64)),
+				),
+				("reason", attempt.reason.into()),
+				("willRetry", LogValue::Bool(attempt.will_retry)),
+			],
+		);
+	}
 	async fn state(&self, state: JobState) {
 		self.core.progress.state.fetch_add(1, Ordering::Relaxed);
 		let leased = leased_state(state);

@@ -93,6 +93,12 @@ export const PLANNING_DIGEST_MAX_LINES = 400;
 const PLANNING_FIXED_OVERHEAD_MAX_BYTES = 4_000;
 /** Tools whose results are planning leads, not evidence. */
 const DISCOVERY_TOOL_IDS: ReadonlySet<string> = new Set(["web.search", "news.search"]);
+// Financial reads use the shared SEC client's request pacing.
+const PARALLEL_STOCK_TOOL_IDS: ReadonlySet<string> = new Set([
+	"stocks.search",
+	"finance.sec_company_financials",
+]);
+const MAX_PARALLEL_STOCK_CALLS = 4;
 /** Tools that read one page each; consecutive requests of a round run concurrently (ADR-0078). */
 const PAGE_READ_TOOL_IDS: ReadonlySet<string> = new Set(["web.extract", "web.fetch_page"]);
 /**
@@ -113,6 +119,15 @@ export const PLANNING_PROMPT_BUDGET_BYTES =
 
 /** Progress sink. Implementations may reject when the lease is lost; the pipeline then stops. */
 export interface PipelineReporter {
+	analysisAttempt?(fields: {
+		readonly analysisAttempt: number;
+		readonly durationSeconds: number;
+		readonly modelTurnSeconds: number;
+		readonly inputBytes: number;
+		readonly outputBytes: number | null;
+		readonly reason: string;
+		readonly willRetry: boolean;
+	}): void;
 	state(state: JobState): Promise<void>;
 	note(text: string): Promise<void>;
 	tool(toolId: string, outcome: "executed" | "denied" | "failed", detail: string): Promise<void>;
@@ -826,10 +841,9 @@ export async function runResearchPipeline(
 				continue;
 			}
 		}
-		// ADR-0078: a run of consecutive page reads executes concurrently; every
-		// other call runs alone. Authorization, de-duplication, the final-round
-		// rule and budgets are still decided call by call in plan order, and
-		// results are recorded in plan order.
+		// Batch consecutive page reads or stock and SEC financial reads.
+		// Authorization, de-duplication, final-round rules, and budgets are
+		// checked in plan order, and results are recorded in that order.
 		let callIndex = 0;
 		while (callIndex < calls.length) {
 			let batchEnd = callIndex + 1;
@@ -838,12 +852,22 @@ export async function runResearchPipeline(
 					batchEnd += 1;
 				}
 			}
+			if (PARALLEL_STOCK_TOOL_IDS.has(calls[callIndex]?.toolId ?? "")) {
+				while (
+					batchEnd - callIndex < MAX_PARALLEL_STOCK_CALLS &&
+					PARALLEL_STOCK_TOOL_IDS.has(calls[batchEnd]?.toolId ?? "")
+				) {
+					batchEnd += 1;
+				}
+			}
 			const batch: {
 				readonly call: (typeof calls)[number];
 				readonly label: string;
 				readonly requestKey: string;
-				readonly start: () => ReturnType<typeof executeToolCall>;
-				readonly runDeadline: AbortSignal;
+				readonly start: () => Promise<{
+					readonly result: Awaited<ReturnType<typeof executeToolCall>>;
+					readonly deadlineReached: boolean;
+				}>;
 			}[] = [];
 			const batchKeys = new Set<string>();
 			// A limit reached while preparing stops collection once the calls
@@ -902,21 +926,23 @@ export async function runResearchPipeline(
 					call,
 					label,
 					requestKey,
-					runDeadline,
 					// Started together once the batch is prepared, in plan order.
-					start: () =>
-						executeToolCall(authorized.value, {
+					start: async () => {
+						const result = await executeToolCall(authorized.value, {
 							...toolContext,
 							signal: AbortSignal.any([input.signal, runDeadline]),
-						}),
+						});
+						return { result, deadlineReached: runDeadline.aborted && !input.signal.aborted };
+					},
 				});
 			}
 			const results = await Promise.all(batch.map((prepared) => prepared.start()));
 			for (const [position, started] of batch.entries()) {
-				const { call, label, requestKey, runDeadline } = started;
-				const result = results[position];
-				if (result === undefined) continue;
-				if (runDeadline.aborted && !input.signal.aborted) {
+				const { call, label, requestKey } = started;
+				const completed = results[position];
+				if (completed === undefined) continue;
+				const { result, deadlineReached } = completed;
+				if (deadlineReached) {
 					executedToolCalls += 1;
 					toolErrorCounts.set("MAX_WALL_CLOCK", (toolErrorCounts.get("MAX_WALL_CLOCK") ?? 0) + 1);
 					await deps.reporter.tool(label, "failed", "MAX_WALL_CLOCK");
@@ -1122,27 +1148,48 @@ export async function runResearchPipeline(
 	// The provider's status behind `analysisFailure`, unchanged (§4a); null when none.
 	let analysisFailureStatus: number | null = null;
 	for (let attempt = 0; attempt < 2 && draft?.success !== true; attempt += 1) {
-		const analysed = await turn(
-			analysisPrompt({
-				request,
-				nowIso: now,
-				evidencePack,
-				recordSummary,
-				datasetGuide: datasetGuide(runId),
-				existingComponents: input.workspaceComponents,
-				conversationContext: input.conversationContext,
-				fenceToken: deps.newFenceToken(),
-				repairNote,
-			}),
-		);
+		const attemptStarted = performance.now();
+		const prompt = analysisPrompt({
+			request,
+			nowIso: now,
+			evidencePack,
+			recordSummary,
+			datasetGuide: datasetGuide(runId),
+			existingComponents: input.workspaceComponents,
+			conversationContext: input.conversationContext,
+			fenceToken: deps.newFenceToken(),
+			repairNote,
+		});
+		const inputBytes = byteLength(prompt);
+		const modelTurnStarted = performance.now();
+		const analysed = await turn(prompt, inputBytes);
+		const modelTurnSeconds = (performance.now() - modelTurnStarted) / 1_000;
+		const logAttempt = (reason: string, retryable = false) => {
+			if (!deps.reporter.analysisAttempt) return;
+			deps.reporter.analysisAttempt({
+				analysisAttempt: attempt + 1,
+				durationSeconds: (performance.now() - attemptStarted) / 1_000,
+				modelTurnSeconds,
+				inputBytes,
+				outputBytes: analysed.ok ? byteLength(analysed.value.text) : null,
+				reason,
+				willRetry: retryable && attempt === 0,
+			});
+		};
 		if (!analysed.ok) {
-			if (analysed.error.kind === "aborted") return { kind: "cancelled", usage };
+			if (analysed.error.kind === "aborted") {
+				logAttempt("aborted");
+				return { kind: "cancelled", usage };
+			}
+			const code = failureCode(analysed.error);
+			const truncated = code === "PROVIDER_OUTPUT_TRUNCATED";
+			logAttempt(truncated ? "output_truncated" : analysed.error.kind, truncated);
 			const pause = spendApproval(analysed.error);
 			if (pause !== null) return pause;
-			analysisFailure = failureCode(analysed.error);
+			analysisFailure = code;
 			analysisFailureStatus = failureStatus(analysed.error);
 			// A smaller answer can recover within the existing repair allowance and budgets.
-			if (analysisFailure === "PROVIDER_OUTPUT_TRUNCATED" && attempt === 0) {
+			if (truncated && attempt === 0) {
 				repairNote =
 					"the provider truncated the previous reply at its output limit. Return a smaller complete JSON object: at most 6 short atomic claims with only the shortest sufficient verbatim supporting quotes; omit optional uiOperations and leave unrelated scenarios, suppliers and pricingPower empty. Prioritize the direct answer and state coverage limitations; do not repeat structured records.";
 				continue;
@@ -1152,6 +1199,7 @@ export async function runResearchPipeline(
 		uiProposals.push(...analysed.value.uiProposals);
 		const json = extractJsonObject(analysed.value.text);
 		if (!json.ok) {
+			logAttempt("invalid_json", true);
 			repairNote = "the reply contained no parseable JSON object";
 			analysisFailure = "ANALYSIS_OUTPUT_INVALID";
 			analysisFailureStatus = null;
@@ -1159,6 +1207,7 @@ export async function runResearchPipeline(
 		}
 		draft = analysisDraftSchema.safeParse(json.value);
 		if (!draft.success) {
+			logAttempt("invalid_schema", true);
 			repairNote = `invalid fields: ${draft.error.issues
 				.slice(0, 6)
 				.map((issue) => issue.path.join("."))
@@ -1166,6 +1215,7 @@ export async function runResearchPipeline(
 			analysisFailure = "ANALYSIS_OUTPUT_INVALID";
 			analysisFailureStatus = null;
 		} else if (draft.data.claims.length === 0 && !hasToolRecords) {
+			logAttempt("no_claims_without_tool_records", true);
 			repairNote =
 				"claims is empty despite retrieved evidence. Answer the question with cited findings or cited exclusions/data limitations for the inspected candidates; use inference for calculations and quote the source inputs. Do not fabricate a match or claim exhaustive coverage.";
 			draft = null;
@@ -1175,6 +1225,7 @@ export async function runResearchPipeline(
 			if (attempt === 0 && draft.data.claims.length > 0) {
 				const checked = verifyClaims(claimDrafts(draft.data.claims), evidenceTexts);
 				if (checked.every((claim) => claim.status === "unsupported")) {
+					logAttempt("all_claims_unsupported", true);
 					repairNote =
 						"none of the claims has usable quoted support from a shown evidence id. Return at most 6 short atomic claims. Use only the exact ids printed in square brackets in the Evidence section; never invent ids or use an article id. Copy each supporting quote word-for-word from that evidence, including original dates and numbers, and use a passage at least 12 characters long. Never paraphrase a quote, change a year, or join nonadjacent passages. Omit claims you cannot quote. Observation numbers must retain the source digits and units (for example $108.5 billion, not 1085億ドル). A unit conversion is a calculation: use inference and quote the original inputs. Never change source years. Leave unrelated scenarios, suppliers and pricingPower empty. Valid evidence ids: " +
 						JSON.stringify([...shownEvidenceIds].slice(0, 12));
@@ -1185,6 +1236,7 @@ export async function runResearchPipeline(
 				}
 				checkedClaims = checked;
 			}
+			logAttempt("accepted");
 			analysisFailure = null;
 			analysisFailureStatus = null;
 		}

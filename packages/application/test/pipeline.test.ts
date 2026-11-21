@@ -14,6 +14,7 @@ import {
 import {
 	checkBundleIntegrity,
 	type PipelineOutcome,
+	type PipelineReporter,
 	type ResearchPipelineInput,
 	runResearchPipeline,
 } from "../src/index.ts";
@@ -47,7 +48,14 @@ function setup(
 ) {
 	const time = fixedClock();
 	const tools = options.tools ?? newsTools(options.articleText);
-	const reporter = recordingReporter();
+	const analysisAttempts: Parameters<NonNullable<PipelineReporter["analysisAttempt"]>>[0][] = [];
+	const reporter = {
+		...recordingReporter(),
+		analysisAttempts,
+		analysisAttempt(fields: (typeof analysisAttempts)[number]) {
+			analysisAttempts.push(fields);
+		},
+	};
 	const agent = createScriptedAgent({
 		reply: (_request, turnIndex) => {
 			options.onTurn?.(turnIndex);
@@ -125,7 +133,7 @@ describe("research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)", () =>
 		]);
 		expect(bundle.provenance).toMatchObject({
 			agentId: "scripted",
-			promptVersion: "research-v9",
+			promptVersion: "research-v10",
 			toolVersions: { "news.fetch_feed": "1" },
 		});
 		expect(bundle.evidence.map((item) => item.evidenceId)).toEqual([EV1]);
@@ -1115,11 +1123,15 @@ describe("research pipeline: the collection allowance leaves room for repair and
 				},
 			],
 		});
-		const { run, agent } = setup([PLAN, bad, analysis(), VERDICT_SUPPORTED]);
+		const { run, agent, reporter } = setup([PLAN, bad, analysis(), VERDICT_SUPPORTED]);
 		const outcome = expectBundle(await run());
 		expect(outcome.kind).toBe("completed");
 		expect(outcome.bundle.claims).toMatchObject([{ status: "supported" }]);
 		expect(agent.requests[2]?.prompt).toContain("none of the claims has usable quoted support");
+		expect(reporter.analysisAttempts[0]).toMatchObject({
+			reason: "all_claims_unsupported",
+			willRetry: true,
+		});
 		expect(agent.requests).toHaveLength(4);
 	});
 
@@ -1171,7 +1183,7 @@ describe("research pipeline: the collection allowance leaves room for repair and
 	});
 
 	it("recovers a truncated analysis with a compact repair and verifies it", async () => {
-		const { run, agent } = setup([
+		const { run, agent, reporter } = setup([
 			PLAN,
 			[{ type: "failed", code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false }],
 			analysis(),
@@ -1182,6 +1194,25 @@ describe("research pipeline: the collection allowance leaves room for repair and
 		expect(outcome.bundle.claims).toMatchObject([{ status: "supported" }]);
 		expect(agent.requests).toHaveLength(4);
 		expect(agent.requests[2]?.prompt).toContain("at most 6 short atomic claims");
+		expect(reporter.analysisAttempts).toMatchObject([
+			{
+				analysisAttempt: 1,
+				outputBytes: null,
+				reason: "output_truncated",
+				willRetry: true,
+			},
+			{
+				analysisAttempt: 2,
+				reason: "accepted",
+				willRetry: false,
+			},
+		]);
+		for (const attempt of reporter.analysisAttempts) {
+			expect(attempt.modelTurnSeconds).toBeGreaterThanOrEqual(0);
+			expect(attempt.durationSeconds).toBeGreaterThanOrEqual(attempt.modelTurnSeconds);
+			expect(attempt.inputBytes).toBeGreaterThan(0);
+		}
+		expect(reporter.analysisAttempts[1]?.outputBytes).toBeGreaterThan(0);
 	});
 
 	it("stops after the compact repair is also truncated", async () => {
@@ -1801,7 +1832,7 @@ describe("research pipeline: a question that needs no research is answered direc
 			answerClaimIds: [],
 			datasets: [],
 			verificationStatus: "unverified",
-			provenance: { promptVersion: "research-v9" },
+			provenance: { promptVersion: "research-v10" },
 		});
 		expect(bundle.answerText).toBe(
 			`${ANSWER}\n\nこの回答は調査を行わず、AI モデルの一般知識から書かれています。出典との照合は行っていません。投資助言ではありません。`,
@@ -2209,9 +2240,9 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 		expect(outcome.bundle.evidence.map((item) => item.title)).toEqual(["A public page"]);
 	});
 
-	function pageTool(onStart: (url: string) => Promise<void>) {
+	function pageTool(onStart: (url: string) => Promise<void>, toolId = "web.fetch_page") {
 		return defineTool({
-			toolId: "web.fetch_page",
+			toolId,
 			version: "1.0.0",
 			description: "Retrieve one public web page.",
 			argsSchema: z.strictObject({ url: z.string() }),
@@ -2248,7 +2279,12 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 			done: true,
 		});
 
-	it("reads consecutive pages of one round concurrently and records them in plan order (ADR-0078)", async () => {
+	it.each([
+		["web.fetch_page", "web.fetch_page"],
+		["stocks.search", "stocks.search"],
+		["finance.sec_company_financials", "finance.sec_company_financials"],
+		["stocks.search", "finance.sec_company_financials"],
+	])("runs consecutive %s and %s calls concurrently and records them in plan order", async (first, second) => {
 		// Each read waits until both have started; run one after another, the
 		// first would wait in vain and report that it ran alone.
 		let started = 0;
@@ -2257,7 +2293,7 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 			release = resolve;
 		});
 		const overlap: string[] = [];
-		const tool = pageTool(async (url) => {
+		const onStart = async (url: string) => {
 			started += 1;
 			if (started === 2) release();
 			const seen = await Promise.race([
@@ -2267,15 +2303,22 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 			// The later-planned page finishes first, so recording follows the plan, not completion.
 			if (url.endsWith("a")) await new Promise((resolve) => setTimeout(resolve, 20));
 			overlap.push(seen);
-		});
+		};
+		const tools = [...new Set([first, second])].map((id) => pageTool(onStart, id));
 		const { run, agent, reporter } = setup(
 			[
-				pagePlan(["https://example.org/a", "https://example.org/b"]),
+				JSON.stringify({
+					toolCalls: [
+						{ toolId: first, args: { url: "https://example.org/a" } },
+						{ toolId: second, args: { url: "https://example.org/b" } },
+					],
+					done: true,
+				}),
 				analysis().replaceAll(EV1, `${RUN_ID}_ev1`),
 				VERDICT_SUPPORTED,
 			],
 			{
-				tools: newsTools(ARTICLE_TEXT, [tool]),
+				tools: newsTools(ARTICLE_TEXT, tools),
 				input: { request: request({ webAccess: "public-web" }) },
 			},
 		);

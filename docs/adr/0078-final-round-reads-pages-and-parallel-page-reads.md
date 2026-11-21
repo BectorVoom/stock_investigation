@@ -49,3 +49,9 @@ Both runners, held equal by the pipeline vectors:
 - A `news.search` request in the final round no longer adds its articles to
   Sources.
 - A read repeated within one batch is not retried when its twin fails.
+
+Consecutive `stocks.search` and `finance.sec_company_financials` calls also
+run concurrently, in batches of up to four. Stock search reads stored records
+through the runner API. SEC requests still pass through the shared SEC
+client's 125 ms request-start pacing. The pipeline admits and records calls
+in plan order, with the same authorization and budget checks as page reads.

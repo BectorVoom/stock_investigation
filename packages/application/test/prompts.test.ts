@@ -40,7 +40,7 @@ function planPrompt(args: Partial<Parameters<typeof planningPrompt>[0]>): string
 
 describe("conversation context in prompts (AGT-007)", () => {
 	it("bumps the prompt version", () => {
-		expect(PROMPT_VERSION).toBe("research-v9");
+		expect(PROMPT_VERSION).toBe("research-v10");
 	});
 
 	it("adds the context block to the planning prompt right after the question", () => {
@@ -76,8 +76,9 @@ describe("conversation context in prompts (AGT-007)", () => {
 			fenceToken: "fence-9",
 			repairNote: null,
 		});
-		expect(prompt).toContain("professional journalistic style");
-		expect(prompt).toContain("Never invent quotations or causal links");
+		expect(prompt).not.toContain("professional journalistic style");
+		expect(prompt).toContain("The default answer shape is");
+		expect(prompt).toContain("Omit unused keys");
 		const questionAt = prompt.indexOf("Research question:");
 		const blockAt = prompt.indexOf("Earlier messages in this conversation, oldest first");
 		const evidenceAt = prompt.indexOf("Evidence (cite ONLY each entry’s bracketed [id]");
@@ -90,6 +91,22 @@ describe("conversation context in prompts (AGT-007)", () => {
 		);
 		const opening = prompt.indexOf("<<<fence-9 conversation");
 		expect(opening).toBeGreaterThan(blockAt);
+	});
+
+	it("keeps journalistic attribution instructions for news reports", () => {
+		const prompt = analysisPrompt({
+			request: request({ outputType: "news" }),
+			nowIso: "2026-10-11T00:00:00.000Z",
+			evidencePack: "pack",
+			recordSummary: "records",
+			datasetGuide: "guide",
+			existingComponents: [],
+			conversationContext: [],
+			fenceToken: "fence-news",
+			repairNote: null,
+		});
+		expect(prompt).toContain("professional journalistic style");
+		expect(prompt).toContain("Never invent quotations or causal links");
 	});
 
 	it("leaves both prompts byte-for-byte unchanged when the context is empty", () => {

@@ -24,7 +24,7 @@ use self::{
 };
 use crate::{
 	ports::Clock,
-	reporter::{PipelineReporter, ToolCallOutcome},
+	reporter::{AnalysisAttempt, PipelineReporter, ToolCallOutcome},
 };
 use research_agent_core::{
 	authorize::{
@@ -117,6 +117,13 @@ fn is_discovery(tool_id: &str) -> bool {
 /// Tools that read one page each; consecutive requests of a round run concurrently (ADR-0078).
 fn is_page_read(tool_id: &str) -> bool {
 	matches!(tool_id, "web.extract" | "web.fetch_page")
+}
+
+// Financial reads use the shared SEC client's request pacing.
+const MAX_PARALLEL_STOCK_CALLS: usize = 4;
+
+fn is_parallel_stock_read(tool_id: &str) -> bool {
+	matches!(tool_id, "stocks.search" | "finance.sec_company_financials")
 }
 
 /// All effects and nondeterminism are injected (ARCH-002).
@@ -535,10 +542,9 @@ pub async fn run_research_pipeline(
 			deps.reporter.usage(&session.usage).await;
 			continue;
 		}
-		// ADR-0078: a run of consecutive page reads executes concurrently; every
-		// other call runs alone. Authorization, de-duplication, the final-round
-		// rule and budgets are still decided call by call in plan order, and
-		// results are recorded in plan order (`runResearchPipeline`).
+		// Batch consecutive page reads or stock and SEC financial reads.
+		// Authorization, de-duplication, final-round rules, and budgets are
+		// checked in plan order, and results are recorded in that order.
 		let mut call_index = 0;
 		while call_index < calls.len() {
 			let mut batch_end = call_index + 1;
@@ -549,6 +555,18 @@ pub async fn run_research_pipeline(
 				while calls
 					.get(batch_end)
 					.is_some_and(|call| is_page_read(&call.tool_id))
+				{
+					batch_end += 1;
+				}
+			}
+			if calls
+				.get(call_index)
+				.is_some_and(|call| is_parallel_stock_read(&call.tool_id))
+			{
+				while batch_end - call_index < MAX_PARALLEL_STOCK_CALLS
+					&& calls
+						.get(batch_end)
+						.is_some_and(|call| is_parallel_stock_read(&call.tool_id))
 				{
 					batch_end += 1;
 				}
@@ -967,6 +985,7 @@ pub async fn run_research_pipeline(
 	// The provider's status behind `analysis_failure`, unchanged (§4a); `None` when none.
 	let mut analysis_failure_status = None;
 	for attempt in 0..2 {
+		let attempt_started = std::time::Instant::now();
 		let prompt = analysis_prompt(AnalysisPromptInput {
 			request: &input.request,
 			now_iso: &now,
@@ -978,17 +997,42 @@ pub async fn run_research_pipeline(
 			fence_token: &(deps.new_fence_token)(),
 			repair_note: repair.as_deref(),
 		})?;
-		let turn = match session.turn(prompt).await {
+		let input_bytes = prompt.len();
+		let model_turn_started = std::time::Instant::now();
+		let reply = session.turn(prompt).await;
+		let model_turn_seconds = model_turn_started.elapsed().as_secs_f64();
+		let output_bytes = reply.as_ref().ok().map(|turn| turn.text.len());
+		let log_attempt = |reason, retryable| {
+			deps.reporter.analysis_attempt(AnalysisAttempt {
+				attempt: attempt + 1,
+				duration_seconds: attempt_started.elapsed().as_secs_f64(),
+				model_turn_seconds,
+				input_bytes,
+				output_bytes,
+				reason,
+				will_retry: retryable && attempt == 0,
+			});
+		};
+		let turn = match reply {
 			Ok(turn) => turn,
 			Err(error) => {
+				let code = error.code();
+				let truncated = code == "PROVIDER_OUTPUT_TRUNCATED";
+				let reason = match &error {
+					_ if truncated => "output_truncated",
+					TurnFailure::Aborted => "aborted",
+					TurnFailure::Budget(_) => "budget",
+					TurnFailure::UnknownSpend => "unknown-spend",
+					TurnFailure::Provider { .. } => "provider",
+				};
+				log_attempt(reason, truncated);
 				if let Some(outcome) = session.terminal(&error) {
 					return Ok(outcome);
 				}
-				analysis_failure = Some(error.code());
+				analysis_failure = Some(code);
 				analysis_failure_status = error.upstream_status();
 				// The repair uses the same cumulative budgets as every other turn.
-				if analysis_failure.as_deref() == Some("PROVIDER_OUTPUT_TRUNCATED") && attempt == 0
-				{
+				if truncated && attempt == 0 {
 					repair = Some("the provider truncated the previous reply at its output limit. Return a smaller complete JSON object: at most 6 short atomic claims with only the shortest sufficient verbatim supporting quotes; omit optional uiOperations and leave unrelated scenarios, suppliers and pricingPower empty. Prioritize the direct answer and state coverage limitations; do not repeat structured records.".to_owned());
 					continue;
 				}
@@ -997,6 +1041,7 @@ pub async fn run_research_pipeline(
 		};
 		ui_proposals.extend(turn.ui_proposals);
 		let Ok(value) = extract_json_object(&turn.text) else {
+			log_attempt("invalid_json", true);
 			repair = Some("the reply contained no parseable JSON object".to_owned());
 			analysis_failure = Some("ANALYSIS_OUTPUT_INVALID".to_owned());
 			analysis_failure_status = None;
@@ -1009,6 +1054,7 @@ pub async fn run_research_pipeline(
 					&& collected.position_observations.is_empty()
 					&& collected.investor_filings.is_empty() =>
 			{
+				log_attempt("no_claims_without_tool_records", true);
 				repair = Some("claims is empty despite retrieved evidence. Answer the question with cited findings or cited exclusions/data limitations for the inspected candidates; use inference for calculations and quote the source inputs. Do not fabricate a match or claim exhaustive coverage.".to_owned());
 				analysis_failure = Some("ANALYSIS_OUTPUT_INVALID".to_owned());
 				analysis_failure_status = None;
@@ -1022,6 +1068,7 @@ pub async fn run_research_pipeline(
 						.iter()
 						.all(|claim| claim.status == ClaimStatus::Unsupported)
 					{
+						log_attempt("all_claims_unsupported", true);
 						repair = Some(format!(
 							"none of the claims has usable quoted support from a shown evidence id. Return at most 6 short atomic claims. Use only the exact ids printed in square brackets in the Evidence section; never invent ids or use an article id. Copy each supporting quote word-for-word from that evidence, including original dates and numbers, and use a passage at least 12 characters long. Never paraphrase a quote, change a year, or join nonadjacent passages. Omit claims you cannot quote. Observation numbers must retain the source digits and units (for example $108.5 billion, not 1085億ドル). A unit conversion is a calculation: use inference and quote the original inputs. Never change source years. Leave unrelated scenarios, suppliers and pricingPower empty. Valid evidence ids: {}",
 							research_js::json::stringify(&a(shown
@@ -1036,12 +1083,14 @@ pub async fn run_research_pipeline(
 					}
 					checked_claims = Some(checked);
 				}
+				log_attempt("accepted", false);
 				analysis = Some(value);
 				analysis_failure = None;
 				analysis_failure_status = None;
 				break;
 			}
 			Err(issues) => {
+				log_attempt("invalid_schema", true);
 				repair = Some(format!(
 					"invalid fields: {}",
 					issues

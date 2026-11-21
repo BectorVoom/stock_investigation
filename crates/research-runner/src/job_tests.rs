@@ -1552,13 +1552,32 @@ async fn job_finished_carries_attempt_budget_usage_cost_verification_and_progres
 		.find(|line| line.contains(r#""event":"job_finished""#))
 		.unwrap();
 	for expected in [
-		r#""runId":"run_test","state":"completed","attempt":1,"maxAttempts":3,"agentId":"scripted","providerModel":null,"promptVersion":"research-v9""#,
+		r#""runId":"run_test","state":"completed","attempt":1,"maxAttempts":3,"agentId":"scripted","providerModel":null,"promptVersion":"research-v10""#,
 		r#""costKnown":false"#,
 		r#""failureCode":null,"verificationStatus":"verified""#,
 		r#""maxAgentSteps":6,"maxToolCalls":10,"maxWallClockMs":600000,"maxInputBytes":400000,"maxSpendUsd":null"#,
 	] {
 		assert!(finished.contains(expected), "{expected} in {finished}");
 	}
+	let attempts: Vec<_> = harness
+		.log
+		.lines()
+		.into_iter()
+		.filter_map(|line| serde_json::from_str::<serde_json::Value>(&line).ok())
+		.filter(|line| line["event"] == "research_analysis_attempt")
+		.collect();
+	assert_eq!(attempts.len(), 1);
+	let attempt = &attempts[0];
+	assert_eq!(attempt["runId"], "run_test");
+	assert_eq!(attempt["leaseGeneration"], 3);
+	assert_eq!(attempt["analysisAttempt"], 1);
+	assert_eq!(attempt["reason"], "accepted");
+	assert_eq!(attempt["willRetry"], false);
+	assert!(
+		attempt["durationSeconds"]
+			.as_f64()
+			.is_some_and(|seconds| seconds >= 0.0)
+	);
 	// The prompts, the question and the progress text never reach the log.
 	assert!(!finished.contains("Which storage products"));
 	assert!(!finished.contains("planning"));
@@ -1593,7 +1612,7 @@ fn job_finished_logs_the_failure_code_with_no_verification_for_a_failed_run() {
 	assert_eq!(*field(&fields, "providerModel"), LogValue::Null);
 	assert_eq!(
 		text(field(&fields, "promptVersion")).as_deref(),
-		Some("research-v9")
+		Some("research-v10")
 	);
 	assert_eq!(*field(&fields, "progressCount"), LogValue::Int(3));
 	assert_eq!(*field(&fields, "progressStateCount"), LogValue::Int(2));

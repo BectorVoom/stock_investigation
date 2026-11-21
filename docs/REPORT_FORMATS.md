@@ -71,10 +71,12 @@ not a claimed publisher-specific house style:
 - [Reuters: Standards and values](https://reutersagency.com/about/standards-values/): accuracy, attribution and independence.
 - [University of Melbourne: Research reports](https://students.unimelb.edu.au/academic-skills/reading-writing-and-referencing/reports/research-reports): summary, findings, discussion and conclusion serve distinct purposes.
 
-Prompt provenance: `research-v8`, with byte-identical TypeScript/Rust templates
-(now `research-v9`: the first planning round may route a question that needs
-no research to a direct answer, [ADR-0079](adr/0079-direct-answers-for-questions-that-need-no-research.md)).
-No domain algorithm, database schema or historical report text changes.
+The TypeScript and Rust runners use byte-identical `research-v10` templates.
+Analysis defaults to concise claims with verbatim quotes covering each factual detail.
+It includes forecasts, suppliers, pricing power, or canvas operations when
+they help answer the question and omits unused JSON keys. News jobs receive
+the detailed journalistic instructions. Direct answers retain the routing
+introduced in [ADR-0079](adr/0079-direct-answers-for-questions-that-need-no-research.md).
 
 ## Validation — 2026-11-10
 

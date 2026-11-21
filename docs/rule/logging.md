@@ -104,3 +104,31 @@ One logger, built on Effect (`@research/effects`). See
 - `apps/api/test/errorBoundary.test.ts` proves `respond` and the defect
   boundary still answer `INTERNAL` / 500 with the stable body when the logger
   throws (workerd AND node:sqlite projects).
+
+## Research analysis attempts
+
+Both runners emit an info-level `research_analysis_attempt` JSON line for each
+analysis attempt. Correlate it by `runId` and `leaseGeneration` and group
+comparisons by `promptVersion`. `analysisAttempt` starts at 1 for each lease.
+`durationSeconds` measures prompt construction through validation and the
+retry decision. `modelTurnSeconds` measures the turn call, including provider
+waits and turn bookkeeping. Both use monotonic clocks. `inputBytes` measures
+the UTF-8 size of the prepared request. `outputBytes` measures the returned
+text in UTF-8 and is null if the turn fails. `willRetry` indicates that the pipeline will
+try its compact repair turn under the same lease and budget.
+
+Filter `reason` by these fixed values:
+
+| Reason | Condition |
+| --- | --- |
+| `output_truncated` | The provider reported that it reached its output limit. |
+| `invalid_json` | The reply contained no parseable JSON object. |
+| `invalid_schema` | The JSON failed analysis draft validation. |
+| `no_claims_without_tool_records` | The draft returned no claims and there were no structured tool records to publish. |
+| `all_claims_unsupported` | The first draft's claims all failed the deterministic evidence checks. |
+| `accepted` | The draft was accepted for the verification stage. |
+| `aborted`, `budget`, `unknown-spend`, `provider` | The turn stopped without entering the draft repair path. |
+
+```sh
+jq -c 'select(.event == "research_analysis_attempt" and .willRetry == true)' data-dev/logs/runner.log
+```

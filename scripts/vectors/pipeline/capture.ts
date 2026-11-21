@@ -222,6 +222,9 @@ export async function capturedRunResearchPipeline(
 		},
 	};
 	const reporter = {
+		...(deps.reporter.analysisAttempt === undefined
+			? {}
+			: { analysisAttempt: deps.reporter.analysisAttempt.bind(deps.reporter) }),
 		async state(state: Parameters<ResearchPipelineDeps["reporter"]["state"]>[0]) {
 			trace.push({ type: "state", state });
 			await deps.reporter.state(state);

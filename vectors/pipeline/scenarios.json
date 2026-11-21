@@ -325,7 +325,19 @@
 			"runs": 1
 		},
 		{
-			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/reads consecutive pages of one round concurrently and records them in plan order (ADR-0078)",
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/runs consecutive %s and %s calls concurrently and records them in plan order [0]",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/runs consecutive %s and %s calls concurrently and records them in plan order [1]",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/runs consecutive %s and %s calls concurrently and records them in plan order [2]",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/runs consecutive %s and %s calls concurrently and records them in plan order [3]",
 			"runs": 1
 		},
 		{
@@ -385,5 +397,5 @@
 			"runs": 4
 		}
 	],
-	"handWrittenRuns": 107
+	"handWrittenRuns": 110
 }

@@ -31,9 +31,29 @@ impl ToolCallOutcome {
 	}
 }
 
+/// Safe analysis timing and size diagnostics for the runner's operational log.
+pub struct AnalysisAttempt {
+	/// One-based attempt number within this run lease.
+	pub attempt: i64,
+	/// Elapsed seconds including prompt construction and draft validation.
+	pub duration_seconds: f64,
+	/// Elapsed seconds inside the model turn, including delivery and provider waits.
+	pub model_turn_seconds: f64,
+	/// UTF-8 size of the prepared input.
+	pub input_bytes: usize,
+	/// UTF-8 size of returned text, when the turn produced a reply.
+	pub output_bytes: Option<usize>,
+	/// Fixed result code.
+	pub reason: &'static str,
+	/// Whether the pipeline will try a repair.
+	pub will_retry: bool,
+}
+
 /// Receives a job's progress.
 #[async_trait]
 pub trait PipelineReporter: Send + Sync {
+	/// Records an analysis attempt in the runner's operational log.
+	fn analysis_attempt(&self, _attempt: AnalysisAttempt) {}
 	/// A lifecycle state was entered (only leased states are legal here).
 	async fn state(&self, state: JobState);
 	/// A progress note for the owner (the runner cuts it to 500 UTF-16 units).

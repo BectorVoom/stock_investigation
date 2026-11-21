@@ -319,6 +319,16 @@ export async function executeJob(
 		}
 	};
 	const reporter: PipelineReporter = {
+		analysisAttempt(fields) {
+			logIsolated(() =>
+				deps.logger.info("research_analysis_attempt", {
+					runId: job.runId,
+					leaseGeneration: job.leaseGeneration,
+					promptVersion: PROMPT_VERSION,
+					...fields,
+				}),
+			);
+		},
 		async state(state) {
 			progress.state += 1;
 			enqueue({ type: "state", state: leasedState(state) });
