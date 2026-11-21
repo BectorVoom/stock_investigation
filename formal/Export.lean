@@ -136,6 +136,124 @@ def comparisonRowSelectVectors : List String := Id.run do
         ("result", jsonNatList (ComparisonTable.selectComparisonRows candidates maxRows))]]
   return output
 
+def companyTokenKindName : CompanyScreening.TokenKind → String
+  | .numericOrTicker => "numericOrTicker"
+  | .cjk => "cjk"
+  | .katakana => "katakana"
+  | .ascii => "ascii"
+  | .mixed => "mixed"
+
+def companyMembershipTierName : Option CompanyScreening.MembershipTier → String
+  | none => "null"
+  | some .identity => jsonStr "identity"
+  | some .directTheme => jsonStr "directTheme"
+  | some .relatedTheme => jsonStr "relatedTheme"
+  | some .sectorSegment => jsonStr "sectorSegment"
+  | some .activeFiling => jsonStr "activeFiling"
+
+def companyAllowedEditsVectors : List String := Id.run do
+  let mut output := []
+  let kinds : List CompanyScreening.TokenKind := [.numericOrTicker, .cjk, .katakana, .ascii, .mixed]
+  for kind in kinds do
+    for len in [0, 1, 3, 4, 5, 6, 8, 9, 12] do
+      output := output ++ [jsonObj [
+        ("kind", jsonStr (companyTokenKindName kind)),
+        ("len", jsonNat len),
+        ("result", jsonNat (CompanyScreening.allowedEdits kind len))]]
+  return output
+
+def companyOsaVectors : List String := Id.run do
+  let mut output := []
+  let samples : List (List Nat × List Nat) := [
+    ([], []),
+    ([], [1]),
+    ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5]),
+    ([1, 2, 3, 4, 5], [1, 2, 4, 5]),
+    ([1, 2, 3, 4, 5], [1, 2, 9, 3, 4, 5]),
+    ([1, 2, 3, 4, 5], [1, 9, 3, 4, 5]),
+    ([1, 2, 3, 4, 5], [1, 3, 2, 4, 5]),
+    ([1, 2, 3, 4, 5], [2, 1, 3, 4, 5]),
+    ([1, 2, 3, 4, 5, 6, 7, 8, 9], [1, 3, 2, 4, 5, 6, 8, 9]),
+    ([1, 2, 3, 4, 5, 6, 7, 8, 9], [2, 1, 3, 9, 5, 6, 7, 8, 9]),
+    ([1, 2, 3, 4, 5, 6, 7, 8], [9, 2, 8, 3, 4, 5, 6, 7, 8]),
+    ([1, 2, 3, 4, 5], [9, 8, 7, 4, 5])
+  ]
+  for k in [0, 1, 2] do
+    for (q, w) in samples do
+      let dist := CompanyScreening.osaWithin k q w
+      let pf1 := CompanyScreening.prefilter1Matches q w
+      let pf2 := CompanyScreening.prefilter2Matches q w
+      output := output ++ [jsonObj [
+        ("maxEdits", jsonNat k),
+        ("q", jsonNatList q),
+        ("w", jsonNatList w),
+        ("distance", jsonOptNat dist),
+        ("prefilter1", jsonBool pf1),
+        ("prefilter2", jsonBool pf2)]]
+  return output
+
+def companyThemeQualifiesVectors : List String := Id.run do
+  let mut output := []
+  for targetOnly in [false, true] do
+    for ancillary in [false, true] do
+      for direct in [false, true] do
+        for related in [false, true] do
+          let flags : CompanyScreening.ThemeMatchFlags := {
+            matchesTargetOnly := targetOnly,
+            isAncillary := ancillary,
+            matchesDirect := direct,
+            matchesRelated := related
+          }
+          output := output ++ [jsonObj [
+            ("matchesTargetOnly", jsonBool targetOnly),
+            ("isAncillary", jsonBool ancillary),
+            ("matchesDirect", jsonBool direct),
+            ("matchesRelated", jsonBool related),
+            ("direct", jsonBool (CompanyScreening.themeQualifiesDirect flags)),
+            ("related", jsonBool (CompanyScreening.themeQualifiesRelated flags))]]
+  return output
+
+def companyMembershipVectors : List String := Id.run do
+  let mut output := []
+  let mut singleTerms : List CompanyScreening.TermMatch := []
+  for idm in [false, true] do
+    for dt in [false, true] do
+      for rt in [false, true] do
+        for ss in [false, true] do
+          for ab in [false, true] do
+            singleTerms := singleTerms ++ [{
+              identity := idm, directTheme := dt, relatedTheme := rt,
+              sectorOrSegment := ss, activeBody := ab
+            }]
+  let representativePairs : List CompanyScreening.TermMatch := [
+    { identity := false, directTheme := false, relatedTheme := false, sectorOrSegment := false, activeBody := false },
+    { identity := false, directTheme := false, relatedTheme := false, sectorOrSegment := false, activeBody := true },
+    { identity := false, directTheme := false, relatedTheme := false, sectorOrSegment := true, activeBody := false },
+    { identity := false, directTheme := false, relatedTheme := true, sectorOrSegment := false, activeBody := false },
+    { identity := false, directTheme := true, relatedTheme := false, sectorOrSegment := false, activeBody := false },
+    { identity := true, directTheme := false, relatedTheme := false, sectorOrSegment := false, activeBody := false }
+  ]
+  let mut termLists : List (List CompanyScreening.TermMatch) := [[]]
+  for t in singleTerms do
+    termLists := termLists ++ [[t]]
+  for t1 in representativePairs do
+    for t2 in representativePairs do
+      termLists := termLists ++ [[t1, t2]]
+  for hasSummary in [false, true] do
+    for isBlankCheck in [false, true] do
+      for terms in termLists do
+        output := output ++ [jsonObj [
+          ("hasSummary", jsonBool hasSummary),
+          ("isBlankCheck", jsonBool isBlankCheck),
+          ("terms", jsonArr (terms.map fun t => jsonObj [
+            ("identity", jsonBool t.identity),
+            ("directTheme", jsonBool t.directTheme),
+            ("relatedTheme", jsonBool t.relatedTheme),
+            ("sectorOrSegment", jsonBool t.sectorOrSegment),
+            ("activeBody", jsonBool t.activeBody)])),
+          ("result", companyMembershipTierName (CompanyScreening.classifyMembership hasSummary isBlankCheck terms))]]
+  return output
+
 def transitionsJson : String :=
   jsonObj (JobState.all.map fun s => (JobState.name s, jsonArr ((JobState.next s).map (jsonStr ∘ JobState.name))))
 
@@ -1913,5 +2031,9 @@ def main : IO Unit := do
   IO.println ("\"citationReference\": [\n" ++ ",\n".intercalate citationReferenceVectors ++ "\n],")
   IO.println ("\"tableRectangularize\": [\n" ++ ",\n".intercalate tableRectangularizeVectors ++ "\n],")
   IO.println ("\"comparisonRowSelect\": [\n" ++ ",\n".intercalate comparisonRowSelectVectors ++ "\n],")
+  IO.println ("\"companyAllowedEdits\": [\n" ++ ",\n".intercalate companyAllowedEditsVectors ++ "\n],")
+  IO.println ("\"companyOsa\": [\n" ++ ",\n".intercalate companyOsaVectors ++ "\n],")
+  IO.println ("\"companyThemeQualifies\": [\n" ++ ",\n".intercalate companyThemeQualifiesVectors ++ "\n],")
+  IO.println ("\"companyMembership\": [\n" ++ ",\n".intercalate companyMembershipVectors ++ "\n],")
   IO.println ("\"stockMentions\": " ++ StockMentionsVectors.vectorsJson)
   IO.println "}"

@@ -72,6 +72,7 @@ import {
 	directAnswerPrompt,
 	PLANNING_CONTEXT_MAX_BYTES,
 	PLANNING_FINAL_ROUND_NOTE,
+	PLANNING_FINANCIALS_NEEDED_NOTE,
 	PLANNING_REMINDER,
 	PLANNING_REPEAT_NOTE,
 	PLANNING_SEARCH_BEFORE_FINAL_NOTE,
@@ -257,6 +258,53 @@ interface Collected {
 
 const utf8Encoder = new TextEncoder();
 const SAFE_TOOL_ID_PATTERN = /^[a-z][a-z0-9._-]{0,39}$/;
+
+const CJK_FINANCIAL_SUBSTRINGS = [
+	"売上",
+	"営業収益",
+	"営業利益",
+	"経常利益",
+	"純利益",
+	"最終利益",
+	"当期利益",
+	"利益率",
+	"増益",
+	"減益",
+	"総資産",
+	"資産合計",
+	"負債合計",
+	"純資産",
+	"キャッシュフロー",
+	"設備投資",
+] as const;
+
+const EN_FINANCIAL_WORDS: ReadonlySet<string> = new Set([
+	"revenue",
+	"revenues",
+	"sales",
+	"profit",
+	"profits",
+	"income",
+	"earnings",
+	"margin",
+	"margins",
+	"assets",
+	"liabilities",
+	"equity",
+	"capex",
+	"financials",
+]);
+
+function questionRequestsFinancials(question: string): boolean {
+	for (const term of CJK_FINANCIAL_SUBSTRINGS) {
+		if (question.includes(term)) return true;
+	}
+	const lower = question.replace(/[A-Z]/g, (ch) => ch.toLowerCase());
+	for (const word of lower.split(/[^a-z0-9]+/)) {
+		if (word !== "" && EN_FINANCIAL_WORDS.has(word)) return true;
+	}
+	return false;
+}
 
 function formatRequestedToolIds(calls: readonly { readonly toolId: string }[]): string {
 	return calls
@@ -752,6 +800,9 @@ export async function runResearchPipeline(
 	let searchCooldownEncountered = false;
 	let foundSearchLeads = false;
 	let webSearchRequested = false;
+	const needsFinancialFigures = questionRequestsFinancials(request.question);
+	let foundCompanyCandidates = false;
+	let financialsQueried = false;
 
 	collection: for (let step = 0; step < collectionSteps; step += 1) {
 		// Spend the remaining model turns on analysis and verification instead
@@ -780,6 +831,15 @@ export async function runResearchPipeline(
 		// decide that the question needs no research. A news task always researches.
 		const routingRound =
 			step === 0 && collected.entries.length === 0 && request.outputType !== "news";
+		const financialsBeforeDone =
+			!finalRound &&
+			!searchBeforeFinal &&
+			reminderPending !== PLANNING_FINANCIALS_NEEDED_NOTE &&
+			needsFinancialFigures &&
+			foundCompanyCandidates &&
+			!financialsQueried &&
+			permittedToolIds.has("stocks.search") &&
+			!unavailableTools.has("stocks.search");
 		const roundReminder =
 			!permittedToolIds.has("web.fetch_page") && permittedToolIds.has("stocks.search")
 				? [
@@ -795,7 +855,9 @@ export async function runResearchPipeline(
 			? PLANNING_FINAL_ROUND_NOTE
 			: searchBeforeFinal
 				? PLANNING_SEARCH_BEFORE_FINAL_NOTE
-				: null;
+				: financialsBeforeDone
+					? PLANNING_FINANCIALS_NEEDED_NOTE
+					: null;
 		const prompt = planningPrompt({
 			request,
 			nowIso: deps.clock.nowIso(),
@@ -931,6 +993,7 @@ export async function runResearchPipeline(
 				readonly call: (typeof calls)[number];
 				readonly label: string;
 				readonly requestKey: string;
+				readonly stockSearchKind: string | null;
 				readonly start: () => Promise<{
 					readonly result: Awaited<ReturnType<typeof executeToolCall>>;
 					readonly deadlineReached: boolean;
@@ -993,11 +1056,20 @@ export async function runResearchPipeline(
 				usage = addUsage(usage, { toolCalls: 1 });
 				// A tool may not outlive the run: its signal also fires at the run's wall-clock deadline.
 				const runDeadline = AbortSignal.timeout(Math.max(1, budget.maxWallClockMs - elapsedMs()));
+				const stockSearchKind =
+					call.toolId === "stocks.search" &&
+					typeof authorized.value.args === "object" &&
+					authorized.value.args !== null &&
+					"kind" in authorized.value.args &&
+					typeof authorized.value.args.kind === "string"
+						? authorized.value.args.kind
+						: null;
 				batchKeys.add(requestKey);
 				batch.push({
 					call,
 					label,
 					requestKey,
+					stockSearchKind,
 					// Started together once the batch is prepared, in plan order.
 					start: async () => {
 						const result = await executeToolCall(authorized.value, {
@@ -1010,7 +1082,7 @@ export async function runResearchPipeline(
 			}
 			const results = await Promise.all(batch.map((prepared) => prepared.start()));
 			for (const [position, started] of batch.entries()) {
-				const { call, label, requestKey } = started;
+				const { call, label, requestKey, stockSearchKind } = started;
 				const completed = results[position];
 				if (completed === undefined) continue;
 				const { result, deadlineReached } = completed;
@@ -1062,6 +1134,19 @@ export async function runResearchPipeline(
 				succeededToolCalls += 1;
 				completedRequests.add(requestKey);
 				const output = result.value;
+				if (
+					call.toolId === "stocks.search" &&
+					(stockSearchKind === "company" || output.planningLeads.length > 0)
+				) {
+					foundCompanyCandidates = true;
+				}
+				if (
+					call.toolId === "finance.sec_company_financials" ||
+					(call.toolId === "stocks.search" && stockSearchKind === "financials") ||
+					output.financialObservations.length > 0
+				) {
+					financialsQueried = true;
+				}
 				// Search snippets are planning leads. Only the fetched original can support a claim.
 				const discovery = DISCOVERY_TOOL_IDS.has(call.toolId);
 				if (discovery) foundSearchLeads ||= output.evidence.length > 0;
@@ -1148,6 +1233,21 @@ export async function runResearchPipeline(
 		) {
 			reminderPending =
 				"Open relevant original pages from the search leads and assess the sources before ending collection.";
+			continue;
+		}
+		if (
+			(plan.done || calls.length === 0) &&
+			needsFinancialFigures &&
+			foundCompanyCandidates &&
+			!financialsQueried &&
+			permittedToolIds.has("stocks.search") &&
+			!unavailableTools.has("stocks.search") &&
+			step + 1 < Math.min(collectionSteps, 3)
+		) {
+			reminderPending = PLANNING_FINANCIALS_NEEDED_NOTE;
+			await deps.reporter.note(
+				"Candidate companies were found without financial figures; continuing collection.",
+			);
 			continue;
 		}
 		if (plan.done || calls.length === 0) break;

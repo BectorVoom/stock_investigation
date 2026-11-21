@@ -409,9 +409,13 @@
 			"runs": 1
 		},
 		{
+			"name": "/stock screening repeat and pre-final search guidance/refuses premature done=true after company-only discovery when the question asks for a revenue table (売上高)",
+			"runs": 1
+		},
+		{
 			"name": "/Japanese financial observations and cited comparison tables/deduplicates Japanese securities and financial observations across repeated stocks.search calls and emits financial-table plus verified comparisonTables",
 			"runs": 1
 		}
 	],
-	"handWrittenRuns": 114
+	"handWrittenRuns": 115
 }

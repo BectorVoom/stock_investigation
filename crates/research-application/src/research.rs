@@ -15,9 +15,10 @@ use self::{
 	collect::{CollectedEntry, collected_so_far_text, digest_lines_for},
 	draft::parse_draft,
 	prompts::{
-		AnalysisPromptInput, PLANNING_FINAL_ROUND_NOTE, PLANNING_PROMPT_BUDGET_BYTES,
-		PLANNING_REMINDER, PLANNING_REPEAT_NOTE, PLANNING_SEARCH_BEFORE_FINAL_NOTE,
-		PlanningPromptInput, analysis_prompt, planning_prompt, verification_prompt,
+		AnalysisPromptInput, PLANNING_FINAL_ROUND_NOTE, PLANNING_FINANCIALS_NEEDED_NOTE,
+		PLANNING_PROMPT_BUDGET_BYTES, PLANNING_REMINDER, PLANNING_REPEAT_NOTE,
+		PLANNING_SEARCH_BEFORE_FINAL_NOTE, PlanningPromptInput, analysis_prompt, planning_prompt,
+		verification_prompt,
 	},
 	turn::{Session, TurnFailure},
 	value::*,
@@ -288,6 +289,52 @@ fn is_safe_tool_id(id: &str) -> bool {
 			.all(|b| matches!(b, b'a'..=b'z' | b'0'..=b'9' | b'.' | b'_' | b'-'))
 }
 
+fn question_requests_financials(question: &str) -> bool {
+	const CJK_TERMS: [&str; 16] = [
+		"売上",
+		"営業収益",
+		"営業利益",
+		"経常利益",
+		"純利益",
+		"最終利益",
+		"当期利益",
+		"利益率",
+		"増益",
+		"減益",
+		"総資産",
+		"資産合計",
+		"負債合計",
+		"純資産",
+		"キャッシュフロー",
+		"設備投資",
+	];
+	if CJK_TERMS.iter().any(|term| question.contains(term)) {
+		return true;
+	}
+	question
+		.to_ascii_lowercase()
+		.split(|ch: char| !ch.is_ascii_alphanumeric())
+		.any(|word| {
+			matches!(
+				word,
+				"revenue"
+					| "revenues"
+					| "sales"
+					| "profit"
+					| "profits"
+					| "income"
+					| "earnings"
+					| "margin"
+					| "margins"
+					| "assets"
+					| "liabilities"
+					| "equity"
+					| "capex"
+					| "financials"
+			)
+		})
+}
+
 fn format_requested_tool_ids(calls: &[ToolRequest]) -> String {
 	let joined = calls
 		.iter()
@@ -416,6 +463,9 @@ pub async fn run_research_pipeline(
 	let mut search_cooldown_encountered = false;
 	let mut found_search_leads = false;
 	let mut web_search_requested = false;
+	let needs_financial_figures = question_requests_financials(&input.request.question);
+	let mut found_company_candidates = false;
+	let mut financials_queried = false;
 	'collection: for step in 0..collection_steps {
 		if step >= 3 {
 			collection_limit_reached = true;
@@ -454,6 +504,14 @@ pub async fn run_research_pipeline(
 			&& entries.is_empty()
 			&& input.request.output_type
 				!= Some(research_contracts::jobs::ResearchOutputType::News);
+		let financials_before_done = !final_round
+			&& !search_before_final
+			&& pending_reminder != Some(PLANNING_FINANCIALS_NEEDED_NOTE)
+			&& needs_financial_figures
+			&& found_company_candidates
+			&& !financials_queried
+			&& permitted_ids.contains("stocks.search")
+			&& !unavailable_tools.contains("stocks.search");
 		let mut reminder_parts: Vec<&str> = Vec::new();
 		if !permitted_ids.contains("web.fetch_page") && permitted_ids.contains("stocks.search") {
 			reminder_parts.push(if permitted_ids.contains("web.extract") {
@@ -469,6 +527,8 @@ pub async fn run_research_pipeline(
 			reminder_parts.push(PLANNING_FINAL_ROUND_NOTE);
 		} else if search_before_final {
 			reminder_parts.push(PLANNING_SEARCH_BEFORE_FINAL_NOTE);
+		} else if financials_before_done {
+			reminder_parts.push(PLANNING_FINANCIALS_NEEDED_NOTE);
 		}
 		let combined_reminder = (!reminder_parts.is_empty()).then(|| reminder_parts.join(" "));
 		let prompt = planning_prompt(PlanningPromptInput {
@@ -749,8 +809,11 @@ pub async fn run_research_pipeline(
 				let call_cancel = input.cancel.child_token();
 				let mut context = tool_context.clone();
 				context.cancel = call_cancel.clone();
+				let stock_search_kind = (call.tool_id == "stocks.search")
+					.then(|| get(&authorized.args, "kind").as_str().map(str::to_owned))
+					.flatten();
 				batch_keys.insert(request_key.clone());
-				prepared.push((call, label, request_key));
+				prepared.push((call, label, request_key, stock_search_kind));
 				// Started together once the batch is prepared, in plan order.
 				runs.push(async move {
 					let _guard = call_cancel.drop_guard();
@@ -764,7 +827,9 @@ pub async fn run_research_pipeline(
 				});
 			}
 			let results = futures_util::future::join_all(runs).await;
-			for ((call, label, request_key), raced) in prepared.into_iter().zip(results) {
+			for ((call, label, request_key, stock_search_kind), raced) in
+				prepared.into_iter().zip(results)
+			{
 				executed += 1;
 				executed_in_round += 1;
 				let result = match raced {
@@ -837,6 +902,19 @@ pub async fn run_research_pipeline(
 					Ok(output) => {
 						succeeded += 1;
 						completed_requests.insert(request_key);
+						if call.tool_id == "stocks.search"
+							&& (stock_search_kind.as_deref() == Some("company")
+								|| !output.planning_leads.is_empty())
+						{
+							found_company_candidates = true;
+						}
+						if call.tool_id == "finance.sec_company_financials"
+							|| (call.tool_id == "stocks.search"
+								&& stock_search_kind.as_deref() == Some("financials"))
+							|| !output.financial_observations.is_empty()
+						{
+							financials_queried = true;
+						}
 						entries.push(CollectedEntry {
 							step,
 							full_text: format!("Result of {label}:\n{}", output.model_text),
@@ -973,6 +1051,22 @@ pub async fn run_research_pipeline(
 			reminder = Some(
 				"Open relevant original pages from the search leads and assess the sources before ending collection.",
 			);
+			continue;
+		}
+		if (done || calls.is_empty())
+			&& needs_financial_figures
+			&& found_company_candidates
+			&& !financials_queried
+			&& permitted_ids.contains("stocks.search")
+			&& !unavailable_tools.contains("stocks.search")
+			&& step + 1 < collection_steps.min(3)
+		{
+			reminder = Some(PLANNING_FINANCIALS_NEEDED_NOTE);
+			deps.reporter
+				.note(
+					"Candidate companies were found without financial figures; continuing collection.",
+				)
+				.await;
 			continue;
 		}
 		if done || calls.is_empty() {

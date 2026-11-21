@@ -1,8 +1,15 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { type StockResearchHit, stockResearchQuerySchema } from "@research/contracts";
 import { err, ok, verifyClaims } from "@research/domain";
 import { describe, expect, it } from "vitest";
+import { createStockResearchRepository } from "../../src/sql/stockResearch.ts";
+import { initializeSqlSchema, openNodeSqlite } from "../../src/sqlite/index.ts";
 import { createStockResearchTool } from "../../src/tools/stockResearch.ts";
+import {
+	seedJapaneseShipbuildingScreening,
+	seedStockResearch,
+} from "../sql/stockResearchFixtures.ts";
 import { createToolContext } from "./support.ts";
 
 const hit: StockResearchHit = {
@@ -281,5 +288,57 @@ describe("stocks.search", () => {
 			2_100_000_000 / 45_465_000_000,
 			10,
 		);
+	});
+
+	it("discovers Japanese AI-overview shipbuilder leads without divested/customer/SPAC false positives and emits structured J-Quants net profit margins", async () => {
+		const db = openNodeSqlite(":memory:");
+		try {
+			initializeSqlSchema(
+				db,
+				readFileSync(new URL("../../../../db/schema.sql", import.meta.url), "utf8"),
+				[],
+			);
+			await seedStockResearch(db, "owner");
+			await seedJapaneseShipbuildingScreening(db, "owner");
+			const repo = createStockResearchRepository(db);
+			const tool = createStockResearchTool({
+				hasher,
+				search: async (query) => ok(await repo.search("owner", query)),
+			});
+
+			const discovery = await tool.execute(
+				{ query: "日本の造船", kind: "company", limit: 12 },
+				createToolContext(),
+			);
+			if (!discovery.ok) throw new Error("Expected company discovery");
+			expect(discovery.value.evidence).toEqual([]);
+			expect(discovery.value.planningLeads).toEqual([
+				"lead (no evidence): JP:7914 合成名村造船 (Synthetic Namura Shipbuilding Co.,Ltd.) AI-written company overview",
+				"lead (no evidence): JP:7918 合成内海造船 (Synthetic Naikai Zosen Corporation) AI-written company overview",
+				"lead (no evidence): JP:7018 合成造船 (Synthetic Zosen Corporation) AI-written company overview",
+				"lead (no evidence): JP:7003 合成マリンエンジニアリング (Synthetic Marine Engineering) AI-written company overview",
+				"lead (no evidence): JP:7912 合成重工 (Synthetic Heavy Marine Ltd.) AI-written company overview",
+			]);
+			const joinedLeads = `${discovery.value.planningLeads.join("\n")}\n${discovery.value.modelText}`;
+			for (const forbidden of ["7922", "7921", "3168", "9907", "SPAC9", "EXSHIP"]) {
+				expect(joinedLeads).not.toContain(forbidden);
+			}
+
+			const financials = await tool.execute(
+				{ query: "7914 純利益率", kind: "financials", limit: 6 },
+				createToolContext(),
+			);
+			if (!financials.ok) throw new Error("Expected financials retrieval");
+			expect(financials.value.securities).toMatchObject([
+				{ country: "JP", ticker: "7914", issuerName: "合成名村造船", exchange: "TSE" },
+			]);
+			expect(financials.value.financialObservations).toMatchObject([
+				{ metricCode: "revenue", value: 100_000_000_000, currency: "JPY" },
+				{ metricCode: "net-income", value: 15_000_000_000, currency: "JPY" },
+				{ metricCode: "net-profit-margin", value: 0.15, unit: "ratio" },
+			]);
+		} finally {
+			db.close();
+		}
 	});
 });

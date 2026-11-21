@@ -1,7 +1,10 @@
 import { env } from "cloudflare:test";
 import { stockResearchResponseSchema } from "@research/contracts";
 import { describe, expect, it } from "vitest";
-import { seedStockResearch } from "../../../packages/adapters/test/sql/stockResearchFixtures.ts";
+import {
+	seedJapaneseShipbuildingScreening,
+	seedStockResearch,
+} from "../../../packages/adapters/test/sql/stockResearchFixtures.ts";
 import {
 	body,
 	claim,
@@ -34,18 +37,42 @@ describe("runner stored stock retrieval", () => {
 			new Set(["company", "financials", "news"]),
 		);
 		expect(harness.fetchCalls).toEqual([]);
+		await seedJapaneseShipbuildingScreening(env.DB, harness.ownerId);
 		const shipbuilders = await body(
 			await harness.runner(token, `/jobs/${job.runId}/stock-search`, {
 				query: "造船",
 				kind: "company",
+				limit: 12,
 				leaseGeneration: job.leaseGeneration,
 			}),
 			stockResearchResponseSchema,
 		);
-		expect(shipbuilders.hits.map((hit) => hit.recordId)).toEqual(["JP:7018", "JP:7003", "JP:3168"]);
-		expect(shipbuilders.hits[0]?.title).toBe(
+		expect(shipbuilders.hits.map((hit) => hit.recordId)).toEqual([
+			"JP:7914",
+			"JP:7918",
+			"JP:7018",
+			"JP:7003",
+			"JP:7912",
+		]);
+		expect(shipbuilders.hits.find((hit) => hit.recordId === "JP:7018")?.title).toBe(
 			"JP:7018 合成造船 (Synthetic Zosen Corporation) AI-written company overview",
 		);
+		const fuzzyShipbuilders = await body(
+			await harness.runner(token, `/jobs/${job.runId}/stock-search`, {
+				query: "日本 shipbuiding",
+				kind: "company",
+				limit: 12,
+				leaseGeneration: job.leaseGeneration,
+			}),
+			stockResearchResponseSchema,
+		);
+		expect(fuzzyShipbuilders.hits.map((hit) => hit.recordId)).toEqual([
+			"JP:7914",
+			"JP:7918",
+			"JP:7018",
+			"JP:7003",
+			"JP:7912",
+		]);
 		const tickerFinancials = await body(
 			await harness.runner(token, `/jobs/${job.runId}/stock-search`, {
 				query: "7018 2025 純利益",

@@ -8,7 +8,11 @@ import {
 	openNodeSqlite,
 	readSqlMigrations,
 } from "../../src/sqlite/index.ts";
-import { seedStockResearch, seedStockScreening } from "../sql/stockResearchFixtures.ts";
+import {
+	seedJapaneseShipbuildingScreening,
+	seedStockResearch,
+	seedStockScreening,
+} from "../sql/stockResearchFixtures.ts";
 
 for (const layout of ["canonical", "migrated"] as const)
 	describe(`stored stock retrieval (${layout})`, () => {
@@ -151,7 +155,7 @@ for (const layout of ["canonical", "migrated"] as const)
 				db.close();
 			}
 		});
-		it("orders company hits by name, then theme, then body mention, and includes Japanese local names", async () => {
+		it("orders company hits by identity then theme, excludes customer-only body mentions, and includes Japanese local names", async () => {
 			const { db, repository } = await setup();
 			try {
 				const result = await repository.search("owner", {
@@ -159,9 +163,177 @@ for (const layout of ["canonical", "migrated"] as const)
 					kind: "company",
 					limit: 6,
 				});
-				expect(result.hits.map((hit) => hit.recordId)).toEqual(["JP:7018", "JP:7003", "JP:3168"]);
+				expect(result.hits.map((hit) => hit.recordId)).toEqual(["JP:7018", "JP:7003"]);
 				expect(result.hits[0]?.title).toBe(
 					"JP:7018 合成造船 (Synthetic Zosen Corporation) AI-written company overview",
+				);
+			} finally {
+				db.close();
+			}
+		});
+		it("screens Japanese stock_company_summary overviews with fuzzy/related matching while excluding divested, customer-only, historical, and SPAC false positives", async () => {
+			const { db, repository } = await setup();
+			try {
+				await seedJapaneseShipbuildingScreening(db, "owner");
+
+				for (const query of [
+					"造船",
+					"日本 造船",
+					"日本の造船",
+					"shipbuilding",
+					"shipbuilders",
+					"shipbuiding",
+					"hsipbuilding",
+				]) {
+					const result = await repository.search("owner", {
+						query,
+						kind: "company",
+						limit: 12,
+					});
+					const ids = result.hits.map((hit) => hit.recordId);
+					// Identity matches (`7914`, `7918`, `7018`) precede direct theme (`7003`) and related theme (`7912`)
+					expect(ids, `query=${query}`).toEqual([
+						"JP:7914",
+						"JP:7918",
+						"JP:7018",
+						"JP:7003",
+						"JP:7912",
+					]);
+					for (const excluded of [
+						"JP:3168",
+						"JP:7922",
+						"JP:7921",
+						"JP:9907",
+						"US:SPAC9",
+						"eqc_us_exship:0",
+						"US:EXSHIP",
+					]) {
+						expect(ids, `query=${query} must exclude ${excluded}`).not.toContain(excluded);
+					}
+				}
+
+				// Unrelated CJK 1-char near-misses must never match shipbuilders
+				for (const unrelated of ["造園", "酒造", "鋳造"]) {
+					expect(
+						(await repository.search("owner", { query: unrelated, kind: "company", limit: 6 }))
+							.hits,
+					).toEqual([]);
+				}
+
+				// Fuzzy metric aliases & full-width digits in financials retrieve J-Quants revenue & net income
+				const marginHit = await repository.search("owner", {
+					query: "７９１４ 純利益率",
+					kind: "financials",
+					limit: 6,
+				});
+				expect(marginHit.hits.map((h) => h.recordId)).toEqual([
+					"eqc_jp_7914:2025:profit-attributable-to-owners",
+				]);
+				expect(marginHit.jpFinancials).toMatchObject([
+					{
+						symbol: "7914",
+						issuerName: "合成名村造船",
+						fiscalYear: 2025,
+						revenue: { value: 100_000_000_000, currency: "JPY" },
+						netIncome: { value: 15_000_000_000, currency: "JPY" },
+					},
+				]);
+
+				const typoFinancials = await repository.search("owner", {
+					query: "SYNTH revene",
+					kind: "financials",
+					limit: 6,
+				});
+				expect(typoFinancials.hits).toHaveLength(1);
+				expect(typoFinancials.hits[0]?.recordId).toBe("eqc_retrieval:2026:revenue");
+
+				// Hiragana / half-width katakana fuzzy matching on drone candidates
+				await seedStockScreening(db, "owner");
+				for (const droneVariant of ["どろーん", "ﾄﾞﾛｰﾝ", "drones"]) {
+					const drones = await repository.search("owner", {
+						query: droneVariant,
+						kind: "company",
+						limit: 12,
+					});
+					expect(drones.hits.map((h) => h.recordId)).toEqual([
+						"eqc_screen_25:0",
+						"eqc_screen_10:0",
+					]);
+				}
+
+				// Short ASCII tickers (`GD`, `BA`, `DE`) in financials must match exact symbols and never match `currency=SGD`, `unit=base`, or `derived=`
+				await db
+					.prepare(
+						`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name, tracked, tracked_at)
+						VALUES ('owner', 'eqc_us_gd', 'US', 'GD', 'sec', 'General Dynamics Corp', 0, '2026-11-01T00:00:00Z'),
+						       ('owner', 'eqc_us_tlih', 'US', 'TLIH', 'sec', 'Ten-League International Holdings', 0, '2026-11-06T00:00:00Z')`,
+					)
+					.run();
+				await db
+					.prepare(
+						`INSERT INTO equity_report_filing (owner_id, filing_id, company_id, provider, source_document_id, form, filed_on, period_end, source_url, facts_status, primary_scope, first_seen_at, recorded_at)
+						VALUES ('owner', 'fil_gd', 'eqc_us_gd', 'sec', 'doc_gd', '10-K', '2026-02-01', '2025-12-31', 'https://filings.example.org/gd', 'extracted', 'consolidated', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z'),
+						       ('owner', 'fil_tlih', 'eqc_us_tlih', 'sec', 'doc_tlih', '20-F', '2026-04-01', '2025-12-31', 'https://filings.example.org/tlih', 'extracted', 'consolidated', '2026-11-06T00:00:00Z', '2026-11-06T00:00:00Z')`,
+					)
+					.run();
+				await db
+					.prepare(
+						`INSERT INTO equity_metric_value (owner_id, company_id, metric_code, fiscal_year, value_decimal, currency, filing_id, concept, scope, period_start, period_end, reported_value_count, updated_at)
+						VALUES ('owner', 'eqc_us_gd', 'revenue', 2025, '52550000000', 'USD', 'fil_gd', 'us-gaap:Revenues', 'consolidated', '2025-01-01', '2025-12-31', 1, '2026-11-01T00:00:00Z'),
+						       ('owner', 'eqc_us_tlih', 'revenue', 2025, '58496000', 'SGD', 'fil_tlih', 'ifrs-full:Revenue', 'consolidated', '2025-01-01', '2025-12-31', 1, '2026-11-06T00:00:00Z')`,
+					)
+					.run();
+
+				const gdRev = await repository.search("owner", {
+					query: "GD revenue",
+					kind: "financials",
+					limit: 4,
+				});
+				expect(gdRev.hits.map((h) => h.recordId)).toEqual(["eqc_us_gd:2025:revenue"]);
+				expect(
+					(await repository.search("owner", { query: "BA revenue", kind: "financials", limit: 4 }))
+						.hits,
+				).toEqual([]);
+				expect(
+					(await repository.search("owner", { query: "DE revenue", kind: "financials", limit: 4 }))
+						.hits,
+				).toEqual([]);
+
+				// Multi-paragraph 10-K on a thematic company query keeps at most 1 filing paragraph per company, while identity search keeps all paragraphs
+				await db
+					.prepare(
+						`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name, tracked, tracked_at)
+						VALUES ('owner', 'eqc_us_hii', 'US', 'HII', 'sec', 'Huntington Ingalls Industries', 0, '2026-11-04T00:00:00Z')`,
+					)
+					.run();
+				await db
+					.prepare(
+						`INSERT INTO equity_business_description (owner_id, company_id, source_document_id, form, filed_on, period_end, source_url, status, paragraphs_json, truncated, fetched_at)
+						VALUES ('owner', 'eqc_us_hii', 'doc_hii', '10-K', '2026-02-10', '2025-12-31', 'https://filings.example.org/hii', 'extracted', ?, 0, '2026-11-04T00:00:00Z')`,
+					)
+					.bind(
+						JSON.stringify([
+							{ kind: "text", text: "Shipbuilding segment builds nuclear aircraft carriers." },
+							{ kind: "text", text: "Shipbuilding operations also construct submarines." },
+							{ kind: "text", text: "Naval shipbuilding backlog reached record levels." },
+						]),
+					)
+					.run();
+				const thematicWithHii = await repository.search("owner", {
+					query: "造船",
+					kind: "company",
+					limit: 12,
+				});
+				expect(
+					thematicWithHii.hits.filter((h) => h.recordId.startsWith("eqc_us_hii:")),
+				).toHaveLength(1);
+				const identityHii = await repository.search("owner", {
+					query: "HII shipbuilding",
+					kind: "company",
+					limit: 12,
+				});
+				expect(identityHii.hits.filter((h) => h.recordId.startsWith("eqc_us_hii:"))).toHaveLength(
+					3,
 				);
 			} finally {
 				db.close();

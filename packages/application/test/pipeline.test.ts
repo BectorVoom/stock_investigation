@@ -20,6 +20,7 @@ import {
 } from "../src/index.ts";
 import {
 	PLANNING_FINAL_ROUND_NOTE,
+	PLANNING_FINANCIALS_NEEDED_NOTE,
 	PLANNING_REPEAT_NOTE,
 	PLANNING_ROUTING_NOTE,
 	PLANNING_SEARCH_BEFORE_FINAL_NOTE,
@@ -2943,6 +2944,182 @@ describe("stock screening repeat and pre-final search guidance", () => {
 			publisher: "J-Quants",
 		});
 		expect(outcome.bundle.claims[0]).toMatchObject({ status: "supported" });
+	});
+
+	it("refuses premature done=true after company-only discovery when the question asks for a revenue table (売上高)", async () => {
+		const baseTools = newsTools();
+		const mixedStockTool = defineTool({
+			toolId: "stocks.search",
+			version: "1.2.0",
+			description: "Search stored stock records.",
+			argsHint: '{"query": string, "kind"?: "company" | "financials" | "news", "limit"?: number}',
+			argsSchema: z.object({
+				query: z.string(),
+				kind: z.enum(["company", "financials", "news"]).optional(),
+				limit: z.number().int().optional(),
+			}),
+			timeoutMs: 5_000,
+			permission: "research-read",
+			costCategory: "free",
+			sideEffect: "none",
+			networkAllowlist: { kind: "none" },
+			async execute(args, context) {
+				if (args.kind === "financials") {
+					const isHii = args.query.toUpperCase().includes("HII");
+					const id = context.nextId("ev");
+					const passage = isHii
+						? "Stored source metadata:\nTitle: US:HII HUNTINGTON INGALLS INDUSTRIES, INC. revenue\nPublisher: SEC EDGAR\nPublished at: 2026-02-15T00:00:00Z\nRetrieved at: 2026-11-05T00:00:00Z\nEffective at: 2025-12-31T00:00:00Z\n\nPassage:\nissuer=US:HII HUNTINGTON INGALLS INDUSTRIES, INC.; metric=revenue; fiscalYear=2025; value=12484000000; currency=USD; unit=base currency units; scope=consolidated"
+						: "Stored source metadata:\nTitle: JP:7018 内海造船 revenue 売上高\nPublisher: J-Quants\nPublished at: 2026-05-08T00:00:00Z\nRetrieved at: 2026-11-05T00:00:00Z\nEffective at: 2026-03-31T00:00:00Z\n\nPassage:\nissuer=JP:7018 内海造船; metric=revenue; fiscalYear=2026; value=47016000000; currency=JPY; unit=base currency units; scope=consolidated";
+					return ok({
+						...EMPTY_TOOL_OUTPUT,
+						modelText: passage,
+						evidence: [
+							{
+								evidence: {
+									evidenceId: id,
+									sourceUrl: isHii
+										? "https://www.sec.gov/Archives/edgar/data/1501585/hii-20251231.htm"
+										: "https://api.jquants.com/v2/fins/summary?code=70180",
+									title: isHii
+										? "US:HII HUNTINGTON INGALLS INDUSTRIES, INC. revenue"
+										: "JP:7018 内海造船 revenue 売上高",
+									publisher: isHii ? "SEC EDGAR" : "J-Quants",
+									publishedAt: isHii ? "2026-02-15T00:00:00Z" : "2026-05-08T00:00:00Z",
+									retrievedAt: "2026-11-05T00:00:00Z",
+									effectiveAt: isHii ? "2025-12-31T00:00:00Z" : "2026-03-31T00:00:00Z",
+									excerpt: null,
+									checksum: (isHii ? "b" : "a").repeat(64),
+									sourceClass: "regulatory-filing",
+								},
+								retrievedText: passage,
+								retainQuotes: isHii,
+							},
+						],
+					});
+				}
+				const bizId = context.nextId("ev");
+				const bizPassage =
+					"Stored source metadata:\nTitle: US:HII HUNTINGTON INGALLS INDUSTRIES, INC. business description\nPublisher: SEC EDGAR\nPublished at: 2026-02-15T00:00:00Z\nRetrieved at: 2026-11-05T00:00:00Z\nEffective at: 2025-12-31T00:00:00Z\n\nPassage:\nWe design and build nuclear-powered ships for the U.S. Navy.";
+				return ok({
+					...EMPTY_TOOL_OUTPUT,
+					modelText: bizPassage,
+					planningLeads: [
+						"lead (no evidence): JP:7018 内海造船 (Naikai Zosen Corporation) AI-written company overview",
+						"lead (no evidence): US:HII HUNTINGTON INGALLS INDUSTRIES, INC. AI-written company overview",
+					],
+					evidence: [
+						{
+							evidence: {
+								evidenceId: bizId,
+								sourceUrl: "https://www.sec.gov/Archives/edgar/data/1501585/hii-20251231.htm",
+								title: "US:HII HUNTINGTON INGALLS INDUSTRIES, INC. business description",
+								publisher: "SEC EDGAR",
+								publishedAt: "2026-02-15T00:00:00Z",
+								retrievedAt: "2026-11-05T00:00:00Z",
+								effectiveAt: "2025-12-31T00:00:00Z",
+								excerpt: null,
+								checksum: "d".repeat(64),
+								sourceClass: "regulatory-filing",
+							},
+							retrievedText: bizPassage,
+							retainQuotes: true,
+						},
+					],
+				});
+			},
+		});
+		const registry = createToolRegistry([...baseTools.registry.list(), mixedStockTool]);
+		const round1CompanyOnly = JSON.stringify({
+			toolCalls: [{ toolId: "stocks.search", args: { query: "造船", kind: "company", limit: 12 } }],
+			done: false,
+		});
+		const round2PrematureDone = JSON.stringify({
+			toolCalls: [],
+			done: true,
+		});
+		const round3Financials = JSON.stringify({
+			toolCalls: [
+				{ toolId: "stocks.search", args: { query: "7018 売上高", kind: "financials" } },
+				{ toolId: "stocks.search", args: { query: "HII revenue", kind: "financials" } },
+			],
+			done: true,
+		});
+		const ev7018 = `${RUN_ID}_ev2`;
+		const evHii = `${RUN_ID}_ev3`;
+		const draft = JSON.stringify({
+			claims: [
+				{
+					text: "内海造船（7018）の2026年度の売上高は47,016,000,000円である。",
+					claimType: "observation",
+					evidence: [
+						{
+							evidenceId: ev7018,
+							relation: "supports",
+							quote:
+								"issuer=JP:7018 内海造船; metric=revenue; fiscalYear=2026; value=47016000000; currency=JPY",
+						},
+					],
+				},
+				{
+					text: "Huntington Ingalls Industries（HII）の2025年度の売上高は12,484,000,000米ドルである。",
+					claimType: "observation",
+					evidence: [
+						{
+							evidenceId: evHii,
+							relation: "supports",
+							quote:
+								"issuer=US:HII HUNTINGTON INGALLS INDUSTRIES, INC.; metric=revenue; fiscalYear=2025; value=12484000000; currency=USD",
+						},
+					],
+				},
+			],
+			comparisonTables: [
+				{
+					title: "造船銘柄の売上高",
+					caption: null,
+					columns: [
+						{ label: "銘柄", kind: "text", unit: null },
+						{ label: "通貨", kind: "text", unit: null },
+						{ label: "売上高", kind: "number", unit: "base" },
+					],
+					rows: [
+						{ values: ["7018 内海造船", "JPY", 47_016_000_000], claimIndices: [0], evidence: [] },
+						{ values: ["US:HII", "USD", 12_484_000_000], claimIndices: [1], evidence: [] },
+					],
+				},
+			],
+		});
+		const verdicts = JSON.stringify({
+			verdicts: [
+				{ claimIndex: 0, verdict: "supported" },
+				{ claimIndex: 1, verdict: "supported" },
+			],
+		});
+		const { run, agent, reporter } = setup(
+			[round1CompanyOnly, round2PrematureDone, round3Financials, draft, verdicts],
+			{
+				tools: { ...baseTools, registry },
+				input: {
+					request: request({
+						question: "造船銘柄の売上高の表を作成してください",
+						budget: { ...request().budget, maxAgentSteps: 10 },
+					}),
+				},
+			},
+		);
+		const outcome = expectBundle(await run());
+		// Round 2 already receives the financials-needed stage note despite citeable 10-K company text.
+		expect(agent.requests[1]?.prompt).toContain(PLANNING_FINANCIALS_NEEDED_NOTE);
+		// Premature done=true in Round 2 is refused, continuing to Round 3 to fetch financials.
+		expect(reporter.recorded.notes).toContain(
+			"Candidate companies were found without financial figures; continuing collection.",
+		);
+		expect(agent.requests[2]?.prompt).toContain(PLANNING_FINANCIALS_NEEDED_NOTE);
+		expect(agent.requests[2]?.prompt).toContain(PLANNING_FINAL_ROUND_NOTE);
+		expect(outcome.bundle.claims.every((c) => c.status === "supported")).toBe(true);
+		const compDataset = outcome.bundle.datasets.find((d) => d.title === "造船銘柄の売上高");
+		expect(compDataset?.rows).toHaveLength(2);
+		expect(compDataset?.rows.map((r) => r.col2?.v)).toEqual([47_016_000_000, 12_484_000_000]);
 	});
 });
 

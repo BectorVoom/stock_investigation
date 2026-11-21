@@ -31,5 +31,6 @@ import ResearchFormal.SecIdentity
 import ResearchFormal.ResearchRetrieval
 
 import ResearchFormal.CitationReference
+import ResearchFormal.CompanyScreening
 import ResearchFormal.ComparisonTable
 import ResearchFormal.DemandSignals

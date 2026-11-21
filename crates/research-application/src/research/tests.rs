@@ -390,8 +390,8 @@ fn compare(actual: &Value, expected: &Value, path: &str) {
 
 /// Pipeline.test.ts blocks (it.each rows expanded) and the hand-written runs
 /// they record; the seeded `gen/` and `edge/` runs come on top.
-const HAND_WRITTEN_BLOCKS: usize = 103;
-const HAND_WRITTEN_RUNS: usize = 114;
+const HAND_WRITTEN_BLOCKS: usize = 104;
+const HAND_WRITTEN_RUNS: usize = 115;
 
 #[tokio::test]
 async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
