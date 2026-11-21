@@ -1,6 +1,6 @@
 # ADR-0071: Agent retrieval of stored stock research
 
-Status: accepted, 2026-11-05.
+Status: accepted, 2026-11-05. Amended 2026-11-21 by [ADR-0080](0080-stock-screening-relevance-and-planning-leads.md) (company relevance tiers `name → theme → body`, Japanese `local_name` in AI overview titles, token-bounded digit/ticker terms, `issuer=` in financial passages, `stocks.search` v1.1.0 compact context-only hits and short-form reserve, `ToolOutput.planningLeads`, `research-v11`, and `research_planning_round` logging).
 
 ## Context
 

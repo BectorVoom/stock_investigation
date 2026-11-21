@@ -132,3 +132,21 @@ Filter `reason` by these fixed values:
 ```sh
 jq -c 'select(.event == "research_analysis_attempt" and .willRetry == true)' data-dev/logs/runner.log
 ```
+
+## Research planning rounds
+
+Both runners emit an info-level `research_planning_round` JSON line for each
+planning round in the research collection loop ([ADR-0080](../adr/0080-stock-screening-relevance-and-planning-leads.md)).
+Correlate it by `runId` and `leaseGeneration`. `round` starts at 1 for each
+lease and `finalRound` marks the last collection round where discovery search
+tools are refused ([ADR-0078](../adr/0078-final-round-reads-pages-and-parallel-page-reads.md)).
+`requestedToolIds` lists the requested tool identifiers in plan order with
+duplicates kept (comma-separated, validated against the safe identifier pattern
+or `"invalid"`), and `executed`, `repeated`, `denied` and
+`refusedFinalRoundSearch` count each call's outcome in that round. Tool
+arguments and question text are never logged, because arguments can contain the
+owner's question.
+
+```sh
+jq -c 'select(.event == "research_planning_round")' data-dev/logs/runner.log
+```
